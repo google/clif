@@ -1,0 +1,15 @@
+syntax = "proto2";
+
+package clif.testing;
+
+message Outer {
+  message Inner {
+    enum Nested {
+      E = 0;
+      A = 1;
+      B = 2;
+    };
+    optional Nested val = 1;
+  };
+  optional Inner sub = 1;
+};

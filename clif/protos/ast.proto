@@ -1,0 +1,176 @@
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto2";
+
+package clif.protos;
+
+
+// AST message - abstract API representation.
+// Is sent in both directions to/from Clang C++ matcher.
+message AST {
+  optional string source = 1;
+  repeated string usertype_includes = 2;
+  repeated Decl decls = 3;
+  repeated string extra_init = 4;  // C++ code lines for Init() body.
+  optional bool catch_exceptions = 5;  // C++ code may throw.
+  repeated Typemap typemaps = 6;   // C++ types and processors for a lang type
+  repeated Macro macros = 7;       // Macro definitions to pass through.
+};
+
+message Decl {
+  enum Type {
+    UNKNOWN = 0;
+    ENUM = 1;
+    VAR = 2;
+    CONST = 3;
+    FUNC = 4;
+    TYPE = 5;
+    CLASS = 6;
+  };
+  optional Type decltype = 1;
+  oneof decl {
+    ClassDecl class_ = 10;  // Workaround for Python protobuf (should be just "class")
+    EnumDecl enum = 11;
+    VarDecl var = 12;
+    ConstDecl const = 13;
+    FuncDecl func = 14;
+    ForwardDecl fdecl = 15;
+  };
+  optional string cpp_file = 2;   // C++ filename to look that API in.
+  optional string not_found = 3;  // Placeholder for match errors.
+  optional int32 line_number = 4;  // Line number of clif source file that produced this decl.
+  optional string namespace_ = 5;
+};
+
+message ClassDecl {
+  optional Name name = 1;
+  repeated Name bases = 2;
+  repeated Decl members = 3;
+  optional bool final = 4;        // No derived classes allowed.
+  optional bool shared = 5;       // Class instance not owned (shared with C++).
+  optional bool async_dtor = 10;  // Release Python GIL while deleting C++ instance.
+  optional bool cpp_has_def_ctor = 6 [default = true];  // C++ class has a default constructor.
+  optional bool cpp_copyable = 7 [default = true];  // C++ class can be copied.
+  optional bool cpp_abstract = 8;  // C++ class is an abstract base class.
+  optional bool cpp_has_public_dtor = 9 [default = true];  // C++ class can be destroyed.
+  message Base {
+    optional string name = 1;
+    optional string namespace = 2;
+    optional string filename = 3;
+  };
+  repeated Base cpp_bases = 11;   // Additional info for C++ base classes.
+  // Next available: 12
+};
+
+message EnumDecl {
+  optional Name name = 1;
+  repeated Name members = 2;
+  optional bool enum_class = 3;
+  optional Type item = 4;  // Enum size.
+};
+
+message VarDecl {
+  optional Name name = 1;
+  optional Type type = 2;
+  optional FuncDecl cpp_get = 3;  // Property getter name.
+  optional FuncDecl cpp_set = 4;  // Property setter name.
+};
+
+message ConstDecl {
+  optional Name name = 1;
+  optional Type type = 2;
+  optional string value = 3;
+};
+
+message ParamDecl {
+  optional Name name = 1;
+  optional Type type = 2;  // Matcher set deduced mutable type here.
+  optional string cpp_exact_type = 4;  // Set to exact C++ type (good for override).
+  // if has_default_value(), this parameter is optional.
+  optional string default_value = 3;
+  // Next available: 5
+};
+
+message FuncDecl {
+  optional Name name = 1;
+  repeated ParamDecl params = 2;
+  repeated ParamDecl returns = 3;
+  repeated Exception excepts = 4;
+  optional string postproc = 5;    // Replace results with native postproc(results).
+  optional bool constructor = 18;  // Set to true iff this function is a constructor
+  optional bool classmethod = 11;  // C++ class static function member.
+  optional bool async = 12;        // Release Python GIL while running.
+  optional bool virtual = 15;      // Set to true to allow override.
+  optional bool ignore_return_value = 16; // Set to true if C++ function return will be ignored.
+  optional bool cpp_void_return = 13; // Set to true iff C++ function returns void.
+  optional bool cpp_noexcept = 14;  // Set to true if C++ func is noexcept(true).
+  optional bool cpp_opfunction = 17;  // Invoke C++ operator function.
+  optional bool cpp_const_method = 19;  // Set to true if C++ func is const.
+  // Next available: 20
+};
+
+// ForwardDecl describe a C++ name declaration match (only make sense for
+// classes).
+message ForwardDecl {
+  optional Name name = 1;
+};
+
+// Type describe a C++ name match.
+message Name {
+  optional string native = 1;  // Target language name.
+  optional string cpp_name = 2;
+};
+
+// Type describe a C++ type match.
+// ...
+// If cpp_raw_pointer==true, matcher match only raw pointer params
+// (Foo* for input and Foo** for output), if false - matcher set it true if
+// matched parameter is a raw pointer.
+message Type {
+  optional string lang_type = 1;  // Target language-specific typename.
+  optional string cpp_type = 2;  // Placeholder to fill in found concrete C++ type.
+  repeated Type params = 3;    // For containers, a parsed tree
+  optional FuncDecl callable = 4;     // For lambda it has params and returns.
+  optional bool cpp_has_def_ctor = 5 [default = true];  // true iff the type has a default constructor
+  optional bool cpp_copyable = 6 [default = true];  // true if the type is copyable.
+  optional bool cpp_raw_pointer = 7;  // true iff is a C++ raw pointer type.
+  optional bool cpp_toptr_conversion = 8;  // true iff there is a Lang to T* conversion.
+  optional bool cpp_touniqptr_conversion = 11;  // true iff there is a Lang to unique_ptr<T> conversion.
+  optional bool cpp_abstract = 9;  // true iff the type is a C++ abstract class.
+  optional bool cpp_has_public_dtor = 10 [default = true];  // C++ class can be destroyed.
+  // Next available: 12
+};
+
+message Exception {
+  optional string name = 1;
+  optional bool checked = 2;
+};
+
+// Language-specific mapping from native type to C++ types.
+message TypeTable {
+  repeated Typemap typemaps = 1;
+};
+
+message Typemap {
+  optional string lang_type = 1;  // Target language-specific typename.
+  repeated string cpp_type = 2;   // C++ types to try (the order is important).
+  optional string postconversion = 3;  // C++ func to apply on C++ -> lang path
+};
+
+message Macro {
+  optional string name = 1;
+  optional bytes definition = 2;
+};
+
