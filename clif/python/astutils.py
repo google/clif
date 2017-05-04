@@ -18,12 +18,9 @@ import itertools
 
 
 def HaveEnum(decls):
-  for d in decls:
-    if d.decltype == d.ENUM: return True
-  for d in decls:
-    if d.decltype == d.CLASS:
-      if HaveEnum(d.class_.members): return True
-  return False
+  if any(d.decltype == d.ENUM for d in decls):
+    return True
+  return any(d.decltype == d.CLASS and HaveEnum(d.class_.members) for d in decls)
 
 
 def RawType(t):
