@@ -1014,17 +1014,11 @@ Wrapping a template instantiation should be done using the normal way of
 wrapping classes and methods. The C++ name in the Clif declaration should
 include all the non-default template parameters of the C++ template. The Python
 name _must_ be provided as its alternate. Consider the following C++ template
-definition:
-
-```live-snippet
-cs/file:clif/examples/templates/templates.h
+[definition](../../examples/templates/templates.h).
 ```
 
-The Clif wrapping for the above class in two different flavors is as follows:
-
-```live-snippet
-cs/file:clif/examples/templates/python/templates.clif
-```
+The Clif wrapping for the above class in two different flavors is
+[here](../../examples/templates/python/templates.clif).
 
 The first flavor in the above Clif file wraps the template instantiation
 `MyClass<int, string>`, and the second flavor wraps the template instantiation
@@ -1042,95 +1036,6 @@ should __not__ list the template arguments in the C++ name. Apart from that, it
 is very similar to wrapping any normal function. This is illustrated in the
 above Clif file which wraps the C++ template function `MyAdd` into two flavors
 `MyAddInt` and `MyAddFloat`.
-
-## Wrapping Protocol Buffers
-
-NOTE: The example `wrap_protos` used in this section lives in
-clif/examples/wrap_protos.
-
-Wrapping protocol buffers with Clif requires setting up certain build rules and
-targets following a certain pattern. There are no constructs to wrap them
-explicitly in a Clif file. Consider an example proto definition as follows:
-
-```live-snippet
-cs/file:clif/examples/wrap_protos/protos/sample.proto
-```
-
-NOTE: Only proto2 (and `cc_api_version=2`) supported by Clif. If the proto rule
-has `cc_api_version=1`, then protoc generates a `.pb.h` file incompatible with
-CLIF (nested message typedefs are not generated). Under certain conditions,
-the `proto_library` rule falls back to proto1 even if `cc_api_version=2` is
-mentioned in the rule. Such cases are also not supported by Clif.
-
-To use the protobufs generated from the above definition in Python together with
-other Clif-wrapped constructs, one will have to list a `pyclif_proto_library`
-target in the `BUILD` file:
-
-```live-snippet
-cs/file:clif/examples/wrap_protos/protos/BUILD
-```
-
-There are a few rules to follow when specifying `pyclif_proto_library` targets
-in `BUILD` files:
-
-1. A `pyclif_proto_library` target should be listed in the same package in which
-the proto file lives.
-
-2. The name of the `pyclif_proto_library` target should be of the form
-`<MY_PROTO_FILE>_pyclif`, if one is wrapping the proto file named
-`<MY_PROTO_FILE>.proto`.
-
-NOTE: The rule `pyclif_proto_library` should first be loaded from the file
-`clif/python/clif_build_rule.bzl` before it can be used.
-
-To see how the Clif wrappings for the above proto definitions can be used along
-with Clif-wrapped Python code, let us consider C++ code which operates with the
-proto `MyMessage` as follows:
-
-```live-snippet
-cs/file:clif/examples/wrap_protos/wrap_protos.h
-```
-
-Make special note of two constructs from the above C++ header: The function
-`DefaultInitMyMessage` which takes a pointer to the proto `MyMessage` as
-argument, and the method `GetMyMessage` which returns a pointer to the proto
-`MyMessage`. With these in mind, let us look at the following Clif file which
-wraps the C++ class `ProtoManager` and the function `DefaultInitMyMessage` as
-follows:
-
-```live-snippet
-cs/file:clif/examples/wrap_protos/python/wrap_protos.clif
-```
-
-Since we are using the Clif wrapped protobuf types in our Clif file, we have to
-_import_ them using the `from` statement in a manner similar to importing Clif
-wrapped constructs from other Clif modules. As before, the name of the header
-file (without the `.h` extension), from which the Clif wrappings should be
-imported, should match the name of the build target which builds the Clif
-wrappings. This import statement makes the protobuf message names available for
-use in the Clif file. Nested messages and enums should be specified using the
-'`.`' notation.
-
-NOTE: If a protobuf message name conflicts with another name used or defined in
-a Clif file, then the protobuf wrapping should be imported using the
-`from <proto_wrapping_header_file> import * as <local_name>` syntax. The message
-name can then be used in the Clif file with the `<local_name>.` prefix.
-
-A very important point to keep in mind is that, unlike instances of wrapped
-class/struct types, when protobuf messages cross the language boundary (C++ to
-Python, or Python to C++), the receiving side receives the language-native
-version of the message. Since C++ and Python representation of the protos
-differ, changes made to a message are local to the language the changes are made
-from. Hence, in the above example, even though the wrapped
-`DefaultInitMyMessage` takes a pointer to the proto `MyMessage`, changes made to
-it on the C++ side do not get reflected on the Python side. Similarly, even
-though the method `GetMyMessage` returns a non-const pointer, changes made to
-the returned protobuf on the Python side do not get reflected on the C++ side.
-This is illustrated by the following test:
-
-```live-snippet
-cs/file:clif/examples/wrap_protos/python/wrap_protos_test.py
-```
 
 ## Providing a Python Wrapper Layer
 
