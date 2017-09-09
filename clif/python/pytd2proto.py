@@ -25,6 +25,7 @@ In case of errors it will raise an exception. Possible exceptions are:
 """
 
 from __future__ import print_function
+import inspect
 import os
 import pickle
 import re
@@ -298,6 +299,10 @@ class Postprocessor(object):
                       % (p[1], ln))
     self._typetable.setdefault(p[1], []).append(p[0])
 
+  def _docstring(self, unused_ln, p, pb):
+      assert len(p) == 1, str(p)
+      pb.docstring = inspect.cleandoc(p[0]).replace('\n', '\\n')
+
   # decl
 
   def _capsule(self, ln, ast, pb, ns=None):
@@ -323,6 +328,8 @@ class Postprocessor(object):
     _set_name(p.name, ast.name, ns, allow_fqcppname=is_iterator)
     pyname = p.name.native
     self.check_known_name(pyname)
+    if ast.docstring:
+      p.docstring = inspect.cleandoc(ast.docstring[0]).replace('\n', '\\n')
     decorators = ast.decorators.asList()
     if not is_iterator:
       self._typetable[pyname] = [p.name.cpp_name]
@@ -473,6 +480,7 @@ class Postprocessor(object):
         raise TypeError('@getter signature must be (self)->T')
       p.type.CopyFrom(f.returns[0].type)
       p.cpp_get.name.native = pyname
+      p.cpp_get.docstring = f.docstring
     else:
       assert getset == ['setter']
       if len(f.params) != 1 or f.returns:
@@ -484,6 +492,7 @@ class Postprocessor(object):
         p.cpp_get.name.native = cname
       # Preserve func param varname for the error message (not useful otherwise)
       p.name.native = f.params[0].name.native
+      p.cpp_set.docstring = f.docstring
     return True
 
   def _enum(self, ln, ast, pb, ns=None):
@@ -520,6 +529,9 @@ class Postprocessor(object):
       self.set_type(f.params.add().type, ast,
                     lambda x, f=f: _set_keep_gil(f, x))
       f.ignore_return_value = True
+    if ast.docstring:
+      p.cpp_get.docstring = inspect.cleandoc(ast.docstring[0]).replace('\n',
+                                                                       '\\n')
     return p.name.native
 
   def _const(self, ln, ast, pb, ns=None):
@@ -602,12 +614,17 @@ class Postprocessor(object):
         f.postproc = '->self'  # '->' indicate special postprocessing.
     if return_self and f.postproc != '->self':
       raise ValueError('Only inplace ops can return "self".')
-    if ast.postproc:
-      name = ast.postproc[0][0][0]
-      try:
-        f.postproc = self._names[name]
-      except KeyError:
-        raise NameError('Should import name "%s" before use.' % name)
+    if ast.func_block:
+      func_block = ast.func_block[0][0]
+      if func_block.docstring:
+          f.docstring = inspect.cleandoc(func_block.docstring[0]).replace('\n',
+                                                                          '\\n')
+      if func_block.postproc:
+        name = func_block.postproc[0]
+        try:
+          f.postproc = self._names[name]
+        except KeyError:
+          raise NameError('Should import name "%s" before use.' % name)
     name = f.name.native.rstrip('@#')
     if decorators:
       raise ValueError('Unknown decorator%s for def %s: %s'
@@ -721,7 +738,7 @@ def _set_bases(pb, ast_bases, names, typetable):
       try:
         n = names[n]  # Resolve to FQName.
       except KeyError:
-        # 
+        #
         if n not in typetable:
           raise NameError('Base class %s not defined' % n)
     base = pb.add()
@@ -891,7 +908,7 @@ _SPECIAL = {
     '__next__': 'operator*',  # For the "class __iter__: def __next__" case.
     '__int__': 'operator int',
     '__float__': 'operator double',
-    # 
+    #
     # so will have only one in the future.
     '__nonzero__': 'operator bool',  # PY2
     '__bool__': 'operator bool',  # PY3

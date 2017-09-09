@@ -73,7 +73,11 @@ def Docstring(method):
                ('=default' if a.default_value else '') for a in method.params)
   # Gen Python signature
   yield method.name.native + i + out
-  yield '  Calls C++ function'
-  # Gen C++ signature
-  cname = method.name.cpp_name or method.name.native
-  yield '  ' + FuncReturnType(method) + ' ' + cname + FuncParamStr(method)
+  if method.docstring != '':
+    yield ''
+    yield '  ' + method.docstring
+  else:
+    yield '  Calls C++ function'
+    # Gen C++ signature
+    cname = method.name.cpp_name or method.name.native
+    yield '  ' + FuncReturnType(method) + ' ' + cname + FuncParamStr(method)

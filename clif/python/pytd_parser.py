@@ -62,6 +62,7 @@ ANGLED = lambda el: S('<') - el - S('>')
 
 QSTRING = pp.QuotedString('"')
 ASTRING = pp.QuotedString('`')
+DSTRING = pp.QuotedString('"""', multiline=True)
 NAME = pp.Word(pp.alphas+'_', pp.alphanums+'_').setName('name')
 dotted_name = pp.delimitedList(NAME, '.', combine=True)
 
@@ -78,8 +79,11 @@ plist = pp.ZeroOrMore(S(',') + pdef)
 decorators = Group(pp.ZeroOrMore(S('@') - NAME + NEWLINE))('decorators')
 parameters = Group(PARENS(Optional(pdef + plist)))('params')
 mparameters = PARENS((W('self') | W('cls'))('self') + Group(plist)('params'))
-postproc = Optional(BLOCK(
-    S('return') - pp.WordEnd() + NAME - S('(...)')))('postproc')
+
+docstring = Group(DSTRING + NEWLINE)('docstring')
+postproc = Group(S('return') - pp.WordEnd() + NAME - S('(...)'))('postproc')
+docpost = docstring + postproc
+func_block = Optional(BLOCK(docstring ^ postproc ^ docpost))('func_block')
 
 types = Group(E('') + type) | PARENS(pp.delimitedList(pdef))
 returns = S('->') - (SW('None') | Group(types)('returns'))
@@ -94,13 +98,14 @@ G = lambda X: X
 
 _func = Tag('func')
 funcdef = G(_func + decorators + S('def') - cname +
-            parameters + Optional(returns - postproc))
+            parameters + Optional(returns) - Optional(func_block))
 methoddef = G(_func + decorators + S('def') - cname +
-              mparameters + Optional(returns - postproc))
+              mparameters + Optional(returns) - Optional(func_block))
 _cnamedef = cname + S(':') - type
 vardef = G(Tag('var') + _cnamedef + Optional(
     S('=') - S('property') + PARENS(ASTRING('getter') +
-                                    Optional(S(',') + ASTRING('setter')))))
+                                    Optional(S(',') + ASTRING('setter')))) +
+           Optional(docstring))
 composed_type = NAME - ANGLED(pp.delimitedList(NAME))
 interface_stmt = G(K('interface') - composed_type) - BLOCK(methoddef | vardef)
 implementsdef = G(K('implements') - composed_type)
@@ -108,7 +113,8 @@ implementsdef = G(K('implements') - composed_type)
 nested_decl = pp.Forward()
 classdef = G(Tag('class') + decorators + S('class') - cname +
              Group(Optional(PARENS(pp.delimitedList(cname))))('bases') -
-             BLOCK(nested_decl))
+             Optional(S(':') + NEWLINE + Optional(docstring) +
+                      pp.indentedBlock(nested_decl, _indentation_stack)))
 constdef = G(K('const') - _cnamedef)
 enumdef = G(K('enum') - cname + Optional(S('with') - BLOCK(crename)))
 capsule_def = G(K('capsule') - cname)
@@ -134,6 +140,6 @@ stmt = Group(NEWLINE |
             )
 
 # Top-level parser.
-Clif = pp.OneOrMore(stmt)  # pylint: disable=invalid-name
+Clif = Optional(Group(Tag('docstring') + DSTRING)) + pp.OneOrMore(stmt)  # pylint: disable=invalid-name
 Clif.ignore(pp.pythonStyleComment)
 Clif.validate()

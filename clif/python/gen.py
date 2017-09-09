@@ -251,7 +251,7 @@ def VirtualOverriderClass(name, pyname, cname, cfqname, isabstract, idfunc,
   yield '};'
 
 
-def TypeObject(tp_slots, slotgen, pyname, ctor, wname, fqclassname,
+def TypeObject(tp_slots, slotgen, pyname, ctor, docstring, wname, fqclassname,
                abstract, iterator, need_dtor=True, subst_cpp_ptr=''):
   """Generate PyTypeObject methods and table.
 
@@ -307,7 +307,10 @@ def TypeObject(tp_slots, slotgen, pyname, ctor, wname, fqclassname,
   tp_slots['tp_itemsize'] = tp_slots['tp_version_tag'] = '0'
   tp_slots['tp_dictoffset'] = tp_slots['tp_weaklistoffset'] = '0'
   tp_slots['tp_flags'] = ' | '.join(tp_slots['tp_flags'])
-  tp_slots['tp_doc'] = '"CLIF wrapper for %s"' % fqclassname
+  if docstring != '':
+    tp_slots['tp_doc'] = '"%s"' % docstring
+  else:
+    tp_slots['tp_doc'] = '"CLIF wrapper for %s"' % fqclassname
   wtype = '%s_Type' % wname
   yield ''
   yield 'PyTypeObject %s = {' % wtype

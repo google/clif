@@ -329,21 +329,31 @@ class Module(object):
       # It's an unproperty var (@getter pyname / @setter pyname).
       assert not v.cpp_get.name.cpp_name
       unproperty = True
-      self.methods.append((v.cpp_get.name.native, getter,
-                           NOARGS, '%s()->%s  C++ %s.%s getter' %
-                           (v.cpp_get.name.native, v.type.lang_type,
-                            self.name, v.name.cpp_name)))
+      if v.cpp_get.docstring != '':
+        docstring = '%s()->%s\\n\\n%s' % (v.cpp_get.name.native,
+                                          v.type.lang_type, v.cpp_get.docstring)
+      else:
+        docstring = '%s()->%s  C++ %s.%s getter' % (
+            v.cpp_get.name.native, v.type.lang_type, self.name, v.name.cpp_name)
+      self.methods.append((v.cpp_get.name.native, getter, NOARGS, docstring))
       if v.cpp_set.name.native:
         assert not v.cpp_set.name.cpp_name
+        if v.cpp_set.docstring != '':
+          docstring = '%s(%s)\\n\\n%s' % (v.cpp_set.name.native,
+                                          v.type.lang_type, v.cpp_set.docstring)
+        else:
+          docstring = '%s(%s)  C++ %s.%s setter' % (
+            v.cpp_set.name.native, v.type.lang_type, self.name, v.name.cpp_name)
         self.methods.append((v.cpp_set.name.native, setter,
-                             'METH_O', '%s(%s)  C++ %s.%s setter' %
-                             (v.cpp_set.name.native, v.type.lang_type,
-                              self.name, v.name.cpp_name)))
+                             'METH_O', docstring))
       else:
         setter = 'nullptr'
     else:
-      self.properties.append((v.name.native, getter, setter, 'C++ %s %s.%s' % (
-          v.type.cpp_type, self.CppName(), vname)))
+      if v.cpp_get.docstring != '':
+        docstring = v.cpp_get.docstring
+      else:
+        docstring = 'C++ %s %s.%s' % (v.type.cpp_type, self.CppName(), vname)
+      self.properties.append((v.name.native, getter, setter, docstring))
     # For a nested container we'll try to return it (we use cpp_toptr_conversion
     # as an indicator for a custom container).
     for s in gen.VarGetter(getter, unproperty, base, cvar, _GetCppObj(),
@@ -460,7 +470,7 @@ class Module(object):
     # Python convention to have a type struct named FOO_Type.
     # Generate wrapper Type object in wname+'_Type' static var.
     for s in gen.TypeObject(
-        tp_slots, slots.GenTypeSlots, pyname, ctor,
+        tp_slots, slots.GenTypeSlots, pyname, ctor, docstring=c.docstring,
         fqclassname=c.name.cpp_name, wname=WRAPPER_CLASS_NAME,
         abstract=c.cpp_abstract, need_dtor=not c.cpp_has_trivial_dtor,
         iterator=_GetCppObj('iter') if iter_class else None,
@@ -552,11 +562,13 @@ class Module(object):
     for s in gen.ReadyFunction(self.types_init):
       yield s
 
-  def GenInitFunction(self, api_source_h):
+  def GenInitFunction(self, api_source_h, docstring):
     """Generate a function to create the module and initialize it."""
     assert not self.nested, 'Stack was not fully processed'
+    if docstring == '':
+      docstring = 'CLIF-generated module for %s' % api_source_h
     for s in gen.InitFunction(
-        self.path, 'CLIF-generated module for %s' % api_source_h,
+        self.path, docstring,
         gen.MethodDef.name if self.methods else 'nullptr',
         self.init, self.dict): yield s
 
@@ -592,7 +604,8 @@ class Module(object):
         yield s
     for s in self.GenTypesReady():  # extends self.init
       yield s
-    for s in self.GenInitFunction(api_header):  # consumes self.init
+    for s in self.GenInitFunction(api_header,
+                                  ast.docstring):  # consumes self.init
       yield s
     yield ''
     yield '}  // namespace %s' % self.wrap_namespace

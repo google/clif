@@ -27,6 +27,7 @@ message AST {
   optional bool catch_exceptions = 5;  // C++ code may throw.
   repeated Typemap typemaps = 6;   // C++ types and processors for a lang type
   repeated Macro macros = 7;       // Macro definitions to pass through.
+  optional string docstring = 8;   // Module docstring.
 };
 
 message Decl {
@@ -73,7 +74,8 @@ message ClassDecl {
     optional string filename = 3;
   };
   repeated Base cpp_bases = 11;   // Additional info for C++ base classes.
-  // Next available: 14
+  optional string docstring = 14;  // Python class docstring.
+  // Next available: 15
 };
 
 message EnumDecl {
@@ -120,7 +122,8 @@ message FuncDecl {
   optional bool cpp_noexcept = 14;  // Set to true if C++ func is noexcept(true).
   optional bool cpp_opfunction = 17;  // Invoke C++ operator function.
   optional bool cpp_const_method = 19;  // Set to true if C++ func is const.
-  // Next available: 20
+  optional string docstring = 20;  // Python function docstring.
+  // Next available: 21
 };
 
 // ForwardDecl describe a C++ name declaration match (only make sense for
@@ -175,4 +178,3 @@ message Macro {
   optional string name = 1;
   optional bytes definition = 2;
 };
-
