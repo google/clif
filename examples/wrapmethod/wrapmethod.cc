@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "clif/examples/wrapmethod/wrapmethod.h"
+#include "wrapmethod/wrapmethod.h"
 
 namespace clif_example {
 namespace wrapmethod {

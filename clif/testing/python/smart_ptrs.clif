@@ -38,6 +38,11 @@ from "clif/testing/smart_ptrs.h":
     class D1(C1):
       def __init__(self, i: int)
 
+    class WithPrivateDtor:
+      @classmethod
+      def New(cls) -> WithPrivateDtor
+      def Get(self) -> int
+
     class X:
       y: int
 

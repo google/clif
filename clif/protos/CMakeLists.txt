@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/__init__.py" "")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/__init__.py"
+  "import pkgutil; __path__ = pkgutil.extend_path(__path__, __name__)"
+)
 
 add_proto_library(clifAstProto ast.proto)
+
+add_pyclif_proto_library(clifAstProtoWrapper ast.proto clifAstProto)

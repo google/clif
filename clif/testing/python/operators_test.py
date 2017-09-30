@@ -22,6 +22,9 @@ class OperatorsTest(unittest.TestCase):
 
   def testAbc(self):
     abc = operators.Abc(ord('a'), ord('z'))
+    self.assertEqual(bool(abc), False)
+    self.assertEqual(int(abc), 1)
+    self.assertAlmostEqual(float(abc), 1.1)
     self.assertEqual(len(abc), 26)
     self.assertEqual(abc[0], 'a')
     self.assertEqual(abc[1], 'b')
@@ -30,6 +33,10 @@ class OperatorsTest(unittest.TestCase):
     self.assertNotEqual(abc, ABC)
     self.assertEqual(len(abc), len(ABC))
     self.assertLess(ABC, abc, str(ABC[0] < abc[0]))
+    abc += 2  # a->c
+    self.assertEqual(len(abc), 26)
+    self.assertEqual(abc[0], 'c')
+    self.assertIn(ord('c'), abc)
 
 
 if __name__ == '__main__':

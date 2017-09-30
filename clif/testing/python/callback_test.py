@@ -22,6 +22,10 @@ def Callback(input_data):
   return 0, input_data
 
 
+def Callback2(input_data):
+  return input_data
+
+
 def InvalidCallback1():
   return 0
 
@@ -38,23 +42,43 @@ class CallbackTest(unittest.TestCase):
   def CallbackInvalid(self):
     return 2
 
-  def testNewStype(self):
+  def testNewStyleConstRef(self):
     self.assertEqual(
-        callback.NewStyleCallback([1, 2], Callback), [1, 2])
+        callback.NewStyleCallbackConstRef([1, 2], Callback), [1, 2])
     with self.assertRaises(TypeError):
-      callback.NewStyleCallback(12, InvalidCallback1)
+      callback.NewStyleCallbackConstRef(12, InvalidCallback1)
     with self.assertRaises(TypeError):
-      callback.NewStyleCallback(13, InvalidCallback2)
+      callback.NewStyleCallbackConstRef(13, InvalidCallback2)
 
-  def testNewStypeMethod(self):
+  def testNewStyleNonConstRef(self):
     self.assertEqual(
-        callback.NewStyleCallback([2, 3], self.CallbackMethod), [2, 3])
+        callback.NewStyleCallbackNonConstRef([1, 2], Callback), [1, 2])
     with self.assertRaises(TypeError):
-      callback.NewStyleCallback(23, self.CallbackInvalid)
+      callback.NewStyleCallbackNonConstRef(12, InvalidCallback1)
+    with self.assertRaises(TypeError):
+      callback.NewStyleCallbackNonConstRef(13, InvalidCallback2)
+
+  def testNewStyleConstRefWithSelfCallback(self):
+    self.assertEqual(
+        callback.NewStyleCallbackConstRef([2, 3], self.CallbackMethod), [2, 3])
+    with self.assertRaises(TypeError):
+      callback.NewStyleCallbackConstRef(23, self.CallbackInvalid)
 
   def testSelfCallback(self):
     # assert not raises:
     callback.SelfCallback(Callback)
+
+  def testStrCallback(self):
+    # 'foo' is str in Py2 and Py3
+    def cb(s):
+      self.assertIsInstance(s, str)
+      self.assertEqual(s, 'foo')
+    callback.StringCallback(cb)
+
+
+  def testCallableOutput(self):
+    returned_callback = callback.FunctionWithCallableReturn(Callback2)
+    self.assertEqual(returned_callback(5), 5)
 
 
 if __name__ == '__main__':

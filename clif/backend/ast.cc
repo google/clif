@@ -53,7 +53,9 @@ static std::unique_ptr<clang::ASTUnit> BuildClangASTFromCode(
   adjusted_clang_command.push_back("-w");
   return clang::tooling::buildASTFromCodeWithArgs(
       file_contents.c_str(), adjusted_clang_command, file_name.c_str(),
-      clang_command[0].c_str());
+      clang_command[0].c_str(),
+      std::make_shared<clang::PCHContainerOperations>(),
+      clang::tooling::getClangSyntaxOnlyAdjuster());
 }
 
 
@@ -89,7 +91,7 @@ bool IsForwardDeclaration(NamedDecl* decl) {
           IsForwardDeclarationOf<clang::VarDecl>(decl));
 }
 
-// TODO: Most of the DeclClassification logic is obsolete,
+// 
 // delete it. The conversion function finder is one part that isn't
 // obsolete.
 
@@ -467,35 +469,44 @@ QualType TranslationUnitAST::FindBuiltinType(
           QualType() : QualType(atype->second, 0));
 }
 
-ClifLookupResult TranslationUnitAST::LookupOperator(
-    clang::DeclContext* context,
-    const std::string& name) {
+ClifLookupResult TranslationUnitAST::LookupOperatorOrConversionFunction(
+    clang::DeclContext* context, const std::string& name) {
   const std::string operator_keyword = "operator";
   auto& ast = GetASTContext();
   const std::string& token = name.substr(operator_keyword.length(),
                                          name.length());
+  // check if it's an overloaded operator or implicit type conversion function.
+  bool is_conversion = true;
   // Sema::LookupOverloadedOperatorName is only valid during
   // parsing, so find the clang operator name in the raw clang style.
   DeclarationNameInfo operator_name;
 #define OVERLOADED_OPERATOR(Name, Spelling, Token, Unary, Binary, MemberOnly) \
-  if (token == (Spelling)) {                                            \
-    operator_name = DeclarationNameInfo(                                \
-        ast.DeclarationNames.getCXXOperatorName(clang::OO_##Name),      \
-        SourceLocation());                                              \
+  if (token == (Spelling)) {                                                  \
+    is_conversion = false;                                                    \
+    operator_name = DeclarationNameInfo(                                      \
+        ast.DeclarationNames.getCXXOperatorName(clang::OO_##Name),            \
+        SourceLocation());                                                    \
   }
 #define OVERLOADED_OPERATOR_MULTI(Name, Spelling, Unary, Binary, MemberOnly) \
-  if (token == (Spelling)) {                                            \
-    operator_name = DeclarationNameInfo(                                \
-        ast.DeclarationNames.getCXXOperatorName(clang::OO_##Name),      \
-        SourceLocation());                                              \
+  if (token == (Spelling)) {                                                 \
+    is_conversion = false;                                                   \
+    operator_name = DeclarationNameInfo(                                     \
+        ast.DeclarationNames.getCXXOperatorName(clang::OO_##Name),           \
+        SourceLocation());                                                   \
   }
 #include "clang/Basic/OperatorKinds.def"  // NO_LINT
   // Clang handles member operator overloading separate from normal
   // operator lookup
+  auto class_decl = llvm::dyn_cast<CXXRecordDecl>(context);
+  if (class_decl != nullptr && is_conversion) {
+    auto conversion_decls = class_decl->getVisibleConversionFunctions();
+    ClifLookupResult result(conversion_decls);
+    return result;
+  }
+
   Sema::LookupNameKind lookup_kind =
-      (llvm::dyn_cast<CXXRecordDecl>(context) != nullptr ?
-       Sema::LookupNameKind::LookupMemberName :
-       Sema::LookupNameKind::LookupOperatorName);
+      (class_decl != nullptr ? Sema::LookupNameKind::LookupMemberName
+                             : Sema::LookupNameKind::LookupOperatorName);
   clang::LookupResult results(GetSema(), operator_name, lookup_kind);
   results.suppressDiagnostics();
   GetSema().LookupQualifiedName(results, context, false);
@@ -550,8 +561,9 @@ ClifLookupResult TranslationUnitAST::LookupScopedSymbolInContext(
   DeclContextLookupResult lookup_result;
   DeclContext* decl_context = GetDeclContextFromDecl(decl);
   for (const auto& name_component : namespace_components) {
-    if (IsOperatorFunction(name_component.str())) {
-      return LookupOperator(decl_context, name_component.str());
+    if (IsOperatorOrConversionFunction(name_component.str())) {
+      return LookupOperatorOrConversionFunction(decl_context,
+                                                name_component.str());
     }
     IdentifierInfo& name_ident =
         GetASTContext().Idents.get(name_component);

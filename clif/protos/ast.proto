@@ -59,19 +59,21 @@ message ClassDecl {
   repeated Name bases = 2;
   repeated Decl members = 3;
   optional bool final = 4;        // No derived classes allowed.
-  optional bool shared = 5;       // Class instance not owned (shared with C++).
-  optional bool async_dtor = 10;  // Release Python GIL while deleting C++ instance.
+  optional bool shared = 5  [deprecated = true];
   optional bool cpp_has_def_ctor = 6 [default = true];  // C++ class has a default constructor.
+  optional bool cpp_has_trivial_defctor = 12;  // Set to true if C++ class default ctor is trivial.
+  optional bool cpp_has_trivial_dtor = 13;  // Set to true if C++ class dtor is trivial.
+  optional bool cpp_has_public_dtor = 9 [default = true];  // C++ class can be destroyed.
+  optional bool async_dtor = 10;  // Release Python GIL while deleting C++ instance.
   optional bool cpp_copyable = 7 [default = true];  // C++ class can be copied.
   optional bool cpp_abstract = 8;  // C++ class is an abstract base class.
-  optional bool cpp_has_public_dtor = 9 [default = true];  // C++ class can be destroyed.
   message Base {
     optional string name = 1;
     optional string namespace = 2;
     optional string filename = 3;
   };
   repeated Base cpp_bases = 11;   // Additional info for C++ base classes.
-  // Next available: 12
+  // Next available: 14
 };
 
 message EnumDecl {
@@ -111,7 +113,7 @@ message FuncDecl {
   optional string postproc = 5;    // Replace results with native postproc(results).
   optional bool constructor = 18;  // Set to true iff this function is a constructor
   optional bool classmethod = 11;  // C++ class static function member.
-  optional bool async = 12;        // Release Python GIL while running.
+  optional bool py_keep_gil = 12;  // Do not release Python GIL while running C++.
   optional bool virtual = 15;      // Set to true to allow override.
   optional bool ignore_return_value = 16; // Set to true if C++ function return will be ignored.
   optional bool cpp_void_return = 13; // Set to true iff C++ function returns void.

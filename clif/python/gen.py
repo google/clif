@@ -20,7 +20,7 @@ Produces pieces of generated code.
 from clif.python import astutils
 from clif.python import postconv
 
-VERSION = '0.2'   # CLIF generated API version. Pure informative.
+VERSION = '0.3'   # CLIF generated API version. Pure informative.
 PY3OUTPUT = None  # Target Python3 on True, Py2 on False, None-don't care.
 I = '  '
 
@@ -94,9 +94,8 @@ def TypeConverters(type_namespace, types, *gen_cvt_args):
     yield 'using ::clif::Clif_PyObjAs;'
     yield 'using ::clif::Clif_PyObjFrom;'
   for t in types:
-    for s in (
-        t.GenConverters(*gen_cvt_args)
-        ): yield s
+    for s in t.GenConverters(*gen_cvt_args):
+      yield s
   yield ''
   yield CloseNs(type_namespace)
 
@@ -117,16 +116,14 @@ def _DefTable(ctype, cname, lines):
 
 
 def MethodDef(methods):
-  for s in (
-      _DefTable('PyMethodDef', 'Methods', methods)
-      ): yield s
+  for s in _DefTable('PyMethodDef', 'Methods', methods):
+    yield s
 MethodDef.name = 'Methods'
 
 
 def GetSetDef(properties):
-  for s in (
-      _DefTable('PyGetSetDef', 'Properties', properties)
-      ): yield s
+  for s in _DefTable('PyGetSetDef', 'Properties', properties):
+    yield s
 GetSetDef.name = 'Properties'
 
 
@@ -134,28 +131,37 @@ def ReadyFunction(types_init):
   """Generate Ready() function to call PyType_Ready for wrapped types."""
   yield ''
   yield 'bool Ready() {'
+  pybases = set()
+  last_pybase = ''
   for cppname, base, _ in types_init:
     if base:
       if '.' in base:
         # |base| is a fully qualified Python name.
-        # The caller ensures we have only one Python base.
-        yield I+'PyObject* base_cls = ImportFQName("%s");' % base
-        yield I+'if (base_cls == nullptr) return false;'
-        yield I+'if (!PyObject_TypeCheck(base_cls, &PyType_Type)) {'
-        yield I+I+'Py_DECREF(base_cls);'
-        yield I+I+('PyErr_SetString(PyExc_TypeError, "Base class %s is not a '
-                   'new style class inheriting from object.");' % base)
-        yield I+I+'return false;'
-        yield I+'}'
-        yield I+('%s.tp_base = reinterpret_cast<PyTypeObject*>(base_cls);'
-                 % cppname)
-        yield I+'// Check that base_cls is a *statically* allocated PyType.'
-        yield I+'if (%s.tp_base->tp_alloc == PyType_GenericAlloc) {' % cppname
-        yield I+I+'Py_DECREF(base_cls);'
-        yield I+I+('PyErr_SetString(PyExc_TypeError, "Base class %s is a'
-                   ' dynamic (Python defined) class.");' % base)
-        yield I+I+'return false;'
-        yield I+'}'
+        # The caller ensures we have only one Python base per each class.
+        if base == last_pybase:
+          yield I+'Py_INCREF(base_cls);'
+        else:
+          yield I+'%sbase_cls = ImportFQName("%s");' % (
+              '' if pybases else 'PyObject* ', base)
+        if base not in pybases:
+          yield I+'if (base_cls == nullptr) return false;'
+          yield I+'if (!PyObject_TypeCheck(base_cls, &PyType_Type)) {'
+          yield I+I+'Py_DECREF(base_cls);'
+          yield I+I+('PyErr_SetString(PyExc_TypeError, "Base class %s is not a '
+                     'new style class inheriting from object.");' % base)
+          yield I+I+'return false;'
+          yield I+'}'
+        yield I+cppname+'.tp_base = %s(base_cls);' % _Cast('PyTypeObject')
+        if base not in pybases:
+          yield I+'// Check that base_cls is a *statically* allocated PyType.'
+          yield I+'if (%s.tp_base->tp_alloc == PyType_GenericAlloc) {' % cppname
+          yield I+I+'Py_DECREF(base_cls);'
+          yield I+I+('PyErr_SetString(PyExc_TypeError, "Base class %s is a'
+                     ' dynamic (Python defined) class.");' % base)
+          yield I+I+'return false;'
+          yield I+'}'
+          last_pybase = base
+          pybases.add(base)
       else:
         # base is Python wrapper type in a C++ class namespace defined locally.
         # Allow to inherit only from top-level classes.
@@ -201,41 +207,101 @@ def InitFunction(pathname, doc, meth_ref, init, dict_):
   yield '}'
 
 
-def TypeObject(tp_slots, slotgen, pyname, wname, fqclassname, ctor,
-               abstract, async_dtor=False, subst_cpp_ptr=''):
+def PyModInitFunction(init_name='', modname='', ns='', py3=False):
+  """Generate extension module init function."""
+  assert (init_name or modname) and not (init_name and modname)  # xor
+  name = init_name or (('PyInit_' if py3 else 'init') + modname)
+  yield ''
+  yield 'PyMODINIT_FUNC %s(void) {' % name
+  if py3:
+    yield I+'if (!%s::Ready()) return nullptr;' % ns
+    yield I+'return %s::Init();' % ns
+  else:
+    yield I+'%s::Ready() &&' % ns
+    yield I+'%s::Init();' % ns
+  yield '}'
+
+
+def WrapperClassDef(name, ctype, cname, is_iter, has_iter, iter_ns):
+  """Generate wrapper class."""
+  assert not (has_iter and is_iter)
+  yield ''
+  yield 'struct %s {' % name
+  yield I+'PyObject_HEAD'
+  if is_iter:
+    yield I+'iterator iter;'
+  else:
+    yield I+'::clif::Instance<%s> cpp;' % ctype
+  yield '};'
+  if has_iter:
+    yield 'namespace %s {' % iter_ns
+    yield 'typedef ::clif::Iterator<%s, %s> iterator;' % (cname, has_iter)
+    yield '}'
+
+
+def VirtualOverriderClass(name, pyname, cname, cfqname, isabstract, idfunc,
+                          pcfunc, vfuncs):
+  """Generate a derived redirector class."""
+  yield ''
+  yield 'struct %s : PyObjRef, %s {' % (name, cname)
+  yield I+'using %s;' % cfqname
+  for f in vfuncs:
+    for s in _VirtualFunctionCall(
+        idfunc(f.name.cpp_name), f, pyname, isabstract, pcfunc): yield s
+  yield '};'
+
+
+def TypeObject(tp_slots, slotgen, pyname, ctor, wname, fqclassname,
+               abstract, iterator, need_dtor=True, subst_cpp_ptr=''):
   """Generate PyTypeObject methods and table.
 
   Args:
     tp_slots: dict - values for PyTypeObject slots
     slotgen: generator to produce body of PyTypeObject using tp_slots
     pyname: str - Python class name
+    ctor: str - (WRAPped/DEFault/None) type of generated ctor
     wname: str - C++ wrapper class name
     fqclassname: str - FQ C++ class (being wrapped) name
-    ctor: str - (WRAPped/DEFault/None) type of generated ctor
     abstract: bool - wrapped C++ class is abstract
-    async_dtor: bool - allow Python threads during C++ destructor
+    iterator: str - C++ iterator object if wrapping an __iter__ class else None
+    need_dtor: bool - allow Python threads during C++ destructor
     subst_cpp_ptr: str - C++ "replacement" class (being wrapped) if any
 
   Yields:
      Source code for PyTypeObject and tp_alloc / tp_init / tp_free methods.
   """
+  if ctor:
+    yield ''
+    yield '// %s __init__' % pyname
+    yield 'static int _ctor(PyObject* self, PyObject* args, PyObject* kw);'
+  if not iterator:
+    yield ''
+    yield '// %s __new__' % pyname
+    yield 'static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems);'
+    tp_slots['tp_alloc'] = '_new'
+    tp_slots['tp_new'] = 'PyType_GenericNew'
   yield ''
-  yield '// %s __new__' % pyname
-  yield 'static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems);'
-  yield '// %s __init__' % pyname
-  yield 'static int _ctor(PyObject* self, PyObject* args, PyObject* kw);'
-  yield ''
-  yield 'static void _dtor(void* self) {'
-  if async_dtor:
+  yield '// %s __del__' % pyname
+  if need_dtor or iterator:
+    # Use dtor for dynamic types (derived) to wind down malloc'ed C++ obj, so
+    # the C++ dtors are run.
+    tp_slots['tp_dealloc'] = '_dtor'
+    yield 'static void _dtor(PyObject* self) {'
     yield I+'Py_BEGIN_ALLOW_THREADS'
-  yield I+'delete reinterpret_cast<%s*>(self);' % wname
-  if async_dtor:
+    if iterator:
+      yield I+iterator+'.~iterator();'
+    else:
+      # Using ~Instance() leads to AddressSanitizer: heap-use-after-free.
+      yield I+'%s(self)->cpp.Destruct();' % _Cast(wname)
     yield I+'Py_END_ALLOW_THREADS'
-  yield '}'
-  tp_slots['tp_free'] = '_dtor'
-  tp_slots['tp_dealloc'] = 'Clif_PyType_GenericFree'
-  tp_slots['tp_alloc'] = '_allocator'
-  tp_slots['tp_new'] = 'PyType_GenericNew'
+    yield I+'Py_TYPE(self)->tp_free(self);'
+    yield '}'
+  if not iterator:
+    # Use delete for static types (not derived), allocated with _new.
+    tp_slots['tp_free'] = '_del'
+    yield 'static void _del(void* self) {'
+    yield I+'delete %s(self);' % _Cast(wname)
+    yield '}'
   tp_slots['tp_init'] = '_ctor' if ctor else 'Clif_PyType_Inconstructible'
   tp_slots['tp_basicsize'] = 'sizeof(%s)' % wname
   tp_slots['tp_itemsize'] = tp_slots['tp_version_tag'] = '0'
@@ -256,6 +322,7 @@ def TypeObject(tp_slots, slotgen, pyname, wname, fqclassname, ctor,
       yield I+'if (Py_TYPE(self) == &%s) {' % wtype
       yield I+I+'return Clif_PyType_Inconstructible(self, args, kw);'
       yield I+'}'
+    cpp = '%s(self)->cpp' % _Cast(wname)
     if ctor == 'DEF':
       # Skip __init__ if it's a METH_NOARGS.
       yield I+('if ((args && PyTuple_GET_SIZE(args) != 0) ||'
@@ -264,23 +331,35 @@ def TypeObject(tp_slots, slotgen, pyname, wname, fqclassname, ctor,
                  pyname)
       yield I+I+'return -1;'
       yield I+'}'
-      cpp = 'reinterpret_cast<%s*>(self)->cpp' % wname
+      # We have been lucky so far because NULL initialization of clif::Instance
+      # object is equivalent to constructing it with the default constructor.
+      # (NULL initialization happens in PyType_GenericAlloc).
+      # We don't have a place to call placement new. __init__ (and so _ctor) can
+      # be called many times and we have no way to ensure the previous object is
+      # destructed properly (it may be NULL or new initialized).
       yield I+'%s = ::clif::MakeShared<%s>();' % (cpp,
                                                   subst_cpp_ptr or fqclassname)
       if subst_cpp_ptr:
-        yield I+'%s->::clif::PyObj::Init(self);' % cpp
+        yield I+'%s->::clif::PyObjRef::Init(self);' % cpp
       yield I+'return 0;'
     else:  # ctor is WRAP (holds 'wrapper name')
       yield I+'PyObject* init = %s(self, args, kw);' % ctor
-      yield I+'Py_XDECREF(init);'
-      yield I+'return init? 0: -1;'
+      if subst_cpp_ptr:
+        yield I+'if (!init) return -1;'
+        yield I+'Py_DECREF(init);'
+        yield I+'%s->::clif::PyObjRef::Init(self);' % cpp
+        yield I+'return 0;'
+      else:
+        yield I+'Py_XDECREF(init);'
+        yield I+'return init? 0: -1;'
     yield '}'
-  yield ''
-  yield 'static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems) {'
-  yield I+'assert(nitems == 0);'
-  yield I+'PyObject* self = reinterpret_cast<PyObject*>(new %s);' % wname
-  yield I+'return PyObject_Init(self, &%s);' % wtype
-  yield '}'
+  if not iterator:
+    yield ''
+    yield 'static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems) {'
+    yield I+'assert(nitems == 0);'
+    yield I+'PyObject* self = %s(new %s);' % (_Cast(), wname)
+    yield I+'return PyObject_Init(self, &%s);' % wtype
+    yield '}'
 
 
 def _CreateInputParameter(func_name, ast_param, arg, args):
@@ -362,6 +441,9 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
 
   Yields:
      Source code for wrapped function.
+
+  Raises:
+    ValueError: for non-supported default arguments
   """
   ctxmgr = pyname.endswith('@')
   if ctxmgr:
@@ -370,6 +452,11 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
         'Invalid context manager name ' + pyname)
     pyname = pyname.rstrip('@')
   nret = len(func_ast.returns)
+  return_type = astutils.FuncReturnType(func_ast)  # Can't use cpp_exact_type.
+  # return_type mangled to FQN and drop &, sadly it also drop const.
+  void_return_type = 'void' == return_type
+  # Has extra func parameters for output values.
+  xouts = nret > (0 if void_return_type else 1)
   params = []  # C++ parameter names.
   nargs = len(func_ast.params)
   yield ''
@@ -397,7 +484,7 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
              'return nullptr;' % ('O'*nargs if minargs == nargs else
                                   'O'*minargs+'|'+'O'*(nargs-minargs), pyname,
                                   ', '.join('&a[%d]'%i for i in range(nargs))))
-    if minargs < nargs:
+    if minargs < nargs and not xouts:
       yield I+'int nargs;  // Find how many args actually passed in.'
       yield I+'for (nargs = %d; nargs > %d; --nargs) {' % (nargs, minargs)
       yield I+I+'if (a[nargs-1] != nullptr) break;'
@@ -407,34 +494,51 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
       n = i+1
       arg = 'arg%d' % n
       yield I+_CreateInputParameter(pyname+' line %d' % lineno, p, arg, params)
-      cvt = ('if (!Clif_PyObjAs(a[{i}], &{cvar})) return ArgError'
+      cvt = ('if (!Clif_PyObjAs(a[{i}], &{cvar}{postconv})) return ArgError'
              '("{func_name}", names[{i}], "{ctype}", a[{i}]);'
-            ).format(i=i, cvar=arg, func_name=pyname, ctype=astutils.Type(p))
+            ).format(i=i, cvar=arg, func_name=pyname, ctype=astutils.Type(p),
+                     # Add post conversion parameter for std::function.
+                     postconv='' if p.type.cpp_type else ', {%s}' % ', '.join(
+                         postconv.Initializer(t.type, typepostconversion)
+                         for t in p.type.callable.params))
       if i < minargs:
         # Non-default parameter.
         yield I+cvt
       else:
-        yield I+'if (nargs > %d) {' % i
+        if xouts:
+          _I = ''  # pylint: disable=invalid-name
+        else:
+          _I = I   # pylint: disable=invalid-name
+          yield I+'if (nargs > %d) {' % i
         # Check if we're passed kw args, skipping some default C++ args.
         # In this case we must substitute missed default args with default_value
         if (p.default_value == 'default'   # Matcher could not find the default.
             or 'inf' in p.default_value):  # W/A for b/29437257
+          if xouts:
+            raise ValueError("Can't supply the default for C++ function"
+                             ' argument. Drop =default in def %s(%s).'
+                             % (pyname, p.name.native))
           if n < nargs:
             yield I+I+('if (!a[{i}]) return DefaultArgMissedError('
                        '"{}", names[{i}]);'.format(pyname, i=i))
           yield I+I+cvt
+        elif (p.default_value and
+              params[-1].startswith('&') and p.type.cpp_raw_pointer):
+          # Special case for a pointer to an integral type param (like int*).
+          raise ValueError('A default for integral type pointer argument is '
+                           ' not supported. Drop =default in def %s(%s).'
+                           % (pyname, p.name.native))
         else:
           # C-cast takes care of the case where |arg| is an enum value, while
           # the matcher would return an integral literal. Using static_cast
           # would be ideal, but its argument should be an expression, which a
           # struct value like {1, 2, 3} is not.
-          yield I+I+'if (!a[%d]) %s = (%s)%s;' % (i, arg, astutils.Type(p),
-                                                  p.default_value)
-          yield I+I+'else '+cvt
-        yield I+'}'
+          yield _I+I+'if (!a[%d]) %s = (%s)%s;' % (i, arg, astutils.Type(p),
+                                                   p.default_value)
+          yield _I+I+'else '+cvt
+        if not xouts:
+          yield I+'}'
   # Create input parameters for extra return values.
-  return_type = astutils.FuncReturnType(func_ast)
-  void_return_type = return_type == 'void'
   for n, p in enumerate(func_ast.returns):
     if n or void_return_type:
       yield I+'%s ret%d{};' % (astutils.Type(p), n)
@@ -444,7 +548,7 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
     for s in call[:-1]:
       yield I+s
     call = call[-1]
-  if func_ast.async:
+  if not func_ast.py_keep_gil:
     if nargs:
       yield I+'Py_INCREF(args);'
       yield I+'Py_XINCREF(kw);'
@@ -462,7 +566,7 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
   if catch:
     for s in _GenExceptionTry():
       yield s
-  if minargs < nargs:
+  if minargs < nargs and not xouts:
     if not void_return_type:
       call = 'ret0 = '+call
     yield I+'switch (nargs) {'
@@ -487,7 +591,7 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
       yield I+postcall_init
     else:
       yield I+'ret0'+postcall_init
-  if func_ast.async:
+  if not func_ast.py_keep_gil:
     yield I+'Py_BLOCK_THREADS'
     if nargs:
       yield I+'Py_DECREF(args);'
@@ -495,6 +599,12 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
   if catch:
     for s in _GenExceptionRaise():
       yield s
+  if func_ast.postproc == '->self':
+    func_ast.postproc = ''
+    return_self = True
+    assert nret == 0, '-> self must have no other output parameters'
+  else:
+    return_self = False
   # If ctxmgr, force return self on enter, None on exit.
   if nret > 1 or (func_ast.postproc or ctxmgr) and nret:
     yield I+'// Convert return values to Python.'
@@ -534,7 +644,7 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
     yield I+'return Clif_PyObjFrom(std::move(ret0%s), %s);' % (
         ('.value()' if optional_ret0 else ''),
         postconv.Initializer(func_ast.returns[0].type, typepostconversion))
-  elif ctxmgr == '__enter__@':
+  elif return_self or ctxmgr == '__enter__@':
     yield I+'Py_INCREF(self);'
     yield I+'return self;'
   else:
@@ -564,7 +674,7 @@ def _GenExceptionRaise():
   yield I+'}'
 
 
-def VirtualFunctionCall(fname, f, pyname, abstract, postconvinit):
+def _VirtualFunctionCall(fname, f, pyname, abstract, postconvinit):
   """Generate virtual redirector call wrapper from AST.FuncDecl f."""
   name = f.name.cpp_name
   ret = astutils.FuncReturnType(f, true_cpp_type=True)
@@ -576,14 +686,13 @@ def VirtualFunctionCall(fname, f, pyname, abstract, postconvinit):
   yield I+'%s %s%s%s override {' % (ret, fname, arg, ' '.join(mod))
   params = astutils.TupleStr('std::move(a%i)' % i for i in range(
       len(f.params) + len(f.returns) - (ret != 'void')))
-  yield I+I+('auto f = ::clif::SafeGetAttrString(pythis.get(), C("%s"));'
-             % f.name.native)
-  yield I+I+'if (f.get()) {'
-  # TODO: Pass postconvinit(f.params...) to callback::Func.
+  yield I+I+'SafeAttr impl(self(), "%s");' % f.name.native
+  yield I+I+'if (impl.get()) {'
   ret_st = 'return ' if ret != 'void' else ''
-  yield I+I+I+'%s::clif::callback::Func<%s>(f.get())%s;' % (
+  yield I+I+I+'%s::clif::callback::Func<%s>(impl.get(), {%s})%s;' % (
       ret_st, ', '.join([ret] + list(astutils.Type(a) for a in f.params)
-                        + list(astutils.FuncReturns(f))), params)
+                        + list(astutils.FuncReturns(f))),
+      ', '.join(postconvinit(a.type) for a in f.params), params)
   yield I+I+'} else {'
   if abstract:
     # This is only called from C++. Since f has no info if it is pure virtual,
@@ -599,7 +708,113 @@ def VirtualFunctionCall(fname, f, pyname, abstract, postconvinit):
   yield I+'}'
 
 
+def CastAsCapsule(wrapped_cpp, pointer_name, wrapper):
+  yield ''
+  yield '// Implicit cast this as %s*' % pointer_name
+  yield 'static PyObject* %s(PyObject* self) {' % wrapper
+  yield I+'%s* p = ::clif::python::Get(%s);' % (pointer_name, wrapped_cpp)
+  yield I+'if (p == nullptr) return nullptr;'
+  yield I+('return PyCapsule_New(p, C("%s"), nullptr);') % pointer_name
+  yield '}'
+
+
+def NewIter(wrapped_iter, ns, wrapper, wrapper_type):
+  yield ''
+  yield 'PyObject* new_iter(PyObject* self) {'
+  yield I+'if (!ThisPtr(self)) return nullptr;'
+  yield I+'%s* it = PyObject_New(%s, &%s);' % (wrapper, wrapper, wrapper_type)
+  yield I+'if (!it) return nullptr;'
+  yield I+'using std::equal_to;  // Often a default template argument.'
+  yield I+'new(&it->iter) %siterator(MakeStdShared(%s));' % (ns, wrapped_iter)
+  yield I+'return %s(it);' % _Cast()
+  yield '}'
+NewIter.name = 'new_iter'
+
+
+def IterNext(wrapped_iter, async, postconversion):
+  """Generate tp_iternext method implementation."""
+  yield ''
+  yield 'PyObject* iternext(PyObject* self) {'
+  if async:
+    yield I+'PyThreadState* _save;'
+    yield I+'Py_UNBLOCK_THREADS'
+  yield I+'auto* v = %s.Next();' % wrapped_iter
+  if async:
+    yield I+'Py_BLOCK_THREADS'
+  yield I+'return v? Clif_PyObjFrom(*v, %s): nullptr;' % postconversion
+  yield '}'
+IterNext.name = 'iternext'
+
+
 def FromFunctionDef(ctype, wdef, wname, flags, doc):
   """PyCFunc definition."""
   assert ctype.startswith('std::function<'), repr(ctype)
   return 'static PyMethodDef %s = %s;' % (wdef, _DefLine('', wname, flags, doc))
+
+
+def VarGetter(name, cfunc, error, cvar, cobj, get_nested, pc):
+  """Generate var getter."""
+  xdata = '' if cfunc else ', void* xdata'
+  yield ''
+  yield 'static PyObject* %s(PyObject* self%s) {' % (name, xdata)
+  if error:
+    yield I+error+'return nullptr;'
+  if get_nested: cvar = '::clif::MakeStdShared(%s, &%s)' % (cobj, cvar)
+  yield I+'return Clif_PyObjFrom(%s, %s);' % (cvar, pc)
+  yield '}'
+
+
+def VarSetter(name, cfunc, error, cvar, v, csetter, as_str):
+  """Generate var setter.
+
+  Args:
+    name: setter function name
+    cfunc: (True/False) generate setter as a CFunction
+    error: C++ condition to return error if any
+    cvar: C var name to set new value to directly
+    v: VAR AST
+    csetter: C++ call expression to set var (without '(newvalue)') if any
+    as_str: Python str -> C str function (different for Py2/3)
+
+  Yields:
+     Source code for setter function.
+  """
+  yield ''
+  if cfunc:
+    yield 'static PyObject* %s(PyObject* self, PyObject* value) {' % name
+    ret_error = 'return nullptr;'
+    ret_ok = 'Py_RETURN_NONE;'
+  else:
+    yield ('static int %s(PyObject* self, PyObject* value, void* xdata) {'
+           % name)
+    ret_error = 'return -1;'
+    ret_ok = 'return 0;'
+    yield I+'if (value == nullptr) {'
+    yield I+I+('PyErr_SetString(PyExc_TypeError, "Cannot delete the'
+               ' %s attribute");' % v.name.native)
+    yield I+I+ret_error
+    yield I+'}'
+    if csetter:
+      # Workaround BUG "v.type.cpp_type not updated by Matcher", so get p[0].
+      yield I+'%s cval;' % v.cpp_set.params[0].type.cpp_type
+      yield I+'if (Clif_PyObjAs(value, &cval)) {'
+      if error:
+        yield I+I+error+ret_error
+      yield I+I+csetter + '(cval);'
+      yield I+I+ret_ok
+      yield I+'}'
+  if not csetter:
+    if error:
+      yield I+error+ret_error
+    yield I+'if (Clif_PyObjAs(value, &%s)) ' % cvar + ret_ok
+  yield I+'PyObject* s = PyObject_Repr(value);'
+  yield I+('PyErr_Format(PyExc_ValueError, "%s is not valid for {}:{}", s? {}'
+           '(s): "input");').format(v.name.native, v.type.lang_type, as_str)
+  yield I+'Py_XDECREF(s);'
+  yield I+ret_error
+  yield '}'
+
+
+def _Cast(t='PyObject'):
+  assert not t.endswith('*')
+  return 'reinterpret_cast<%s*>' % t

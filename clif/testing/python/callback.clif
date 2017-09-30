@@ -13,9 +13,19 @@
 # limitations under the License.
 
 from "clif/testing/callback.h":
-  def `Function` as NewStyleCallback(
+  def `FunctionNewStyleCallbackConstRef` as NewStyleCallbackConstRef(
       input:list<int>,
       callback: (in:list<int>) -> tuple<int, list<int>>) -> list<int>
 
+  def `FunctionNewStyleCallbackNonConstRef` as NewStyleCallbackNonConstRef(
+      input:list<int>,
+      callback: (in:list<int>) -> tuple<int, list<int>>) -> list<int>
+
+  def FunctionWithCallableReturn(callback: (input:int) -> int) ->
+      (return_value: (input:int) -> int)
+
+  def StringCallback(callback: (in:str) -> None)
+
   class SelfCallback:
     def __init__(self, cb: (s:SelfCallback)->None)
+

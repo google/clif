@@ -22,6 +22,8 @@ from "clif/testing/t9.h":
 
     class Core:
       def CoreValue(self) -> int
+      @classmethod
+      def IsDestructed(cls) -> bool
 
     class Derived(Core):
       def Value(self) -> int

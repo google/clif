@@ -23,6 +23,10 @@ class StdContainersTest(unittest.TestCase):
   def testVector(self):
     self.assertEqual(std_containers.Mul([1, 2, 3], 2), [2, 4, 6])
 
+  def testVectorBool(self):
+    self.assertEqual(std_containers.Odd([1, 2, 3]), [True, False, True])
+    self.assertEqual(std_containers.Even([1, 2, 3]), [False, True, False])
+
   def testMap(self):
     # pylint: disable=bad-whitespace
     self.assertEqual(std_containers.Find(0, {1:2, 3:4, 5:0}), (True, 5))
@@ -52,6 +56,20 @@ class StdContainersTest(unittest.TestCase):
     for row in s:
       self.assertEqual(len(row), 3)
       self.assertTrue(all(elem == 5 for elem in row))
+
+  def testMake2By3(self):
+    m = std_containers.Make2By3()
+    self.assertEqual(len(m), 2)
+    for c in m:
+      self.assertEqual(len(c), 3)
+
+  def testFlatten2By3(self):
+    m = ((1, 2, 3), (4, 5, 6))
+    self.assertEqual(len(m), 2)
+    t = std_containers.Flatten2By3(m)
+    self.assertEqual(len(t), 6)
+    for e, i in zip(t, range(1, 7)):
+      self.assertEqual(e, i)
 
 
 if __name__ == '__main__':

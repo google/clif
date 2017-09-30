@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from "clif/examples/inheritance/hidden_base.h":
+from "inheritance/hidden_base.h":
   namespace `clif_example::hidden_base`:
     class Derived:
       def `AsString` as __str__(self) -> str

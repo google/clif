@@ -39,6 +39,7 @@ class FuncTest(unittest.TestCase):
 
   def testVoidFunc0(self):
     self.assertFuncEqual("""
+      py_keep_gil: true
       name {
         native: "f"
         cpp_name: "f"
@@ -58,7 +59,6 @@ class FuncTest(unittest.TestCase):
         native: "f"
         cpp_name: "f"
       }
-      async: true
       returns {
         type {
           lang_type: "int"
@@ -79,6 +79,7 @@ class FuncTest(unittest.TestCase):
 
   def testIntFunc0Post(self):
     self.assertFuncEqual("""
+      py_keep_gil: true
       name {
         native: "f"
         cpp_name: "f"
@@ -123,7 +124,6 @@ class FuncTest(unittest.TestCase):
         native: "f"
         cpp_name: "f"
       }
-      async: true
       returns {
         type {
           lang_type: "int"
@@ -158,6 +158,7 @@ class FuncTest(unittest.TestCase):
 
   def testVoidFunc1(self):
     self.assertFuncEqual("""
+      py_keep_gil: true
       name {
         native: "f"
         cpp_name: "f"
@@ -194,7 +195,6 @@ class FuncTest(unittest.TestCase):
         native: "f"
         cpp_name: "f"
       }
-      async: true
       params {
         name {
           native: "a"
@@ -230,6 +230,7 @@ class FuncTest(unittest.TestCase):
 
   def testVoidFunc1Ptr(self):
     self.assertFuncEqual("""
+      py_keep_gil: true
       name {
         native: "f"
         cpp_name: "f"
@@ -264,6 +265,7 @@ class FuncTest(unittest.TestCase):
 
   def testVoidFunc2(self):
     self.assertFuncEqual("""
+      py_keep_gil: true
       name {
         native: "f"
         cpp_name: "f"
@@ -310,6 +312,7 @@ class FuncTest(unittest.TestCase):
 
   def testVoidFunc2opt(self):
     self.assertFuncEqual("""
+      py_keep_gil: true
       name {
         native: "F"
         cpp_name: "f"
@@ -375,6 +378,7 @@ class FuncTest(unittest.TestCase):
 
   def testIntFunc2opt1(self):
     self.assertFuncEqual("""
+      py_keep_gil: true
       name {
         native: "F"
         cpp_name: "f"
@@ -441,6 +445,7 @@ class FuncTest(unittest.TestCase):
 
   def testReturnsBoolStrFunc1(self):
     self.assertFuncEqual("""
+      py_keep_gil: true
       name {
         native: "f"
         cpp_name: "f"
@@ -508,6 +513,7 @@ class FuncTest(unittest.TestCase):
 
   def testVoidFunc1cb(self):
     self.assertFuncEqual("""
+      py_keep_gil: true
       name {
         native: "f"
         cpp_name: "f"
@@ -547,7 +553,7 @@ class FuncTest(unittest.TestCase):
         };
         if (!PyArg_ParseTupleAndKeywords(args, kw, "O:f", names, &a[0])) return nullptr;
         std::function<void(const ::std::vector<int, ::std::allocator<int> > &)> arg1;
-        if (!Clif_PyObjAs(a[0], &arg1)) return ArgError("f", names[0], "", a[0]);
+        if (!Clif_PyObjAs(a[0], &arg1, {{}})) return ArgError("f", names[0], "", a[0]);
         // Call actual C++ method.
         f(std::move(arg1));
         Py_RETURN_NONE;

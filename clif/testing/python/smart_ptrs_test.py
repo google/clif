@@ -82,6 +82,11 @@ class SmartPtrsTest(unittest.TestCase):
 
     self.assertEqual(smart_ptrs.D1(123).Get(), 123)
 
+  def testPrivateDtor(self):
+    # Can deal with objects with private/protected destructor std::shared_ptr.
+    d = smart_ptrs.WithPrivateDtor.New()
+    self.assertEqual(d.Get(), 321)
+
   def testF3(self):
     x = smart_ptrs.X()
     x.y = 123

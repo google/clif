@@ -17,4 +17,5 @@ from "clif/testing/imported_methods.h":
     class Derived:
       def __init__(self, a: int)
       def GetA(self) -> int
+      def GetT(self, template_input: int) -> int
       def `GetA` as GetAWithOffset(self, i: int) -> int

@@ -22,6 +22,11 @@ class Base {
  public:
   explicit Base(int a) : a_(a) {}
 
+  template <typename T>
+  T GetT(T template_input) {
+    return template_input;
+  }
+
  protected:
   int GetA(int offset) { return a_ + offset; }
 
@@ -34,6 +39,11 @@ class Derived : public Base {
   using Base::Base;
 
   using Base::GetA;
+
+  // Add "using Base::GetT" here to force GetT's clang decl have the type
+  // UsingShadowDecl.
+  // Test for matching and setting template functions imported by "using".
+  using Base::GetT;
 
   int GetA() {
     return Base::GetA(0);

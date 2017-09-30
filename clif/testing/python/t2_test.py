@@ -135,6 +135,14 @@ class T2Test(unittest.TestCase):
     with self.assertRaisesRegexp(TypeError, r'\bOldStyleClass\b'):
       t2.k_check(OldStyleClass())
 
+  def testNoCopy(self):
+    no_copy = t2.NoCopy(1)
+    self.assertEqual(no_copy.a, 1)
+
+  def testNoMove(self):
+    no_move = t2.NoMove(1)
+    self.assertEqual(no_move.a, 1)
+
   def testReturnNoDefaultConstructor(self):
     self.assertIsInstance(t2.make_ndefctor(1), t2.NoDefaultConstructor)
 

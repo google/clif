@@ -28,14 +28,10 @@ include_directories(
   # the "tools" directory instead of to a "clif" or a "clif/include" directory.
   "${LLVM_MAIN_SRC_DIR}/tools"
   "${LLVM_BINARY_DIR}/tools"
-
-  # Add path to protobuf libs
-  "${GOOGLE_PROTOBUF_INCLUDE_DIRS}"
 )
 
-link_directories(
-  "${GOOGLE_PROTOBUF_LIBRARY_DIRS}"
-)
+add_protobuf_include_directories()
+add_protobuf_library_directories()
 
 add_definitions(
   # Disable RTTI in the protobuf runtime library as the LLVM build
@@ -93,14 +89,12 @@ set(CLIF_BACKEND_LINK_LIBRARIES
 
   # LLVM Libraries
   LLVMSupport
-
-  # Protobuf runtime
-  ${GOOGLE_PROTOBUF_LIBRARIES}
 )
 
 target_link_libraries(clif-matcher
   ${CLIF_BACKEND_LINK_LIBRARIES}
 )
+add_target_protobuf_link_libraries(clif-matcher)
 
 # The test suite target to be used with the function add_unittest.
 # Building this one target will build all the individual unittest targets.
@@ -120,6 +114,7 @@ function(add_clif_backend_unittest name cc_file)
   target_link_libraries(${name}
     ${CLIF_BACKEND_LINK_LIBRARIES}
   )
+  add_target_protobuf_link_libraries(${name})
 endfunction(add_clif_backend_unittest)
 
 add_clif_backend_unittest(clifMatcherUnitTest

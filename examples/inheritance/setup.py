@@ -54,6 +54,44 @@ setuptools.setup(
             include_dirs=[
                 # Path to clif runtime headers
                 user_home + '/opt',
+                # Path to examples in CLIF installation.
+                user_home + '/opt/clif/examples',
+                ],
+            extra_compile_args=['-std=c++11'],
+            ),
+        setuptools.Extension(
+            'base', [
+                # CLIF-generated sources
+                'python/base.cc',
+                'python/base_init.cc',
+                # 'clif_runtime',
+                user_home + '/opt/clif/python/runtime.cc',
+                user_home + '/opt/clif/python/slots.cc',
+                user_home + '/opt/clif/python/types.cc',
+                ],
+            include_dirs=[
+                # Path to clif runtime headers
+                user_home + '/opt',
+                # Path to examples in CLIF installation.
+                user_home + '/opt/clif/examples',
+                ],
+            extra_compile_args=['-std=c++11'],
+            ),
+        setuptools.Extension(
+            'python_inheritance', [
+                # CLIF-generated sources
+                'python/python_inheritance.cc',
+                'python/python_inheritance_init.cc',
+                # 'clif_runtime',
+                user_home + '/opt/clif/python/runtime.cc',
+                user_home + '/opt/clif/python/slots.cc',
+                user_home + '/opt/clif/python/types.cc',
+                ],
+            include_dirs=[
+                # Path to clif runtime headers
+                user_home + '/opt',
+                # Path to examples in CLIF installation.
+                user_home + '/opt/clif/examples',
                 ],
             extra_compile_args=['-std=c++11'],
             ),
@@ -70,6 +108,8 @@ setuptools.setup(
             include_dirs=[
                 # Path to clif runtime headers
                 user_home + '/opt',
+                # Path to examples in CLIF installation.
+                user_home + '/opt/clif/examples',
                 ],
             extra_compile_args=['-std=c++11'],
             ),
@@ -86,6 +126,8 @@ setuptools.setup(
             include_dirs=[
                 # Path to clif runtime headers
                 user_home + '/opt',
+                # Path to examples in CLIF installation.
+                user_home + '/opt/clif/examples',
                 ],
             extra_compile_args=['-std=c++11'],
             ),

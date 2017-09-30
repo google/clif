@@ -13,5 +13,7 @@
 # limitations under the License.
 
 add_pyclif_library("hidden_base" hidden_base.clif)
+add_pyclif_library("base" base.clif)
+add_pyclif_library("python_inheritance" python_inheritance.clif)
 add_pyclif_library("inheritance" inheritance.clif)
 add_pyclif_library("operation" operation.clif)

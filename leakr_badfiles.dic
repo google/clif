@@ -1,0 +1,4 @@
+;; We are shipping source code so override the source code entries in
+;; the default dictionary.
+$RE:\.(?:cc|py)$;0;Allow Py/C++ source code
+$RE:\.proto$;0;Allow Proto file

@@ -60,7 +60,7 @@ def GenPostConvTable(postconv_types):
 def Initializer(ast_type, postconv_types_index_map, nested=False):
   """Tranform [complex] ast_type to a postconversion initializer_list."""
   if ast_type.HasField('callable'):
-    # TODO: Fix postconv for callable.
+    # 
     # print ast_type
     return PASS
   if not postconv_types_index_map: return PASS

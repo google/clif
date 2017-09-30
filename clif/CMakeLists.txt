@@ -49,6 +49,7 @@ set(CMAKE_MODULE_PATH
 include(CLIFUtils)
 
 set(PYCLIF "${CMAKE_CURRENT_SOURCE_DIR}/pyclif.py")
+set(PYCLIF_PROTO "${CMAKE_CURRENT_SOURCE_DIR}/python/proto.py")
 set(CLIF_MATCHER "${LLVM_BINARY_DIR}/bin/clif-matcher")
 
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/__init__.py"

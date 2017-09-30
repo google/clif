@@ -59,6 +59,8 @@ setuptools.setup(
             include_dirs=[
                 # Path to clif runtime headers and example cc lib headers
                 user_home + '/opt',
+                # Path to examples in CLIF installation.
+                user_home + '/opt/clif/examples',
                 ],
             extra_compile_args=['-std=c++11'],
             library_dirs=['./'],

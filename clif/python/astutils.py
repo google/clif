@@ -18,23 +18,18 @@ import itertools
 
 
 def HaveEnum(decls):
-  if any(d.decltype == d.ENUM for d in decls):
-    return True
-  return any(d.decltype == d.CLASS and HaveEnum(d.class_.members) for d in decls)
-
-
-def RawType(t):
-  if t.cpp_raw_pointer and not t.cpp_type.endswith('*'):
-    return t.cpp_type + '*'
-  return t.cpp_type
+  return (any(d.decltype == d.ENUM for d in decls) or
+          any(HaveEnum(d.class_.members) for d in decls
+              if d.decltype == d.CLASS))
 
 
 def Type(p):
-  return RawType(p.type)
+  return p.type.cpp_type
 
 
 def FuncReturnType(fdecl, true_cpp_type=False):
   if not fdecl.cpp_void_return and fdecl.returns:
+    # Use cpp_type if cpp_exact_type is empty (eg. for C++ builtin types).
     return true_cpp_type and fdecl.returns[0].cpp_exact_type or Type(
         fdecl.returns[0])
   return 'void'

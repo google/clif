@@ -93,6 +93,19 @@ class D1 : public C1 {
   ~D1() { }
 };
 
+class WithPrivateDtor {
+ public:
+  static std::shared_ptr<WithPrivateDtor> New() {
+    return {new WithPrivateDtor(), Destroy};
+  }
+  int Get() { return 321; }
+
+ private:
+  static void Destroy(WithPrivateDtor* p) { delete p; }
+  ~WithPrivateDtor() = default;
+};
+
+
 class X { public: int y; };
 
 std::unique_ptr<X> F3(std::unique_ptr<X> x) {

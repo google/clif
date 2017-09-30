@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from "clif/examples/wrapmethod/wrapmethod.h":
+from "wrapmethod/wrapmethod.h":
   namespace `clif_example::wrapmethod`:
     class ClassWithMethods:
       # Wrapper for the constructor ClassWithMethods::ClassWithMethods(size_t)

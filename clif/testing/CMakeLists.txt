@@ -21,4 +21,16 @@ add_clif_test_cc_library(t2
   t2.cc
 )
 
+add_proto_library(clif_testing_nested_proto nested.proto)
+add_pyclif_proto_library(clif_testing_nested_proto_wrapper
+  nested.proto
+  clif_testing_nested_proto
+)
+
+add_clif_test_cc_library(t4
+  t4.h
+  t4.cc
+)
+target_link_libraries(clif_testing_t4 clif_testing_nested_proto)
+
 add_subdirectory("python")

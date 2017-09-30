@@ -66,38 +66,38 @@ class NoDefaultConstructor {
   int A() { return a_; }
 };
 
+// Class 'NoCopy' is not CLIF copyable because it does not contain a copy
+// constructor or a copy assignment operator.
 class NoCopy {
   int a_;
   NoCopy(const NoCopy&) = delete;
-  void operator=(const NoCopy&) = delete;
+  NoCopy& operator=(const NoCopy&) = delete;
  public:
   explicit NoCopy(int a = 0) : a_(a) {}
   int A() { return a_; }
 };
 
-class NoCopyCtor {
+// Class 'NoMove' is not CLIF movable because it does not contain a move
+// constructor or a move assignment operator.
+class NoMove {
   int a_;
-  NoCopyCtor(const NoCopyCtor&) = delete;
+  NoMove(const NoMove&) = default;
+  NoMove& operator=(const NoMove&) = default;
+  NoMove(NoMove&&) = delete;
+  NoMove& operator=(NoMove&&) = delete;
  public:
-  explicit NoCopyCtor(int a = 0) : a_(a) {}
+  explicit NoMove(int a = 0) : a_(a) {}
   int A() { return a_; }
 };
 
-class NoCopyAssignCtor {
-  int a_;
-  NoCopyAssignCtor& operator=(const NoCopyAssignCtor&) = delete;
+class MovableButUncopyable {
+  std::unique_ptr<int> a_;
  public:
-  explicit NoCopyAssignCtor(int a = 0) : a_(a) {}
-  int A() { return a_; }
+  explicit MovableButUncopyable(int a = 0) : a_(new int(a)) {}
+  int A() { return *a_; }
 };
 
-class NoCopyAssign {
-  int a_;
-  void operator=(const NoCopyAssign&) = delete;
- public:
-  explicit NoCopyAssign(int a = 0) : a_(a) {}
-  int A() { return a_; }
-};
+void take_nocopy_class(MovableButUncopyable*);
 
 struct CtxMgr {
   CtxMgr(): state(CtxMgr::UNDEFINED) {}
@@ -119,16 +119,6 @@ struct NestedContainerAttributes {
 
 std::vector<std::unique_ptr<NoCopy>> all_nocopy_holds();
 std::unique_ptr<std::vector<Nested>> vector_inside_unique_ptr();
-
-class MovableButUncopyable {
-  std::unique_ptr<int> a_;
-
- public:
-  explicit MovableButUncopyable(int a = 0) : a_(new int(a)) {}
-  int A() { return *a_; }
-};
-
-void take_nocopy_class(MovableButUncopyable*);
 
 inline NoDefaultConstructor make_ndefctor(int x = 0) {
   return NoDefaultConstructor(x);

@@ -18,6 +18,7 @@
 #include "clif/backend/matcher.h"
 
 #include <algorithm>
+#include <queue>
 
 #include "clif/backend/strutil.h"
 #include "llvm/Support/Debug.h"
@@ -28,7 +29,7 @@
 #include "clang/Sema/SemaDiagnostic.h"
 #include "clang/Tooling/Core/QualTypeNames.h"
 
-// TODO: Switch to clang diagnostics mechanism for errors.
+// 
 
 #define DEBUG_TYPE "clif_matcher"
 
@@ -104,10 +105,17 @@ static std::string GetErrorCodeString(ClifErrorCode code) {
       return "Output parameter is constant.";
     case kConstVariable:
       return "Clif expects a variable, but C++ declares it constant.";
+    case kUncopyableReturnType:
+      return "Clif expects output parameters to be copyable.";
     case kIncompatibleTypes:
       return "Non-matching types.";
     case kParameterCountsDiffer:
       return "Parameter counts differ.";
+    case kUnexpectedDefaultSpecifier:
+      return "Clif contains unexpected default specifiers.";
+    case kWrongOrderDefault:
+      return ("Clif expects all required parameters to be placed before "
+          "default arguments.");
     case kMultipleInheritance:
       return "Clif doesn't support classes with multiple inheritance.";
     case kNoDefinitionAvailable:
@@ -132,14 +140,14 @@ static std::string GetErrorCodeString(ClifErrorCode code) {
 }
 
 static void ReportMultimatchError(
-    const ClifMatcher& matcher,
-    const TranslationUnitAST* ast,
-    const std::vector<std::pair<const FunctionDecl*, FuncDecl>> &matches,
-    Decl* clif_decl) {
+    const ClifMatcher& matcher, const TranslationUnitAST* ast,
+    const std::vector<std::pair<const FunctionDecl*, FuncDecl>>& matches,
+    Decl* clif_decl, const std::string& message = "") {
   ClifError multimatch_error(matcher, kMultipleMatches);
   for (auto decl_pair : matches) {
     multimatch_error.AddClangDeclAndLocation(ast, decl_pair.first);
   }
+  multimatch_error.AddMessage(message);
   multimatch_error.Report(clif_decl);
 }
 
@@ -201,7 +209,11 @@ std::string ClifError::Report(Decl* clif_decl) {
     StrAppend(&error, kMessageIndent, message, "\n");
   }
   llvm::errs() << error;
-  clif_decl->set_not_found(error);
+  // For a single clif decl, more than one error might be reported. The
+  // not_found field should record all of the error messages.
+  std::string error_message;
+  StrAppend(&error_message, clif_decl->not_found(), error);
+  clif_decl->set_not_found(error_message);
   return error;
 }
 
@@ -233,6 +245,17 @@ std::string ClifMatcher::GetParallelTypeNames() const {
               "    Clif Type: \"", types.second, "\" with \n",
               "     C++ Type: \"", types.first, "\"");
   }
+  return message;
+}
+
+std::string ClifMatcher::GetErrorMessageForNonTargetDecl(
+    const clang::NamedDecl& clang_decl) const {
+  std::string message;
+  StrAppend(&message,
+            "Clif Error: UsingShadowDecl does not have the target decl\n",
+            "Rejected Candidate:\n  ", kMessageIndent,
+            ast_->GetClangDeclNameForError(clang_decl), " at ",
+            ast_->GetClangDeclLocForError(clang_decl));
   return message;
 }
 
@@ -386,7 +409,7 @@ bool ClifMatcher::MatchAndSetOneDecl(Decl* clif_decl) {
 
 bool ClifMatcher::ImportedFromCorrectFile(const NamedDecl& named_decl,
                                           ClifError* error) const {
-  // TODO: Suffix checking is not a particularly robust
+  // 
   // way of checking that we imported a declaration from a particular
   // file.  There could be many files with the given name. This is
   // less of an issue if the path in the proto is long, or even a full
@@ -449,6 +472,8 @@ void ClifMatcher::ReportTypecheckError(
     const std::string& clif_identifier,
     const std::string& clif_type) const {
   std::string message;
+  // 
+  // kinds to users directly. For example, map "CXXRecord" to "C++ classes".
   StrAppend(&message,
             "Type mismatch: Clif declares ", clif_identifier,
             " as ", clif_type, " but its name matched \"",
@@ -562,6 +587,17 @@ bool ClifMatcher::MatchAndSetClassName(ForwardDecl* forward_decl) const {
   return true;
 }
 
+// Construct the hash function for the keys of
+// std::unordered_set<clang::QualType>.
+class hashing_func {
+ public:
+  std::size_t operator()(const QualType& base_type) const {
+    // Use the hash of the base class's name as the hash function.
+    return std::hash<std::string>()(base_type.getAsString());
+  }
+};
+
+// Collect public base classes of |clang_decl| and save them in |clif_decl|.
 bool ClifMatcher::CalculateBaseClasses(const CXXRecordDecl* clang_decl,
                                        ClassDecl* clif_decl) const {
   if (clang_decl->hasDefinition()) {
@@ -574,21 +610,39 @@ bool ClifMatcher::CalculateBaseClasses(const CXXRecordDecl* clang_decl,
     error.Report(CurrentDecl());
     return false;
   }
-  // This loop will eventually run out of base classes, or error.
-  while (clang_decl->getNumBases() > 0) {
-    // The proto fields "bases" and "cpp_bases" are separate for
-    // historical reasons.
-    for (auto base : clang_decl->bases()) {
+
+  // Traverse all of the base classes of the current ClassDecl and update
+  // clif_decl. Base classes for private/protected inheritances are skipped.
+  // "base_queue" stores the base classes waiting to be processed.
+  std::queue<clang::CXXBaseSpecifier> base_queue;
+  // public_bases keeps already processed bases to avoid duplicate reporting.
+  std::unordered_set<QualType, hashing_func> public_bases;
+  for (auto base : clang_decl->bases()) {
+    base_queue.push(base);
+  }
+  while (!base_queue.empty()) {
+    auto base = base_queue.front();
+    base_queue.pop();
+    if (base.getAccessSpecifier() == clang::AS_public) {
       QualType base_type = base.getType();
-      clif_decl->add_bases()->set_cpp_name(GetQualTypeClifName(base_type));
-      ClassDecl::Base* cpp_base = clif_decl->add_cpp_bases();
-      cpp_base->set_name(GetQualTypeClifName(base_type));
       clang_decl = base_type->getAsCXXRecordDecl();
-      cpp_base->set_filename(ast_->GetSourceFile(*clang_decl));
-      if (auto* context = clang_decl->getEnclosingNamespaceContext()) {
-        if (auto* namespace_decl = llvm::dyn_cast<NamespaceDecl>(context)) {
-          cpp_base->set_namespace_(namespace_decl->getNameAsString());
+      if (public_bases.find(base_type) == public_bases.end()) {
+        const std::string base_type_name = GetQualTypeClifName(base_type);
+        // The proto fields "bases" and "cpp_bases" are separate for
+        // historical reasons.
+        clif_decl->add_bases()->set_cpp_name(base_type_name);
+        ClassDecl::Base* cpp_base = clif_decl->add_cpp_bases();
+        cpp_base->set_name(base_type_name);
+        cpp_base->set_filename(ast_->GetSourceFile(*clang_decl));
+        if (auto* context = clang_decl->getEnclosingNamespaceContext()) {
+          if (auto* namespace_decl = llvm::dyn_cast<NamespaceDecl>(context)) {
+            cpp_base->set_namespace_(namespace_decl->getNameAsString());
+          }
         }
+        for (auto child_base : clang_decl->bases()) {
+          base_queue.push(child_base);
+        }
+        public_bases.insert(base_type);
       }
     }
   }
@@ -612,6 +666,23 @@ bool ClifMatcher::MatchAndSetClass(ClassDecl* class_decl) {
   SetTypeProperties<ClassDecl>(clif_type->second.qual_type, class_decl);
 
   ast_->PushLookupContext(record_decl);
+
+  // Check if the class is an instantiation of a template. If so, we can allow
+  // the class declaration located at a separate file.
+  clang::ClassTemplateDecl* template_decl =
+      ast_->GetQualTypeTemplateDecl(clif_type->second.qual_type);
+  if (template_decl == nullptr) {
+    ClifError mismatch_error(*this, kOK);
+    ImportedFromCorrectFile(*record_decl, &mismatch_error);
+    // If the class is not an instantiation of a template, but declared in
+    // a separate file, report error(kNotInImportFile).
+    if (mismatch_error.GetCode() != kOK) {
+      mismatch_error.Report(CurrentDecl());
+      ast_->PopLookupContext();
+      return false;
+    }
+  }
+
   int num_unmatched = 0;
   for (auto& decl : *class_decl->mutable_members()) {
     // Constructors are special-cased throughout clang, can't be
@@ -684,12 +755,15 @@ bool ClifMatcher::MatchAndSetEnum(EnumDecl* enum_decl) {
     std::string error;
     StrAppend(&error,
               "Extra enumerators in Clif enum declaration ",
-              enum_decl->name().native(), ".  C++ Enumerator ",
+              enum_decl->name().native(), ".  C++ enum ",
               clang_decl->getQualifiedNameAsString(),
               " does not contain enumerator(s):");
     for (const std::string& extra : extras) {
       StrAppend(&error, " ", extra);
     }
+    StrAppend(&error, ".\n");
+    llvm::errs() << error;
+    CurrentDecl()->set_not_found(error);
     return false;
   }
   // Ensure that all the decls get fully qualified names. Extra C++
@@ -839,16 +913,22 @@ bool ClifMatcher::MatchAndSetConst(ConstDecl* const_decl) {
   return code == kOK;
 }
 
-ClifErrorCode ClifMatcher::MatchAndSetCallable(const QualType& callable_type,
+ClifErrorCode ClifMatcher::MatchAndSetCallable(QualType callable_type,
                                                FuncDecl* callable) {
+  // Check if callable_type is const &, if so, remove both const and &, so that
+  // callable_type matches with "std::function"
+  if (callable_type->isReferenceType()) {
+    callable_type = callable_type.getNonReferenceType();
+    callable_type.removeLocalConst();
+  }
   if (ast_->GetStdTemplateDecl("function") ==
       ast_->GetQualTypeTemplateDecl(callable_type)) {
     QualType func_type = ast_->GetTemplateArgType(callable_type);
     std::string message;
-    // -1 means all args are non-default. TODO: add default
-    // -args support.
-    ClifErrorCode code = MatchAndSetSignatures(
-        func_type->getAs<clang::FunctionProtoType>(), -1, callable, &message);
+    // nullptr means all args are non-default (eg.in std::function).
+    auto* clang_prototype = func_type->getAs<clang::FunctionProtoType>();
+    ClifErrorCode code =
+        MatchAndSetSignatures(nullptr, clang_prototype, callable, &message);
     if (code == kOK) {
       return kOK;
     }
@@ -893,6 +973,7 @@ void ClifMatcher::SetTypeProperties(QualType clang_type,
       if (clang_decl->isAbstract()) {
         clif_decl->set_cpp_abstract(true);
       }
+      SetUniqueClassProperties(clang_decl, clif_decl);
     } else {
       // From clif's perspective, if we have no definition for the
       // class (maybe it was forward declared), it may as well be
@@ -902,10 +983,192 @@ void ClifMatcher::SetTypeProperties(QualType clang_type,
   }
 }
 
-ClifErrorCode ClifMatcher::MatchAndSetContainer(
-    const QualType& clang_type,
-    protos::Type* composed,
-    unsigned int flags) {
+template<> void SetUniqueClassProperties(const clang::CXXRecordDecl* clang_decl,
+                                         clif::ClassDecl* clif_decl) {
+  if (clang_decl->hasTrivialDefaultConstructor()) {
+    clif_decl->set_cpp_has_trivial_defctor(true);
+  }
+  if (clang_decl->hasTrivialDestructor()) {
+    clif_decl->set_cpp_has_trivial_dtor(true);
+  }
+}
+
+// template_required indicates if we are expecting both clif_type and clang_type
+// to be template types. When MatcheAndSetContainerHelper is invoked by
+// MatchAndSetContainer, template_required is set to true because clif_type and
+// clang_type should be containers.
+ClifErrorCode ClifMatcher::MatchAndSetContainerHelper(
+    const QualType& clang_type, const QualType& clif_type,
+    const clang::SourceLocation& loc, bool template_required) {
+  QualType clang_qual_type = clang_type.getCanonicalType();
+  QualType clif_qual_type = clif_type;
+  // Remove clang_qual_type's pointer if there exist.
+  bool is_clang_type_a_ptr = false;
+  if (clang_qual_type->isPointerType()) {
+    is_clang_type_a_ptr = true;
+    clang_qual_type = clang_qual_type->getPointeeType().getUnqualifiedType();
+  }
+  // Process clang_qual_type if it is a smart pointer. If clang_qual_type is
+  // std::smart_ptr<PointeeType>, then we remove the outer smart pointer
+  // template and get the PointeeType for matching and setting in later section.
+  bool is_smart_ptr = false;
+  if (ast_->IsStdSmartPtr(clang_qual_type)) {
+    clang_qual_type = ast_->GetTemplateArgType(clang_qual_type);
+    is_smart_ptr = true;
+  }
+
+  // Parse the clang_decl and clang_args from clang_qual_type.
+  const clang::TemplateArgument* clang_args = nullptr;
+  int num_clang_args = 0;
+  clang::Decl* clang_template_decl = nullptr;
+  if (const auto* record =
+          clang_qual_type.getNonLValueExprType(ast_->GetASTContext())
+              ->getAs<clang::RecordType>()) {
+    if (auto clang_decl = llvm::dyn_cast<const ClassTemplateSpecializationDecl>(
+            record->getDecl())) {
+      clang_args = clang_decl->getTemplateArgs().data();
+      num_clang_args = clang_decl->getTemplateArgs().size();
+      clang_template_decl =
+          clang_decl->getSpecializedTemplate()->getCanonicalDecl();
+    }
+  } else if (auto clang_decl =
+                 clang_qual_type->getAs<clang::TemplateSpecializationType>()) {
+    clang_args = clang_decl->getArgs();
+    num_clang_args = clang_decl->getNumArgs();
+    clang_template_decl =
+        clang_decl->getTemplateName().getAsTemplateDecl()->getCanonicalDecl();
+  }
+
+  // Parse the clif_decl and clif_args from clif_qual_type.
+  auto clif_record_decl = clif_qual_type.getNonReferenceType()
+                              .getCanonicalType()
+                              ->getAsCXXRecordDecl();
+  clang::Decl* clif_template_decl = nullptr;
+  const clang::TemplateArgument* clif_args = nullptr;
+  const ClassTemplateSpecializationDecl* clif_decl = nullptr;
+  int num_clif_args = 0;
+  bool is_basic_string = false;
+  if (clif_record_decl != nullptr) {
+    clif_decl =
+        CheckDeclType<ClassTemplateSpecializationDecl>(clif_record_decl);
+    if (clif_decl) {
+      num_clif_args = clif_decl->getTemplateArgs().size();
+      clif_args = clif_decl->getTemplateArgs().data();
+      clif_template_decl =
+          clif_decl->getSpecializedTemplate()->getCanonicalDecl();
+      // If the type we are matching is "::std::basic_string" or
+      // "::basic_string", we can not match clif and clang template type by
+      // comparing whether clif_template_decl and clang_template_decl are equal.
+      // "basic_string" is a versioned symbol in google3 and might appear as
+      // "::std::basic_string" or "::basic_string". We match by checking whether
+      // clif_qual_type and clang_qual_type are assignable for "basic_string".
+      if (GetGloballyQualifiedName(clif_decl) == "::std::basic_string" ||
+          GetGloballyQualifiedName(clif_decl) == "::basic_string") {
+        is_basic_string = true;
+      }
+    }
+  }
+
+  // If both clang_type and clif_type are templates, they can only be matched if
+  // all of the following rules are satisfied("basic_string" is an exception):
+  // 1. clang_type and clif_type's canonical template decls are the same.
+  // 2. clang_type and clif_type's number of template arguments are the same.
+  // 3. Each clang_type and clif_type's template arguments are matched.
+  if (clang_template_decl && clif_template_decl) {
+    if (clang_template_decl == clif_template_decl) {
+      if (num_clang_args != num_clif_args) {
+        return kIncompatibleTypes;
+      }
+      // 
+      // arguments' type mismatch error message.
+      //
+      // Recursively call MatchAndSetContainerHelper to check if each of the
+      // clang_type and clif_type's template arguments are matched.
+      for (int arg_count = 0; arg_count < num_clang_args; arg_count++) {
+        auto clang_arg_type = clang_args[arg_count].getKind();
+        auto clif_arg_type = clif_args[arg_count].getKind();
+        if (clang_arg_type != clif_arg_type) {
+          return kIncompatibleTypes;
+        }
+        switch (clang_arg_type) {
+          case clang::TemplateArgument::Type: {
+            if (MatchAndSetContainerHelper(clang_args[arg_count].getAsType(),
+                                           clif_args[arg_count].getAsType(),
+                                           loc, false) != kOK) {
+              return kIncompatibleTypes;
+            }
+            break;
+          }
+          case clang::TemplateArgument::Pack: {
+            // If a template argument is of Pack kind, then the items in the
+            // pack are guaranteed to be type arguments.
+            if (clang_args[arg_count].pack_size() !=
+                clif_args[arg_count].pack_size()) {
+              return kIncompatibleTypes;
+            }
+            auto clang_iter = clang_args[arg_count].pack_begin();
+            auto clif_iter = clif_args[arg_count].pack_begin();
+            auto clang_iter_end = clang_args[arg_count].pack_end();
+            while (clang_iter != clang_iter_end) {
+              if (MatchAndSetContainerHelper(clang_iter->getAsType(),
+                                             clif_iter->getAsType(), loc,
+                                             false) != kOK) {
+                return kIncompatibleTypes;
+              }
+              ++clang_iter;
+              ++clif_iter;
+            }
+            break;
+          }
+          default: {
+            return kIncompatibleTypes;
+            break;
+          }
+        }
+      }
+      return kOK;
+    } else if (!is_basic_string) {
+      return kIncompatibleTypes;
+    }
+  } else if (template_required) {
+    // If MatchAndSetContainerHelper is invoked by MatchAndSetContainer
+    // directly, we expect both clang_type and clif_type to be templates.
+    return kIncompatibleTypes;
+  }
+  if ((!clang_template_decl && !clif_template_decl) || is_basic_string) {
+    // If none of clang_type and clif_type is a template or if they are
+    // "basic_string", check if they are assignable to each other.
+    if (is_smart_ptr || is_clang_type_a_ptr) {
+      clang_qual_type = ast_->GetASTContext().getPointerType(clang_qual_type);
+      // Clif template type's default template argument might already contain
+      // *.
+      if (!clif_qual_type->isPointerType()) {
+        clif_qual_type = ast_->GetASTContext().getPointerType(clif_qual_type);
+      }
+    }
+    if (AreAssignableTypes(clif_qual_type, loc, clang_qual_type)) {
+      return kOK;
+    }
+    // Clif_qual_type and clang_qual_type might be uncopyable. If their
+    // pointer type are assignable, it's still a match.
+    if (!clang_qual_type->isPointerType() && !clif_qual_type->isPointerType()) {
+      if (AreAssignableTypes(
+              ast_->GetASTContext().getPointerType(clif_qual_type), loc,
+              ast_->GetASTContext().getPointerType(clang_qual_type))) {
+        return kOK;
+      }
+    }
+    type_mismatch_stack_.emplace_back(
+        std::make_pair(GetQualTypeClifName(clang_qual_type),
+                       GetQualTypeClifName(clif_qual_type)));
+    return kIncompatibleTypes;
+  }
+  return kIncompatibleTypes;
+}
+
+ClifErrorCode ClifMatcher::MatchAndSetContainer(const QualType& clang_type,
+                                                protos::Type* composed,
+                                                unsigned int flags) {
   QualType reffed_type = clang_type;
   // The actual C++ type could be a pointer.
   bool original_is_ptr_type = false;
@@ -913,102 +1176,22 @@ ClifErrorCode ClifMatcher::MatchAndSetContainer(
     original_is_ptr_type = true;
     reffed_type = reffed_type->getPointeeType().getUnqualifiedType();
   }
-  const clang::TemplateArgument* clang_args;
-  int num_clang_args;
-  clang::Decl* canonical;
-  if (const auto* record =
-      reffed_type.getNonLValueExprType(
-          ast_->GetASTContext())->getAs<clang::RecordType>()) {
-    if (auto special =
-        llvm::dyn_cast<const ClassTemplateSpecializationDecl>(
-            record->getDecl())) {
-      clang_args = special->getTemplateArgs().data();
-      num_clang_args = special->getTemplateArgs().size();
-      canonical = special->getSpecializedTemplate()->getCanonicalDecl();
-    } else {
-      RecordIncompatibleTypes(reffed_type, *composed);
-      return kIncompatibleTypes;
-    }
-  } else {
-    if (auto special =
-        reffed_type->getAs<clang::TemplateSpecializationType>()) {
-      clang_args = special->getArgs();
-      num_clang_args = special->getNumArgs();
-      canonical =
-          special->getTemplateName().getAsTemplateDecl()->getCanonicalDecl();
-    } else {
-      RecordIncompatibleTypes(reffed_type, *composed);
-      return kIncompatibleTypes;
-    }
-  }
-  // If this isn't a template, then it can't match a composed type.
-  if (clang_args == nullptr) {
-    RecordIncompatibleTypes(reffed_type, *composed);
-    return kIncompatibleTypes;
-  }
-  // Check that the container itself is compatible.
-  auto clif_qual_type = clif_qual_types_.find(composed->cpp_type());
-  assert(clif_qual_type != clif_qual_types_.end());
-  auto clif_decl = clif_qual_type->second.qual_type->getAsCXXRecordDecl();
-  if (clif_decl == nullptr) {
-    return kIncompatibleTypes;
-  }
-  auto clang_decl = TypecheckLookupResult<ClassTemplateSpecializationDecl>(
-      clif_decl, composed->lang_type(), kTemplateNameForError);
-  if (clang_decl == nullptr ||
-      clang_decl->getSpecializedTemplate()->getCanonicalDecl() != canonical) {
+
+  auto clif_qual_decl = clif_qual_types_.find(composed->cpp_type());
+  assert(clif_qual_decl != clif_qual_types_.end());
+  auto clif_qual_type = clif_qual_decl->second.qual_type;
+
+  // Here we matched and set the container by matching clang_qual_type and
+  // clif_qual_type. We can not match the clang qual type with parameters
+  // listed in clif .ipb directly because clif .ipb might not show the correct
+  // information about the underlying template arguments types when the c++
+  // template uses template alias.
+  if (MatchAndSetContainerHelper(reffed_type, clif_qual_type,
+                                 clif_qual_decl->second.loc, true) != kOK) {
     RecordIncompatibleTypes(reffed_type, *composed);
     return kIncompatibleTypes;
   }
 
-  int cur_arg = 0;
-  int mismatches = 0;
-  while (cur_arg < composed->params_size() && cur_arg < num_clang_args) {
-    switch (clang_args[cur_arg].getKind()) {
-      case clang::TemplateArgument::Type:
-        if (MatchAndSetType(clang_args[cur_arg].getAsType(),
-                            composed->mutable_params(cur_arg)) != kOK)  {
-          ++mismatches;
-        }
-        ++cur_arg;
-        break;
-      case clang::TemplateArgument::Pack:
-        {
-          // If a template argument is of Pack kind, then the items in the
-          // pack are guaranteed to be type arguments.
-          num_clang_args += clang_args[cur_arg].pack_size() - 1;
-          auto iter = clang_args[cur_arg].pack_begin();
-          auto iter_end = clang_args[cur_arg].pack_end();
-          for (;
-               iter != iter_end && cur_arg < composed->params_size();
-               ++iter) {
-            if (MatchAndSetType(iter->getAsType(),
-                                composed->mutable_params(cur_arg)) != kOK)  {
-              ++mismatches;
-            }
-            ++cur_arg;
-          }
-        }
-        break;
-      default:
-        RecordIncompatibleTypes(reffed_type, *composed);
-        return kIncompatibleTypes;
-    }
-  }
-  if (cur_arg != composed->params_size() ||
-      mismatches != 0) {
-    // If we exited the loop above because the clang-type doesn't have
-    // enough elements, then that is an error.  TODO:
-    // Handle templates with default arguments.  This would involve
-    // clause like so:
-    //
-    // cur_arg < (num_clang_args - num_clang_default_args)
-    //
-    // Unfortunately, calculating the number of clang default template
-    // arguments is not easy.
-    RecordIncompatibleTypes(reffed_type, *composed);
-    return kIncompatibleTypes;
-  }
   // We stripped the pointer type from the actual C++ type if it was of a
   // pointer type. However, when reporting the type name, we need to report
   // the one of the actual C++ type.
@@ -1046,7 +1229,9 @@ ClifErrorCode ClifMatcher::MatchAndSetStdSmartPtr(
     type_to_match = pointee_type;
     // The flags are effectively irrelevant for builtin types, but be explicit
     // to avoid confusion.
-    flags = TMF_EXACT_TYPE;
+    // When the current type smart_ptr<builtintype> is the return type, we keep
+    // the flag TMF_RETURN_TYPE so that qualifiers of builtintype are kept.
+    flags = TMF_EXACT_TYPE | (flags & TMF_RETURN_TYPE);
   } else {
     auto record_decl = pointee_type->getAsCXXRecordDecl();
     if (record_decl != nullptr && (flags & TMF_DERIVED_CLASS_TYPE)) {
@@ -1072,12 +1257,24 @@ ClifErrorCode ClifMatcher::MatchAndSetStdSmartPtr(
     flags |= TMF_POINTEE_TYPE;
     type_to_match = ast_->GetASTContext().getPointerType(pointee_type);
   }
+  // type_to_match is the nested type of a smart pointer, so we update flags.
+  flags |= TMF_FROM_SMART_PTR;
   ClifErrorCode code = MatchAndSetType(type_to_match, clif_type, flags);
   if (code != kOK) {
     return code;
   }
-  std::string type_name = GetGloballyQualifiedName(
-      smart_ptr_type->getAsCXXRecordDecl());
+
+  // Hard code smart_ptr template's name to be
+  // "::std::unique_ptr"/"::std::shared_ptr" In case that smart_ptrs are defined
+  // in different versions.
+  clang::ClassTemplateDecl* template_decl =
+      ast_->GetQualTypeTemplateDecl(smart_ptr_type);
+  std::string type_name;
+  if (template_decl == ast_->GetStdTemplateDecl(kUniquePtrName)) {
+    type_name = "::std::unique_ptr";
+  } else {
+    type_name = "::std::shared_ptr";
+  }
   // |clif_type| holds the correct pointee type to report as it was
   // evaluated based on |flags|.
   StrAppend(&type_name, "<", clif_type->cpp_type(), ">");
@@ -1131,6 +1328,7 @@ QualType ClifMatcher::HandleTypeMatchFlags(
           clif_pointee_type : clif_qual_type;
     }
   }
+  QualType reference_type = type_to_report;
   if (type_to_report->isReferenceType()) {
     type_to_report = flags & TMF_UNCONVERTED_REF_TYPE ?
         clif_qual_type : type_to_report->getPointeeType();
@@ -1147,7 +1345,43 @@ QualType ClifMatcher::HandleTypeMatchFlags(
       type_to_report = ast_->GetASTContext().getPointerType(type_to_report);
     }
   }
-  return type_to_report.getUnqualifiedType();
+  // Record the canonical type, so that the generated code is not influenced by
+  // the sugar of the clang type.
+  type_to_report = type_to_report.getCanonicalType();
+  // For the function's return type, if the c++ type is the nested type of a
+  // smart pointer, we keep the qualifiers of the type.
+  if ((flags & TMF_RETURN_TYPE) && (flags & TMF_FROM_SMART_PTR)) {
+    return type_to_report;
+  } else {
+    // If the function's return value is uncopyable, we would keep the const
+    // qualifier and reference if the original clang type has them.
+    // Example:
+    // If we have a C++ function: const T& FactoryConstRef();
+    // When T is uncopyable but movable, CLIF wants to have "const T& ret0 =
+    // FactoryConstRef();" in the generated code. Dropping the const qualifier
+    // and & would lead to a compilation error. We keep the const qualifier and
+    // & here as long as T is uncopyable. The compiler will produce an error if
+    // T is both uncopyable and unmovable.
+    // When T is copyable, it's clean and safe to keep the original clif
+    // matcher's implemetation, which generates "T ret0 = FactoryConstRef();"
+
+    type_to_report = type_to_report.getUnqualifiedType();
+    // 
+    // values.
+    if ((flags & TMF_RETURN_TYPE) &&
+        !AreAssignableTypes(type_to_report, clang::SourceLocation(),
+                            type_to_report)) {
+      // Add reference back to the type.
+      if (clang_type->isReferenceType()) {
+        type_to_report = reference_type.getUnqualifiedType().getCanonicalType();
+      }
+      // Add const back to the type.
+      if (clang_type.isConstQualified() && !type_to_report.isConstQualified()) {
+        type_to_report.addConst();
+      }
+    }
+    return type_to_report;
+  }
 }
 
 // Set up error handling and stack checking to match a type.
@@ -1314,8 +1548,12 @@ ClifErrorCode ClifMatcher::MatchAndSetOutputParamType(
   if (reffed_type.isConstQualified()) {
     return kConstReturnType;
   }
-  while (auto *td_type = reffed_type->getAs<clang::TypedefType>()) {
-    reffed_type = td_type->desugar();
+  auto qtype = clif_qual_types_.find(clif_type->cpp_type());
+  assert(qtype != clif_qual_types_.end());
+  const ClifQualTypeDecl& clif_cpp_decl = qtype->second;
+  // check if the output parameter's type(reffed_type) is copyable.
+  if (!AreAssignableTypes(reffed_type, clif_cpp_decl.loc, reffed_type)) {
+    return kUncopyableReturnType;
   }
   return MatchAndSetTypeTop(reffed_type, clif_type);
 }
@@ -1364,7 +1602,7 @@ ClifErrorCode ClifMatcher::MatchAndSetInputParamType(QualType clang_type,
 
 ClifErrorCode ClifMatcher::MatchAndSetReturnType(const QualType& clang_ret,
                                                  Type* clif_type_proto) {
-  if (MatchAndSetTypeTop(clang_ret, clif_type_proto) == kOK) {
+  if (MatchAndSetTypeTop(clang_ret, clif_type_proto, TMF_RETURN_TYPE) == kOK) {
     return kOK;
   }
   auto* ret_decl = clang_ret->getAsCXXRecordDecl();
@@ -1381,12 +1619,13 @@ ClifErrorCode ClifMatcher::MatchAndSetReturnType(const QualType& clang_ret,
     QualType clif_ret = clif_type->second.qual_type;
     if (clif_ret.getCanonicalType().getUnqualifiedType() ==
         clang_ret.getCanonicalType().getUnqualifiedType()) {
+      // Set the return value's cpp_type in .opb.
+      SetUnqualifiedCppType(clang_ret.getUnqualifiedType(), clif_type_proto);
       return kOK;
     }
   }
   return kReturnValueMismatch;
 }
-
 
 ClifErrorCode ClifMatcher::MatchAndSetReturnValue(
     const clang::FunctionProtoType* clang_type,
@@ -1406,7 +1645,7 @@ ClifErrorCode ClifMatcher::MatchAndSetReturnValue(
     protos::ParamDecl* return_param = nullptr;
 
     if (func_decl->returns().empty()) {
-      // TODO: return error if C++ has MUST_USE_RESULT annotation.
+      // 
 
       if (!func_decl->ignore_return_value()) {
         StrAppend(message, "C++ declares a return value but Clif does not.");
@@ -1501,11 +1740,15 @@ ClifErrorCode ClifMatcher::MatchFunctionStatic(
 // allow a param to be modified.  This has the interesting property of
 // preventing matches against functions with default arguments,
 // although the check for that is automatic via argument matching.
+//
+// clang_type is a parameter of MatchAndSetSignatures() because when we call
+// MatchAndSetCallable(), there is no valid clang_decl, only clang_type
+// makes sense. Also callable(eg. std::function) does not have default args, so
+// clang_decl is passed in as nullptr in this case.
 
 ClifErrorCode ClifMatcher::MatchAndSetSignatures(
-    const clang::FunctionProtoType* clang_type,
-    int min_req_args,
-    FuncDecl* func_decl,
+    const clang::FunctionDecl* clang_decl,
+    const clang::FunctionProtoType* clang_type, FuncDecl* func_decl,
     std::string* message) {
   bool consumed_return_arg = false;
   ClifErrorCode code = MatchAndSetReturnValue(clang_type,
@@ -1515,8 +1758,6 @@ ClifErrorCode ClifMatcher::MatchAndSetSignatures(
   if (code != kOK) {
     return code;
   }
-  // Number of non-optional CLIF input params.
-  int clif_nonopt_params = 0;
   // Index into clang_type's list of C++ arguments.
   int cur_arg = 0;
   // Index to the last C++ input arg
@@ -1526,8 +1767,9 @@ ClifErrorCode ClifMatcher::MatchAndSetSignatures(
   // Various "+ 1" in the error handling below to match clang
   // one-based numbering when reporting errors.
   int cur_return = consumed_return_arg ? 1 : 0;
-  if (min_req_args < 0) min_req_args = clang_type->getNumParams();
-  min_req_args += cur_return;
+  // Record if any default specifier has appeared so far. All required clif
+  // parameters must be placed before default arguments.
+  bool default_exist = false;
 
   // Check the input parameters.
   while (cur_arg < clang_type->getNumParams() &&
@@ -1543,8 +1785,30 @@ ClifErrorCode ClifMatcher::MatchAndSetSignatures(
                 GetParallelTypeNames());
       return kParameterMismatch;
     }
-    if (func_decl->params(cur_param).default_value().empty()) {
-      ++clif_nonopt_params;
+    // If clif does not have "default" specifier for this parameter but clang
+    // does, we skip clang's default specifier. If clif has "default" specifier
+    // for this parameter but clang does not, we report the error
+    // kUnexpectedDefaultSpecifier.
+    if (!func_decl->params(cur_param).default_value().empty()) {
+      if (!clang_decl || !clang_decl->getParamDecl(cur_arg)->hasDefaultArg()) {
+        StrAppend(message, GetErrorCodeString(kUnexpectedDefaultSpecifier));
+        StrAppend(message, " Clif's param ", cur_param, " \"",
+                  param_type->lang_type(), "\"",
+                  " contains a default specifier while C++'s param ", cur_arg,
+                  " \"", GetQualTypeClifName(arg_type), "\"", " does not.");
+        return kUnexpectedDefaultSpecifier;
+      } else {
+        default_exist = true;
+      }
+    } else if (default_exist) {
+      // Clif does not allow non-default parameters being placed before default
+      // arguments.
+      StrAppend(message, GetErrorCodeString(kWrongOrderDefault));
+      StrAppend(message, " Clif's param ", cur_param, " \"",
+                param_type->lang_type(), "\"",
+                " does not contain a default specifier while previous params "
+                "contain default specifiers.");
+      return kWrongOrderDefault;
     }
     ++cur_param;
     ++cur_arg;
@@ -1564,19 +1828,23 @@ ClifErrorCode ClifMatcher::MatchAndSetSignatures(
     if (code != kOK) {
       StrAppend(message, "Parameter ", cur_param + 1, ". ",
                 GetParallelTypeNames());
+      if (code == kUncopyableReturnType) {
+        StrAppend(message, "    Output Parameter Type: \"",
+                  GetQualTypeClifName(arg_type), "\" \n");
+      }
       return code;
     }
     ++cur_return;
     ++cur_arg;
   }
-  // Did we use up all the clif-params?
+  // Do we have clif input parameters left unmatched?
   if (last_in_arg != func_decl->params_size()) {
     StrAppend(message, GetErrorCodeString(kParameterCountsDiffer));
     StrAppend(message, " Clif declares ", func_decl->params_size(),
               " input parameters. C++ declaration has ", last_in_arg);
     return kParameterCountsDiffer;
   }
-  // Did we have enough returns?
+  // Do we have clif output parameters left unmatched?
   if (cur_return != func_decl->returns_size()) {
     StrAppend(message, GetErrorCodeString(kParameterCountsDiffer));
     StrAppend(message, " Clif declares ", func_decl->returns_size(),
@@ -1584,13 +1852,21 @@ ClifErrorCode ClifMatcher::MatchAndSetSignatures(
               " (including C++ return value).");
     return kParameterCountsDiffer;
   }
-  // Did we have enough non optional arguments to actually call the function?
-  min_req_args -= cur_return;
-  if (clif_nonopt_params != min_req_args) {
-    StrAppend(message, GetErrorCodeString(kParameterCountsDiffer));
-    StrAppend(message, " Clif declares ", clif_nonopt_params, " required "
-              "parameters vs. C++ declaration has ", min_req_args);
-    return kParameterCountsDiffer;
+  // Do we have c++ parameter's left unmatched?
+  while (cur_arg < clang_type->getNumParams()) {
+    // If C++'s current parameter has the default specifier, clif is allowed to
+    // skip the current parameter.
+    if (clang_decl && clang_decl->getParamDecl(cur_arg)->hasDefaultArg()) {
+      cur_arg++;
+    } else {
+      StrAppend(message, GetErrorCodeString(kParameterCountsDiffer));
+      StrAppend(message, " Clif declares ",
+                func_decl->params_size() + func_decl->returns_size() -
+                    consumed_return_arg,
+                " input or output parameters while the C++ declaration has ",
+                clang_type->getNumParams(), " parameters.");
+      return kParameterCountsDiffer;
+    }
   }
   return kOK;
 }
@@ -1598,8 +1874,8 @@ ClifErrorCode ClifMatcher::MatchAndSetSignatures(
 bool ClifMatcher::MatchAndSetFunc(FuncDecl* func_decl) {
   // Operator overloading in C++ doesn't map well to other
   // languages--handle it separately.
-  if (ast_->IsOperatorFunction(func_decl->name().cpp_name())) {
-    return MatchAndSetOperator(func_decl);
+  if (ast_->IsOperatorOrConversionFunction(func_decl->name().cpp_name())) {
+    return MatchAndSetOperatorOrConversion(func_decl);
   }
 
   // Observe that C++ overloaded functions means we can't use
@@ -1613,11 +1889,10 @@ bool ClifMatcher::MatchAndSetFunc(FuncDecl* func_decl) {
   return MatchAndSetFuncFromCandidates(clang_decls, func_decl) != nullptr;
 }
 
-bool ClifMatcher::MatchAndSetOperatorInContext(
-    DeclContext* context,
-    FuncDecl* operator_decl) {
-  auto overloads = ast_->LookupOperator(context,
-                                        operator_decl->name().cpp_name());
+bool ClifMatcher::MatchAndSetOperatorOrConversionInContext(
+    DeclContext* context, FuncDecl* operator_decl) {
+  auto overloads = ast_->LookupOperatorOrConversionFunction(
+      context, operator_decl->name().cpp_name());
   if (overloads.Size() > 0) {
     if (auto func_decl =
         MatchAndSetFuncFromCandidates(overloads, operator_decl)) {
@@ -1630,7 +1905,7 @@ bool ClifMatcher::MatchAndSetOperatorInContext(
   return false;
 }
 
-bool ClifMatcher::MatchAndSetOperator(FuncDecl* operator_decl) {
+bool ClifMatcher::MatchAndSetOperatorOrConversion(FuncDecl* operator_decl) {
   // Fully qualified names get exact matching, even for operators.
   if (operator_decl->name().cpp_name().find(':') != std::string::npos) {
     ClifLookupResult candidates =
@@ -1656,7 +1931,7 @@ bool ClifMatcher::MatchAndSetOperator(FuncDecl* operator_decl) {
     // We only want the first parameter on the working copy of the
     // FunctionDecl, otherwise errors and such get confusing.
     FuncDecl cur_decl = *operator_decl;
-    if (MatchAndSetOperatorInContext(class_decl, &cur_decl)) {
+    if (MatchAndSetOperatorOrConversionInContext(class_decl, &cur_decl)) {
       *operator_decl = cur_decl;
       return true;
     }
@@ -1665,9 +1940,11 @@ bool ClifMatcher::MatchAndSetOperator(FuncDecl* operator_decl) {
     // only if the current context wasn't a class--if we weren't
     // inside a class, then the Clif-writer shouldn't have been
     // expecing an implicit "this" pointer.
+
     AdjustForNonClassMethods(&cur_decl);
     // Look inside the same declaration context as the class_decl.
-    if (MatchAndSetOperatorInContext(class_decl->getParent(), &cur_decl)) {
+    if (MatchAndSetOperatorOrConversionInContext(class_decl->getParent(),
+                                                 &cur_decl)) {
       *operator_decl = cur_decl;
       return true;
     }
@@ -1677,7 +1954,7 @@ bool ClifMatcher::MatchAndSetOperator(FuncDecl* operator_decl) {
   FuncDecl cur_decl = *operator_decl;
   AdjustForNonClassMethods(&cur_decl);
   // Look inside the TU declaration context.
-  if (MatchAndSetOperatorInContext(ast_->GetTU(), &cur_decl)) {
+  if (MatchAndSetOperatorOrConversionInContext(ast_->GetTU(), &cur_decl)) {
     *operator_decl = cur_decl;
     return true;
   }
@@ -1690,7 +1967,7 @@ bool ClifMatcher::MatchAndSetConstructor(
     CXXRecordDecl* class_decl,
     const clang::SourceLocation& loc,
     FuncDecl* func_decl) {
-  // TODO: Figure out a way to suppress this diagnostic if
+  // 
   // the complete type can't be instantiatiated.
   if (ast_->GetSema().RequireCompleteType(
           loc,
@@ -1725,6 +2002,9 @@ const FunctionDecl* ClifMatcher::MatchAndSetFuncFromCandidates(
   // couldn't cast to a function decl (as C++ doesn't allow
   // overloading non-function types).
 
+  // 
+  // the previous error code. We should record all of the mismatch errors and
+  // report them together.
   ClifError mismatch_error(*this, kOK);
   for (auto decl : candidates.GetResults()) {
     FuncDecl cur_func_decl = *func_decl;
@@ -1736,6 +2016,7 @@ const FunctionDecl* ClifMatcher::MatchAndSetFuncFromCandidates(
       clang_decl = SpecializeFunctionTemplate(template_decl, &cur_func_decl);
       if (!clang_decl) {
         mismatch_error.SetCode(kUnspecializableTemplate);
+        mismatch_error.AddClangDeclAndLocation(ast_.get(), template_decl);
         continue;
       }
     } else {
@@ -1757,13 +2038,45 @@ const FunctionDecl* ClifMatcher::MatchAndSetFuncFromCandidates(
         auto using_shadow_decl = llvm::dyn_cast<clang::UsingShadowDecl>(decl);
         if (using_shadow_decl != nullptr) {
           clang::NamedDecl* target_decl = using_shadow_decl->getTargetDecl();
-          clang_decl = llvm::dyn_cast<FunctionDecl>(target_decl);
+          // UsingShadowDecl's target decl is the processed candidate we want to
+          // match and set. Here target_decl could be any type like FuctionDecl,
+          // FunctionTemplateDecl, CXXRecord...
+          // We select the FunctionDecl, specialize the FunctionTemplateDecl, or
+          // report an error for other types.
+
+          // If UsingShadowDecl does not have a target decl, a clif error is
+          // reported.
+          if (target_decl == nullptr) {
+            llvm::errs() << GetErrorMessageForNonTargetDecl(*using_shadow_decl);
+            return nullptr;
+          }
+
+          if (llvm::isa<FunctionDecl>(target_decl)) {
+            clang_decl = llvm::dyn_cast<FunctionDecl>(target_decl);
+          } else if (llvm::isa<FunctionTemplateDecl>(target_decl)) {
+            auto* template_decl =
+                llvm::dyn_cast<FunctionTemplateDecl>(target_decl);
+            clang_decl =
+                SpecializeFunctionTemplate(template_decl, &cur_func_decl);
+            if (!clang_decl) {
+              mismatch_error.SetCode(kUnspecializableTemplate);
+              mismatch_error.AddClangDeclAndLocation(ast_.get(), template_decl);
+              continue;
+            }
+          } else {
+            // Use the underlying target_decl without using-declaration rather
+            // than the initial decl for error reporting.
+            decl = target_decl;
+          }
         }
-      }
-      if (clang_decl == nullptr) {
-        ReportTypecheckError<FunctionDecl>(
-            decl, func_decl->name().native(), kFunctionNameForError);
-        return nullptr;
+        // Report an error if the type of the candidate is not a (template)
+        // function. For example, we report an error when the candidate decl is
+        // a CXXRecord.
+        if (clang_decl == nullptr) {
+          ReportTypecheckError<FunctionDecl>(
+              decl, func_decl->name().native(), kFunctionNameForError);
+          return nullptr;
+        }
       }
       // Some FunctionDecl's are children of FunctionTemplateDecls
       // with the same name. These get examined in
@@ -1773,15 +2086,24 @@ const FunctionDecl* ClifMatcher::MatchAndSetFuncFromCandidates(
         continue;
       }
     }
-    if (!ImportedFromCorrectFile(*decl, &mismatch_error)) {
+
+    // Check if the current decl is a member function. If it's not a class
+    // member function, the candidates found in separate header files are not
+    // valid.
+
+    // We already filter out non-template classes with declarations in different
+    // header files in MatchAndSetClass(). So here we only care about non-member
+    // functions and member functions of template classes.
+    clang::Decl* lookup_scope = ast_->GetCurrentLookupScope();
+    if (!clang::isa<clang::CXXRecordDecl>(lookup_scope) &&
+        !ImportedFromCorrectFile(*decl, &mismatch_error)) {
       // Ignore certain errors for now. If we don't find any match,
       // these will be listed as failed candidates.
       continue;
     }
     std::string message;
     ClifErrorCode code = MatchAndSetSignatures(
-        clang_decl->getType()->getAs<clang::FunctionProtoType>(),
-        clang_decl->getMinRequiredArguments(),
+        clang_decl, clang_decl->getType()->getAs<clang::FunctionProtoType>(),
         &cur_func_decl, &message);
     if (code == kOK) {
       code = MatchFunctionStatic(clang_decl, cur_func_decl);
@@ -1914,17 +2236,33 @@ const FunctionDecl* ClifMatcher::MatchAndSetFuncFromCandidates(
       //   }
       // };
       // int Func(int a = (A){100});
-      if (result.Val.isInt() || result.Val.isFloat() ||
-          clang_param_decl->getType()->isPointerType()) {
+      bool is_ptr = clang_param_decl->getType()->isPointerType();
+      if (result.Val.isInt() || result.Val.isFloat() || is_ptr) {
         protos::ParamDecl* param_decl = func_decl->mutable_params(i);
-        param_decl->set_default_value(result.Val.getAsString(
-            ast_->GetASTContext(), clang_param_decl->getType()));
+        std::string default_value = result.Val.getAsString(
+            ast_->GetASTContext(), clang_param_decl->getType());
+        // nullptr default value is evaluated as "0" here. We want to represent
+        // nullptr default value as "nullptr" in .opb.
+        if (is_ptr && default_value == "0") {
+          default_value = "nullptr";
+        }
+        param_decl->set_default_value(default_value);
       }
     }
 
     return clang_decl;
   } else if (pruned_decls.size() > 1) {
-    ReportMultimatchError(*this, ast_.get(), pruned_decls, CurrentDecl());
+    std::string message;
+    // If a constructor matches multiple candidates, users may have forgotten to
+    // add the keyword "explicit" for the C++ construtors, which enables
+    // unexpected implicit type conversion.
+    if (pruned_decls.front().second.constructor()) {
+      message =
+          "Is the keyword \"explicit\" missed in C++'s definition of "
+          "constructors?";
+    }
+    ReportMultimatchError(*this, ast_.get(), pruned_decls, CurrentDecl(),
+                          message);
     // Don't return here. There may be a mismatch error too.
   } else if (match_decls.size() > 1) {
     // All the matched decls are deprecated!
@@ -1984,7 +2322,6 @@ const clang::FunctionDecl* ClifMatcher::SpecializeFunctionTemplate(
   clang::FunctionDecl* specialized_decl = nullptr;
   llvm::SmallVector<clang::Expr, 4> args;
   llvm::SmallVector<clang::Expr *, 4> arg_ptrs;
-
 
   for (int i = 0; i < arg_count; ++i) {
     std::string clif_cpp_type;
@@ -2057,7 +2394,6 @@ void ClifMatcher::BuildTypeTable() {
     };
   }
 }
-
 
 }  // namespace clif
 

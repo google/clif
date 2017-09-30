@@ -14,6 +14,7 @@
 
 """Tests for clif.testing.python.virtual_funcs."""
 
+import weakref
 import unittest
 from clif.testing.python import virtual_funcs
 
@@ -59,8 +60,14 @@ class AbstractClassNonDefConstImpl(virtual_funcs.AbstractClassNonDefConst):
 
 class ClassNonDefConstImpl(virtual_funcs.ClassNonDefConst):
 
+  def __init__(self, a, b):
+    super(ClassNonDefConstImpl, self).__init__(a, b)
+    self.c = [1, 2, 3]  # Must have a non-trivial container to enable gc.
+    # Remove self.invalidated after gaining (limited) access to invalidated ptr.
+    self.invalidated = False
+
   def DoSomething(self):
-    return self.a * self.b
+    return -1 if self.invalidated else self.a * self.b
 
 
 class VirtualTest(unittest.TestCase):
@@ -99,6 +106,74 @@ class VirtualTest(unittest.TestCase):
     q = L(3)
     self.assertEqual(virtual_funcs.add_seq(q, 2, 6), 3)
     self.assertEqual(q.data(), [0, 2, 4])
+
+  def testTemporaryInstance(self):
+    man = virtual_funcs.Manager(virtual_funcs.ClassNonDefConst(100, 23))
+    self.assertEqual(man.DoIt(), 123)
+    man = virtual_funcs.Manager(ClassNonDefConstImpl(100, 123))
+    self.assertEqual(man.DoIt(), 12300)
+
+  def testVirtualProperty(self):
+    c = virtual_funcs.D()
+    c.pos_c = -1
+    self.assertEqual(c.pos_c, 1)
+
+  def testNotLeakComplexPythonInstance(self):
+    # Test for b/64524765. Ensure that after the Python object deleted, it's
+    # not leaked. Reference to it saved during C++ virtual call.
+    non_def_impl = ClassNonDefConstImpl(4, 5)
+    wr = weakref.ref(non_def_impl)
+    self.assertEqual(non_def_impl.DoSomething(), 20)
+    del non_def_impl
+    # test non_def_impl deleted ...
+    self.assertIsNone(wr())
+
+
+class SmartPtrsTest(unittest.TestCase):
+
+  def testNotShared(self):
+    a = ClassNonDefConstImpl(12, 30)
+    # |a| is not shared with C++. So, the call to DoUniq should invalidate it.
+    a.invalidated = True
+    self.assertEqual(virtual_funcs.DoUniq(a), -1)
+    with self.assertRaises(ValueError):
+      _ = a.a
+    with self.assertRaises(ValueError):
+      virtual_funcs.DoUniq(a)
+
+  def testShared(self):
+    a = ClassNonDefConstImpl(1, 23)
+    b = virtual_funcs.Manager(a)
+    # |a| is shared between C++ and Python. So, cannot give it to Func.
+    self.assertEqual(b.DoIt(), 23)
+    with self.assertRaises(ValueError):
+      virtual_funcs.DoUniq(a)
+    # Check |a| is intact.
+    self.assertEqual(a.a, 1)
+
+  def testSharedKeepsPyObj(self):
+    a = ClassNonDefConstImpl(2, 23)
+    r = weakref.ref(a)
+    b = virtual_funcs.Manager(a)
+    del a
+    # Check |a| is intact.
+    self.assertEqual(b.DoIt(), 46)
+    self.assertTrue(r())
+    del b
+    # test |a| deleted ...
+    self.assertIsNone(r())
+
+  def testSharedFreeAfterUse(self):
+    a = ClassNonDefConstImpl(2, 3)
+    b = virtual_funcs.Manager(a)
+    self.assertEqual(b.DoIt(), 6)
+    # Remove the reference in |b|
+    del b
+    # We should be able to call Func again
+    a.invalidated = True
+    self.assertEqual(virtual_funcs.DoUniq(a), -1)
+    with self.assertRaises(ValueError):
+      _ = a.a
 
 
 if __name__ == '__main__':

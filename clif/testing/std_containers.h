@@ -26,6 +26,18 @@ inline std::vector<int> Mul(std::vector<int> v, int m) {
   return v;
 }
 
+inline std::vector<bool> Even(const std::vector<int>& v) {
+  std::vector<bool> e(v.size());
+  for (int i=0; i < v.size(); ++i) { if ((v[i] & 1) == 0) { e[i] = true; }}
+  return e;
+}
+
+inline std::vector<bool>* Odd(const std::vector<int>& v) {
+  std::vector<bool>* e = new std::vector<bool>(v.size());
+  for (int i=0; i < v.size(); ++i) { if (v[i] & 1) { (*e)[i] = true; }}
+  return e;
+}
+
 // dict input arg.
 inline bool Find(int val, std::unordered_map<int, int> m, int* key) {
   for (const auto& i : m)
@@ -66,6 +78,21 @@ inline std::vector<std::vector<int>> MatrixSum(
     }
   }
   return sum;
+}
+
+inline std::tuple<std::tuple<int, int, int>, std::tuple<int, int, int>>
+Make2By3() {
+  return std::tuple<std::tuple<int, int, int>, std::tuple<int, int, int>>();
+}
+
+inline std::tuple<int, int, int, int, int, int> Flatten2By3(
+const std::tuple<std::tuple<int, int, int>, std::tuple<int, int, int>>& m) {
+  return std::make_tuple(std::get<0>(std::get<0>(m)),
+                         std::get<1>(std::get<0>(m)),
+                         std::get<2>(std::get<0>(m)),
+                         std::get<0>(std::get<1>(m)),
+                         std::get<1>(std::get<1>(m)),
+                         std::get<2>(std::get<1>(m)));
 }
 
 #endif  // CLIF_TESTING_STD_CONTAINERS_H_

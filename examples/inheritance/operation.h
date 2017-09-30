@@ -16,8 +16,6 @@
 #ifndef CLIF_EXAMPLES_INHERITANCE_OPERATION_H_
 #define CLIF_EXAMPLES_INHERITANCE_OPERATION_H_
 
-#include <memory>
-
 namespace clif_example {
 namespace vfunc {
 
@@ -27,7 +25,7 @@ class Operation {
   virtual int Run() = 0;
 };
 
-inline int Perform(std::shared_ptr<Operation> op) {
+inline int Perform(Operation* op) {
   return op->Run();
 }
 

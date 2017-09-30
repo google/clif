@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
   }
 
   llvm::cl::ParseCommandLineOptions(argc, argv);
-  // TODO: Remove --input_file and --output_file when they
+  // 
   // are no longer passed by blaze or the py_clif_cc rule.
   if (!FLAGS_output_file.empty())
     output_file = FLAGS_output_file;

@@ -37,8 +37,11 @@ class PytdParserTest(unittest.TestCase):
   def setUp(self):
     reset_indentation()
 
+  def _Parse(self, t, a, unused_b=''):
+    return Parse(a) if t is Clif else t.parseString(a, parseAll=True)
+
   def EQ(self, t, a, b):
-    p = Parse(a) if t is Clif else t.parseString(a, parseAll=True)
+    p = self._Parse(t, a)
     self.assertEqual(p.asList(), b, 'got ' + p.dump())
 
   def TEQ(self, t, a, k, b):
@@ -99,6 +102,8 @@ class PytdParserTest(unittest.TestCase):
     self.EQ(funcdef, 'def f() ->(a:int, b:str)',
             ['func', 0, [], ['f'], [], [[['a'], [['int']]], [['b'], [['str']]]]]
            )
+    self.EQ(funcdef, 'def f() -> None', ['func', 0, [], ['f'], []])
+    self.TEQ(funcdef, 'def f() -> self', 'returns', [['', [['self']]]])
     self.EQ(funcdef, 'def f() -> x',
             ['func', 0, [], ['f'], [], [['', [['x']]]]])
     self.EQ(funcdef, 'def f() -> x:\n  return Zx(...)',
@@ -137,6 +142,25 @@ class PytdParserTest(unittest.TestCase):
     self.EQ(from_stmt, 'from "abc":\n  namespace `xyz`:\n    def f()',
             ['from', 0, 'abc',
              [['namespace', 14, 'xyz', [['func', 35, [], ['f'], []]]]]])
+
+  def testFromNsErr(self):
+    # Keep feature parity with unittest (avoid assertRaisesWithPredicateMatch).
+    with self.assertRaises(pp.ParseSyntaxException) as exception_ctx:
+      self._Parse(from_stmt, ('from "abc":\n'
+                              '  namespace `x`:\n'
+                              '    namespace `y`:\n'
+                              '      def f()'))
+      self.assertIn('indented block (at char 33)', exception_ctx)
+
+  def testFromErr1(self):
+    # Keep feature parity with unittest (avoid assertRaisesWithPredicateMatch).
+    with self.assertRaises(pp.ParseSyntaxException) as exception_ctx:
+      self._Parse(from_stmt, textwrap.dedent('''\
+          from "wireless/android/contentreview/label/app_category.h":
+            namespace `wireless_android_contentreview_label`:
+              app_category_map: `std::map` as dict<int, str>
+          '''))
+      self.assertIn('indented block (at char 116)', exception_ctx)
 
   def testFromF1(self):
     self.EQ(from_stmt, 'from "abc":\n  def f()',

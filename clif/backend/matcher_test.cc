@@ -47,15 +47,17 @@ class ClifMatcherTest : public testing::Test {
   //    over the protos in this DeclList. Hence, the C++ type names in the
   //    Decl proto messages of this DeclList will actually be keys to the
   //    corresponding qual types in the matcher's type table.
-  DeclList PrepareMatcher(const std::vector<std::string>& proto_list) {
+
+  // Add test_header_file args to support test for different header files.
+  DeclList PrepareMatcher(const std::vector<std::string>& proto_list,
+                          const std::string& test_header_file) {
     // We add a dummy decl which only has the cpp_file field set.
     // This cpp_file is the test header file which contains the C++
     // constructs to match.
     std::string clif_ast_proto_text;
     StrAppend(&clif_ast_proto_text,
-              "decls: { decltype: UNKNOWN cpp_file: ",
-              "'", test_src_dir_, "/test.h'"
-              "} ");
+              "decls: { decltype: UNKNOWN cpp_file: ", "'", test_src_dir_, "/",
+              test_header_file, "'} ");
     for (const std::string& proto_str : proto_list) {
         StrAppend(&clif_ast_proto_text, "decls: { ", proto_str, " } ");
     }
@@ -74,11 +76,19 @@ class ClifMatcherTest : public testing::Test {
     return decl_list;
   }
 
-  void TestMatch(const std::string& proto);
-  void TestMatch(const std::string& proto, protos::Decl* decl);
-  void TestMatch(const std::vector<std::string>& proto_list, DeclList* decl);
-  void TestNoMatch(const std::string& proto);
-  void TestNoMatch(const std::string& proto, protos::Decl* decl);
+  // Add "test.h" as the default testing header file. If header file is not
+  // specified by users, we are testing the declarations in test.h.
+  void TestMatch(const std::string& proto,
+                 const std::string& test_header_file = "test.h");
+  void TestMatch(const std::string& proto, protos::Decl* decl,
+                 const std::string& test_header_file = "test.h");
+  void TestMatch(const std::vector<std::string>& proto_list,
+                 DeclList* decl_list,
+                 const std::string& test_header_file = "test.h");
+  void TestNoMatch(const std::string& proto,
+                   const std::string& test_header_file = "test.h");
+  void TestNoMatch(const std::string& proto, protos::Decl* decl,
+                   const std::string& test_header_file = "test.h");
 
   std::unique_ptr<ClifMatcher> matcher_;
   protos::AST clif_ast_;
@@ -104,27 +114,31 @@ TEST_F(ClifMatcherTest, BuildCode) {
   EXPECT_TRUE(llvm::StringRef(code).contains("#include \"test.h\""));
 }
 
-void ClifMatcherTest::TestMatch(const std::string& proto) {
+void ClifMatcherTest::TestMatch(const std::string& proto,
+                                const std::string& test_header_file) {
   protos::Decl decl;
-  TestMatch(proto, &decl);
+  TestMatch(proto, &decl, test_header_file);
 }
 
-void ClifMatcherTest::TestNoMatch(const std::string& proto) {
+void ClifMatcherTest::TestNoMatch(const std::string& proto,
+                                  const std::string& test_header_file) {
   protos::Decl decl;
-  TestNoMatch(proto, &decl);
+  TestNoMatch(proto, &decl, test_header_file);
 }
 
-void ClifMatcherTest::TestMatch(const std::string& proto, protos::Decl* decl) {
+void ClifMatcherTest::TestMatch(const std::string& proto, protos::Decl* decl,
+                                const std::string& test_header_file) {
   std::vector<std::string> proto_list(1, proto);
-  DeclList decl_list = PrepareMatcher(proto_list);
+  DeclList decl_list = PrepareMatcher(proto_list, test_header_file);
   SCOPED_TRACE(proto);
   *decl = decl_list.Get(0);
   EXPECT_TRUE(matcher_->MatchAndSetOneDecl(decl));
 }
 
 void ClifMatcherTest::TestMatch(const std::vector<std::string>& proto_list,
-                                DeclList* decl_list) {
-  *decl_list = PrepareMatcher(proto_list);
+                                DeclList* decl_list,
+                                const std::string& test_header_file) {
+  *decl_list = PrepareMatcher(proto_list, test_header_file);
   EXPECT_EQ(proto_list.size(), decl_list->size());
   for (int i = 0; i < decl_list->size(); ++i) {
     SCOPED_TRACE(proto_list[i]);
@@ -132,10 +146,10 @@ void ClifMatcherTest::TestMatch(const std::vector<std::string>& proto_list,
   }
 }
 
-void ClifMatcherTest::TestNoMatch(const std::string& proto,
-                                  protos::Decl* decl) {
+void ClifMatcherTest::TestNoMatch(const std::string& proto, protos::Decl* decl,
+                                  const std::string& test_header_file) {
   std::vector<std::string> proto_list(1, proto);
-  DeclList decl_list = PrepareMatcher(proto_list);
+  DeclList decl_list = PrepareMatcher(proto_list, test_header_file);
   SCOPED_TRACE(proto);
   *decl = decl_list.Get(0);
   EXPECT_FALSE(matcher_->MatchAndSetOneDecl(decl));
@@ -187,7 +201,87 @@ TEST_F(ClifMatcherTest, TestMatchAndSetFuncCplusplusReturnValue) {
   TestNoMatch("cpp_file: 'nonexistent.h' decltype: FUNC func { name {"
             "cpp_name: 'FuncInAnotherFile' } }");
 
-  // Returning a movable but uncopyable type
+  TestMatch("decltype: FUNC func { "
+            "  name { cpp_name: 'FuncReturnsConstIntPtr' } "
+            "  returns { "
+            "    type { "
+            "      lang_type: 'int' "
+            "      cpp_type: 'int' "
+            "    } "
+            "  } "
+            "}", &decl);
+  EXPECT_EQ(decl.func().returns(0).type().cpp_type(), "const int *");
+
+  std::string decl_proto =
+      "decltype: FUNC func { "
+      "  name { cpp_name: 'FuncReturnsConstClassPtr' } "
+      "  returns { "
+      "    type { "
+      "      cpp_type: 'Class' "
+      "    } "
+      "  } "
+      "}";
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().returns(0).type().cpp_type(), "const ::Class *");
+
+  decl_proto =
+      "decltype: FUNC func { "
+      "  name { cpp_name: 'FuncReturnsConstInt' } "
+      "  returns { "
+      "    type { "
+      "      cpp_type: 'int' "
+      "    } "
+      "  } "
+      "}";
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().returns(0).type().cpp_type(), "int");
+
+  decl_proto =
+      "decltype: FUNC func { "
+      "  name { cpp_name: 'FuncReturnsConstClass' } "
+      "  returns { "
+      "    type { "
+      "      cpp_type: 'Class' "
+      "    } "
+      "  } "
+      "}";
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().returns(0).type().cpp_type(), "::Class");
+
+  decl_proto =
+      "decltype: FUNC func {"
+      "  name {"
+      "    cpp_name: 'FuncReturnsSmartPtrOfConstClass'"
+      "  }"
+      "  returns {"
+      "    type {"
+      "      cpp_type: 'Class'"
+      "    }"
+      "  }"
+      "}";
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().returns(0).type().cpp_type(),
+            "::std::shared_ptr<const ::Class>");
+
+  decl_proto =
+      "decltype: FUNC func {"
+      "  name {"
+      "    cpp_name: 'FuncReturnsSmartPtrOfConstInt'"
+      "  }"
+      "  returns {"
+      "    type {"
+      "      cpp_type: 'int'"
+      "    }"
+      "  }"
+      "}";
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().returns(0).type().cpp_type(),
+            "::std::shared_ptr<const int>");
+}
+
+TEST_F(ClifMatcherTest, TestMatchAndSetUncopyableButMovableFuncReturn) {
+  protos::Decl decl;
+  // Returning a plain movable but uncopyable type.
   TestMatch(
       "decltype: CLASS class_ { "
       "  name { cpp_name: 'ClassMovableButUncopyable' } "
@@ -202,17 +296,72 @@ TEST_F(ClifMatcherTest, TestMatchAndSetFuncCplusplusReturnValue) {
       "      } "
       "    } "
       "  } "
-      "}");
-  TestMatch("decltype: FUNC func { "
-            "  name { cpp_name: 'FuncReturnsConstIntPtr' } "
-            "  returns { "
-            "    type { "
-            "      lang_type: 'int' "
-            "      cpp_type: 'int' "
-            "    } "
-            "  } "
-            "}", &decl);
-  EXPECT_EQ(decl.func().returns(0).type().cpp_type(), "const int *");
+      "}",
+      &decl);
+  EXPECT_EQ(decl.class_().members(0).func().returns(0).type().cpp_type(),
+            "::ClassMovableButUncopyable");
+
+  // Returning a pointer of a movable but uncopyable type.
+  TestMatch(
+      "decltype: CLASS class_ { "
+      "  name { cpp_name: 'ClassMovableButUncopyable' } "
+      "  members { "
+      "    decltype: FUNC func { "
+      "      name { cpp_name: 'FactoryPointer' } "
+      "      returns { "
+      "        type { "
+      "           lang_type: 'ClassMovableButUncopyable' "
+      "           cpp_type: 'ClassMovableButUncopyable' "
+      "        } "
+      "      } "
+      "    } "
+      "  } "
+      "}",
+      &decl);
+  EXPECT_EQ(decl.class_().members(0).func().returns(0).type().cpp_type(),
+            "::ClassMovableButUncopyable *");
+  EXPECT_TRUE(
+      decl.class_().members(0).func().returns(0).type().cpp_raw_pointer());
+
+  // Returning a reference of a movable but uncopyable type.
+  TestMatch(
+      "decltype: CLASS class_ { "
+      "  name { cpp_name: 'ClassMovableButUncopyable' } "
+      "  members { "
+      "    decltype: FUNC func { "
+      "      name { cpp_name: 'FactoryRef' } "
+      "      returns { "
+      "        type { "
+      "           lang_type: 'ClassMovableButUncopyable' "
+      "           cpp_type: 'ClassMovableButUncopyable' "
+      "        } "
+      "      } "
+      "    } "
+      "  } "
+      "}",
+      &decl);
+  EXPECT_EQ(decl.class_().members(0).func().returns(0).type().cpp_type(),
+            "::ClassMovableButUncopyable &");
+
+  // Returning a const reference of a movable but uncopyable type.
+  TestMatch(
+      "decltype: CLASS class_ { "
+      "  name { cpp_name: 'ClassMovableButUncopyable' } "
+      "  members { "
+      "    decltype: FUNC func { "
+      "      name { cpp_name: 'FactoryConstRef' } "
+      "      returns { "
+      "        type { "
+      "           lang_type: 'ClassMovableButUncopyable' "
+      "           cpp_type: 'ClassMovableButUncopyable' "
+      "        } "
+      "      } "
+      "    } "
+      "  } "
+      "}",
+      &decl);
+  EXPECT_EQ(decl.class_().members(0).func().returns(0).type().cpp_type(),
+            "const ::ClassMovableButUncopyable &");
 }
 
 TEST_F(ClifMatcherTest, TestMatchAndSetFuncReturnOutParam) {
@@ -376,7 +525,6 @@ TEST_F(ClifMatcherTest, TestMatchAndSetFuncTemplateParamLValue) {
               "  lang_type: 'int' "
               "  cpp_type: 'multiparent'   "
               "} } } } ", &decl);
-  llvm::errs() << decl.not_found();
   EXPECT_TRUE(llvm::StringRef(decl.not_found()).contains(
       "ComposedType<int>"));
 }
@@ -443,6 +591,13 @@ TEST_F(ClifMatcherTest, TestMatchUncopyableClassParamType) {
   EXPECT_FALSE(decl.func().params(0).type().cpp_has_def_ctor());
   EXPECT_FALSE(decl.func().params(0).type().cpp_copyable());
   EXPECT_FALSE(decl.func().params(0).type().cpp_abstract());
+  TestNoMatch("decltype: FUNC func { "
+            "name { cpp_name: 'FuncTakesUncopyableClassOutputParam' } "
+            "returns { type { lang_type: 'FuncTakesUncopyableClass' "
+            "         cpp_type: 'UncopyableClass' } } }",
+            &decl);
+  EXPECT_TRUE(llvm::StringRef(decl.not_found()).contains(
+      "Clif expects output parameters to be copyable."));
 }
 
 
@@ -474,6 +629,8 @@ TEST_F(ClifMatcherTest, TestMatchSetTypeProperties) {
       "}", &decl);
   EXPECT_FALSE(decl.class_().cpp_copyable());
   EXPECT_FALSE(decl.class_().cpp_abstract());
+  EXPECT_FALSE(decl.class_().cpp_has_trivial_defctor());
+  EXPECT_TRUE(decl.class_().cpp_has_trivial_dtor());
   TestMatch(
       "decltype: CLASS class_ { "
       "name { cpp_name: 'ClassMovableButUncopyable' } "
@@ -491,11 +648,27 @@ TEST_F(ClifMatcherTest, TestMatchSetTypeProperties) {
       "name { cpp_name: 'NoCopyAssign' } "
       "}", &decl);
   EXPECT_FALSE(decl.class_().cpp_copyable());
+  EXPECT_TRUE(decl.class_().cpp_has_def_ctor());
+  EXPECT_FALSE(decl.class_().cpp_has_trivial_defctor());
+  EXPECT_TRUE(decl.class_().cpp_has_trivial_dtor());
   TestMatch(
       "decltype: CLASS class_ { "
       "name { cpp_name: 'AbstractClass' } "
       "}", &decl);
   EXPECT_TRUE(decl.class_().cpp_abstract());
+  TestMatch(
+      "decltype: CLASS class_ { "
+      "name { cpp_name: 'PrivateDestructorClass' } "
+      "}", &decl);
+  EXPECT_TRUE(decl.class_().cpp_has_trivial_defctor());
+  EXPECT_FALSE(decl.class_().cpp_has_trivial_dtor());
+  TestMatch(
+      "decltype: CLASS class_ { "
+      "name { cpp_name: 'ClassWithDefaultCtor' } "
+      "}", &decl);
+  EXPECT_TRUE(decl.class_().cpp_has_def_ctor());
+  EXPECT_FALSE(decl.class_().cpp_has_trivial_defctor());
+  EXPECT_TRUE(decl.class_().cpp_has_trivial_dtor());
 }
 
 TEST_F(ClifMatcherTest, TestCppAbstract) {
@@ -634,13 +807,70 @@ TEST_F(ClifMatcherTest, TestMatchAndSetClassTemplates) {
       "        params { type { lang_type: 'int' cpp_type: 'int' } } "
       "} } }");
   TestMatch(
-      "decltype: CLASS class_ { "
+      "decltype: CLASS "
+      "  cpp_file: 'clif/backend/test.h' "
+      "  class_ { "
+      "  name { cpp_name: 'ClassTemplateDeclaredInImportedFile' } "
+      "  members { decltype: FUNC func { "
+      "        name { cpp_name: 'ClassTemplateInAnotherFile' } "
+      "        constructor: true }"
+      "} } ");
+  TestMatch(
+      "decltype: CLASS "
+      "  cpp_file: 'clif/backend/test.h' "
+      "  class_ { "
       "  name { cpp_name: 'ClassTemplateDeclaredInImportedFile' } "
       "  members { decltype: FUNC func { "
       "        name { cpp_name: 'SomeFunction' } "
       "        params { type { lang_type: 'int' cpp_type: 'int' } } "
       "        returns { type { lang_type: 'int' cpp_type: 'int' } } }"
       "} } ");
+  TestMatch(
+      "decltype: CLASS "
+      "  cpp_file: 'clif/backend/test.h' "
+      "  class_ { "
+      "  name { cpp_name: 'ClassTemplateDeclaredInImportedFile2' } "
+      "  members { decltype: FUNC func { "
+      "        name { cpp_name: 'SomeFunction' } "
+      "        params { type { lang_type: 'AnotherClass'  "
+      "                        cpp_type: 'AnotherClass' } } "
+      "        returns { type { lang_type: 'AnotherClass' "
+      "                         cpp_type: 'AnotherClass' } } }"
+      "} } ");
+  TestNoMatch(
+      "decltype: CLASS "
+      "  cpp_file: 'clif/backend/test.h' "
+      "  class_ { "
+      "  name { cpp_name: 'ClassInAnotherFile' } "
+      "  members { decltype: FUNC func { "
+      "        name { cpp_name: 'SomeFunction' } "
+      "        params { type { lang_type: 'int' cpp_type: 'int' } } "
+      "        returns { type { lang_type: 'int' cpp_type: 'int' } } }"
+      "} } ",
+      &decl);
+  EXPECT_TRUE(
+      llvm::StringRef(decl.not_found())
+          .contains(
+              "Declaration was found, but not inside the required file."));
+}
+
+TEST_F(ClifMatcherTest, TestMatchAndSetConversionFunction) {
+  // test case for conversion function operator bool()
+  protos::Decl decl;
+  TestMatch(
+      "decltype: CLASS class_ { "
+      "name { cpp_name: 'ConversionClass' } "
+      "members { decltype: FUNC func { name { cpp_name: 'operator bool' }  "
+      "          returns { type { lang_type: 'bool' cpp_type: 'bool' } } } } }",
+      &decl);
+  EXPECT_FALSE(decl.class_().members(0).func().cpp_opfunction());
+  TestNoMatch(
+      "decltype: CLASS class_ { "
+      "name { cpp_name: 'ConversionClass' } "
+      "members { decltype: FUNC func { name { cpp_name: 'operator double' }  "
+      "          returns { type { lang_type: 'double' cpp_type: 'double' } } } "
+      "} }",
+      &decl);
 }
 
 TEST_F(ClifMatcherTest, TestMatchAndSetOperatorOverload) {
@@ -650,8 +880,30 @@ TEST_F(ClifMatcherTest, TestMatchAndSetOperatorOverload) {
             "params { type { lang_type: 'int' cpp_type: 'grandmother' } } "
             "params { type { lang_type: 'int' cpp_type: 'grandfather' } } "
             "returns { type { lang_type: 'int' cpp_type: 'bool' } } }");
-  // Class operator, no added implicit this.
+
+  // Add unit test for operator* in different invoking cases.
   protos::Decl decl;
+  // operator* declared outside of class in .h file
+  TestMatch(
+      "decltype: CLASS class_ { "
+      "name { cpp_name: 'OperatorClass' } "
+      "members { decltype: FUNC func { name { native: 'Deref' cpp_name: "
+      "'operator*' } "
+      "          returns { type { lang_type: 'int' cpp_type: 'int' } } } } } ",
+      &decl);
+  EXPECT_TRUE(decl.class_().members(0).func().cpp_opfunction());
+
+  // operator* declared inside class in .h file
+  TestMatch(
+      "decltype: CLASS class_ { "
+      "name { cpp_name: 'OperatorClass2' } "
+      "members { decltype: FUNC func { name { native: 'Deref' cpp_name: "
+      "'operator*' } "
+      "          returns { type { lang_type: 'int' cpp_type: 'int' } } } } } ",
+      &decl);
+  EXPECT_FALSE(decl.class_().members(0).func().cpp_opfunction());
+
+  // Class operator, no added implicit this.
   TestMatch(
       "decltype: CLASS class_ { "
       "name { cpp_name: 'OperatorClass' } "
@@ -665,7 +917,6 @@ TEST_F(ClifMatcherTest, TestMatchAndSetOperatorOverload) {
       "decltype: CLASS class_ { "
       "name { cpp_name: 'OperatorClass' } "
       "members { decltype: FUNC func { name { cpp_name: 'operator!=' }  "
-      "          cpp_opfunction: true "
       "          returns { type { lang_type: 'int' cpp_type: 'bool' } } "
       "          params { type { lang_type: 'OperatorClass'"
       "                   cpp_type: 'OperatorClass' } } }  "
@@ -703,33 +954,72 @@ TEST_F(ClifMatcherTest, TestBaseClassSetter) {
   EXPECT_TRUE(
       llvm::StringRef(decl.class_().cpp_bases(2).filename()).endswith(
           "test.h"));
+
+  TestMatch("decltype: CLASS class_ { name { cpp_name: 'derive1' } } ", &decl);
+  EXPECT_EQ(decl.class_().bases_size(), 2);
+  EXPECT_EQ(decl.class_().bases(0).cpp_name(), "::base1");
+  EXPECT_EQ(decl.class_().bases(1).cpp_name(), "::base1_1");
+  EXPECT_EQ(decl.class_().cpp_bases_size(), 2);
+  EXPECT_EQ(decl.class_().cpp_bases(0).name(), "::base1");
+  EXPECT_EQ(decl.class_().cpp_bases(1).name(), "::base1_1");
+
+  // Test for diamond inheritance. "base2_1" should only be reported once.
+  TestMatch("decltype: CLASS class_ { name { cpp_name: 'derive2' } } ", &decl);
+  EXPECT_EQ(decl.class_().bases_size(), 3);
+  EXPECT_EQ(decl.class_().bases(0).cpp_name(), "::base2");
+  EXPECT_EQ(decl.class_().bases(1).cpp_name(), "::base3");
+  EXPECT_EQ(decl.class_().bases(2).cpp_name(), "::base2_1");
+  EXPECT_EQ(decl.class_().cpp_bases_size(), 3);
+  EXPECT_EQ(decl.class_().cpp_bases(0).name(), "::base2");
+  EXPECT_EQ(decl.class_().cpp_bases(1).name(), "::base3");
+  EXPECT_EQ(decl.class_().cpp_bases(2).name(), "::base2_1");
 }
 
 TEST_F(ClifMatcherTest, TestMatchAndSetEnum) {
   // Note that this intentionally omits enumerator 'd' from the test.h
-  // declaration. TODO: Check to be sure that the returned
-  // proto got the 'd' added.
-  TestMatch("decltype: ENUM enum { "
-            "name { cpp_name: 'anEnum' native: 'anEnum' } "
-            "members { cpp_name: 'a' native: 'a' } "
-            "members { cpp_name: 'b' native: 'b' } "
-            "members { cpp_name: 'c' native: 'c' } "
-            "} namespace_: 'Namespace'");
+  // declaration. The returned proto got the 'd' added.
+  protos::Decl decl;
+  TestMatch(
+      "decltype: ENUM enum { "
+      "name { cpp_name: 'anEnum' native: 'anEnum' } "
+      "members { cpp_name: 'a' native: 'a' } "
+      "members { cpp_name: 'b' native: 'b' } "
+      "members { cpp_name: 'c' native: 'c' } "
+      "} namespace_: 'Namespace'", &decl);
+  EXPECT_EQ(decl.enum_().members(0).cpp_name(), "::Namespace::anEnum::a");
+  EXPECT_EQ(decl.enum_().members(1).cpp_name(), "::Namespace::anEnum::b");
+  EXPECT_EQ(decl.enum_().members(2).cpp_name(), "::Namespace::anEnum::c");
+  EXPECT_EQ(decl.enum_().members(3).cpp_name(), "::Namespace::anEnum::d");
+  EXPECT_TRUE(decl.enum_().enum_class());
+
   // This is a non-class enum.
-  TestMatch("decltype: ENUM enum { "
-            "name { cpp_name: 'anotherEnum' native: 'anotherEnum' } "
-            "members { cpp_name: 'e' native: 'e' } "
-            "members { cpp_name: 'f' native: 'f' } "
-            "members { cpp_name: 'g' native: 'g' } "
-            "} namespace_: 'Namespace'");
+  TestMatch(
+      "decltype: ENUM enum { "
+      "name { cpp_name: 'anotherEnum' native: 'anotherEnum' } "
+      "members { cpp_name: 'e' native: 'e' } "
+      "members { cpp_name: 'f' native: 'f' } "
+      "members { cpp_name: 'g' native: 'g' } "
+      "} namespace_: 'Namespace'", &decl);
+  EXPECT_EQ(decl.enum_().members(0).cpp_name(), "::Namespace::anotherEnum::e");
+  EXPECT_EQ(decl.enum_().members(1).cpp_name(), "::Namespace::anotherEnum::f");
+  EXPECT_EQ(decl.enum_().members(2).cpp_name(), "::Namespace::anotherEnum::g");
+  EXPECT_EQ(decl.enum_().members(3).cpp_name(), "::Namespace::anotherEnum::h");
+  EXPECT_FALSE(decl.enum_().enum_class());
+
   // Everything should match but the 'e'.
-  TestNoMatch("decltype: ENUM enum { "
-              "name { cpp_name: 'anEnum' native: 'anEnum' } "
-              "members { cpp_name: 'a' native: 'a' } "
-              "members { cpp_name: 'b' native: 'b' } "
-              "members { cpp_name: 'c' native: 'c' } "
-              "members { cpp_name: 'e' native: 'e' } "
-              "} namespace_: 'Namespace'");
+  TestNoMatch(
+      "decltype: ENUM enum { "
+      "name { cpp_name: 'anEnum' native: 'anEnum' } "
+      "members { cpp_name: 'a' native: 'a' } "
+      "members { cpp_name: 'b' native: 'b' } "
+      "members { cpp_name: 'c' native: 'c' } "
+      "members { cpp_name: 'e' native: 'e' } "
+      "} namespace_: 'Namespace'", &decl);
+  EXPECT_TRUE(llvm::StringRef(decl.not_found())
+                  .contains("Extra enumerators in Clif enum declaration "
+                            "anEnum.  C++ enum Namespace::anEnum does "
+                            "not contain enumerator(s): e"));
+
   // Type mismatch check.
   TestNoMatch("decltype: ENUM enum { "
               "name { cpp_name: 'aClass' } "
@@ -737,7 +1027,10 @@ TEST_F(ClifMatcherTest, TestMatchAndSetEnum) {
               "members { cpp_name: 'b' native: 'b' } "
               "members { cpp_name: 'c' native: 'c' } "
               "members { cpp_name: 'e' native: 'e' } "
-              "}");
+              "}", &decl);
+  EXPECT_TRUE(llvm::StringRef(decl.not_found())
+                  .contains("name matched \"aClass\" which is a CXXRecord"));
+
   TestMatch("decltype: CLASS class_ { "
             "name { cpp_name: 'Namespace::UsingClass' } "
             "members { "
@@ -862,11 +1155,14 @@ TEST_F(ClifMatcherTest, TestClassFieldsFilled) {
             " } ", &decl);
   EXPECT_EQ(decl.class_().name().cpp_name(), "::Namespace::bClass");
   EXPECT_TRUE(decl.class_().cpp_has_def_ctor());
+  EXPECT_TRUE(decl.class_().cpp_has_trivial_defctor());
+  EXPECT_TRUE(decl.class_().cpp_has_trivial_dtor());
   TestMatch("decltype: CLASS class_ {"
             "name { cpp_name: 'ClassWithoutDefaultCtor' } "
             "}", &decl);
   EXPECT_FALSE(decl.class_().cpp_has_def_ctor());
   EXPECT_TRUE(decl.class_().cpp_has_public_dtor());
+  EXPECT_TRUE(decl.class_().cpp_has_trivial_dtor());
 }
 
 TEST_F(ClifMatcherTest, TestPrivateDestructor) {
@@ -921,6 +1217,193 @@ TEST_F(ClifMatcherTest, TestOverloadedCallable) {
       "             params { type { lang_type: 'char' cpp_type: 'parent' } } "
       " } } } } ";
   TestNoMatch(decl_proto, &decl);
+}
+
+TEST_F(ClifMatcherTest, TestCallableTemplateArgWithInput) {
+  std::string decl_proto =
+      "decltype: FUNC func {"
+      "name { cpp_name: 'CallableTemplateArgFunction' } "
+      "params { type { "
+      "           cpp_type: '::example::Vector' "
+      "             params { "
+      "               callable { "
+      "                 params { "
+      "                   type { "
+      "                     cpp_type: 'child' "
+      "                   } "
+      "                 } "
+      "                 params { "
+      "                   type { "
+      "                     cpp_type: 'int' "
+      "                   } "
+      "                 } "
+      "               } "
+      "             } "
+      "           } "
+      "        } "
+      "  } ";
+  protos::Decl decl;
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().params(0).type().cpp_type(),
+            "::example::Vector< ::std::function<void (child, int)> >");
+}
+
+TEST_F(ClifMatcherTest, TestCallableTemplateArgWithReturn) {
+  std::string decl_proto =
+      "decltype: FUNC func {"
+      "name { cpp_name: 'CallableTemplateArgFunction2' } "
+      "params { type { "
+      "           cpp_type: '::example::Vector' "
+      "             params { "
+      "               callable { "
+      "                 returns { "
+      "                   type  { cpp_type: 'child' } "
+      "                 } "
+      "               } "
+      "            } "
+      "          } "
+      "      } "
+      "  }";
+  protos::Decl decl;
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().params(0).type().cpp_type(),
+            "::example::Vector< ::std::function<child ()> >");
+}
+
+TEST_F(ClifMatcherTest, TestCallableTemplateArgTooManyReturn) {
+  // Too many returns for callable(std::function) will result in compilation
+  // errors.
+  std::string decl_proto =
+      "decltype: FUNC func {"
+      "name { cpp_name: 'CallableTemplateArgFunction2' } "
+      "params { type { "
+      "           cpp_type: '::example::Vector' "
+      "             params { "
+      "               callable { "
+      "                 returns { "
+      "                   type  { cpp_type: 'child' } "
+      "                 } "
+      "                 returns { "
+      "                   type  { cpp_type: 'int' } "
+      "                 } "
+      "               } "
+      "            } "
+      "          } "
+      "      } "
+      "  }";
+  TestNoMatch(decl_proto);
+}
+
+TEST_F(ClifMatcherTest, TestCallableTemplateArgWithBothInputAndReturn) {
+  std::string decl_proto =
+      "decltype: FUNC func {"
+      "name { cpp_name: 'CallableTemplateArgFunction3' } "
+      "params { type { "
+      "           cpp_type: '::example::Vector' "
+      "             params { "
+      "               callable { "
+      "                 params { "
+      "                   type { "
+      "                     cpp_type: 'child' "
+      "                   } "
+      "                 } "
+      "                 returns { "
+      "                   type  { cpp_type: 'int' } "
+      "                 } "
+      "               } "
+      "            } "
+      "          } "
+      "      } "
+      "  }";
+  protos::Decl decl;
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().params(0).type().cpp_type(),
+            "::example::Vector< ::std::function<int (child)> >");
+}
+
+TEST_F(ClifMatcherTest, TestOutputCallableTemplateArg) {
+  std::string decl_proto =
+      "decltype: FUNC func {"
+      "name { cpp_name: 'CallableTemplateArgFunction4' } "
+      "returns { type { "
+      "           cpp_type: '::example::Vector' "
+      "             params { "
+      "               callable { "
+      "                 params { "
+      "                   type { "
+      "                     cpp_type: 'int' "
+      "                   } "
+      "                 } "
+      "               } "
+      "            } "
+      "          } "
+      "      } "
+      "  }";
+  protos::Decl decl;
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().returns(0).type().cpp_type(),
+            "::example::Vector< ::std::function<void (int)> >");
+}
+
+TEST_F(ClifMatcherTest, TestReturnCallableTemplateArg) {
+  std::string decl_proto =
+      "decltype: FUNC func {"
+      "name { cpp_name: 'CallableTemplateArgFunction5' } "
+      "returns { type { "
+      "           cpp_type: '::example::Vector' "
+      "             params { "
+      "               callable { "
+      "                 params { "
+      "                   type { "
+      "                     cpp_type: 'int' "
+      "                   } "
+      "                 } "
+      "               } "
+      "            } "
+      "          } "
+      "      } "
+      "  }";
+  protos::Decl decl;
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().returns(0).type().cpp_type(),
+            "::example::Vector< ::std::function<void (int)> >");
+}
+
+TEST_F(ClifMatcherTest, TestConstRefCallable) {
+  std::string decl_proto =
+      "decltype: FUNC func {"
+      "name { native: 'SimpleCallbackNonConstRef' "
+      "       cpp_name: 'FunctionSimpleCallbackNonConstRef' }"
+      "params { name { native: 'input'  cpp_name: 'input' }"
+      "         type { lang_type: 'int' cpp_type: 'int' } }"
+      "params { name { native: 'callback' cpp_name: 'callback' }"
+      "         type { lang_type: '(in:int)->None' "
+      "           callable { "
+      "             params { "
+      "               name { native: 'in' cpp_name: 'in' } "
+      "               type { lang_type: 'int' cpp_type: 'int' } } "
+      " } } } } ";
+  protos::Decl decl;
+  TestMatch(decl_proto, &decl);
+  EXPECT_TRUE(decl.func().params(1).type().has_callable());
+  EXPECT_EQ(decl.func().name().cpp_name(),
+            "::FunctionSimpleCallbackNonConstRef");
+  decl_proto =
+      "decltype: FUNC func {"
+      "name { native: 'SimpleCallbackConstRef' "
+      "       cpp_name: 'FunctionSimpleCallbackConstRef' }"
+      "params { name { native: 'input'  cpp_name: 'input' }"
+      "         type { lang_type: 'int' cpp_type: 'int' } }"
+      "params { name { native: 'callback' cpp_name: 'callback' }"
+      "         type { lang_type: '(in:int)->None' "
+      "           callable { "
+      "             params { "
+      "               name { native: 'in' cpp_name: 'in' } "
+      "               type { lang_type: 'int' cpp_type: 'int' } } "
+      " } } } } ";
+  TestMatch(decl_proto, &decl);
+  EXPECT_TRUE(decl.func().params(1).type().has_callable());
+  EXPECT_EQ(decl.func().name().cpp_name(), "::FunctionSimpleCallbackConstRef");
 }
 
 TEST_F(ClifMatcherTest, TestNoModifyInputFQName) {
@@ -1339,9 +1822,255 @@ TEST_F(ClifMatcherTest, TestDefaultArguments) {
   EXPECT_EQ(decl.class_().members(2).func().params(0).default_value(), "false");
   EXPECT_EQ(decl.class_().members(3).func().params(0).default_value(),
             "default");
-  EXPECT_EQ(decl.class_().members(4).func().params(0).default_value(), "0");
+  EXPECT_EQ(decl.class_().members(4).func().params(0).default_value(),
+            "nullptr");
   EXPECT_EQ(decl.class_().members(5).func().params(0).default_value(),
             "default");
+}
+
+TEST_F(ClifMatcherTest, TestDropDefaultArguments) {
+  // Drop the default specifier for input parameters in clif wrapping.
+  std::string decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'Class' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'MethodWithDefaultArgs'"
+      "       }"
+      "       params {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "       }"
+      "       params {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  protos::Decl decl;
+  TestMatch(decl_proto, &decl);
+  EXPECT_TRUE(
+      decl.class_().members(0).func().params(0).default_value().empty());
+  EXPECT_TRUE(
+      decl.class_().members(0).func().params(1).default_value().empty());
+
+  decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'Class' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'MethodWithDefaultArgs'"
+      "       }"
+      "       params {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "       }"
+      "       params {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "         default_value: 'default'"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  TestMatch(decl_proto, &decl);
+  EXPECT_TRUE(
+      decl.class_().members(0).func().params(0).default_value().empty());
+  EXPECT_FALSE(
+      decl.class_().members(0).func().params(1).default_value().empty());
+
+  decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'Class' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'MethodWithDefaultArgs'"
+      "       }"
+      "       params {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "         default_value: 'default'"
+      "       }"
+      "       params {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  TestNoMatch(decl_proto, &decl);
+  EXPECT_TRUE(llvm::StringRef(decl.class_().members(0).not_found())
+                  .contains("Clif expects all required parameters to be placed "
+                            "before default arguments."));
+
+  // In clif wrapping, drop C++'s tailing output parameter's default specifier.
+  decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'Class' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'MethodWithDefaultArgs'"
+      "       }"
+      "       params {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "         default_value: 'default'"
+      "       }"
+      "       returns {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  TestMatch(decl_proto, &decl);
+  EXPECT_FALSE(
+      decl.class_().members(0).func().params(0).default_value().empty());
+
+  decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'Class' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'MethodWithDefaultArgs'"
+      "       }"
+      "       params {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "       }"
+      "       returns {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  TestMatch(decl_proto, &decl);
+  EXPECT_TRUE(
+      decl.class_().members(0).func().params(0).default_value().empty());
+
+  // In clif wrapping, drop C++'s tailing parameter, which contains default
+  // specifier.
+  decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'Class' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'MethodWithDefaultArgs'"
+      "       }"
+      "       params {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "         default_value: 'default'"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  TestMatch(decl_proto, &decl);
+  EXPECT_FALSE(
+      decl.class_().members(0).func().params(0).default_value().empty());
+
+  decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'Class' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'MethodWithDefaultArgs'"
+      "       }"
+      "       params {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  TestMatch(decl_proto, &decl);
+  EXPECT_TRUE(
+      decl.class_().members(0).func().params(0).default_value().empty());
+
+  decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'Class' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'MethodWithDefaultArgs'"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  TestMatch(decl_proto);
+
+  // Can't have out param after skipped input param (no place to supply the
+  // default value).
+  decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'Class' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'MethodWithDefaultArgs'"
+      "       }"
+      "       returns {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  TestNoMatch(decl_proto, &decl);
+  EXPECT_TRUE(llvm::StringRef(decl.class_().members(0).not_found())
+                  .contains(" output parameter must be either a pointer or "));
+}
+
+TEST_F(ClifMatcherTest, TestUnexpectedDefaultSpecifier) {
+  std::string decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'Class' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'MethodWithoutDefaultArg'"
+      "       }"
+      "       params {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "         default_value: 'default'"
+      "       }"
+      "       returns {"
+      "         type {"
+      "           cpp_type: 'bool'"
+      "         }"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  protos::Decl decl;
+  TestNoMatch(decl_proto, &decl);
+  EXPECT_TRUE(llvm::StringRef(decl.class_().members(0).not_found())
+                  .contains("Clif contains unexpected default specifiers."));
 }
 
 TEST_F(ClifMatcherTest, TestOpaqueClassCapsule) {
@@ -1384,7 +2113,30 @@ TEST_F(ClifMatcherTest, TestTypedefPtrOutputArg) {
   EXPECT_EQ(decl2.func().returns(0).type().cpp_type(), "::OpaqueClass *");
 }
 
+TEST_F(ClifMatcherTest, TestTypedefWithinTemplate) {
+    std::string decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'ObjectTypeHolder<Vector<float>>' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "     name { cpp_name: 'FailTerribly'}"
+      "       params {"
+      "         type {"
+      "           cpp_type: 'ObjectTypeHolder<Vector<float>>'"
+      "         }"
+      "       }"
+      "     }"
+      "   }"
+      " } namespace_: 'example'";
+  protos::Decl decl;
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.class_().members(0).func().params(0).type().cpp_type(),
+            "::example::ObjectTypeHolder< ::example::Vector<float> > *");
+}
+
 TEST_F(ClifMatcherTest, TestFuncWithBaseClassParam) {
+  // 
+  // parameter of Class(not Class*).
   std::string decl_proto = "decltype: FUNC func {"
       "  name {"
       "    cpp_name: 'BaseFunctionValue'"
@@ -1395,9 +2147,10 @@ TEST_F(ClifMatcherTest, TestFuncWithBaseClassParam) {
       "    }"
       "  }"
       "}";
-  protos::Decl decl1;
-  TestMatch(decl_proto, &decl1);
-  EXPECT_EQ(decl1.func().params(0).type().cpp_type(), "::DerivedClass");
+  protos::Decl decl;
+  // decl is refreshed with new contents every time TestMatch() is executed.
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().params(0).type().cpp_type(), "::DerivedClass");
 
   decl_proto = "decltype: FUNC func {"
       "  name {"
@@ -1409,9 +2162,8 @@ TEST_F(ClifMatcherTest, TestFuncWithBaseClassParam) {
       "    }"
       "  }"
       "}";
-  protos::Decl decl2;
-  TestMatch(decl_proto, &decl2);
-  EXPECT_EQ(decl2.func().params(0).type().cpp_type(), "::DerivedClass *");
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().params(0).type().cpp_type(), "::DerivedClass *");
 
   decl_proto = "decltype: FUNC func {"
       "  name {"
@@ -1423,9 +2175,8 @@ TEST_F(ClifMatcherTest, TestFuncWithBaseClassParam) {
       "    }"
       "  }"
       "}";
-  protos::Decl decl3;
-  TestMatch(decl_proto, &decl3);
-  EXPECT_EQ(decl3.func().params(0).type().cpp_type(), "::DerivedClass");
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().params(0).type().cpp_type(), "::DerivedClass");
 
   decl_proto = "decltype: FUNC func {"
       "  name {"
@@ -1437,9 +2188,8 @@ TEST_F(ClifMatcherTest, TestFuncWithBaseClassParam) {
       "    }"
       "  }"
       "}";
-  protos::Decl decl4;
-  TestMatch(decl_proto, &decl4);
-  EXPECT_EQ(decl4.func().params(0).type().cpp_type(), "::DerivedClass2 *");
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().params(0).type().cpp_type(), "::DerivedClass2 *");
 
   decl_proto = "decltype: FUNC func {"
       "  name {"
@@ -1451,10 +2201,51 @@ TEST_F(ClifMatcherTest, TestFuncWithBaseClassParam) {
       "    }"
       "  }"
       "}";
-  protos::Decl decl5;
-  TestMatch(decl_proto, &decl5);
-  EXPECT_EQ(decl5.func().params(0).type().cpp_type(),
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().params(0).type().cpp_type(),
             "::std::unique_ptr<::DynamicDerived>");
+
+  decl_proto =
+      "decltype: FUNC func {"
+      "  name {"
+      "    cpp_name: 'FuncWithBaseReturnValue'"
+      "  }"
+      "  returns {"
+      "    type {"
+      "      cpp_type: 'DynamicDerived'"
+      "    }"
+      "  }"
+      "}";
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().returns(0).type().cpp_type(), "::DynamicBase *");
+
+  decl_proto =
+      "decltype: FUNC func {"
+      "  name {"
+      "    cpp_name: 'FuncWithBaseParam'"
+      "  }"
+      "  params {"
+      "    type {"
+      "      cpp_type: 'DynamicDerived'"
+      "    }"
+      "  }"
+      "}";
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().params(0).type().cpp_type(), "::DynamicDerived *");
+
+  decl_proto =
+      "decltype: FUNC func {"
+      "  name {"
+      "    cpp_name: 'FuncWithBaseParam'"
+      "  }"
+      "  returns {"
+      "    type {"
+      "      cpp_type: 'DynamicDerived'"
+      "    }"
+      "  }"
+      "}";
+  TestMatch(decl_proto, &decl);
+  EXPECT_EQ(decl.func().returns(0).type().cpp_type(), "::DynamicBase");
 }
 
 TEST_F(ClifMatcherTest, TestClassWithInheritedConstructor) {
@@ -1478,8 +2269,193 @@ TEST_F(ClifMatcherTest, TestClassWithInheritedConstructor) {
       "     }"
       "   }"
       " }";
+  TestMatch(decl_proto);
+}
+
+TEST_F(ClifMatcherTest, TestClassWithInheritedTemplateConstructor) {
+  std::string decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'ClassUsingInheritedTemplateFunctions' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       constructor: true"
+      "       params {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  TestMatch(decl_proto);
+}
+
+TEST_F(ClifMatcherTest, TestClassWithInheritedTemplateMethod) {
+  std::string decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'ClassUsingInheritedTemplateFunctions' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'Method'"
+      "       }"
+      "       params {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  TestMatch(decl_proto);
+
+  decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'ClassUsingInheritedTemplateFunctions' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'Method'"
+      "       }"
+      "     }"
+      "   }"
+      " }";
   protos::Decl decl;
-  TestMatch(decl_proto, &decl);
+  TestNoMatch(decl_proto, &decl);
+  EXPECT_TRUE(llvm::StringRef(decl.class_().members(0).not_found())
+                  .contains("Function template can't be specialized"));
+  EXPECT_TRUE(llvm::StringRef(decl.class_().members(0).not_found())
+                  .contains("ClassWithTemplateFunctions::Method"));
+
+  decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'ClassUsingInheritedTemplateFunctions' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'NestClass'"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  TestNoMatch(decl_proto, &decl);
+  EXPECT_TRUE(
+      llvm::StringRef(decl.class_().members(0).not_found())
+          .contains("which is a CXXRecord"));
+}
+
+// Test for matching non explicit constructors. If the C++ constructor is not
+// marked as explicit, matcher might do implicit type conversion in the backend,
+// count copy/move constructors as valid candidates and report a multi match
+// error.
+TEST_F(ClifMatcherTest, TestNonExplicitConstructor) {
+  std::string decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'ClassWithNonExplicitConstructor' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       constructor: true"
+      "       params {"
+      "         type {"
+      "           cpp_type: 'int'"
+      "         }"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  protos::Decl decl;
+  TestNoMatch(decl_proto, &decl);
+  EXPECT_TRUE(llvm::StringRef(decl.not_found())
+                  .contains("Is the keyword \"explicit\" missed in C++'s "
+                            "definition of constructors?"));
+}
+
+TEST_F(ClifMatcherTest, TestTemplateAliasWithDifferentArgs) {
+  protos::Decl decl;
+  // The template argument type "void" is ignored by clif matcher as the type is
+  // only used in the C++ template alias and does not affect the underlying
+  // type.
+  TestMatch(
+      "decltype: FUNC func { "
+      "  name { cpp_name: 'func_template_alias_set_input' } "
+      "  params { "
+      "    type { "
+      "      cpp_type: 'clif_set' "
+      "      params { "
+      "        cpp_type: 'void' "
+      "      } "
+      "    } "
+      "  } "
+      "} ",
+      &decl);
+  EXPECT_EQ(decl.func().params(0).type().cpp_type(), "::set<>");
+
+  TestMatch(
+      "decltype: FUNC func { "
+      "  name { cpp_name: 'func_template_alias_set_output' } "
+      "  returns {"
+      "    type { "
+      "      cpp_type: 'clif_set' "
+      "      params { "
+      "        cpp_type: 'void' "
+      "      } "
+      "    } "
+      "  }"
+      "} ",
+      &decl);
+  EXPECT_EQ(decl.func().returns(0).type().cpp_type(), "::set<>");
+
+  TestMatch(
+      "decltype: FUNC func { "
+      "  name { cpp_name: 'func_template_alias_set_return' } "
+      "  returns {"
+      "    type { "
+      "      cpp_type: 'clif_set' "
+      "      params { "
+      "        cpp_type: 'void' "
+      "      } "
+      "    } "
+      "  }"
+      "} ",
+      &decl);
+  EXPECT_EQ(decl.func().returns(0).type().cpp_type(), "::set<>");
+
+  TestMatch(
+      "decltype: FUNC func { "
+      "  name { cpp_name: 'func_template_alias_map' } "
+      "  params { "
+      "    type { "
+      "      cpp_type: 'clif_map' "
+      "      params { "
+      "        cpp_type: 'void' "
+      "      } "
+      "      params { "
+      "        cpp_type: 'int' "
+      "      } "
+      "    } "
+      "  } "
+      "} ",
+      &decl);
+  EXPECT_EQ(decl.func().params(0).type().cpp_type(), "::map<int>");
+}
+
+TEST_F(ClifMatcherTest, TestTemplateWithSmartPtr) {
+  protos::Decl decl;
+  TestMatch(
+      "decltype: FUNC func { "
+      "  name { cpp_name: 'func_template_unique_ptr' } "
+      "  params { "
+      "    type { "
+      "      cpp_type: 'set' "
+      "      params { "
+      "        cpp_type: 'int' "
+      "      } "
+      "    } "
+      "  } "
+      "} ",
+      &decl);
+  EXPECT_EQ(decl.func().params(0).type().cpp_type(),
+            "::set< ::std::unique_ptr<int> >");
 }
 
 TEST_F(ClifMatcherTest, TestMultilevelContainer) {
@@ -1706,6 +2682,20 @@ TEST_F(ClifMatcherTest, VariadicTemplateClass) {
       "}";
   protos::Decl decl2;
   TestMatch(decl_proto, &decl2);
+}
+
+// Test for versioned smart pointers, which is defined in
+// versioned_smart_ptr_test.h
+TEST_F(ClifMatcherTest, TestMatchAndSetVersionedSmartPtr) {
+  protos::Decl decl;
+  TestMatch(
+      "decltype: FUNC func { "
+      "  name { cpp_name: 'f' }"
+      "  returns { "
+      "      type { lang_type: 'int' cpp_type: 'int' }"
+      "    } }",
+      &decl, "versioned_smart_ptr_test.h");
+  EXPECT_EQ(decl.func().returns(0).type().cpp_type(), "::std::unique_ptr<int>");
 }
 
 }  // namespace clif

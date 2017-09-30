@@ -81,22 +81,13 @@ class ClifLookupResult {
       results_.push_back(decl->second);
     }
   }
-  explicit ClifLookupResult(const clang::LookupResult& results) {
-    for (auto decl : results) {
-      results_.push_back(decl);
-    }
-  }
-  explicit ClifLookupResult(const clang::DeclContextLookupResult& decls) {
-    for (auto& decl : decls) {
-      results_.push_back(decl);
-    }
-  }
-  explicit ClifLookupResult(const clang::CXXRecordDecl::ctor_range& decls) {
+
+  template <typename iterable_decls>
+  explicit ClifLookupResult(const iterable_decls& decls) {
     for (const auto& decl : decls) {
       results_.push_back(decl);
     }
   }
-
   void AddResult(clang::NamedDecl* decl) {
     results_.push_back(decl);
   }
@@ -205,9 +196,9 @@ class TranslationUnitAST {
     return LookupClassMember(name);
   }
 
-  // Lookup an operator in the given context.
-  ClifLookupResult LookupOperator(clang::DeclContext* context,
-                                  const std::string& token);
+  // Lookup an operator or conversion function in the given context.
+  ClifLookupResult LookupOperatorOrConversionFunction(
+      clang::DeclContext* context, const std::string& token);
 
   // A name used by clif may or may not be defined within a class. So
   // for type names only, we want to do a normal cliff lookup and
@@ -327,7 +318,7 @@ class TranslationUnitAST {
 
   bool DestructorIsAccessible(clang::CXXRecordDecl* class_decl) const;
 
-  bool IsOperatorFunction(const std::string& name) const {
+  bool IsOperatorOrConversionFunction(const std::string& name) const {
     const std::string operator_keyword = "operator";
     size_t last_component = name.rfind("::");
     if (last_component == std::string::npos) {

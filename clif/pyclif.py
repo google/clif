@@ -61,7 +61,7 @@ def _ParseCommandline(doc, argv):
   parser.add_argument('--modname',
                       help='Generated module name')
   parser.add_argument('--prepend', '-p', action='append',
-                      default=[sys.prefix+'/python/types.h'],
+                      default=[],
                       help=('Prepend header file to scan default '
                             'C++ types from "// CLIF use..." comments'))
   parser.add_argument('--include_paths', '-I', default=['.'], action='append',
@@ -78,7 +78,10 @@ def _ParseCommandline(doc, argv):
                       help='Indentation token')
   parser.add_argument('input_filename', nargs=1,
                       help='CLIF input definition')
-  return parser.parse_args(argv[1:])
+  args = parser.parse_args(argv[1:])
+  if not args.prepend:
+    args.prepend.append(sys.prefix+'/python/types.h')
+  return args
 
 
 class _ParseError(Exception):
@@ -187,13 +190,13 @@ def main():
       with open(FLAGS.ccdeps_out, 'w') as f: f.write(e)
       with open(FLAGS.ccinit_out, 'w') as f: f.write(e)
       with open(FLAGS.header_out, 'w') as f: f.write(e)
-      print('A compilation error occured while negative compilation'
+      print('A compilation error occurred while negative compilation'
             ' flag --nc-test is set, written to output files')
       return 0
     print(Err(e))
     return 7
   if FLAGS.nc_test:
-    print('No compilation error occured while negative compilation'
+    print('No compilation error occurred while negative compilation'
           ' flag --nc-test is set')
     return 8
 

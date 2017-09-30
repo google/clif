@@ -24,6 +24,13 @@ class TemplatesTest(unittest.TestCase):
     a = templates.A()
     templates.TemplateParamFunc(a)
 
+  def testTemplateClassInstantiation(self):
+    # The instantiation of the class should not blow up.
+    templates.TemplateClassInt()
+
+  def testTypedefInTemplateClass(self):
+    b = templates.VectorHolder()
+    self.assertEqual(b.MethodUsingTemplateType(b), 1)
 
 if __name__ == '__main__':
   unittest.main()

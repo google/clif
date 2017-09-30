@@ -19,7 +19,7 @@
 # tool usage as it generates code per target version depending on invocation
 # flag, ie. it's not changing in runtime.
 
-# TODO: Decide if we need as_buffer slots implemented.
+# 
 
 import copy
 import itertools
@@ -46,7 +46,7 @@ def _SplitSlots(orig_methods, py3=False):
       methods.append(m)
     else:
       if as_slot:
-        slots.extend(_SlotsFuncAddress(name.rstrip('#'), as_slot, m[1]))
+        slots.extend(_SlotsFuncAddress(name.rstrip('#'), as_slot, m[1], py3))
       else:
         raise NameError('Redefining %s is not allowed.' % name)
   if slots:
@@ -54,13 +54,14 @@ def _SplitSlots(orig_methods, py3=False):
   return slots
 
 
-def _SlotsFuncAddress(py_slot_name, slot_descr, cfunc_name):
+def _SlotsFuncAddress(py_slot_name, slot_descr, cfunc_name, py3):
   """Expand a [list of] slot(s) to (c_slot_name, func_addr)... generator.
 
   Args:
     py_slot_name: like __str__
     slot_descr: Slot description from the _SLOT_MAP
     cfunc_name: generated CFunction name like wrapFoo_as__str__
+    py3: True if for Python 3
   Yields:
     ('c_slot_name', 'c_slot_func_address' | special_case_data_struct)
   """
@@ -85,12 +86,12 @@ def _SlotsFuncAddress(py_slot_name, slot_descr, cfunc_name):
       yield c_slot_name, special.data[c_slot_name]
     else:
       yield (c_slot_name.rstrip('#'),
-             _SlotFunc(c_slot_name, cfunc_name, slot_descr[1]))
+             _SlotFunc(c_slot_name, cfunc_name, slot_descr[1], py3))
 
 
-def _SlotFunc(cslot_name, cfunc_name, converter):
+def _SlotFunc(cslot_name, cfunc_name, converter, py3):
   """Compute c_slot_function name."""
-  ret, args = _SlotFuncSignature(cslot_name)
+  ret, args = _SlotFuncSignature(cslot_name, py3)
   if isinstance(args, list) or args.strip('O'):
     assert converter, 'Non PyObject* args needs a convertor.'
     assert not converter.startswith('+'), 'Not a special processor.'
@@ -105,7 +106,7 @@ def _SlotFunc(cslot_name, cfunc_name, converter):
     return 'slot::adapter<%s, slot::%s, ' % (ret, converter[1:]) + args
 
 
-def GenRichCompare(rcslots, py3=False):
+def GenRichCompare(rcslots, py3):
   """Generate tp_richcmp slot implementation.
 
   Args:
@@ -119,18 +120,22 @@ def GenRichCompare(rcslots, py3=False):
   yield I+'switch (op) {'
   for op_func in rcslots.items():
     yield I+I+'case %s: return slot::adapter<%s>(self, other);' % op_func
-  yield I+I+'default: return slot::noop_%s();' % ('py3' if py3 else 'py2')
+  if py3:
+    yield I+I+'default: Py_RETURN_NOTIMPLEMENTED;'
+  else:
+    yield I+I+'default:'
+    yield I+I+I+'Py_INCREF(Py_NotImplemented);'
+    yield I+I+I+'return Py_NotImplemented;'
   yield I+'}'
   yield '}'
 GenRichCompare.name = 'slot_richcmp'  # Generated C++ name.
 
 
-def GenSetAttr(setattr_slots, unused_py3=False):
+def GenSetAttr(setattr_slots, unused_py3):
   """Generate slot implementation for __set*__ / __del*__ user functions.
 
   Args:
     setattr_slots: [set_func, del_func]
-    unused_py3: Generate for Py3.
   Yields:
     C++ source
   """
@@ -164,7 +169,7 @@ def GenSetAttr(setattr_slots, unused_py3=False):
 GenSetAttr.name = 'slot_seto'  # Generated C++ name.
 
 
-def GenSetItem(setitem_slots, py3=False):
+def GenSetItem(setitem_slots, py3):
   """Combine __setitem__ / __delitem__ funcs into one xx_setitem slot."""
   assert len(setitem_slots) == 2, 'Need __setitem__ / __delitem__ funcs.'
   setitem, delitem = setitem_slots
@@ -221,7 +226,7 @@ def GenTypeSlots(tp_group, py3=False):
 
 def GenSlots(methods, tp_slots, py3=False):
   """Generate extra slots structs and update tp_slots dict."""
-  all_slots = _SplitSlots(methods)
+  all_slots = _SplitSlots(methods, py3)
   if all_slots:
     tp_flags = tp_slots['tp_flags']
     groups = {}
@@ -247,7 +252,7 @@ def GenSlots(methods, tp_slots, py3=False):
         ('nb', 'tp_as_number', 'PyNumberMethods', 'AsNumber'),
         ('sq', 'tp_as_sequence', 'PySequenceMethods', 'AsSequence'),
         ('mp', 'tp_as_mapping', 'PyMappingMethods', 'AsMapping'),
-        # TODO: Implement Py3-only slots (3.5+).
+        # 
         # ('am', 'tp_as_async', GenAsAsync),
     ]:
       xx_slots = groups.get(xx)

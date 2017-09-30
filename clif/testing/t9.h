@@ -17,50 +17,58 @@
 #define CLIF_TESTING_T9_H_
 #include "clif/python/types.h"
 
-struct _object;
-typedef struct _object PyObject;
+// Testing "capsule".
+//
+// We have some class hierarhies and test how they passed up/down those
+// hierarhies with "class"/"capsule" intermix capabilities.
 
 namespace t9 {
 
-struct Core {
-  Core() : c_(12) {}
+class Core {
+ public:
+  static bool IsDestructed() { return destructed_; }
+  Core() : c_(12) { destructed_ = false; }
+  ~Core() { destructed_ = true; }
   int CoreValue()
       { return c_; }
  protected:
   int c_;
+ private:
+  static bool destructed_;
 };
 
-struct Base: Core {
+class Base: public Core {
+ public:
   virtual ~Base() {}
-  virtual int Value()
-      { return 1; }
+  virtual int Value() { return 1; }
 };
 
-struct Derived: Base {
-  int Value() override
-      { return 2; }
+class Derived: public Base {
+ public:
+  int Value() override { return 2; }
 };
 
-bool IsDerived(Base* c)
-      { return c->Value() == 2; }
+inline bool IsDerived(Base* c) { return c->Value() == 2; }
 
-int CoreValue(Core* c)
-      { return c->CoreValue(); }
+inline int CoreValue(Core* c) { return c->CoreValue(); }
 
-struct Abstract {
+class Abstract {
+ public:
   virtual int Undef() = 0;
   virtual ~Abstract() {}
  private:
   std::unique_ptr<Core> core_;
 };
 
-struct Concrete : Abstract {
+class Concrete : public Abstract {
+ public:
   int Undef() override { return 1; }
 };
 
-Abstract* NewAbstract() { return new Concrete; }
+inline Abstract* NewAbstract() { return new Concrete; }
 
-PyObject* ConversionFunctionCheck(PyObject* x) { return x; }
+inline PyObject* ConversionFunctionCheck(PyObject* x) { return x; }
+
 }  // namespace t9
 
 #endif  // CLIF_TESTING_T9_H_

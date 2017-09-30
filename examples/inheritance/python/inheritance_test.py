@@ -15,7 +15,9 @@
 """Tests for clif.examples.inheritance.python.inheritance."""
 
 import unittest
+import base
 import inheritance
+import python_inheritance
 
 
 class InheritanceTest(unittest.TestCase):
@@ -36,6 +38,25 @@ class InheritanceTest(unittest.TestCase):
     l = lambda: d2.GetDerivedValue
     self.assertRaises(AttributeError, l)
 
+
+# Test for clif.examples.inheritance.python.python_inheritance
+class PythonInheritanceTest(unittest.TestCase):
+
+  def testBase(self):
+    b = base.Base(54321)
+    self.assertEqual(b.GetBaseValue(), 54321)
+
+  def testDerived1(self):
+    d1 = python_inheritance.Derived1(54321)
+    self.assertEqual(d1.GetBaseValue(), 12345)
+    self.assertEqual(d1.GetDerivedValue(), 54321)
+
+  def testDerived2(self):
+    d2 = python_inheritance.Derived2()
+    self.assertEqual(d2.GetBaseValue(), 12345)
+
+    l = lambda: d2.GetDerivedValue
+    self.assertRaises(AttributeError, l)
 
 if __name__ == '__main__':
   unittest.main()

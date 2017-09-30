@@ -18,14 +18,19 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/__init__.py"
   "import pkgutil; __path__ = pkgutil.extend_path(__path__, __name__)"
 )
 
+add_protobuf_include_directories()
+add_protobuf_library_directories()
+
 add_library(pyClifRuntime SHARED
   optional.h
   optional.cc
   postconv.h
   ptr_util.h
+  pyproto.h
+  pyproto.cc
   runtime.cc
   runtime.h
-  shared_ptr.h
+  instance.h
   slots.cc
   slots.h
   stltypes.h
@@ -38,7 +43,8 @@ target_include_directories(pyClifRuntime PUBLIC
   "${PYTHON_INCLUDE_DIRS}"
 )
 
-target_link_libraries(pyClifRuntime PUBLIC
+add_target_protobuf_link_libraries(pyClifRuntime)
+target_link_libraries(pyClifRuntime
   "${PYTHON_LIBRARIES}"
 )
 
@@ -48,3 +54,23 @@ add_custom_target(runPyClifUnitTests
   WORKING_DIRECTORY ${LLVM_TOOLS_BIN_DIR}
   DEPENDS clifAstProto
 )
+
+add_library(proto_util_cc STATIC
+  proto_util.h
+  proto_util.cc
+)
+
+target_include_directories(proto_util_cc
+  PUBLIC
+  ${LLVM_TOOLS_DIR}
+  ${LLVM_TOOLS_BIN_DIR}
+  ${PYTHON_INCLUDE_DIRS}
+)
+
+target_link_libraries(proto_util_cc
+  pyClifRuntime
+  ${PYTHON_LIBRARIES}
+)
+add_target_protobuf_link_libraries(proto_util_cc)
+
+add_subdirectory(utils)

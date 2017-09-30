@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from "clif/examples/inheritance/inheritance.h":
+from "inheritance/inheritance.h":
   namespace `clif_example::inheritance`:
     class Base:
       def __init__(self, i: int)

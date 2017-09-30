@@ -163,16 +163,16 @@ void CodeBuilder::BuildCodeForClass(ClassDecl* decl) {
   }
 }
 
-void CodeBuilder::BuildCodeForType(Type* type) {
+std::string CodeBuilder::BuildCodeForType(Type* type) {
   if (!type->params().empty()) {
-    BuildCodeForContainer(type);
-    return;
+    return BuildCodeForContainer(type);
   }
   if (type->has_callable()) {
-    BuildCodeForFunc(type->mutable_callable());
-    return;
+    return BuildCodeForFunc(type->mutable_callable());
   }
+  std::string type_name = type->cpp_type();
   type->set_cpp_type(GenerateTypedefString(type->cpp_type()));
+  return type_name;
 }
 
 std::string CodeBuilder::BuildCodeForContainerHelper(Type* type) {
@@ -180,10 +180,12 @@ std::string CodeBuilder::BuildCodeForContainerHelper(Type* type) {
   StrAppend(&template_name, type->cpp_type(), "<");
   for (int idx = 0; idx < type->params().size(); idx++) {
     Type* element = type->mutable_params(idx);
+    // If the container contains a callable as a template argument, we should
+    // include the callable's type information in the template's cpp_type.
     if (element->has_callable()) {
-      BuildCodeForFunc(type->mutable_callable());
-    }
-    if (!element->params().empty()) {
+      std::string func_name = BuildCodeForFunc(element->mutable_callable());
+      StrAppend(&template_name, func_name);
+    } else if (!element->params().empty()) {
       // Since |element| is a Type, we could just call BuildCodeForType.
       // However, we want the template name of |element| so that we can
       // append it to the parent's template name. Hence, we call this
@@ -202,17 +204,39 @@ std::string CodeBuilder::BuildCodeForContainerHelper(Type* type) {
   return template_name;
 }
 
-void CodeBuilder::BuildCodeForContainer(Type* type) {
-  BuildCodeForContainerHelper(type);
+std::string CodeBuilder::BuildCodeForContainer(Type* type) {
+  return BuildCodeForContainerHelper(type);
 }
 
-void CodeBuilder::BuildCodeForFunc(FuncDecl* decl) {
-  for (int i = 0; i < decl->params_size(); ++i) {
-    BuildCodeForType(decl->mutable_params(i)->mutable_type());
-  }
+std::string CodeBuilder::BuildCodeForFunc(FuncDecl* decl) {
+  // Build and return the cpp_type for function decls. The returned
+  // func_type_name is only used when we are building the code for templates
+  // with callable template arguments, i.e., only when BuildCodeForFunc is
+  // invoked by BuildCodeForContainerHelper. If we have a type
+  // template_class<std::function<output(intput)>>, the return value
+  // func_type_name is expected to be "std::function<output(intput)>".
+  std::string func_type_name;
+  StrAppend(&func_type_name, "::std::function<");
   for (int i = 0; i < decl->returns_size(); ++i) {
-    BuildCodeForType(decl->mutable_returns(i)->mutable_type());
+    // If decl is a callable(std::function), returns_size can not be greater
+    // than 1. Otherwise, the compiler will report an error.
+    std::string type_name =
+        BuildCodeForType(decl->mutable_returns(i)->mutable_type());
+    StrAppend(&func_type_name, type_name);
+    if (i != decl->returns_size() - 1) StrAppend(&func_type_name, ", ");
   }
+  if (decl->returns_size() == 0) {
+    StrAppend(&func_type_name, "void");
+  }
+  StrAppend(&func_type_name, "(");
+  for (int i = 0; i < decl->params_size(); ++i) {
+    std::string type_name =
+        BuildCodeForType(decl->mutable_params(i)->mutable_type());
+    StrAppend(&func_type_name, type_name);
+    if (i != decl->params_size() - 1) StrAppend(&func_type_name, ", ");
+  }
+  StrAppend(&func_type_name, ")", ">");
+  return func_type_name;
 }
 
 void CodeBuilder::BuildCodeForDecl(Decl* decl) {

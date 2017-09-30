@@ -37,6 +37,7 @@ CLIF_USE = re.compile(r'// *CLIF:? +use'
 CLIF_INIT = re.compile(r'// *CLIF:? +init_module +(?P<cpp_statement>.+)')
 CLIF_MACRO = re.compile(r'// *CLIF:? +macro +(?P<name>.+) +(?P<def>.+)$')
 CLIF_INCLUDE = re.compile(r'// *CLIF:? +include +"(?P<path>[^"]+)"')
+KEEP_GIL_DECORATOR = 'do_not_release_gil'
 
 
 def _read_include(input_stream, fname, prefix, typetable, capsules, interfaces,
@@ -87,7 +88,7 @@ def _read_include(input_stream, fname, prefix, typetable, capsules, interfaces,
       if name in interfaces:
         raise NameError('Interface name "%s" from file %s already used'
                         % (name, fname))
-      interfaces[name] = src
+      interfaces[name] = src + (False,)
       continue
 
 
@@ -99,14 +100,14 @@ class Postprocessor(object):
     self._capsules = {}   # Keep raw pointer names (pytype -> cpptype).
     self._typenames = {}  # Keep typedef aliases (pytype -> type_ir).
     self._typetable = {}  # Keep typetable (pytype -> [cpptype]) defaults.
-    self._macros = {}  # Keep interfaces (name -> (num_args, subtree)).
+    self._macros = {}  # Keep interfaces (name -> (num_args, subtree, local)).
     self._scan_includes = config_headers or []
     self._include_paths = include_paths
     self._preamble = preamble
     self.source = None
-    self._macro_values = []  # [actual, param, values] only set in _class that
-                             # has implements MACRO<actual, param, values>
-    self.need_threads = False  # Add call to PyEval_InitThreads to Init.
+    # _macro_values [actual, param, values] only set in _class that
+    # has implements MACRO<actual, param, values>.
+    self._macro_values = []
 
   def is_pyname_known(self, name):
     return (name in self._capsules or
@@ -136,8 +137,8 @@ class Postprocessor(object):
     if self._preamble:
       self._Parse(self._preamble, pb)
     self._Parse(pytd_file.read(), pb)
-    if self.need_threads:
-      pb.extra_init.append('PyEval_InitThreads();')
+    # Since most C++ calls release GIL we need threads.
+    pb.extra_init.append('PyEval_InitThreads();')
     # Assumed we always want a deterministic output proto. Since dict/set order
     # is not, do sorted() order traversal.
     order = sorted
@@ -150,11 +151,13 @@ class Postprocessor(object):
       tm = pb.typemaps.add()
       tm.lang_type = t
       tm.cpp_type.append(self._capsules[t])
-    for name, src in order(self._macros.items()):
-      m = pb.macros.add()
-      m.name = name
-      # Use protocol 0 to keep version independence.
-      m.definition = pickle.dumps((sys.hexversion, pytd_parser.version, src), 0)
+    for name, (nargs, src, local) in order(self._macros.items()):
+      if local:
+        m = pb.macros.add()
+        m.name = name
+        # Use protocol 0 to keep version independence.
+        m.definition = pickle.dumps(
+            (sys.hexversion, pytd_parser.version, (nargs, src)), 0)
     return pb
 
   def _Parse(self, text, pb):  # pylint: disable=invalid-name
@@ -196,7 +199,7 @@ class Postprocessor(object):
         else:
           raise NameError('Only def and var allowed in interface,'
                           ' found "%s" at line %d' % (ast[0], ln))
-    self._macros[name] = nargs, src
+    self._macros[name] = nargs, src, True
 
   def _from(self, unused_ln, p, pb):
     """from "full/project/path/cheader.h": BLOCK."""
@@ -316,18 +319,16 @@ class Postprocessor(object):
     pb.decltype = pb.CLASS
     p = pb.class_
     cpp_name = ast.name[0]  # Save C++ name without FQ.
-    _set_name(p.name, ast.name, ns)
+    is_iterator = ast.name[-1] == '__iter__'
+    _set_name(p.name, ast.name, ns, allow_fqcppname=is_iterator)
     pyname = p.name.native
     self.check_known_name(pyname)
-    self._typetable[pyname] = [p.name.cpp_name]
     decorators = ast.decorators.asList()
-    if 'final' in decorators:
-      p.final = True
-      decorators.remove('final')
-    if 'async__del__' in decorators:
-      p.async_dtor = True
-      decorators.remove('async__del__')
-      self.need_threads = True
+    if not is_iterator:
+      self._typetable[pyname] = [p.name.cpp_name]
+      if 'final' in decorators:
+        p.final = True
+        decorators.remove('final')
     if decorators:
       raise NameError('Unknown class decorator(s)%s: %s'
                       % (atln, ', '.join(decorators)))
@@ -342,34 +343,43 @@ class Postprocessor(object):
           raise SyntaxError('only derived class allowed to be empty' + atln)
         continue
       line_number = self.line(decl[1])
-      if decl[0] == 'implements':
-        name = decl[2]
-        self._macro_values = [pyname] + decl[3:]
-        try:
-          nargs, src = self._macros[name]
-        except KeyError:
-          raise NameError('interface %s not defined' % name + atln)
-        if len(self._macro_values) != nargs+1:
-          raise NameError('interface %s needs %d args (%d given)'
-                          % (name, len(self._macro_values)-1, nargs) + atln)
-        for d in src:
-          ln = self.line(d[1])
-          if d[0] == 'func':
-            if not self.unproperty(ln, d, pyname, p.members, local_names):
-              _add_uniq(pyname, local_names, self._func(ln, d, p.members.add()))
-          elif d[0] == 'var':
-            _add_uniq(pyname, local_names, self._var(ln, d, p.members.add()))
-          else:
-            assert 0, 'implements %s contains unallowed %s'%(name, d[0]) + atln
-        self._macro_values = []
-        continue
-      if (decl[0] == 'func' and
-          self.unproperty(line_number, decl, pyname, p.members, local_names)):
-        continue
+      if is_iterator:
+        if (len(ast[-1]) != 1 or
+            decl[0] != 'func' or decl.name[-1] != '__next__'):
+          raise SyntaxError('__iter__ class must only def __next__ at line %d'
+                            % line_number)
+      else:
+        if decl[0] == 'implements':
+          name = decl[2]
+          self._macro_values = [pyname] + decl[3:]
+          try:
+            nargs, src, _ = self._macros[name]
+          except KeyError:
+            raise NameError('interface %s not defined' % name + atln)
+          if len(self._macro_values) != nargs+1:
+            raise NameError('interface %s needs %d args (%d given)'
+                            % (name, len(self._macro_values)-1, nargs) + atln)
+          for d in src:
+            ln = self.line(d[1])
+            if d[0] == 'func':
+              if not self.unproperty(ln, d, pyname, p.members, local_names):
+                _add_uniq(pyname, local_names,
+                          self._func(ln, d, p.members.add()))
+            elif d[0] == 'var':
+              _add_uniq(pyname, local_names, self._var(ln, d, p.members.add()))
+            else:
+              raise SyntaxError('implements %s contains disallowed %s%s'
+                                % (name, d[0], atln))
+          self._macro_values = []
+          continue
+        if decl[0] == 'func' and self.unproperty(
+            line_number, decl, pyname, p.members, local_names):
+          continue
       name = getattr(self, '_'+decl[0])(line_number, decl, p.members.add())
       _add_uniq(pyname, local_names, name)
-    # Fix ctor name to be the class name.
     for m in p.members:
+
+      # Fix ctor name to be the class name.
       if m.decltype != m.FUNC:
         continue
       if m.func.name.native == '__init__':
@@ -389,16 +399,28 @@ class Postprocessor(object):
       elif not m.func.name.cpp_name:  # An additional ctor.
         m.func.name.cpp_name = cpp_name
         m.func.constructor = True
+
+      # Fix 'self' for C++ operator function (implemented out of class).
       elif m.func.name.native in _RIGHT_OPS:
         if len(m.func.params) != 1:
           raise ValueError('%s must have only 1 input parameter'
                            % m.func.name.native + atln)
-        m.func.cpp_opfunction = True  # Special case C++ operator function.
-        this = m.func.params.add()
-        this.name.native = 'self'
-        this.name.cpp_name = 'this'
-        this.type.lang_type = cpp_name
-        this.type.cpp_type = cpp_name
+        m.func.cpp_opfunction = True  # Mark a free function.
+        _set_self(m.func.params.add(), cpp_name)  # Add the instance parameter.
+      elif '::' in m.func.name.cpp_name:
+        if not m.func.params:
+          m.func.params.add()
+        # else make room for param[0] by shifting 0->1, 1->2 and so on.
+        elif len(m.func.params) == 1:
+          m.func.params.extend([m.func.params[0]])
+        else:
+          pcopy = ast_pb2.FuncDecl()
+          pcopy.params.extend(m.func.params)
+          del m.func.params[1:]
+          m.func.params.extend(pcopy.params)
+          del pcopy
+        m.func.cpp_opfunction = True  # Mark a free function.
+        _set_self(m.func.params[0], cpp_name)  # Set the instance parameter.
     _move_local_types(p.members, pyname+'.', cpp_name+'::', self._typetable)
     return pyname
 
@@ -418,11 +440,18 @@ class Postprocessor(object):
     """
     assert ast[0] == 'func', repr(ast)
     getset = ast.decorators.asList()
+    try:
+      getset.remove(KEEP_GIL_DECORATOR)
+      do_not_release_gil = True
+    except ValueError:
+      do_not_release_gil = False
     if getset not in (['getter'], ['setter']): return False
+    ast.decorators[:] = []
     # Convert func to var.
     f = ast_pb2.Decl()
     self._func(ln, ast, f)
     f = f.func
+    if do_not_release_gil: f.py_keep_gil = True
     cname = f.name.cpp_name
     pyname = f.name.native
     for m in members:
@@ -483,11 +512,13 @@ class Postprocessor(object):
     if ast.getter:
       f = p.cpp_get
       f.name.cpp_name = ast.getter
-      self.set_type(f.returns.add().type, ast)
+      self.set_type(f.returns.add().type, ast,
+                    lambda x, f=f: _set_keep_gil(f, x))
     if ast.setter:
       f = p.cpp_set
       f.name.cpp_name = ast.setter
-      self.set_type(f.params.add().type, ast)
+      self.set_type(f.params.add().type, ast,
+                    lambda x, f=f: _set_keep_gil(f, x))
       f.ignore_return_value = True
     return p.name.native
 
@@ -509,6 +540,11 @@ class Postprocessor(object):
     pb.decltype = pb.FUNC
     f = pb.func
     _set_name(f.name, _fix_special_names(ast.name), ns, allow_fqcppname=True)
+    if ast.returns and ast.returns.asList() == [['', [['self']]]]:
+      del ast['returns']
+      return_self = True
+    else:
+      return_self = False
     self.set_func(f, ast)
     decorators = ast.decorators.asList()
     if ast.self == 'cls':
@@ -518,30 +554,36 @@ class Postprocessor(object):
       if 'virtual' in decorators:
         raise ValueError("Classmethods can't be @virtual")
       f.classmethod = True
+      decorators.remove('classmethod')
     elif 'classmethod' in decorators:
       raise ValueError('Method %s with the first arg self should not be '
                        '@classmethod' % f.name.native)
     elif 'virtual' in decorators:
       if ast.self != 'self':
-        raise ValueError('@virual method first arg must be self')
+        raise ValueError('@virtual method first arg must be self')
       f.virtual = True
-    if 'async' in decorators:
-      f.async = True
-      self.need_threads = True
+      decorators.remove('virtual')
+    if KEEP_GIL_DECORATOR in decorators:
+      f.py_keep_gil = True
+      decorators.remove(KEEP_GIL_DECORATOR)
     if 'add__init__' in decorators:
       f.name.cpp_name = ''  # A hack to flag an extra ctor.
+      decorators.remove('add__init__')
     if 'sequential' in decorators:
       if f.name.native not in ('__getitem__', '__setitem__', '__delitem__'):
         raise NameError('Only __{get/set/del}item__ can be @sequential')
       f.name.native += '#'  # A hack to flag a sq_* slot.
+      decorators.remove('sequential')
     if '__enter__' in decorators:
       f.name.native = '__enter__@'  # A hack to flag a ctx mgr.
+      decorators.remove('__enter__')
     elif f.name.native == '__enter__':
       if f.postproc or f.params or len(f.returns) != 1:
         raise NameError('Use @__enter__ decorator for %s instead of rename'
                         % f.name.cpp_name)
     if '__exit__' in decorators:
       f.name.native = '__exit__@'  # A hack to flag a ctx mgr.
+      decorators.remove('__exit__')
     elif f.name.native == '__exit__':
       if (len(f.params) != 3
           or len(f.returns) > 1
@@ -550,21 +592,35 @@ class Postprocessor(object):
                         % f.name.cpp_name)
     elif f.name.native in _IGNORE_RETURN_VALUE:
       f.ignore_return_value = True
+      if f.name.native in _INPLACE_OPS:
+        if ast.self != 'self':
+          raise NameError('Inplace ops must have "self" as the first argument.')
+        if not return_self:
+          raise NameError('Inplace ops must return "self".')
+        if ast.postproc:
+          raise ValueError('Inplace ops can\'t have "return Postprocess(...)"')
+        f.postproc = '->self'  # '->' indicate special postprocessing.
+    if return_self and f.postproc != '->self':
+      raise ValueError('Only inplace ops can return "self".')
     if ast.postproc:
       name = ast.postproc[0][0][0]
       try:
         f.postproc = self._names[name]
       except KeyError:
         raise NameError('Should import name "%s" before use.' % name)
-    return f.name.native.rstrip('@#')
+    name = f.name.native.rstrip('@#')
+    if decorators:
+      raise ValueError('Unknown decorator%s for def %s: %s'
+                       % ('s' if len(decorators) > 1 else '',
+                          name, ', '.join('@'+f for f in decorators)))
+    return name
 
   # helpers
 
-  def set_type(self, pb, ast):
+  def set_type(self, pb, ast, has_object=lambda x: None):
     """Fill AST Type protobuf from PYTD IR ast."""
     assert isinstance(pb, ast_pb2.Type), repr(pb)
     if ast.callable:
-      self.need_threads = True
       self.set_func(pb.callable, ast.callable)
       inputs = (a.name.native+':'+a.type.lang_type for a in pb.callable.params)
       inputs = '(%s)' % ', '.join(inputs)
@@ -585,11 +641,12 @@ class Postprocessor(object):
     if ast.named:
       self.set_typename(pb, ast.named)
       if len(ast.named) > 1:
-        pb.lang_type += '<%s>' % ', '.join(
-            self.set_type(pb.params.add(), t) for t in ast.named[1:])
+        pb.lang_type += '<%s>' % ', '.join(self.set_type(
+            pb.params.add(), t, has_object) for t in ast.named[1:])
         if len(ast.named.name) > 1:  # Has an explicit C++ type.
           pb.cpp_type = ast.named.name[0]
     assert pb.lang_type, 'Parameter AST is not "named" or "callable":\n%r' % ast
+    if pb.lang_type == 'object': has_object(True)
     return pb.lang_type
 
   def set_typename(self, pb, ast):
@@ -631,7 +688,7 @@ class Postprocessor(object):
       arg_names.add(pyname)
       p = pb.params.add()
       _set_name(p.name, arg.name)
-      self.set_type(p.type, arg)
+      self.set_type(p.type, arg, lambda x, f=pb: _set_keep_gil(f, x))
       if len(arg) > 2:
         p.default_value = arg[2]
         must_be_optional = True
@@ -640,7 +697,7 @@ class Postprocessor(object):
                          'arg(s) before it marked optional.')
     for t in ast.returns:
       p = pb.returns.add()
-      self.set_type(p.type, t)
+      self.set_type(p.type, t, lambda x, f=pb: _set_keep_gil(f, x))
       if t.name:
         pyname = t.name[-1]
         if pyname in arg_names:
@@ -664,7 +721,7 @@ def _set_bases(pb, ast_bases, names, typetable):
       try:
         n = names[n]  # Resolve to FQName.
       except KeyError:
-        # TODO: Lookup possible 'renames' for bases.
+        # 
         if n not in typetable:
           raise NameError('Base class %s not defined' % n)
     base = pb.add()
@@ -686,6 +743,17 @@ def _set_name(pb, ast, namespace=None, allow_fqcppname=False):
     if not namespace.endswith('::'):
       namespace += '::'
     pb.cpp_name = namespace + ast[0]
+
+
+def _set_keep_gil(f, val):
+  f.py_keep_gil = val
+
+
+def _set_self(param, class_name):
+  param.name.native = 'self'
+  param.name.cpp_name = 'this'
+  param.type.lang_type = class_name
+  param.type.cpp_type = class_name
 
 
 def _add_uniq(class_name, names_set, new_name):
@@ -725,6 +793,9 @@ def  _move_local_types(members, pn, cn, typetable):
       name = m.enum.name.native
     elif m.decltype == m.CLASS:
       name = m.class_.name.native
+      if name == '__iter__':
+        # __iter__ and __next__ doesn't need to be moved to enclosed namespace.
+        continue
     else:
       continue
     t = m.WhichOneof('decl')
@@ -747,13 +818,8 @@ def  _move_local_types(members, pn, cn, typetable):
           del typetable[n]
 
 
-# Python special method name that we can ignore returning C++ value for.
-# (Implemented as slot::ignore(...) in slots.py)
-_IGNORE_RETURN_VALUE = [
-    '__setitem__',
-    '__delitem__',
-    '__setattr__',
-    '__delattr__',
+# Special methods that must return self.
+_INPLACE_OPS = frozenset([
     '__iadd__',
     '__isub__',
     '__imul__',
@@ -765,7 +831,14 @@ _IGNORE_RETURN_VALUE = [
     '__iand__',
     '__ixor__',
     '__ior__',
-]
+])
+# Special methods that don't use returning C++ value, so we can ignore it.
+_IGNORE_RETURN_VALUE = frozenset([
+    '__setitem__',
+    '__delitem__',
+    '__setattr__',
+    '__delattr__',
+] + list(_INPLACE_OPS))
 
 # Python special method name -> C++ operator rename table.
 _SPECIAL = {
@@ -814,7 +887,14 @@ _SPECIAL = {
     '__invert__': 'operator~',
     '__call__': 'operator()',
     '__getitem__': 'operator[]',
-    '__del__': 'DO_NOT_DECLARE_DTOR'
+    '__del__': 'DO_NOT_DECLARE_DTOR',
+    '__next__': 'operator*',  # For the "class __iter__: def __next__" case.
+    '__int__': 'operator int',
+    '__float__': 'operator double',
+    # 
+    # so will have only one in the future.
+    '__nonzero__': 'operator bool',  # PY2
+    '__bool__': 'operator bool',  # PY3
 }
 _RIGHT_OPS = frozenset([
     '__radd__',

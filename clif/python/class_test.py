@@ -63,6 +63,7 @@ class ClassTest(unittest.TestCase):
         native: "Struct"
         cpp_name: "StructTy"
       }
+      cpp_has_trivial_dtor: true
       members {
         decltype: VAR
         var {
@@ -81,7 +82,7 @@ class ClassTest(unittest.TestCase):
 
       struct wrapper {
         PyObject_HEAD
-        ::clif::SharedPtr<StructTy> cpp;
+        ::clif::Instance<StructTy> cpp;
       };
       static StructTy* ThisPtr(PyObject*);
 
@@ -108,12 +109,14 @@ class ClassTest(unittest.TestCase):
         {}
       };
 
-      // Struct __new__
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems);
       // Struct __init__
       static int _ctor(PyObject* self, PyObject* args, PyObject* kw);
 
-      static void _dtor(void* self) {
+      // Struct __new__
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems);
+
+      // Struct __del__
+      static void _del(void* self) {
         delete reinterpret_cast<wrapper*>(self);
       }
 
@@ -122,7 +125,7 @@ class ClassTest(unittest.TestCase):
         "path.to.ext.module.test.Struct",    // tp_name
         sizeof(wrapper),                     // tp_basicsize
         0,                                   // tp_itemsize
-        Clif_PyType_GenericFree,             // tp_dealloc
+        nullptr,                             // tp_dealloc
         nullptr,                             // tp_print
         nullptr,                             // tp_getattr
         nullptr,                             // tp_setattr
@@ -137,7 +140,7 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_getattro
         nullptr,                             // tp_setattro
         nullptr,                             // tp_as_buffer
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_TYPE_SUBCLASS%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
+        Py_TPFLAGS_DEFAULT%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
         "CLIF wrapper for StructTy",         // tp_doc
         nullptr,                             // tp_traverse
         nullptr,                             // tp_clear
@@ -154,9 +157,9 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_descr_set
         0,                                   // tp_dictoffset
         _ctor,                               // tp_init
-        _allocator,                          // tp_alloc
+        _new,                                // tp_alloc
         PyType_GenericNew,                   // tp_new
-        _dtor,                               // tp_free
+        _del,                                // tp_free
         nullptr,                             // tp_is_gc
         nullptr,                             // tp_bases
         nullptr,                             // tp_mro
@@ -176,7 +179,7 @@ class ClassTest(unittest.TestCase):
         return 0;
       }
 
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems) {
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems) {
         assert(nitems == 0);
         PyObject* self = reinterpret_cast<PyObject*>(new wrapper);
         return PyObject_Init(self, &wrapper_Type);
@@ -228,7 +231,7 @@ class ClassTest(unittest.TestCase):
       PyObject* Init() {
         PyObject* module = PyModule_Create(&Module);
         if (!module) return nullptr;
-        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyStruct::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
         return module;
       err:
         Py_DECREF(module);
@@ -238,7 +241,7 @@ class ClassTest(unittest.TestCase):
       PyObject* Init() {
         PyObject* module = Py_InitModule3("path.to.ext.module.test", nullptr, "CLIF-generated module for test.h");
         if (!module) return nullptr;
-        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyStruct::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
         return module;
       err:
         return nullptr;
@@ -272,7 +275,7 @@ class ClassTest(unittest.TestCase):
 
       struct wrapper {
         PyObject_HEAD
-        ::clif::SharedPtr<StructTy> cpp;
+        ::clif::Instance<StructTy> cpp;
       };
       static StructTy* ThisPtr(PyObject*);
 
@@ -311,12 +314,20 @@ class ClassTest(unittest.TestCase):
         {}
       };
 
-      // Struct __new__
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems);
       // Struct __init__
       static int _ctor(PyObject* self, PyObject* args, PyObject* kw);
 
-      static void _dtor(void* self) {
+      // Struct __new__
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems);
+
+      // Struct __del__
+      static void _dtor(PyObject* self) {
+        Py_BEGIN_ALLOW_THREADS
+        reinterpret_cast<wrapper*>(self)->cpp.Destruct();
+        Py_END_ALLOW_THREADS
+        Py_TYPE(self)->tp_free(self);
+      }
+      static void _del(void* self) {
         delete reinterpret_cast<wrapper*>(self);
       }
 
@@ -325,7 +336,7 @@ class ClassTest(unittest.TestCase):
         "path.to.ext.module.test.Struct",    // tp_name
         sizeof(wrapper),                     // tp_basicsize
         0,                                   // tp_itemsize
-        Clif_PyType_GenericFree,             // tp_dealloc
+        _dtor,                               // tp_dealloc
         nullptr,                             // tp_print
         nullptr,                             // tp_getattr
         nullptr,                             // tp_setattr
@@ -340,7 +351,7 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_getattro
         nullptr,                             // tp_setattro
         nullptr,                             // tp_as_buffer
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_TYPE_SUBCLASS%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
+        Py_TPFLAGS_DEFAULT%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
         "CLIF wrapper for StructTy",         // tp_doc
         nullptr,                             // tp_traverse
         nullptr,                             // tp_clear
@@ -357,9 +368,9 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_descr_set
         0,                                   // tp_dictoffset
         _ctor,                               // tp_init
-        _allocator,                          // tp_alloc
+        _new,                                // tp_alloc
         PyType_GenericNew,                   // tp_new
-        _dtor,                               // tp_free
+        _del,                                // tp_free
         nullptr,                             // tp_is_gc
         nullptr,                             // tp_bases
         nullptr,                             // tp_mro
@@ -379,7 +390,7 @@ class ClassTest(unittest.TestCase):
         return 0;
       }
 
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems) {
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems) {
         assert(nitems == 0);
         PyObject* self = reinterpret_cast<PyObject*>(new wrapper);
         return PyObject_Init(self, &wrapper_Type);
@@ -431,7 +442,7 @@ class ClassTest(unittest.TestCase):
       PyObject* Init() {
         PyObject* module = PyModule_Create(&Module);
         if (!module) return nullptr;
-        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyStruct::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
         return module;
       err:
         Py_DECREF(module);
@@ -441,7 +452,7 @@ class ClassTest(unittest.TestCase):
       PyObject* Init() {
         PyObject* module = Py_InitModule3("path.to.ext.module.test", nullptr, "CLIF-generated module for test.h");
         if (!module) return nullptr;
-        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyStruct::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
         return module;
       err:
         return nullptr;
@@ -475,7 +486,7 @@ class ClassTest(unittest.TestCase):
 
       struct wrapper {
         PyObject_HEAD
-        ::clif::SharedPtr<StructTy> cpp;
+        ::clif::Instance<StructTy> cpp;
       };
       static StructTy* ThisPtr(PyObject*);
 
@@ -502,12 +513,20 @@ class ClassTest(unittest.TestCase):
         {}
       };
 
-      // Struct __new__
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems);
       // Struct __init__
       static int _ctor(PyObject* self, PyObject* args, PyObject* kw);
 
-      static void _dtor(void* self) {
+      // Struct __new__
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems);
+
+      // Struct __del__
+      static void _dtor(PyObject* self) {
+        Py_BEGIN_ALLOW_THREADS
+        reinterpret_cast<wrapper*>(self)->cpp.Destruct();
+        Py_END_ALLOW_THREADS
+        Py_TYPE(self)->tp_free(self);
+      }
+      static void _del(void* self) {
         delete reinterpret_cast<wrapper*>(self);
       }
 
@@ -516,7 +535,7 @@ class ClassTest(unittest.TestCase):
         "path.to.ext.module.test.Struct",    // tp_name
         sizeof(wrapper),                     // tp_basicsize
         0,                                   // tp_itemsize
-        Clif_PyType_GenericFree,             // tp_dealloc
+        _dtor,                               // tp_dealloc
         nullptr,                             // tp_print
         nullptr,                             // tp_getattr
         nullptr,                             // tp_setattr
@@ -531,7 +550,7 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_getattro
         nullptr,                             // tp_setattro
         nullptr,                             // tp_as_buffer
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_TYPE_SUBCLASS%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
+        Py_TPFLAGS_DEFAULT%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
         "CLIF wrapper for StructTy",         // tp_doc
         nullptr,                             // tp_traverse
         nullptr,                             // tp_clear
@@ -548,9 +567,9 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_descr_set
         0,                                   // tp_dictoffset
         _ctor,                               // tp_init
-        _allocator,                          // tp_alloc
+        _new,                                // tp_alloc
         PyType_GenericNew,                   // tp_new
-        _dtor,                               // tp_free
+        _del,                                // tp_free
         nullptr,                             // tp_is_gc
         nullptr,                             // tp_bases
         nullptr,                             // tp_mro
@@ -570,7 +589,7 @@ class ClassTest(unittest.TestCase):
         return 0;
       }
 
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems) {
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems) {
         assert(nitems == 0);
         PyObject* self = reinterpret_cast<PyObject*>(new wrapper);
         return PyObject_Init(self, &wrapper_Type);
@@ -636,7 +655,7 @@ class ClassTest(unittest.TestCase):
       PyObject* Init() {
         PyObject* module = PyModule_Create(&Module);
         if (!module) return nullptr;
-        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyStruct::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
         return module;
       err:
         Py_DECREF(module);
@@ -646,7 +665,7 @@ class ClassTest(unittest.TestCase):
       PyObject* Init() {
         PyObject* module = Py_InitModule3("path.to.ext.module.test", nullptr, "CLIF-generated module for test.h");
         if (!module) return nullptr;
-        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyStruct::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
         return module;
       err:
         return nullptr;
@@ -659,6 +678,7 @@ class ClassTest(unittest.TestCase):
         native: "Outer"
         cpp_name: "OutKlass"
       }
+      cpp_has_trivial_dtor: true
       members {
         decltype: CLASS
         class_ {
@@ -666,6 +686,7 @@ class ClassTest(unittest.TestCase):
             native: "Inner"
             cpp_name: "OutKlass::InnKlass"
           }
+          cpp_has_trivial_dtor: true
           members {
             decltype: VAR
             var {
@@ -699,7 +720,7 @@ class ClassTest(unittest.TestCase):
 
       struct wrapper {
         PyObject_HEAD
-        ::clif::SharedPtr<OutKlass> cpp;
+        ::clif::Instance<OutKlass> cpp;
       };
       static OutKlass* ThisPtr(PyObject*);
 
@@ -707,7 +728,7 @@ class ClassTest(unittest.TestCase):
 
       struct wrapper {
         PyObject_HEAD
-        ::clif::SharedPtr<OutKlass::InnKlass> cpp;
+        ::clif::Instance<OutKlass::InnKlass> cpp;
       };
       static OutKlass::InnKlass* ThisPtr(PyObject*);
 
@@ -738,7 +759,7 @@ class ClassTest(unittest.TestCase):
             ) == nullptr) goto err;
         PyTuple_SET_ITEM(names, 0, py);
         py = %(frchar)s("Outer.Inner.X");
-        py_enum_class = PyObject_CallFunctionObjArgs(path_to_ext_module_test_clifwrap::_IntEnum, py, names, nullptr);
+        py_enum_class = PyObject_CallFunctionObjArgs(_IntEnum, py, names, nullptr);
         Py_DECREF(py);
       err:
         Py_DECREF(names);
@@ -751,12 +772,14 @@ class ClassTest(unittest.TestCase):
         {}
       };
 
-      // Inner __new__
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems);
       // Inner __init__
       static int _ctor(PyObject* self, PyObject* args, PyObject* kw);
 
-      static void _dtor(void* self) {
+      // Inner __new__
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems);
+
+      // Inner __del__
+      static void _del(void* self) {
         delete reinterpret_cast<wrapper*>(self);
       }
 
@@ -765,7 +788,7 @@ class ClassTest(unittest.TestCase):
         "path.to.ext.module.test.Outer.Inner", // tp_name
         sizeof(wrapper),                     // tp_basicsize
         0,                                   // tp_itemsize
-        Clif_PyType_GenericFree,             // tp_dealloc
+        nullptr,                             // tp_dealloc
         nullptr,                             // tp_print
         nullptr,                             // tp_getattr
         nullptr,                             // tp_setattr
@@ -780,7 +803,7 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_getattro
         nullptr,                             // tp_setattro
         nullptr,                             // tp_as_buffer
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_TYPE_SUBCLASS%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
+        Py_TPFLAGS_DEFAULT%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
         "CLIF wrapper for OutKlass::InnKlass", // tp_doc
         nullptr,                             // tp_traverse
         nullptr,                             // tp_clear
@@ -797,9 +820,9 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_descr_set
         0,                                   // tp_dictoffset
         _ctor,                               // tp_init
-        _allocator,                          // tp_alloc
+        _new,                                // tp_alloc
         PyType_GenericNew,                   // tp_new
-        _dtor,                               // tp_free
+        _del,                                // tp_free
         nullptr,                             // tp_is_gc
         nullptr,                             // tp_bases
         nullptr,                             // tp_mro
@@ -819,7 +842,7 @@ class ClassTest(unittest.TestCase):
         return 0;
       }
 
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems) {
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems) {
         assert(nitems == 0);
         PyObject* self = reinterpret_cast<PyObject*>(new wrapper);
         return PyObject_Init(self, &wrapper_Type);
@@ -854,12 +877,14 @@ class ClassTest(unittest.TestCase):
       }
       }  // namespace pyInner
 
-      // Outer __new__
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems);
       // Outer __init__
       static int _ctor(PyObject* self, PyObject* args, PyObject* kw);
 
-      static void _dtor(void* self) {
+      // Outer __new__
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems);
+
+      // Outer __del__
+      static void _del(void* self) {
         delete reinterpret_cast<wrapper*>(self);
       }
 
@@ -868,7 +893,7 @@ class ClassTest(unittest.TestCase):
         "path.to.ext.module.test.Outer",     // tp_name
         sizeof(wrapper),                     // tp_basicsize
         0,                                   // tp_itemsize
-        Clif_PyType_GenericFree,             // tp_dealloc
+        nullptr,                             // tp_dealloc
         nullptr,                             // tp_print
         nullptr,                             // tp_getattr
         nullptr,                             // tp_setattr
@@ -883,7 +908,7 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_getattro
         nullptr,                             // tp_setattro
         nullptr,                             // tp_as_buffer
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_TYPE_SUBCLASS%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
+        Py_TPFLAGS_DEFAULT%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
         "CLIF wrapper for OutKlass",         // tp_doc
         nullptr,                             // tp_traverse
         nullptr,                             // tp_clear
@@ -900,9 +925,9 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_descr_set
         0,                                   // tp_dictoffset
         _ctor,                               // tp_init
-        _allocator,                          // tp_alloc
+        _new,                                // tp_alloc
         PyType_GenericNew,                   // tp_new
-        _dtor,                               // tp_free
+        _del,                                // tp_free
         nullptr,                             // tp_is_gc
         nullptr,                             // tp_bases
         nullptr,                             // tp_mro
@@ -922,7 +947,7 @@ class ClassTest(unittest.TestCase):
         return 0;
       }
 
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems) {
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems) {
         assert(nitems == 0);
         PyObject* self = reinterpret_cast<PyObject*>(new wrapper);
         return PyObject_Init(self, &wrapper_Type);
@@ -987,8 +1012,8 @@ class ClassTest(unittest.TestCase):
           goto err;
         }
         if (PyDict_SetItemString(pyOuter::pyInner::wrapper_Type.tp_dict, "X", (pyOuter::pyInner::_X=pyOuter::pyInner::wrapX())) < 0) goto err;
-        if (PyDict_SetItemString(pyOuter::wrapper_Type.tp_dict, "Inner", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyOuter::pyInner::wrapper_Type)) < 0) goto err;
-        if (PyModule_AddObject(module, "Outer", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyOuter::wrapper_Type)) < 0) goto err;
+        if (PyDict_SetItemString(pyOuter::wrapper_Type.tp_dict, "Inner", reinterpret_cast<PyObject*>(&pyOuter::pyInner::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Outer", reinterpret_cast<PyObject*>(&pyOuter::wrapper_Type)) < 0) goto err;
         return module;
       err:
         Py_DECREF(module);
@@ -1009,8 +1034,8 @@ class ClassTest(unittest.TestCase):
           goto err;
         }
         if (PyDict_SetItemString(pyOuter::pyInner::wrapper_Type.tp_dict, "X", (pyOuter::pyInner::_X=pyOuter::pyInner::wrapX())) < 0) goto err;
-        if (PyDict_SetItemString(pyOuter::wrapper_Type.tp_dict, "Inner", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyOuter::pyInner::wrapper_Type)) < 0) goto err;
-        if (PyModule_AddObject(module, "Outer", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyOuter::wrapper_Type)) < 0) goto err;
+        if (PyDict_SetItemString(pyOuter::wrapper_Type.tp_dict, "Inner", reinterpret_cast<PyObject*>(&pyOuter::pyInner::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Outer", reinterpret_cast<PyObject*>(&pyOuter::wrapper_Type)) < 0) goto err;
         return module;
       err:
         return nullptr;
@@ -1023,6 +1048,7 @@ class ClassTest(unittest.TestCase):
         native: "Struct"
         cpp_name: "StructTy"
       }
+      cpp_has_trivial_dtor: true
       members {
         decltype: VAR
         var {
@@ -1060,7 +1086,7 @@ class ClassTest(unittest.TestCase):
 
       struct wrapper {
         PyObject_HEAD
-        ::clif::SharedPtr<StructTy> cpp;
+        ::clif::Instance<StructTy> cpp;
       };
       static StructTy* ThisPtr(PyObject*);
 
@@ -1091,12 +1117,14 @@ class ClassTest(unittest.TestCase):
         {}
       };
 
-      // Struct __new__
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems);
       // Struct __init__
       static int _ctor(PyObject* self, PyObject* args, PyObject* kw);
 
-      static void _dtor(void* self) {
+      // Struct __new__
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems);
+
+      // Struct __del__
+      static void _del(void* self) {
         delete reinterpret_cast<wrapper*>(self);
       }
 
@@ -1105,7 +1133,7 @@ class ClassTest(unittest.TestCase):
         "path.to.ext.module.test.Struct",    // tp_name
         sizeof(wrapper),                     // tp_basicsize
         0,                                   // tp_itemsize
-        Clif_PyType_GenericFree,             // tp_dealloc
+        nullptr,                             // tp_dealloc
         nullptr,                             // tp_print
         nullptr,                             // tp_getattr
         nullptr,                             // tp_setattr
@@ -1120,7 +1148,7 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_getattro
         nullptr,                             // tp_setattro
         nullptr,                             // tp_as_buffer
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_TYPE_SUBCLASS%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
+        Py_TPFLAGS_DEFAULT%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
         "CLIF wrapper for StructTy",         // tp_doc
         nullptr,                             // tp_traverse
         nullptr,                             // tp_clear
@@ -1137,9 +1165,9 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_descr_set
         0,                                   // tp_dictoffset
         _ctor,                               // tp_init
-        _allocator,                          // tp_alloc
+        _new,                                // tp_alloc
         PyType_GenericNew,                   // tp_new
-        _dtor,                               // tp_free
+        _del,                                // tp_free
         nullptr,                             // tp_is_gc
         nullptr,                             // tp_bases
         nullptr,                             // tp_mro
@@ -1159,7 +1187,7 @@ class ClassTest(unittest.TestCase):
         return 0;
       }
 
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems) {
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems) {
         assert(nitems == 0);
         PyObject* self = reinterpret_cast<PyObject*>(new wrapper);
         return PyObject_Init(self, &wrapper_Type);
@@ -1211,7 +1239,7 @@ class ClassTest(unittest.TestCase):
       PyObject* Init() {
         PyObject* module = PyModule_Create(&Module);
         if (!module) return nullptr;
-        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyStruct::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
         return module;
       err:
         Py_DECREF(module);
@@ -1221,7 +1249,7 @@ class ClassTest(unittest.TestCase):
       PyObject* Init() {
         PyObject* module = Py_InitModule3("path.to.ext.module.test", nullptr, "CLIF-generated module for test.h");
         if (!module) return nullptr;
-        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyStruct::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
         return module;
       err:
         return nullptr;
@@ -1234,6 +1262,7 @@ class ClassTest(unittest.TestCase):
         native: "Struct"
         cpp_name: "StructTy"
       }
+      cpp_has_trivial_dtor: true
       members {
         decltype: VAR
         var {
@@ -1262,7 +1291,7 @@ class ClassTest(unittest.TestCase):
 
       struct wrapper {
         PyObject_HEAD
-        ::clif::SharedPtr<StructTy> cpp;
+        ::clif::Instance<StructTy> cpp;
       };
       static StructTy* ThisPtr(PyObject*);
 
@@ -1286,12 +1315,14 @@ class ClassTest(unittest.TestCase):
         {}
       };
 
-      // Struct __new__
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems);
       // Struct __init__
       static int _ctor(PyObject* self, PyObject* args, PyObject* kw);
 
-      static void _dtor(void* self) {
+      // Struct __new__
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems);
+
+      // Struct __del__
+      static void _del(void* self) {
         delete reinterpret_cast<wrapper*>(self);
       }
 
@@ -1300,7 +1331,7 @@ class ClassTest(unittest.TestCase):
         "path.to.ext.module.test.Struct",    // tp_name
         sizeof(wrapper),                     // tp_basicsize
         0,                                   // tp_itemsize
-        Clif_PyType_GenericFree,             // tp_dealloc
+        nullptr,                             // tp_dealloc
         nullptr,                             // tp_print
         nullptr,                             // tp_getattr
         nullptr,                             // tp_setattr
@@ -1315,7 +1346,7 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_getattro
         nullptr,                             // tp_setattro
         nullptr,                             // tp_as_buffer
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_TYPE_SUBCLASS%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
+        Py_TPFLAGS_DEFAULT%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
         "CLIF wrapper for StructTy",         // tp_doc
         nullptr,                             // tp_traverse
         nullptr,                             // tp_clear
@@ -1332,9 +1363,9 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_descr_set
         0,                                   // tp_dictoffset
         _ctor,                               // tp_init
-        _allocator,                          // tp_alloc
+        _new,                                // tp_alloc
         PyType_GenericNew,                   // tp_new
-        _dtor,                               // tp_free
+        _del,                                // tp_free
         nullptr,                             // tp_is_gc
         nullptr,                             // tp_bases
         nullptr,                             // tp_mro
@@ -1354,7 +1385,7 @@ class ClassTest(unittest.TestCase):
         return 0;
       }
 
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems) {
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems) {
         assert(nitems == 0);
         PyObject* self = reinterpret_cast<PyObject*>(new wrapper);
         return PyObject_Init(self, &wrapper_Type);
@@ -1406,7 +1437,7 @@ class ClassTest(unittest.TestCase):
       PyObject* Init() {
         PyObject* module = PyModule_Create(&Module);
         if (!module) return nullptr;
-        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyStruct::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
         return module;
       err:
         Py_DECREF(module);
@@ -1416,7 +1447,7 @@ class ClassTest(unittest.TestCase):
       PyObject* Init() {
         PyObject* module = Py_InitModule3("path.to.ext.module.test", nullptr, "CLIF-generated module for test.h");
         if (!module) return nullptr;
-        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyStruct::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
         return module;
       err:
         return nullptr;
@@ -1429,6 +1460,7 @@ class ClassTest(unittest.TestCase):
         native: "Struct"
         cpp_name: "StructTy"
       }
+      cpp_has_trivial_dtor: true
       members {
         decltype: VAR
         var {
@@ -1486,7 +1518,7 @@ class ClassTest(unittest.TestCase):
 
       struct wrapper {
         PyObject_HEAD
-        ::clif::SharedPtr<StructTy> cpp;
+        ::clif::Instance<StructTy> cpp;
       };
 
       static PyObject* get_a(PyObject* self, void* xdata) {
@@ -1519,12 +1551,14 @@ class ClassTest(unittest.TestCase):
         {}
       };
 
-      // Struct __new__
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems);
       // Struct __init__
       static int _ctor(PyObject* self, PyObject* args, PyObject* kw);
 
-      static void _dtor(void* self) {
+      // Struct __new__
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems);
+
+      // Struct __del__
+      static void _del(void* self) {
         delete reinterpret_cast<wrapper*>(self);
       }
 
@@ -1533,7 +1567,7 @@ class ClassTest(unittest.TestCase):
         "path.to.ext.module.test.Struct",    // tp_name
         sizeof(wrapper),                     // tp_basicsize
         0,                                   // tp_itemsize
-        Clif_PyType_GenericFree,             // tp_dealloc
+        nullptr,                             // tp_dealloc
         nullptr,                             // tp_print
         nullptr,                             // tp_getattr
         nullptr,                             // tp_setattr
@@ -1548,7 +1582,7 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_getattro
         nullptr,                             // tp_setattro
         nullptr,                             // tp_as_buffer
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_TYPE_SUBCLASS%(f)s, // tp_flags
+        Py_TPFLAGS_DEFAULT%(f)s, // tp_flags
         "CLIF wrapper for StructTy",         // tp_doc
         nullptr,                             // tp_traverse
         nullptr,                             // tp_clear
@@ -1565,9 +1599,9 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_descr_set
         0,                                   // tp_dictoffset
         _ctor,                               // tp_init
-        _allocator,                          // tp_alloc
+        _new,                                // tp_alloc
         PyType_GenericNew,                   // tp_new
-        _dtor,                               // tp_free
+        _del,                                // tp_free
         nullptr,                             // tp_is_gc
         nullptr,                             // tp_bases
         nullptr,                             // tp_mro
@@ -1587,7 +1621,7 @@ class ClassTest(unittest.TestCase):
         return 0;
       }
 
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems) {
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems) {
         assert(nitems == 0);
         PyObject* self = reinterpret_cast<PyObject*>(new wrapper);
         return PyObject_Init(self, &wrapper_Type);
@@ -1619,7 +1653,7 @@ class ClassTest(unittest.TestCase):
       PyObject* Init() {
         PyObject* module = PyModule_Create(&Module);
         if (!module) return nullptr;
-        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyStruct::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
         return module;
       err:
         Py_DECREF(module);
@@ -1629,24 +1663,25 @@ class ClassTest(unittest.TestCase):
       PyObject* Init() {
         PyObject* module = Py_InitModule3("path.to.ext.module.test", nullptr, "CLIF-generated module for test.h");
         if (!module) return nullptr;
-        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyStruct::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
         return module;
       err:
         return nullptr;
       }
     """))
 
-  def testSharedFinalStruct(self):
+  def testFinalStruct(self):
     self.assertClassEqual("""
       name {
         native: "Struct"
         cpp_name: "StructCpp"
       }
-      shared: true
       final: true
+      cpp_has_trivial_dtor: true
       members {
         decltype: FUNC
         func {
+          py_keep_gil: true
           name {
             native: "f"
             cpp_name: "f"
@@ -1658,7 +1693,7 @@ class ClassTest(unittest.TestCase):
 
       struct wrapper {
         PyObject_HEAD
-        ::clif::SharedPtr<StructCpp> cpp;
+        ::clif::Instance<StructCpp> cpp;
       };
 
       // f()
@@ -1673,12 +1708,14 @@ class ClassTest(unittest.TestCase):
         {}
       };
 
-      // Struct __new__
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems);
       // Struct __init__
       static int _ctor(PyObject* self, PyObject* args, PyObject* kw);
 
-      static void _dtor(void* self) {
+      // Struct __new__
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems);
+
+      // Struct __del__
+      static void _del(void* self) {
         delete reinterpret_cast<wrapper*>(self);
       }
 
@@ -1687,7 +1724,7 @@ class ClassTest(unittest.TestCase):
         "path.to.ext.module.test.Struct",    // tp_name
         sizeof(wrapper),                     // tp_basicsize
         0,                                   // tp_itemsize
-        Clif_PyType_GenericFree,             // tp_dealloc
+        nullptr,                             // tp_dealloc
         nullptr,                             // tp_print
         nullptr,                             // tp_getattr
         nullptr,                             // tp_setattr
@@ -1702,7 +1739,7 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_getattro
         nullptr,                             // tp_setattro
         nullptr,                             // tp_as_buffer
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_TYPE_SUBCLASS%(f)s, // tp_flags
+        Py_TPFLAGS_DEFAULT%(f)s, // tp_flags
         "CLIF wrapper for StructCpp",        // tp_doc
         nullptr,                             // tp_traverse
         nullptr,                             // tp_clear
@@ -1719,9 +1756,9 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_descr_set
         0,                                   // tp_dictoffset
         _ctor,                               // tp_init
-        _allocator,                          // tp_alloc
+        _new,                                // tp_alloc
         PyType_GenericNew,                   // tp_new
-        _dtor,                               // tp_free
+        _del,                                // tp_free
         nullptr,                             // tp_is_gc
         nullptr,                             // tp_bases
         nullptr,                             // tp_mro
@@ -1741,7 +1778,7 @@ class ClassTest(unittest.TestCase):
         return 0;
       }
 
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems) {
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems) {
         assert(nitems == 0);
         PyObject* self = reinterpret_cast<PyObject*>(new wrapper);
         return PyObject_Init(self, &wrapper_Type);
@@ -1773,7 +1810,7 @@ class ClassTest(unittest.TestCase):
       PyObject* Init() {
         PyObject* module = PyModule_Create(&Module);
         if (!module) return nullptr;
-        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyStruct::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
         return module;
       err:
         Py_DECREF(module);
@@ -1783,7 +1820,7 @@ class ClassTest(unittest.TestCase):
       PyObject* Init() {
         PyObject* module = Py_InitModule3("path.to.ext.module.test", nullptr, "CLIF-generated module for test.h");
         if (!module) return nullptr;
-        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyStruct::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
         return module;
       err:
         return nullptr;
@@ -1809,13 +1846,13 @@ class ClassTest(unittest.TestCase):
     """, r"""
       namespace pyStruct {
 
-      struct Overrider : PyObj, StructCpp {
+      struct Overrider : PyObjRef, StructCpp {
         using StructCpp::StructCpp;
 
         void f() override {
-          auto f = ::clif::SafeGetAttrString(pythis.get(), C("F"));
-          if (f.get()) {
-            ::clif::callback::Func<void>(f.get())();
+          SafeAttr impl(self(), "F");
+          if (impl.get()) {
+            ::clif::callback::Func<void>(impl.get(), {})();
           } else {
             ::StructCpp::f();
           }
@@ -1824,7 +1861,7 @@ class ClassTest(unittest.TestCase):
 
       struct wrapper {
         PyObject_HEAD
-        ::clif::SharedPtr<Overrider> cpp;
+        ::clif::Instance<Overrider> cpp;
       };
       static StructCpp* ThisPtr(PyObject*);
 
@@ -1833,7 +1870,10 @@ class ClassTest(unittest.TestCase):
         // Call actual C++ method.
         StructCpp* c = ThisPtr(self);
         if (!c) return nullptr;
+        PyThreadState* _save;
+        Py_UNBLOCK_THREADS
         c->StructCpp::f();
+        Py_BLOCK_THREADS
         Py_RETURN_NONE;
       }
 
@@ -1850,12 +1890,20 @@ class ClassTest(unittest.TestCase):
         {}
       };
 
-      // Struct __new__
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems);
       // Struct __init__
       static int _ctor(PyObject* self, PyObject* args, PyObject* kw);
 
-      static void _dtor(void* self) {
+      // Struct __new__
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems);
+
+      // Struct __del__
+      static void _dtor(PyObject* self) {
+        Py_BEGIN_ALLOW_THREADS
+        reinterpret_cast<wrapper*>(self)->cpp.Destruct();
+        Py_END_ALLOW_THREADS
+        Py_TYPE(self)->tp_free(self);
+      }
+      static void _del(void* self) {
         delete reinterpret_cast<wrapper*>(self);
       }
 
@@ -1864,7 +1912,7 @@ class ClassTest(unittest.TestCase):
         "path.to.ext.module.test.Struct",    // tp_name
         sizeof(wrapper),                     // tp_basicsize
         0,                                   // tp_itemsize
-        Clif_PyType_GenericFree,             // tp_dealloc
+        _dtor,                               // tp_dealloc
         nullptr,                             // tp_print
         nullptr,                             // tp_getattr
         nullptr,                             // tp_setattr
@@ -1879,7 +1927,7 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_getattro
         nullptr,                             // tp_setattro
         nullptr,                             // tp_as_buffer
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_TYPE_SUBCLASS%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
+        Py_TPFLAGS_DEFAULT%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
         "CLIF wrapper for StructCpp",        // tp_doc
         nullptr,                             // tp_traverse
         nullptr,                             // tp_clear
@@ -1896,9 +1944,9 @@ class ClassTest(unittest.TestCase):
         nullptr,                             // tp_descr_set
         0,                                   // tp_dictoffset
         _ctor,                               // tp_init
-        _allocator,                          // tp_alloc
+        _new,                                // tp_alloc
         PyType_GenericNew,                   // tp_new
-        _dtor,                               // tp_free
+        _del,                                // tp_free
         nullptr,                             // tp_is_gc
         nullptr,                             // tp_bases
         nullptr,                             // tp_mro
@@ -1915,11 +1963,11 @@ class ClassTest(unittest.TestCase):
           return -1;
         }
         reinterpret_cast<wrapper*>(self)->cpp = ::clif::MakeShared<Overrider>();
-        reinterpret_cast<wrapper*>(self)->cpp->::clif::PyObj::Init(self);
+        reinterpret_cast<wrapper*>(self)->cpp->::clif::PyObjRef::Init(self);
         return 0;
       }
 
-      static PyObject* _allocator(PyTypeObject* type, Py_ssize_t nitems) {
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems) {
         assert(nitems == 0);
         PyObject* self = reinterpret_cast<PyObject*>(new wrapper);
         return PyObject_Init(self, &wrapper_Type);
@@ -1971,7 +2019,7 @@ class ClassTest(unittest.TestCase):
       PyObject* Init() {
         PyObject* module = PyModule_Create(&Module);
         if (!module) return nullptr;
-        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyStruct::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
         return module;
       err:
         Py_DECREF(module);
@@ -1981,7 +2029,276 @@ class ClassTest(unittest.TestCase):
       PyObject* Init() {
         PyObject* module = Py_InitModule3("path.to.ext.module.test", nullptr, "CLIF-generated module for test.h");
         if (!module) return nullptr;
-        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&path_to_ext_module_test_clifwrap::pyStruct::wrapper_Type)) < 0) goto err;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
+        return module;
+      err:
+        return nullptr;
+      }
+    """))
+
+  def testIteratorStruct(self):
+    self.assertClassEqual("""
+      name {
+        native: "Struct"
+        cpp_name: "StructCpp"
+      }
+      cpp_has_trivial_dtor: true
+      members {
+        decltype: CLASS
+        class_ {
+          cpp_has_trivial_dtor: true
+          name {
+            native: "__iter__"
+            cpp_name: "iterator"
+          }
+          members {
+            decltype: FUNC
+            func {
+              name {
+                native: "__next__"
+                cpp_name: "operator*"
+              }
+              returns {
+                type {
+                  lang_type: "int"
+                  cpp_type: "int"
+                }
+              }
+            }
+          }
+        }
+      }
+    """, r"""
+      namespace pyStruct {
+
+      struct wrapper {
+        PyObject_HEAD
+        ::clif::Instance<StructCpp> cpp;
+      };
+      namespace py__iter__ {
+      typedef ::clif::Iterator<StructCpp, iterator> iterator;
+      }
+      static StructCpp* ThisPtr(PyObject*);
+
+      namespace py__iter__ {
+
+      struct wrapper {
+        PyObject_HEAD
+        iterator iter;
+      };
+
+      PyObject* iternext(PyObject* self) {
+        PyThreadState* _save;
+        Py_UNBLOCK_THREADS
+        auto* v = reinterpret_cast<wrapper*>(self)->iter.Next();
+        Py_BLOCK_THREADS
+        return v? Clif_PyObjFrom(*v, {}): nullptr;
+      }
+
+      // __iter__ __del__
+      static void _dtor(PyObject* self) {
+        Py_BEGIN_ALLOW_THREADS
+        reinterpret_cast<wrapper*>(self)->iter.~iterator();
+        Py_END_ALLOW_THREADS
+        Py_TYPE(self)->tp_free(self);
+      }
+
+      PyTypeObject wrapper_Type = {
+        PyVarObject_HEAD_INIT(&PyType_Type, 0)
+        "path.to.ext.module.test.Struct.__iter__", // tp_name
+        sizeof(wrapper),                     // tp_basicsize
+        0,                                   // tp_itemsize
+        _dtor,                               // tp_dealloc
+        nullptr,                             // tp_print
+        nullptr,                             // tp_getattr
+        nullptr,                             // tp_setattr
+        nullptr,                             // tp_compare
+        nullptr,                             // tp_repr
+        nullptr,                             // tp_as_number
+        nullptr,                             // tp_as_sequence
+        nullptr,                             // tp_as_mapping
+        nullptr,                             // tp_hash
+        nullptr,                             // tp_call
+        nullptr,                             // tp_str
+        nullptr,                             // tp_getattro
+        nullptr,                             // tp_setattro
+        nullptr,                             // tp_as_buffer
+        Py_TPFLAGS_DEFAULT,                  // tp_flags
+        "CLIF wrapper for iterator",         // tp_doc
+        nullptr,                             // tp_traverse
+        nullptr,                             // tp_clear
+        nullptr,                             // tp_richcompare
+        0,                                   // tp_weaklistoffset
+        PyObject_SelfIter,                   // tp_iter
+        iternext,                            // tp_iternext
+        nullptr,                             // tp_methods
+        nullptr,                             // tp_members
+        nullptr,                             // tp_getset
+        nullptr,                             // tp_base
+        nullptr,                             // tp_dict
+        nullptr,                             // tp_descr_get
+        nullptr,                             // tp_descr_set
+        0,                                   // tp_dictoffset
+        Clif_PyType_Inconstructible,         // tp_init
+        nullptr,                             // tp_alloc
+        nullptr,                             // tp_new
+        nullptr,                             // tp_free
+        nullptr,                             // tp_is_gc
+        nullptr,                             // tp_bases
+        nullptr,                             // tp_mro
+        nullptr,                             // tp_cache
+        nullptr,                             // tp_subclasses
+        nullptr,                             // tp_weaklist
+        nullptr,                             // tp_del
+        0,                                   // tp_version_tag
+      };
+
+      }  // namespace py__iter__
+
+      PyObject* new_iter(PyObject* self) {
+        if (!ThisPtr(self)) return nullptr;
+        py__iter__::wrapper* it = PyObject_New(py__iter__::wrapper, &py__iter__::wrapper_Type);
+        if (!it) return nullptr;
+        using std::equal_to;  // Often a default template argument.
+        new(&it->iter) py__iter__::iterator(MakeStdShared(reinterpret_cast<wrapper*>(self)->cpp));
+        return reinterpret_cast<PyObject*>(it);
+      }
+
+      // Struct __init__
+      static int _ctor(PyObject* self, PyObject* args, PyObject* kw);
+
+      // Struct __new__
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems);
+
+      // Struct __del__
+      static void _del(void* self) {
+        delete reinterpret_cast<wrapper*>(self);
+      }
+
+      PyTypeObject wrapper_Type = {
+        PyVarObject_HEAD_INIT(&PyType_Type, 0)
+        "path.to.ext.module.test.Struct",    // tp_name
+        sizeof(wrapper),                     // tp_basicsize
+        0,                                   // tp_itemsize
+        nullptr,                             // tp_dealloc
+        nullptr,                             // tp_print
+        nullptr,                             // tp_getattr
+        nullptr,                             // tp_setattr
+        nullptr,                             // tp_compare
+        nullptr,                             // tp_repr
+        nullptr,                             // tp_as_number
+        nullptr,                             // tp_as_sequence
+        nullptr,                             // tp_as_mapping
+        nullptr,                             // tp_hash
+        nullptr,                             // tp_call
+        nullptr,                             // tp_str
+        nullptr,                             // tp_getattro
+        nullptr,                             // tp_setattro
+        nullptr,                             // tp_as_buffer
+        Py_TPFLAGS_DEFAULT%(f)s | Py_TPFLAGS_BASETYPE, // tp_flags
+        "CLIF wrapper for StructCpp",        // tp_doc
+        nullptr,                             // tp_traverse
+        nullptr,                             // tp_clear
+        nullptr,                             // tp_richcompare
+        0,                                   // tp_weaklistoffset
+        new_iter,                            // tp_iter
+        nullptr,                             // tp_iternext
+        nullptr,                             // tp_methods
+        nullptr,                             // tp_members
+        nullptr,                             // tp_getset
+        nullptr,                             // tp_base
+        nullptr,                             // tp_dict
+        nullptr,                             // tp_descr_get
+        nullptr,                             // tp_descr_set
+        0,                                   // tp_dictoffset
+        _ctor,                               // tp_init
+        _new,                                // tp_alloc
+        PyType_GenericNew,                   // tp_new
+        _del,                                // tp_free
+        nullptr,                             // tp_is_gc
+        nullptr,                             // tp_bases
+        nullptr,                             // tp_mro
+        nullptr,                             // tp_cache
+        nullptr,                             // tp_subclasses
+        nullptr,                             // tp_weaklist
+        nullptr,                             // tp_del
+        0,                                   // tp_version_tag
+      };
+
+      static int _ctor(PyObject* self, PyObject* args, PyObject* kw) {
+        if ((args && PyTuple_GET_SIZE(args) != 0) || (kw && PyDict_Size(kw) != 0)) {
+          PyErr_SetString(PyExc_TypeError, "Struct takes no arguments");
+          return -1;
+        }
+        reinterpret_cast<wrapper*>(self)->cpp = ::clif::MakeShared<StructCpp>();
+        return 0;
+      }
+
+      static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems) {
+        assert(nitems == 0);
+        PyObject* self = reinterpret_cast<PyObject*>(new wrapper);
+        return PyObject_Init(self, &wrapper_Type);
+      }
+
+      static StructCpp* ThisPtr(PyObject* py) {
+        if (Py_TYPE(py) == &wrapper_Type) {
+          return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
+        }
+        PyObject* base = PyObject_CallMethod(py, C("as_StructCpp"), nullptr);
+        if (base) {
+          if (PyCapsule_CheckExact(base)) {
+            void* p = PyCapsule_GetPointer(base, C("StructCpp"));
+            if (!PyErr_Occurred()) {
+              StructCpp* c = static_cast<StructCpp*>(p);
+              Py_DECREF(base);
+              return c;
+            }
+          }
+          Py_DECREF(base);
+        }
+        if (PyObject_IsInstance(py, reinterpret_cast<PyObject*>(&wrapper_Type))) {
+          if (!base) {
+            PyErr_Clear();
+            return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
+          }
+          PyErr_Format(PyExc_ValueError, "can't convert %%s %%s to StructCpp*", ClassName(py), ClassType(py));
+        } else {
+          PyErr_Format(PyExc_TypeError, "expecting %%s instance, got %%s %%s", wrapper_Type.tp_name, ClassName(py), ClassType(py));
+        }
+        return nullptr;
+      }
+      }  // namespace pyStruct
+    """ % self.code, """
+      bool Ready() {
+        if (PyType_Ready(&pyStruct::py__iter__::wrapper_Type) < 0) return false;
+        Py_INCREF(&pyStruct::py__iter__::wrapper_Type);  // For PyModule_AddObject to steal.
+        if (PyType_Ready(&pyStruct::wrapper_Type) < 0) return false;
+        Py_INCREF(&pyStruct::wrapper_Type);  // For PyModule_AddObject to steal.
+        return true;
+      }
+    """ + ("""
+      static struct PyModuleDef Module = {
+        PyModuleDef_HEAD_INIT,
+        "path.to.ext.module.test",  // module name
+        "CLIF-generated module for test.h", // module doc
+        -1,  // module keeps state in global variables
+        nullptr
+      };
+
+      PyObject* Init() {
+        PyObject* module = PyModule_Create(&Module);
+        if (!module) return nullptr;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
+        return module;
+      err:
+        Py_DECREF(module);
+        return nullptr;
+      }
+    """ if self.m.py3output else """
+      PyObject* Init() {
+        PyObject* module = Py_InitModule3("path.to.ext.module.test", nullptr, "CLIF-generated module for test.h");
+        if (!module) return nullptr;
+        if (PyModule_AddObject(module, "Struct", reinterpret_cast<PyObject*>(&pyStruct::wrapper_Type)) < 0) goto err;
         return module;
       err:
         return nullptr;
@@ -2015,7 +2332,7 @@ class ClassTest(unittest.TestCase):
             ) == nullptr) goto err;
         PyTuple_SET_ITEM(names, 1, py);
         py = %(frchar)s("MyEnum");
-        py_enum_class = PyObject_CallFunctionObjArgs(path_to_ext_module_test_clifwrap::_IntEnum, py, names, nullptr);
+        py_enum_class = PyObject_CallFunctionObjArgs(_IntEnum, py, names, nullptr);
         Py_DECREF(py);
       err:
         Py_DECREF(names);

@@ -16,16 +16,22 @@
 #ifndef CLIF_TESTING_VIRTUAL_FUNCS_H_
 #define CLIF_TESTING_VIRTUAL_FUNCS_H_
 
+#include <memory>
 #include <vector>
 
 struct B {
   int c;
+  int get_c() { return c; }
   virtual void set_c(int i) { c = i; }
   virtual ~B() {}
   B() : c(0) {}
 };
 
 void Bset(B* b, int v) { b->set_c(v); }
+
+struct D : B {
+  void set_c(int i) override { c = (i > 0) ? i : -i; }
+};
 
 struct K {
   int i;
@@ -74,6 +80,15 @@ class ClassNonDefConst {
   int my_b;
 };
 
+class Manager {
+ public:
+  Manager(std::shared_ptr<ClassNonDefConst> c) : c_(c) {}
+  int DoIt() { return c_->DoSomething(); }
+
+ private:
+  std::shared_ptr<ClassNonDefConst> c_;
+};
+
 inline int DoSomething(const ClassNonDefConst& a) {
   return a.DoSomething();
 }
@@ -86,4 +101,7 @@ inline int add_seq(Q* q, int step, int stop) {
   return added;
 }
 
+inline int DoUniq(std::unique_ptr<ClassNonDefConst> c) {
+  return c->DoSomething();
+}
 #endif  // CLIF_TESTING_VIRTUAL_FUNCS_H_

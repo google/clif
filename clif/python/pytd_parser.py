@@ -32,16 +32,24 @@ LineNum = pp.lineno     # pylint: disable=invalid-name
 
 # Grammar for Python Type Declaration (CLIF version)
 
+
+def fail_block(s, unused_loc, expr, err):
+  raise pp.ParseFatalException(s, err.loc, 'invalid statement in %s' % expr)
+
 _indentation_stack = [1]  # Holds cols to indent from.
-BLOCK = lambda el: S(':') + NEWLINE - pp.indentedBlock(el, _indentation_stack)
+BLOCK = lambda el: (S(':') + NEWLINE -  # pylint: disable=g-long-lambda
+                    pp.indentedBlock(el, _indentation_stack)
+                    .setFailAction(fail_block))
 
 
 def reset_indentation():  # pylint: disable=invalid-name
   _indentation_stack[:] = [1]
 
 K = lambda el: pp.Keyword(el).setParseAction(lambda el, loc, t: [t[0], loc])
+# pylint: disable=undefined-variable
 E = lambda el: pp.Empty().setParseAction(lambda: el)
 Tag = lambda el: pp.Empty().setParseAction(lambda s, loc, t: [el, loc])  # pylint: disable=invalid-name
+# pylint: enable=undefined-variable
 NEWLINE = pp.lineEnd.setWhitespaceChars(' ').suppress().ignore(
     pp.pythonStyleComment)
 

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "clif/examples/wrapfunc/wrapfunc.h"
-#include "clif/examples/wrappod/wrappod.h"
+#include "wrapfunc/wrapfunc.h"
+#include "wrappod/wrappod.h"
 
 namespace {
 int State = 0xDEAD;

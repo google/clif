@@ -14,9 +14,9 @@
 
 # We use a type wrapped elsewhere in this clif file.
 # Hence, import the wrapped type from the clif generated C++ header file.
-from "clif/examples/wrappod/python/wrappod.h" import *
+from "wrappod/python/wrappod.h" import *
 
-from "clif/examples/wrapfunc/wrapfunc.h":
+from "wrapfunc/wrapfunc.h":
   namespace `clif_example::wrapfunc`:
     def ResetState()
     def SetState(a: int)

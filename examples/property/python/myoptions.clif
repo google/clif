@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from "clif/examples/property/myoptions.h":
+from "property/myoptions.h":
   namespace `clif_example::property`:
     class MyOptions:
       def __init__(self, name: str)

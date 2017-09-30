@@ -36,32 +36,64 @@ examples_tree = [('examples', glob.glob('examples/*.*'))]
 for d in filter(os.path.isdir, glob.glob('examples/*')):
   examples_tree.append((d, glob.glob(d+'/*.*')))
   examples_tree.append((d+'/python', glob.glob(d+'/python/*')))
+  if 'wrap_protos' in d:
+    examples_tree.append((d+'/protos', glob.glob(d+'/protos/*')))
 
 setuptools.setup(
     name='pyclif',
-    version='0.2',
+    version='0.3',
     description='Python CLIF C++ wrapper generator',
-    long_description='...',
+    long_description=('Python extension module generator based on CLIF\n'
+                      'framework. It uses Clang for C++ header analisys\n'
+                      'and a runtime library supporting std:: type convertions.'
+                      '\n'),
     url='https://github.com/google/clif',
     author='Mike Rovner and the other CLIF authors',
     author_email='pyclif@googlegroups.com',
     # Contained modules and scripts.
-    packages=['clif', 'clif.protos', 'clif.python'],
+    packages=['clif', 'clif.protos', 'clif.python', 'clif.python.utils'],
     data_files=[
         # pylint: disable=bad-continuation
         ('python', glob.glob('clif/python/*.cc') +
                    glob.glob('clif/python/*.h') +
                    glob.glob('clif/python/*.md')),
         ] + examples_tree,
-    entry_points={'console_scripts': ['pyclif = clif.pyclif:start']},
+    entry_points={
+        'console_scripts': [
+            'pyclif = clif.pyclif:start',
+            'pyclif_proto = clif.python.proto:start',
+            ],
+        },
+    ext_modules=[
+        setuptools.Extension(
+            'clif.python.utils.proto_util', [
+                # proto_util cc lib
+                'clif/python/proto_util.cc',
+                # CLIF-generated sources for proto_util wrapper
+                'clif/python/utils/proto_util.cc',
+                'clif/python/utils/proto_util.init.cc',
+                # 'clif_runtime',
+                'clif/python/pyproto.cc',
+                'clif/python/runtime.cc',
+                'clif/python/slots.cc',
+                'clif/python/types.cc',
+                ],
+            include_dirs=[
+                # Path to CLIF runtime headers
+                './',
+                ],
+            extra_compile_args=['-std=c++11'],
+            libraries=['protobuf'],
+            ),
+        ],
     install_requires=[
         'setuptools>=18.5',
-        'pyparsing>=2.0.7',
+        'pyparsing>=2.2.0',
         'protobuf>=3.2',
         ],
     # PyPI package information.
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',

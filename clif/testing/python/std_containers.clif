@@ -14,7 +14,11 @@
 
 from "clif/testing/std_containers.h":
   def Mul(v: list<int>, m: int) -> list<int>
+  def Odd(v: list<int>) -> list<bool>
+  def Even(v: list<int>) -> list<bool>
   def Find(v: int, m: dict<int,int>) -> (x: bool, y: int)
   def Ones(rows: int, columns: int) -> list<list<int>>
   def Capitals() -> list<tuple<str, str>>
   def MatrixSum(a: list<list<int>>, b: list<list<int>>) -> list<list<int>>
+  def Make2By3() -> `std::tuple` as tuple<`std::tuple` as tuple<int, int, int>, `std::tuple` as tuple<int, int, int>>
+  def Flatten2By3(m: `std::tuple` as tuple<`std::tuple` as tuple<int, int, int>, `std::tuple` as tuple<int, int, int>>) -> `std::tuple` as tuple<int, int, int, int, int, int>

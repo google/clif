@@ -27,7 +27,13 @@ class DefaultArgsTest(unittest.TestCase):
     self.assertEqual(a.MethodWithDefaultEnumArg(i=5000), 5432)
     self.assertEqual(a.MethodWithDefaultPtrArg(i=1234), 1234)
     self.assertEqual(a.MethodWithDefaultFlag(i=32), 35)
-
+    self.assertEqual(a.MethodThrowAwayDefault(input1=1, input2=2), 3)
+    a.MethodWithOutputDefault3(input1=123, input2=456)
+    self.assertEqual(a.MethodWithOutputDefault4(), 1000)
+    self.assertEqual(a.MethodWithOutputDefault5(input1=10), 1000)
+    a.MethodWithOutputDefault6()
+    a.MethodWithOutputDefault7(input1=10)
+    a.MethodWithOutputDefault8()
 
 if __name__ == '__main__':
   unittest.main()

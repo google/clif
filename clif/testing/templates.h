@@ -17,6 +17,7 @@
 #define CLIF_TESTING_TEMPLATES_H_
 
 #include <memory>
+#include "clif/testing/template_class.h"
 
 namespace templates {
 
@@ -27,6 +28,24 @@ struct A {
 
 template<typename T> inline void TemplateParamFunc(std::unique_ptr<T> a) {
 }
+
+using TemplateClassInt = TemplateClass<int>;
+
+// Test for wrapping a specialized multi-level template class with a typedef
+// inside the class definition.
+template <typename Real>
+class Vector {};
+
+template <class ObjectType>
+class ObjectTypeHolder {
+ public:
+  // Typedef the nested template argument type.
+  typedef ObjectType T;
+
+  ObjectTypeHolder() {}
+
+  int MethodUsingTemplateType(ObjectTypeHolder<T> *other) { return 1; }
+};
 
 }  // namespace templates
 

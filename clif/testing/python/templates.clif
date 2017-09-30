@@ -18,3 +18,11 @@ from "clif/testing/templates.h":
       a: int
 
     def TemplateParamFunc(a: A)
+
+    # Wrapping for instantiation of template class declared in a separate header
+    # file
+    class TemplateClassInt:
+      def __init__(self)
+
+    class `ObjectTypeHolder<Vector<float>>` as VectorHolder:
+      def MethodUsingTemplateType(self, other:VectorHolder) -> int

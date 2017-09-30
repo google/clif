@@ -42,6 +42,7 @@ class T9Test(unittest.TestCase):
   def testVirtualDerived(self):
     self.assertEqual(t9.Derived().CoreValue(), 12)
     self.assertEqual(PyDerived().CoreValue(), 12)
+    self.assertTrue(t9.Core.IsDestructed(), '~Core() not called')
 
   def testPyFromCapsule(self):
     self.assertIsNotNone(t9.NewAbstract())

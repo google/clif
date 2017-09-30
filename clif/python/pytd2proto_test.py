@@ -29,7 +29,8 @@ TMP_FILE = 'clif_python_pytd2proto_test'
 
 class ToprotoTest(unittest.TestCase):
 
-  def ClifEqual(self, pytd, clif, types=None, include_typemaps=False):
+  def ClifEqual(self, pytd, clif, types=None,
+                include_typemaps=False, add_extra_init=True):
     pytd = textwrap.dedent(pytd)
     with open(TMP_FILE, 'w') as pytd_file:
       pytd_file.write(pytd)
@@ -51,6 +52,8 @@ class ToprotoTest(unittest.TestCase):
     out = text_format.MessageToString(pb)
     expected = textwrap.dedent(clif).replace(
         'cpp_type: "string"', 'cpp_type: "std::string"')
+    if add_extra_init:
+      expected += 'extra_init: "PyEval_InitThreads();"\n'
     self.assertMultiLineEqual(out, expected)
 
   def ClifEqualWithTypes(self, pytd, clif, **kw):
@@ -115,7 +118,6 @@ class ToprotoTest(unittest.TestCase):
             }
           }
         }
-        extra_init: "PyEval_InitThreads();"
       """)
 
   def testFromDefCallable(self):
@@ -158,7 +160,6 @@ class ToprotoTest(unittest.TestCase):
             }
           }
         }
-        extra_init: "PyEval_InitThreads();"
       """)
 
   def testFromDefEmptyCallable(self):
@@ -190,7 +191,6 @@ class ToprotoTest(unittest.TestCase):
             }
           }
         }
-        extra_init: "PyEval_InitThreads();"
       """)
 
   def testOptional(self):
@@ -347,11 +347,12 @@ class ToprotoTest(unittest.TestCase):
             }
           }
         }
+        extra_init: "PyEval_InitThreads();"
         typemaps {
           lang_type: "Foo"
           cpp_type: "Foo *"
         }
-      """, include_typemaps=True)
+      """, include_typemaps=True, add_extra_init=False)
 
   def testImport(self):
     self.ClifEqual("""\
@@ -477,9 +478,9 @@ class ToprotoTest(unittest.TestCase):
           const X: int
           class K:
             def __init__(self, i: int)
-            def M(self)
+            def M(self, i: list<object>)
           enum E
-          def F()
+          def F() -> object
       """, """\
         source: "clif_python_pytd2proto_test"
         usertype_includes: "clif/python/types.h"
@@ -538,6 +539,22 @@ class ToprotoTest(unittest.TestCase):
                   native: "M"
                   cpp_name: "M"
                 }
+                params {
+                  name {
+                    native: "i"
+                    cpp_name: "i"
+                  }
+                  type {
+                    lang_type: "list<object>"
+                    cpp_type: "std::vector"
+                    params {
+                      lang_type: "object"
+                      cpp_type: "PyObject*"
+                      cpp_raw_pointer: true
+                    }
+                  }
+                }
+                py_keep_gil: true
               }
             }
           }
@@ -564,6 +581,14 @@ class ToprotoTest(unittest.TestCase):
               native: "F"
               cpp_name: "bar::F"
             }
+            returns {
+              type {
+                lang_type: "object"
+                cpp_type: "PyObject*"
+                cpp_raw_pointer: true
+              }
+            }
+            py_keep_gil: true
           }
         }
       """)
@@ -807,7 +832,7 @@ class ToprotoTest(unittest.TestCase):
             `kBad` as BAD
             `kGood` as GOOD
           `status_` as status: Status
-          @async
+          @do_not_release_gil
           def `Find` as f(self, a: dict<str, list<int>>) -> (x:str, y:str)
       """, """\
         source: "clif_python_pytd2proto_test"
@@ -903,16 +928,15 @@ class ToprotoTest(unittest.TestCase):
                     cpp_type: "string"
                   }
                 }
-                async: true
+                py_keep_gil: true
               }
             }
           }
         }
-        extra_init: "PyEval_InitThreads();"
       """)
 
   def testFromClassBadInitName(self):
-    # TODO: Add check for warning about Init->Foo renaming.
+    # 
     self.ClifEqualWithTypes("""\
       from "foo.h":
         class Foo:
@@ -963,14 +987,25 @@ class ToprotoTest(unittest.TestCase):
             def Bar(self, other: str)
         """, '')
 
+  def testFromClassBadOps(self):
+    with self.assertRaises(NameError):
+      self.ClifEqual("""\
+        from "foo.h":
+          class Foo:
+            def __iadd__(self, other: int)  # "-> self" missed
+        """, '')
+
   def testFromClassOps(self):
-    # TODO: Extend the test to all special names when C++ back is ready
+    # 
     self.ClifEqualWithTypes("""\
       from "foo.h":
         class Foo:
           def __init__(self, a: int)
           def __eq__(self, other: Foo) -> bool
           def __le__(self, other: Foo) -> bool
+          def __nonzero__(self) -> bool
+          def __bool__(self) -> bool
+          def __iadd__(self, other: int) -> self
       """, """\
         source: "clif_python_pytd2proto_test"
         usertype_includes: "clif/python/types.h"
@@ -1056,9 +1091,212 @@ class ToprotoTest(unittest.TestCase):
                 }
               }
             }
+            members {
+              decltype: FUNC
+              line_number: 6
+              func {
+                name {
+                  native: "__nonzero__"
+                  cpp_name: "operator bool"
+                }
+                returns {
+                  type {
+                    lang_type: "bool"
+                    cpp_type: "bool"
+                  }
+                }
+              }
+            }
+            members {
+              decltype: FUNC
+              line_number: 7
+              func {
+                name {
+                  native: "__bool__"
+                  cpp_name: "operator bool"
+                }
+                returns {
+                  type {
+                    lang_type: "bool"
+                    cpp_type: "bool"
+                  }
+                }
+              }
+            }
+            members {
+              decltype: FUNC
+              line_number: 8
+              func {
+                name {
+                  native: "__iadd__"
+                  cpp_name: "operator+="
+                }
+                params {
+                  name {
+                    native: "other"
+                    cpp_name: "other"
+                  }
+                  type {
+                    lang_type: "int"
+                    cpp_type: "int"
+                  }
+                }
+                postproc: "->self"
+                ignore_return_value: true
+              }
+            }
           }
         }
       """)
+
+  def testFromClassFreeOps(self):
+    self.ClifEqualWithTypes("""\
+      from "foo.h":
+        class Foo:
+          def `::FooEQ` as __eq__(self, other: Foo) -> bool
+          def `::FooBool` as __bool__(self) -> bool
+          def `::FooSet` as Set(self, key: int, value: int)
+      """, """\
+        source: "clif_python_pytd2proto_test"
+        usertype_includes: "clif/python/types.h"
+        decls {
+          decltype: CLASS
+          cpp_file: "foo.h"
+          line_number: 2
+          class_ {
+            name {
+              native: "Foo"
+              cpp_name: "Foo"
+            }
+            members {
+              decltype: FUNC
+              line_number: 3
+              func {
+                name {
+                  native: "__eq__"
+                  cpp_name: "::FooEQ"
+                }
+                params {
+                  name {
+                    native: "self"
+                    cpp_name: "this"
+                  }
+                  type {
+                    lang_type: "Foo"
+                    cpp_type: "Foo"
+                  }
+                }
+                params {
+                  name {
+                    native: "other"
+                    cpp_name: "other"
+                  }
+                  type {
+                    lang_type: "Foo"
+                    cpp_type: "Foo"
+                  }
+                }
+                returns {
+                  type {
+                    lang_type: "bool"
+                    cpp_type: "bool"
+                  }
+                }
+                cpp_opfunction: true
+              }
+            }
+            members {
+              decltype: FUNC
+              line_number: 4
+              func {
+                name {
+                  native: "__bool__"
+                  cpp_name: "::FooBool"
+                }
+                params {
+                  name {
+                    native: "self"
+                    cpp_name: "this"
+                  }
+                  type {
+                    lang_type: "Foo"
+                    cpp_type: "Foo"
+                  }
+                }
+                returns {
+                  type {
+                    lang_type: "bool"
+                    cpp_type: "bool"
+                  }
+                }
+                cpp_opfunction: true
+              }
+            }
+            members {
+              decltype: FUNC
+              line_number: 5
+              func {
+                name {
+                  native: "Set"
+                  cpp_name: "::FooSet"
+                }
+                params {
+                  name {
+                    native: "self"
+                    cpp_name: "this"
+                  }
+                  type {
+                    lang_type: "Foo"
+                    cpp_type: "Foo"
+                  }
+                }
+                params {
+                  name {
+                    native: "key"
+                    cpp_name: "key"
+                  }
+                  type {
+                    lang_type: "int"
+                    cpp_type: "int"
+                  }
+                }
+                params {
+                  name {
+                    native: "value"
+                    cpp_name: "value"
+                  }
+                  type {
+                    lang_type: "int"
+                    cpp_type: "int"
+                  }
+                }
+                cpp_opfunction: true
+              }
+            }
+          }
+        }
+      """)
+
+  def testFromClassFQIterErrNotNext(self):
+    # It also tests that FQ class name allowed for __iter__ classes.
+    with self.assertRaises(SyntaxError):
+      self.ClifEqualWithTypes("""\
+        from "foo.h":
+          class Foo:
+            class `x::a` as __iter__:
+              b:int
+        """, '')
+
+  def testFromClassDupIterErr(self):
+    # It also tests that __iter__ class has only def __next__.
+    with self.assertRaises(NameError):
+      self.ClifEqualWithTypes("""\
+        from "foo.h":
+          class Foo:
+            class `iter` as __iter__:
+              def __next__(self) -> int
+            def __iter__(self) -> bytes
+        """, '')
 
   def testFromClassVarErrDupName(self):
     with self.assertRaises(NameError):
@@ -1381,11 +1619,12 @@ class ToprotoTest(unittest.TestCase):
             }
           }
         }
+        extra_init: "PyEval_InitThreads();"
         macros {
           name: "Foo"
           definition: ""
         }
-        """)
+        """, add_extra_init=False)
 
 
 class IncludeTest(unittest.TestCase):

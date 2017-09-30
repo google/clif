@@ -58,6 +58,16 @@ class MyClass {
     return flag | i;
   }
 
+  int MethodThrowAwayDefault(int input1 = 1, int input2 = 1) {
+    return input1 + input2;
+  }
+
+  void MethodWithOutputDefault(int input = 1, int* output = nullptr) {
+    if (output != nullptr) {
+      *output = 1000;
+    }
+  }
+
  private:
   static const Enum kMyEnum;
 };

@@ -18,14 +18,36 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+namespace clif_ops_test {
+
 struct Abc {
   explicit Abc(uint8_t start, uint8_t end)
-      : s(start), l(end < start? 0: end-start+1) {}
+      : s(start), l(end < start ? 0 : end-start+1) {}
   int length() { return l; }
   char operator[](int i);
 
+  operator bool() const {
+    return false;
+  }
+
+  operator int() const {
+    return 1;
+  }
+
+  operator float() const {
+    float a = 1.1;
+    return a;
+  }
+
+  Abc& operator +=(int inc) {
+    s += inc;
+    return *this;
+  }
+
   uint8_t s, l;
 };
+
+int operator*(const Abc& a) { return 1; }
 
 bool operator==(Abc const& lhs, Abc const& rhs) {
   return lhs.l == rhs.l && lhs.s == rhs.s;
@@ -36,6 +58,15 @@ bool operator!=(Abc const& lhs, Abc const& rhs) {
 bool operator<(Abc const& lhs, Abc const& rhs) {
   return lhs.l < rhs.l || lhs.s < rhs.s;
 }
-char Abc::operator[](int i) { return i >= 0 && i <= l? s+i: 0; }
+char Abc::operator[](int i) { return (i >= 0 && i < l) ? s+i : 0; }
+
+// Check if |c| belongs to |abc| container.
+// It should be a non-member function to test that it can be wrapped in class.
+inline bool Abc_has(Abc const& abc, uint8_t c) {
+  const int offset = c - abc.s;
+  return offset >= 0 && offset < abc.l;
+}
+}  // namespace clif_ops_test
 
 #endif  // CLIF_TESTING_OPERATORS_H_
+

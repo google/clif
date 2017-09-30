@@ -24,6 +24,7 @@ class InheritedConstructorsTest(unittest.TestCase):
     d = imported_methods.Derived(12345)
     self.assertEqual(d.GetA(), 12345)
     self.assertEqual(d.GetAWithOffset(43210), 55555)
+    self.assertEqual(d.GetT(12345), 12345)
 
 
 if __name__ == '__main__':

@@ -13,13 +13,19 @@
 # limitations under the License.
 
 from "clif/testing/operators.h":
-
-  class Abc:
-    def __init__(self, s: int, e: int)
-    def __eq__(self, other: Abc) -> bool
-    def __ne__(self, other: Abc) -> bool
-    def __lt__(self, other: Abc) -> bool
-    def `length` as __len__(self) -> int
-    @sequential
-    def __getitem__(self, i: int) -> int:
-      return chr(...)
+  namespace `clif_ops_test`:
+    class Abc:
+      def __init__(self, s: int, e: int)
+      def __nonzero__(self) -> bool  # PY2
+      def __bool__(self) -> bool     # PY3
+      def __eq__(self, other: Abc) -> bool
+      def __ne__(self, other: Abc) -> bool
+      def __lt__(self, other: Abc) -> bool
+      def __int__(self) -> int
+      def __float__(self) -> float
+      def __iadd__(self, other: int) -> self
+      def `length` as __len__(self) -> int
+      @sequential
+      def __getitem__(self, i: int) -> int:
+        return chr(...)
+      def `clif_ops_test::Abc_has` as __contains__(self, k: int) -> bool

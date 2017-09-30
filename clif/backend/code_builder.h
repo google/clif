@@ -96,11 +96,14 @@ class CodeBuilder {
 
   void BuildCodeForClass(ClassDecl* decl);
 
-  void BuildCodeForType(Type* decl);
+  // Return the complete cpp_type made by code builder for the type.
+  std::string BuildCodeForType(Type* type);
 
-  void BuildCodeForFunc(FuncDecl* decl);
+  // Return the complete cpp_type made by code builder for the function decl.
+  std::string BuildCodeForFunc(FuncDecl* decl);
 
-  void BuildCodeForContainer(Type* type);
+  // Return the complete cpp_type made by code builder for the container.
+  std::string BuildCodeForContainer(Type* type);
 
   std::string BuildCodeForContainerHelper(Type* type);
 

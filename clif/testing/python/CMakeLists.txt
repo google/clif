@@ -52,6 +52,11 @@ add_pyclif_library_for_test(t2 t2.clif
 
 add_pyclif_library_for_test(t3 t3.clif)
 
+add_pyclif_library_for_test(t4 t4.clif
+  CC_DEPS clif_testing_t4
+  PROTO_DEPS clif_testing_nested_proto_wrapper clifAstProtoWrapper
+)
+
 add_pyclif_library_for_test(t6 t6.clif)
 
 add_pyclif_library_for_test(t7 t7.clif)
@@ -77,6 +82,8 @@ add_pyclif_library_for_test(nested_types nested_types.clif)
 add_pyclif_library_for_test(operators operators.clif)
 
 add_pyclif_library_for_test(smart_ptrs smart_ptrs.clif)
+
+add_pyclif_library_for_test(static_methods static_methods.clif)
 
 add_pyclif_library_for_test(std_containers std_containers.clif)
 

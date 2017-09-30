@@ -21,10 +21,20 @@
 
 typedef std::function<int(const std::vector<int>&, std::vector<int>*)>
     OldCallback;
+
 typedef std::function<std::pair<int, std::vector<int>>(const std::vector<int>&)>
     NewCallback;
 
-std::vector<int> Function(const std::vector<int>& input, NewCallback callback) {
+// test for wrapping function with nonconst nonref function parameter
+std::vector<int> FunctionNewStyleCallbackNonConstRef(
+    const std::vector<int>& input, NewCallback callback) {
+  auto output = callback(input);
+  return output.second;
+}
+
+// test for wrapping function with const reference function parameter
+std::vector<int> FunctionNewStyleCallbackConstRef(const std::vector<int>& input,
+                                                  const NewCallback& callback) {
   auto output = callback(input);
   return output.second;
 }
@@ -35,8 +45,14 @@ std::vector<int> Function(const std::vector<int>& input, OldCallback callback) {
   return output;
 }
 
+std::function<int(int)> FunctionWithCallableReturn(
+    std::function<int(int)> callback) {
+  return callback;
+}
+
+void StringCallback(std::function<void(string)> f) { f("foo"); }
+
 struct SelfCallback {
   explicit SelfCallback(std::function<void(SelfCallback*)>) {}
 };
-
 #endif  // CLIF_TESTING_CALLBACK_H_

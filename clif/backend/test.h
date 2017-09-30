@@ -88,6 +88,8 @@ class Class {
   int MethodWithDefaultFlag(int flag = F1 | F2);
   bool MethodWithDefaultBoolArgWithSideEffects(bool b = BoolFunc() || true);
   bool MethodWithDefaultBoolArgWithoutSideEffects(bool b = false);
+  bool MethodWithoutDefaultArg(int input);
+  void MethodWithDefaultArgs(int input = 0, int* output = nullptr);
   static bool BoolFunc();
   void Func();
   void MemberA();
@@ -178,6 +180,16 @@ int FuncIntPointerParam(int *x);
 int FuncIntRefParam(int &x); // NOLINT
 int FuncReturnsTwoInts(int *x);
 const int* FuncReturnsConstIntPtr();
+const Class* FuncReturnsConstClassPtr();
+const int FuncReturnsConstInt();
+const Class FuncReturnsConstClass();
+
+namespace std {
+template< typename T > class shared_ptr;
+}
+
+std::shared_ptr<const Class> FuncReturnsSmartPtrOfConstClass();
+std::shared_ptr<const int> FuncReturnsSmartPtrOfConstInt();
 
 // tests for parameter counts
 void FuncOneParam(int x);
@@ -229,6 +241,9 @@ class ClassMovableButUncopyable {
   ClassMovableButUncopyable& operator=(ClassMovableButUncopyable&&) = default;
 
   ClassMovableButUncopyable Factory();
+  ClassMovableButUncopyable* FactoryPointer();
+  ClassMovableButUncopyable& FactoryRef();
+  const ClassMovableButUncopyable& FactoryConstRef();
 };
 
 
@@ -282,6 +297,17 @@ using GrandParents::grandparent;
 class parent : public grandparent {};
 class child : public parent {};
 
+class base1_1 {};
+class base1_2 {};
+class base2_1 {};
+
+class base1 : public base1_1, private base1_2 {};
+class base2 : public base2_1 {};
+class base3 : public base2_1 {};
+
+class derive1 : public base1, private base2 {};
+class derive2 : public base2, public base3 {};
+
 class grandfather {};
 class grandmother {};
 class multiparent : public grandfather, public grandmother {};
@@ -303,6 +329,7 @@ class UncopyableClass {
 
 void FuncTakesUncopyableClass(UncopyableClass uc);
 void FuncTakesUncopyableClassConstRef(const UncopyableClass& uc);
+void FuncTakesUncopyableClassOutputParam(UncopyableClass* uc);
 
 class PrivateDestructorClass {
  private:
@@ -335,8 +362,19 @@ class OperatorClass {
 
 // Overload to be found by global lookup even though Clif defines it
 // in a class. (cpp_opfunction)
+int operator*(const OperatorClass&);
+
+class OperatorClass2 {
+  int operator*() const { return 1; }
+};
 
 bool operator!=(const OperatorClass&, const OperatorClass&);
+
+class ConversionClass {
+ public:
+  operator bool() const { return false; }
+  operator int() const { return 0; }
+};
 
 // Hack because we don't have a complete compilation environment here.
 namespace std {
@@ -352,6 +390,9 @@ class DynamicBase {
 };
 
 class DynamicDerived : public DynamicBase {};
+
+DynamicBase* FuncWithBaseReturnValue();
+void FuncWithBaseParam(DynamicBase*);
 
 void FuncUniqPtrToBuiltinTypeArg(std::unique_ptr<long long int>);  // NOLINT [runtime/int]
 std::unique_ptr<long long int> FuncUniqPtrToBuiltinTypeReturn();  // NOLINT [runtime/int]
@@ -371,6 +412,17 @@ template <typename T>
 float TemplateFuncWithOutputArg4(const T& t, int* i);
 template <typename T>
 T TemplateFuncWithOutputArg5(const T& t, int* i);
+
+namespace example {
+template <typename Real>
+class Vector {};
+template <class ObjectType>
+class ObjectTypeHolder {
+ public:
+  typedef ObjectType T;
+  void FailTerribly(ObjectTypeHolder<T>* other);
+};
+}  // namespace example
 
 class ClassWithQualMethodsAndParams {
  public:
@@ -404,6 +456,18 @@ class ClassWithDeprecatedMethod {
 
 void OverloadedFunction(int x);
 void OverloadedFunction(std::function<void(child)> x);
+// Use templates with callable arguments as input parameters for functions.
+void CallableTemplateArgFunction(
+    example::Vector<std::function<void(child, int)>> x);
+void CallableTemplateArgFunction2(
+    example::Vector<std::function<child()>> x);
+void CallableTemplateArgFunction3(
+    example::Vector<std::function<int(child)>> x);
+// Use templates with callable arguments as output parameters for functions.
+void CallableTemplateArgFunction4(
+    example::Vector<std::function<void(int)>>* x);
+// Use templates with callable arguments as return values for functions.
+example::Vector<std::function<void(int)>> CallableTemplateArgFunction5();
 
 void FunctionWithDeprecaredOverload(Class& c);  // NOLINT
 
@@ -426,10 +490,50 @@ class ClassWithNonDefaultConstructor {
   void Method();
 };
 
+template <typename T = int>
+class set {};
+template <typename T>
+using clif_set = set<>;
+
+void func_template_alias_set_input(set<> s);
+void func_template_alias_set_output(set<>* s);
+set<> func_template_alias_set_return();
+void func_template_unique_ptr(set<std::unique_ptr<int>> s);
+
+template <typename value, typename T = int>
+class map {};
+template <typename K, typename V>
+using clif_map = map<V>;
+
+void func_template_alias_map(map<int> s);
+
 class ClassWithInheritedConstructor : public ClassWithNonDefaultConstructor {
  public:
   using ClassWithNonDefaultConstructor::ClassWithNonDefaultConstructor;
   using ClassWithNonDefaultConstructor::Method;
+};
+
+class ClassWithTemplateFunctions {
+ public:
+  template <typename T>
+  explicit ClassWithTemplateFunctions(T i);
+
+  class NestClass {};
+
+  template <typename T>
+  void Method(T i);
+};
+
+class ClassUsingInheritedTemplateFunctions : public ClassWithTemplateFunctions {
+ public:
+  using ClassWithTemplateFunctions::ClassWithTemplateFunctions;
+  using ClassWithTemplateFunctions::Method;
+  using ClassWithTemplateFunctions::NestClass;
+};
+
+class ClassWithNonExplicitConstructor {
+ public:
+  ClassWithNonExplicitConstructor(const int& i);
 };
 
 class OuterClass1 {
@@ -476,10 +580,16 @@ bool operator==(const Class& x, int);
 }  // namespace defined_namespace
 }  // namespace a_user
 
-
+// Instantiation of template class declared in a separate file can be matched.
 template<typename T> class ClassTemplateInAnotherFile {
  public:
+  ClassTemplateInAnotherFile() {}
   T* SomeFunction(T t);
+};
+
+class ClassInAnotherFile {
+ public:
+  int SomeFunction(int t);
 };
 
 namespace const_ref_tests {
@@ -500,6 +610,18 @@ void PassByRef(ClassA& ls);  //NOLINT [runtime/reference]
 // Preprocessor directive to get back to the original file.
 #line 300 "test.h"
 
+// Instantiation of template class with non-class template parameters.
 typedef ClassTemplateInAnotherFile<int> ClassTemplateDeclaredInImportedFile;
 ClassTemplateDeclaredInImportedFile f;
+
+// Instantiation of template class with class template parameters.
+typedef ClassTemplateInAnotherFile<AnotherClass>
+    ClassTemplateDeclaredInImportedFile2;
+
+typedef std::function<void(int)> SimpleCallback;
+// functions with non const & std::function parameters
+void FunctionSimpleCallbackNonConstRef(int input, SimpleCallback callback);
+// function with const & std::function parameters
+void FunctionSimpleCallbackConstRef(int input, const SimpleCallback& callback);
+
 #endif  // CLIF_BACKEND_TEST_H_

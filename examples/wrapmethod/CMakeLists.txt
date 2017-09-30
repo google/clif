@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/..")
 add_library(wrapmethod_cc_lib
   wrapmethod.h
   wrapmethod.cc

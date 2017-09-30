@@ -30,7 +30,9 @@ class SlotsTest(unittest.TestCase):
         PyObject* slot_richcmp(PyObject* self, PyObject* other, int op) {
           switch (op) {
             case Py_EQ: return slot::adapter<wrap_eq>(self, other);
-            default: return slot::noop_py2();
+            default:
+              Py_INCREF(Py_NotImplemented);
+              return Py_NotImplemented;
           }
         }"""))
 

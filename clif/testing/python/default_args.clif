@@ -16,6 +16,7 @@ from "clif/testing/default_args.h":
   class MyClass:
     enum Enum
     enum Flag
+
     class Arg:
       e: Enum
     def MethodWithDefaultClassArg(
@@ -24,3 +25,16 @@ from "clif/testing/default_args.h":
         self, e: Enum = default, i: int = default) -> int
     def MethodWithDefaultPtrArg(self, a: Arg = default, i: int = default) -> int
     def MethodWithDefaultFlag(self, f: int = default, i: int = default) -> int
+    def MethodThrowAwayDefault(self, input1: int, input2: int) -> int
+
+    # ValueError: A default for integral type pointer argument is not supported. Drop =default in def MethodWithOutputDefault1(input2).
+    # def `MethodWithOutputDefault` as MethodWithOutputDefault1(self, input1: int = default, input2: int = default)
+    # def `MethodWithOutputDefault` as MethodWithOutputDefault2(self, input1: int, input2: int = default)
+
+    def `MethodWithOutputDefault` as MethodWithOutputDefault3(self, input1: int, input2: int)
+    def `MethodWithOutputDefault` as MethodWithOutputDefault4(self, input1: int = default) -> int
+    # Be careful when dropping the default specifier of output param, the initial code may be confusing.
+    def `MethodWithOutputDefault` as MethodWithOutputDefault5(self, input1: int) -> int
+    def `MethodWithOutputDefault` as MethodWithOutputDefault6(self, input1: int = default)
+    def `MethodWithOutputDefault` as MethodWithOutputDefault7(self, input1: int)
+    def `MethodWithOutputDefault` as MethodWithOutputDefault8(self)

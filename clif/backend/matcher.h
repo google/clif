@@ -85,10 +85,17 @@ enum ClifErrorCode {
   kNonPointerType,
   // Output parameter can't be written.
   kConstReturnType,
+  // Output parameter is uncopyable.
+  kUncopyableReturnType,
   // Types can't be assigned to each other.
   kIncompatibleTypes,
   // Too many parameters on one side or the other.
   kParameterCountsDiffer,
+  // Clif parameter contains unexpected default specifier, when C++'s
+  // corresponding parameter does not have default.
+  kUnexpectedDefaultSpecifier,
+  // Clif expects all required parameters to be placed before default arguments.
+  kWrongOrderDefault,
   // Matching a class with multiple inheritance.
   kMultipleInheritance,
   // C++ entity was only forward declared, but clif wants matching of
@@ -142,6 +149,14 @@ enum TypeMatchFlags : unsigned int {
   // For this function, the return type should be declared as constant,
   // but the input type should not.
   TMF_REMOVE_CONST_POINTER_TYPE = 1 << 3,
+
+  // The c++ type is the return type.
+  TMF_RETURN_TYPE = 1 << 4,
+
+  // The c++ type is the nested type of a smart pointer. If a c++ type is both
+  // the return type and the nested type of a smart pointer, then we keep all
+  // qualifiers.
+  TMF_FROM_SMART_PTR = 1 << 5,
 };
 
 class ClifError;
@@ -217,14 +232,14 @@ class ClifMatcher {
 
   bool MatchAndSetFunc(FuncDecl* clif_decl);
 
-  // Match and set an operator following clif lookup rules.
-  bool MatchAndSetOperator(FuncDecl* operator_decl);
+  // Match and set an operator or conversion function following clif lookup
+  // rules.
+  bool MatchAndSetOperatorOrConversion(FuncDecl* operator_decl);
 
-  // Helper for MatchAndSetOperator that finds operator overloads in
-  // particular contexts.
-  bool MatchAndSetOperatorInContext(
-      clang::DeclContext* context,
-      FuncDecl* operator_decl);
+  // Helper for MatchAndSetOperatorOrConversion that finds operator overloads or
+  // conversion function in particular contexts.
+  bool MatchAndSetOperatorOrConversionInContext(clang::DeclContext* context,
+                                                FuncDecl* operator_decl);
 
   bool MatchAndSetConstructor(
       clang::CXXRecordDecl* class_decl,
@@ -238,9 +253,8 @@ class ClifMatcher {
       FuncDecl* func_decl);
 
   ClifErrorCode MatchAndSetSignatures(
-      const clang::FunctionProtoType* clang_type,
-      int min_req_args,
-      FuncDecl* func_decl,
+      const clang::FunctionDecl* clang_decl,
+      const clang::FunctionProtoType* clang_type, FuncDecl* func_decl,
       std::string* message);
 
   // Helper functions for MatchAndSetSignatures
@@ -317,13 +331,20 @@ class ClifMatcher {
 
   // Helper for MatchAndSetType which handles the complicated
   // clif-callable children of Type.
-  ClifErrorCode MatchAndSetCallable(const clang::QualType& callable_type,
+  ClifErrorCode MatchAndSetCallable(clang::QualType callable_type,
                                     FuncDecl* callable);
 
   // Helper for SetClifCppType which handles clif-composed types.
   ClifErrorCode MatchAndSetContainer(const clang::QualType& reffed_type,
                                      protos::Type* container,
                                      unsigned int flags);
+
+  // Helper for MatchAndSetContainer. Check if the template types clang_type and
+  // clif_type match with each other.
+  ClifErrorCode MatchAndSetContainerHelper(const clang::QualType& clang_type,
+                                           const clang::QualType& clif_type,
+                                           const clang::SourceLocation& loc,
+                                           bool template_required);
 
   // Helper to work with function templates.
   const clang::FunctionDecl* SpecializeFunctionTemplate(
@@ -361,6 +382,11 @@ class ClifMatcher {
   // formattting a string displaying the types in the canonical,
   // "Here's what Clif says, and it doesn't match what C++ says" way.
   std::string GetParallelTypeNames() const;
+
+  // Build the clif error message when a UsingShadowDecl does not have the
+  // expected target decl.
+  std::string GetErrorMessageForNonTargetDecl(
+      const clang::NamedDecl& clang_decl) const;
 
   // Did the named_decl come from the file that the clif_decl
   // requests?  If not, then error will contain the details of the
@@ -437,6 +463,11 @@ class ClifMatcher {
   FRIEND_TEST(ClifMatcherTest, TestUsingDecls);
   FRIEND_TEST(ClifMatcherTest, BuildCode);
 };
+
+template<class T>
+void SetUniqueClassProperties(const clang::CXXRecordDecl*, T*) {}
+template<>
+void SetUniqueClassProperties(const clang::CXXRecordDecl*, clif::ClassDecl*);
 
 class ClifError {
  public:

@@ -45,6 +45,8 @@ subdirectory.  Both Python 2 and 3 are supported.
 
  1. We use [CMake](http://llvm.org/docs/CMake.html), so make sure CMake
     version 3.5 or later is available.
+    (For example, Debian 8 only has version 3.0,
+    so in that case you'll need to install an up-to-date CMake.)
 
  1. We use Google
     [protobuf](https://developers.google.com/protocol-buffers/docs/downloads)
@@ -56,29 +58,37 @@ subdirectory.  Both Python 2 and 3 are supported.
  1. You must have [virtualenv](https://pypi.python.org/pypi/virtualenv)
     installed.
 
+ 1. You must have Subversion installed, so we can fetch LLVM.
+
+ 1. You must have pyparsing installed, so we can build protobuf. Use
+    `pip install 'pyparsing>=2.2.0'` to fetch the correct version.
+
+ 1. Make sure `pkg-config --libs python` works (e.g. install `python-dev` and
+    `pkg-config`).
+
 ### Building
 
 The steps below are in `INSTALL.sh` but outlined here for clarification.
 The install script sets up a Python virtual environment where it installs CLIF.
 
- 1. Checkout LLVM and Clang source trees (the exact SVN version as specified
-    here is *required*[^ver])
+1.  Checkout LLVM and Clang source trees (the exact SVN version as specified
+    here is *required*)
 
     ```bash
     # We keep it separate of the CLIF tree to avoid pip unwanted copying.
     mkdir $LLVMSRC_DIR
     cd $LLVMSRC_DIR
-    svn co https://llvm.org/svn/llvm-project/llvm/trunk@299535 llvm
+    svn co https://llvm.org/svn/llvm-project/llvm/trunk@307315 llvm
     cd llvm/tools
-    svn co https://llvm.org/svn/llvm-project/cfe/trunk@299535 clang
+    svn co https://llvm.org/svn/llvm-project/cfe/trunk@307315 clang
     ln -sf "$CLIFSRC_DIR/clif" clif
     ```
 
- 1. Build and install the CLIF backend.
-    If you use [Ninja](https://ninja-build.org/) instead of `make` your build
-    will go significantly faster.  It is used by Chromium, LLVM et al.
-    Look at `INSTALL.sh` for the directory setup and proper ...flags... to
-    supply the `cmake` command here:
+1.  Build and install the CLIF backend. If you use
+    [Ninja](https://ninja-build.org/) instead of `make` your build will go
+    significantly faster. It is used by Chromium, LLVM et al. Look at
+    `INSTALL.sh` for the directory setup and proper ...flags... to supply the
+    `cmake` command here:
 
     ```bash
     # Builds must be done outside of the LLVM tree.
@@ -94,14 +104,32 @@ The install script sets up a Python virtual environment where it installs CLIF.
     ```bash
     cmake -G Ninja ...flags... $LLVMSRC_DIR/llvm
     ninja clif-matcher
-    ninja install
+    ninja -j 2 install
     ```
 
     If the clif-matcher build target is not found, check that you created the
-    correct `llvm/tools/clif` symlink in the previous step.
-    The CLIF backend builds as _part_ of an LLVM build.
+    correct `llvm/tools/clif` symlink in the previous step. The CLIF backend
+    builds as _part_ of an LLVM build.
 
- 1. Get back to your CLIF python checkout and install it using pip.
+    If you have more than one Python version installed (eg. python2.7 and
+    python3.6) cmake may have problems finding python libraries for the Python
+    you specified as INSTALL.sh argument and uses the default Python instead.
+    To help cmake use the correct Python add the following options to the cmake
+    command (substitute the correct path for your system):
+
+    ```bash
+    cmake ... \
+      -DPYTHON_INCLUDE_DIR="/usr/include/python3.6" \
+      -DPYTHON_LIBRARY="/usr/lib/x86_64-linux-gnu/libpython3.6m.so" \
+      -DPYTHON_EXECUTABLE="/usr/bin/python3.6" \
+      "${CMAKE_G_FLAGS[@]}" "$LLVM_DIR/llvm"
+    ```
+
+    NOTE: INSTALL.sh builds only for X86. If you want to build for another
+    architecture, modify it to specify your target architecture, or just remove
+    this restriction (see NOTE in INSTALL.sh).
+
+1.  Get back to your CLIF python checkout and install it using pip.
 
     ```bash
     cd "$CLIFSRC_DIR"
@@ -109,8 +137,8 @@ The install script sets up a Python virtual environment where it installs CLIF.
     pip install .
     ```
 
-[^ver]: That version is guaranteed to work. Older versions likely do not work
-        (they lack some APIs); later versions might work, at your own risk.
+That version is guaranteed to work. Older versions likely do not work (they lack
+some APIs); later versions might work, at your own risk.
 
 INSTALL.sh will build and install CLIF for Python (and LLVM Clang as an internal
 tool) to your system by default in `$HOME/opt/clif` and `$HOME/opt/clif/clang`.
@@ -126,7 +154,12 @@ cd ~/opt/clif/examples
 less README.md
 ```
 
-Next, read the [CLIF Python Primer](clif/python/primer.md).
+Next, read the [Python CLIF User Manual](clif/python/README.md).
+
+For more details please refer to:
+
+1.  [CLIF Python Primer](clif/python/primer.md)
+1.  [CLIF FAQ](clif/python/faq.md)
 
 ## Disclaimer
 

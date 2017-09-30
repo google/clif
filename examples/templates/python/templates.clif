@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from "clif/examples/templates/templates.h":
+from "templates/templates.h":
   namespace `clif_example::templates`:
     class `MyClass<int, string>` as MyClassIntStr:
       a: int = property(`GetA`, `SetA`)

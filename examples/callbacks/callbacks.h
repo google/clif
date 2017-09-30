@@ -17,7 +17,6 @@
 #define CLIF_EXAMPLES_CALLBACKS_CALLBACKS_H_
 
 #include <functional>
-#include <memory>
 
 namespace clif_example {
 namespace callbacks {
@@ -38,8 +37,8 @@ inline int Get(Data d, std::function<int(Data)> func) {
   return func(d);
 }
 
-inline void Set(std::function<void(Data*)> func, std::shared_ptr<Data> d) {
-  func(d.get());
+inline void Set(std::function<void(Data*)> func, Data* d) {
+  func(d);
 }
 
 inline std::function<int(const Data&, int)> GetCallback() {

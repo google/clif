@@ -45,17 +45,16 @@ from "clif/testing/t2.h":
     def __init__(self, a: int=default)
     a: int = property(`A`)
 
-  class NoCopyCtor:
+  class NoMove:
     def __init__(self, a: int=default)
     a: int = property(`A`)
 
-  class NoCopyAssignCtor:
+
+  class MovableButUncopyable:
     def __init__(self, a: int=default)
     a: int = property(`A`)
 
-  class NoCopyAssign:
-    def __init__(self, a: int=default)
-    a: int = property(`A`)
+  def take_nocopy_class(c: MovableButUncopyable)
 
   class CtxMgr:
     enum State
@@ -76,12 +75,6 @@ from "clif/testing/t2.h":
   def all_nocopy_holds() -> list<NoCopy>
 
   def vector_inside_unique_ptr() -> list<Nested>
-
-  class MovableButUncopyable:
-    def __init__(self, a: int=default)
-    a: int = property(`A`)
-
-  def take_nocopy_class(c: MovableButUncopyable)
 
   class NestedContainerAttributes:
     int_set_vector: list<`std::set` as set<int>>
