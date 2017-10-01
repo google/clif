@@ -440,9 +440,11 @@ class Module(object):
         if b.cpp_name and not b.native:
           p = b.cpp_name
           w = 'as_' + types.Mangle(p)  # pyname == cname == w
-          for s in gen.CastAsCapsule(_GetCppObj(), p, w):
-            yield s
-          self.methods.append((w, w, NOARGS, 'Upcast to %s*' % p))
+          # Protect against duplicate bases.
+          if not any(w == m[0] for m in self.methods):
+            for s in gen.CastAsCapsule(_GetCppObj(), p, w):
+              yield s
+            self.methods.append((w, w, NOARGS, 'Upcast to %s*' % p))
       if self.methods:
         for s in slots.GenSlots(self.methods, tp_slots, py3=self.py3output):
           yield s
