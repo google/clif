@@ -1,5 +1,0 @@
-;; Bad words to avoid
-MOE:;2;
-
-;; Allow some words from default dict (warnings)
-hack;0;
