@@ -75,7 +75,7 @@ def Docstring(method):
   yield method.name.native + i + out
   if method.docstring != '':
     yield ''
-    yield '  ' + method.docstring
+    yield method.docstring
   else:
     yield '  Calls C++ function'
     # Gen C++ signature
