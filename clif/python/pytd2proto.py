@@ -301,7 +301,7 @@ class Postprocessor(object):
 
   def _docstring(self, unused_ln, p, pb):
       assert len(p) == 1, str(p)
-      pb.docstring = inspect.cleandoc(p[0]).replace('\n', '\\n')
+      pb.docstring = _process_docstring(p[0])
 
   # decl
 
@@ -329,7 +329,7 @@ class Postprocessor(object):
     pyname = p.name.native
     self.check_known_name(pyname)
     if ast.docstring:
-      p.docstring = inspect.cleandoc(ast.docstring[0]).replace('\n', '\\n')
+      p.docstring = _process_docstring(ast.docstring[0])
     decorators = ast.decorators.asList()
     if not is_iterator:
       self._typetable[pyname] = [p.name.cpp_name]
@@ -530,8 +530,7 @@ class Postprocessor(object):
                     lambda x, f=f: _set_keep_gil(f, x))
       f.ignore_return_value = True
     if ast.docstring:
-      p.cpp_get.docstring = inspect.cleandoc(ast.docstring[0]).replace('\n',
-                                                                       '\\n')
+      p.cpp_get.docstring = _process_docstring(ast.docstring[0])
     return p.name.native
 
   def _const(self, ln, ast, pb, ns=None):
@@ -613,12 +612,10 @@ class Postprocessor(object):
           raise ValueError('Inplace ops can\'t have "return Postprocess(...)"')
         f.postproc = '->self'  # '->' indicate special postprocessing.
     if return_self and f.postproc != '->self':
-      raise ValueError('Only inplace ops can return "self".')
-    if ast.func_block:
+      raise ValueError('Only inplace ops can return "self".')    if ast.func_block:
       func_block = ast.func_block[0][0]
       if func_block.docstring:
-          f.docstring = inspect.cleandoc(func_block.docstring[0]).replace('\n',
-                                                                          '\\n')
+          f.docstring = _process_docstring(func_block.docstring[0])
       if func_block.postproc:
         name = func_block.postproc[0]
         try:
@@ -938,3 +935,6 @@ def _fix_special_names(ast_name):
     if op:
       return [op, pyname]
   return ast_name
+
+def _process_docstring(docstring):
+  return inspect.cleandoc(docstring).replace('\n', '\\n')
