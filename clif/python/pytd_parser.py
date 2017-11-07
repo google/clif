@@ -62,7 +62,7 @@ ANGLED = lambda el: S('<') - el - S('>')
 
 QSTRING = pp.QuotedString('"')
 ASTRING = pp.QuotedString('`')
-DSTRING = pp.QuotedString('"""', multiline=True)
+DSTRING = pp.QuotedString('"""', multiline=True, convertWhitespaceEscapes=False)
 NAME = pp.Word(pp.alphas+'_', pp.alphanums+'_').setName('name')
 dotted_name = pp.delimitedList(NAME, '.', combine=True)
 
