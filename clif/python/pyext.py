@@ -452,6 +452,9 @@ class Module(object):
           for s in gen.MethodDef(self.methods):
             yield s
           tp_slots['tp_methods'] = gen.MethodDef.name
+          for name, wrapper_name, _, _ in self.methods:
+              if name == '__call__':
+                  tp_slots['tp_call'] = '(ternaryfunc)%s' % wrapper_name
     qualname = '.'.join(f.pyname for f in self.nested)
     tp_slots['tp_name'] = '"%s.%s"' % (self.path, qualname)
     if c.async_dtor and c.cpp_has_trivial_dtor:
