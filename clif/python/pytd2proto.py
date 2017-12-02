@@ -937,4 +937,4 @@ def _fix_special_names(ast_name):
   return ast_name
 
 def _process_docstring(docstring):
-  return inspect.cleandoc(docstring).replace('\n', '\\n')
+  return inspect.cleandoc(docstring).replace('\n', '\\n').replace('"', '\\"')

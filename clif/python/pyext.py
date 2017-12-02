@@ -228,7 +228,7 @@ class Module(object):
       meth += ' | METH_CLASS'
     # Keep '#' in method name to distinguish map/seq slots.
     self.methods.append((f.name.native.rstrip('@'), wrapper_name, meth,
-                         '\\n'.join(astutils.Docstring(f)).replace('"', '\\"')))
+                         '\\n'.join(astutils.Docstring(f))))
 
   def _FunctionCallExpr(self, f, cname, pyname):
     """Find function call/postcall C++ expression."""
