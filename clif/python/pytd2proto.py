@@ -612,7 +612,8 @@ class Postprocessor(object):
           raise ValueError('Inplace ops can\'t have "return Postprocess(...)"')
         f.postproc = '->self'  # '->' indicate special postprocessing.
     if return_self and f.postproc != '->self':
-      raise ValueError('Only inplace ops can return "self".')    if ast.func_block:
+      raise ValueError('Only inplace ops can return "self".')
+    if ast.func_block:
       func_block = ast.func_block[0][0]
       if func_block.docstring:
           f.docstring = _process_docstring(func_block.docstring[0])
