@@ -53,7 +53,7 @@ To access a nested type use normal.python.dotted.notation.
 #### **Q:** Why does CLIF insist on using the `package` statement in Protocol Buffers?
 
 **A:** CLIF uses C++ argument-dependent lookup
-((ADL)[http://en.cppreference.com/w/cpp/language/adl]) to find proper conversion
+([ADL](http://en.cppreference.com/w/cpp/language/adl)) to find proper conversion
 functions which does not work in the global namespace (that’s where proto
 messages end up without a package). You can still use such a proto but it will
 have a limited functionality without ADL (that mostly affects using proto in
