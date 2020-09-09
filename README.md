@@ -1,4 +1,9 @@
-# C++ Language Interface Foundation (CLIF)
+# WARNING: This repo is currently in an unmaintained / experimental state.
+
+The last full update was in December 2017. We are now (2020-09-09) exploring
+a new direction.
+
+## C++ Language Interface Foundation (CLIF)
 
 CLIF provides a common foundation for creating C++ wrapper generators for
 various languages.
