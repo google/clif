@@ -24,21 +24,21 @@ namespace property {
 
 class MyOptions {
  public:
-  explicit MyOptions(string name) : name_(std::move(name)) {}
+  explicit MyOptions(std::string name) : name_(std::move(name)) {}
 
-  void SetName(const string& n) {
+  void SetName(const std::string& n) {
     name_ = n;
   }
 
-  string GetName() const {
+  std::string GetName() const {
     return name_;
   }
 
-  void SetPath(const string& p) {
+  void SetPath(const std::string& p) {
     path_ = p;
   }
 
-  string GetPath() const {
+  std::string GetPath() const {
     return path_;
   }
 
@@ -51,8 +51,8 @@ class MyOptions {
   }
 
  private:
-  string name_;
-  string path_;
+  std::string name_;
+  std::string path_;
   int count_;
 };
 

@@ -14,7 +14,7 @@
 
 #include "clif/python/pyobj.h"
 #include "testing/base/public/googletest.h"
-#include "testing/base/public/gunit.h"
+#include "gtest/gtest.h"
 
 namespace clif {
 namespace {

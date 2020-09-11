@@ -57,7 +57,7 @@ class K {
   };
 
   struct O {
-    string n;
+    std::string n;
     bool f;
   };
 

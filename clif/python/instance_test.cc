@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "clif/python/instance.h"
-#include "testing/base/public/gunit.h"
+#include "gtest/gtest.h"
 
 namespace clif {
 

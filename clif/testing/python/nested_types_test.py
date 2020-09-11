@@ -15,10 +15,26 @@
 """Tests for clif.testing.python.nested_types."""
 
 import unittest
+
 from clif.testing.python import nested_types
 
 
 class NestedTypesTest(unittest.TestCase):
+
+  def testModuleAttr(self):
+    expected_module_name = nested_types.__name__
+    for ty in (
+        nested_types.Outer1,
+        nested_types.Outer1.Inner,
+        nested_types.Outer2,
+        nested_types.Outer2.Inner,
+        nested_types.Outer3,
+        nested_types.Outer3.Inner,
+        nested_types.Outer4,
+        nested_types.Outer4.Inner,
+        nested_types.Outer,
+        nested_types.Outer.Inner):
+      self.assertEqual(ty.__module__, expected_module_name)
 
   def testNestedTypes(self):
     inner1 = nested_types.Outer1.Inner()

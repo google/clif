@@ -28,6 +28,8 @@ class DefaultArgsTest(unittest.TestCase):
     self.assertEqual(a.MethodWithDefaultPtrArg(i=1234), 1234)
     self.assertEqual(a.MethodWithDefaultFlag(i=32), 35)
     self.assertEqual(a.MethodThrowAwayDefault(input1=1, input2=2), 3)
+    # Invoking methods that ignore the return values should not blow up.
+    a.MethodThrowAwayDefault2(input1=1, input2=2)
     a.MethodWithOutputDefault3(input1=123, input2=456)
     self.assertEqual(a.MethodWithOutputDefault4(), 1000)
     self.assertEqual(a.MethodWithOutputDefault5(input1=10), 1000)

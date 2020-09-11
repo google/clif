@@ -58,6 +58,41 @@ def PARENS(el):           # pylint: disable=invalid-name
   el.ignore(pp.pythonStyleComment)
   return S('(') - el - S(')')
 
+
+def DOCSTR_BLOCK(expr, resultsName=None):  # pylint: disable=invalid-name
+  """Block with an optional docstring followed by one of more `expr`."""
+
+  # Copied from pyparsing.indentedBlock
+  def checkSubIndent(s, l, t):  # pylint: disable=invalid-name
+    curCol = pp.col(l, s)  # pylint: disable=invalid-name
+    if curCol > _indentation_stack[-1]:
+      _indentation_stack.append(curCol)
+    else:
+      raise pp.ParseException(s, l, 'not a subentry')
+
+  def checkUnindent(s, l, t):  # pylint: disable=invalid-name
+    del t
+    if l >= len(s):
+      return
+    curCol = pp.col(l, s)  # pylint: disable=invalid-name
+    if not (_indentation_stack and curCol < _indentation_stack[-1] and
+            curCol <= _indentation_stack[-2]):
+      raise pp.ParseException(s, l, 'not an unindent')
+    _indentation_stack.pop()
+
+  INDENT = (  # pylint: disable=invalid-name
+      pp.Empty() + pp.Empty().setParseAction(checkSubIndent)).setName('INDENT')
+  UNDENT = pp.Empty().setParseAction(checkUnindent).setName('UNINDENT')  # pylint: disable=invalid-name
+
+  docstring = Group(Tag('docstring') + pp.QuotedString('"""', multiline=True))
+  code = Optional(pp.indentedBlock(expr, _indentation_stack, False), [])
+  if resultsName:
+    code = code.setResultsName(resultsName)
+
+  body = INDENT + Optional(docstring)('docstring') + code + UNDENT
+  return S(':') + NEWLINE - body
+
+
 ANGLED = lambda el: S('<') - el - S('>')
 
 QSTRING = pp.QuotedString('"')
@@ -78,8 +113,8 @@ plist = pp.ZeroOrMore(S(',') + pdef)
 decorators = Group(pp.ZeroOrMore(S('@') - NAME + NEWLINE))('decorators')
 parameters = Group(PARENS(Optional(pdef + plist)))('params')
 mparameters = PARENS((W('self') | W('cls'))('self') + Group(plist)('params'))
-postproc = Optional(BLOCK(
-    S('return') - pp.WordEnd() + NAME - S('(...)')))('postproc')
+postproc = Optional(
+    DOCSTR_BLOCK(S('return') - pp.WordEnd() + NAME - S('(...)'), 'postproc'))
 
 types = Group(E('') + type) | PARENS(pp.delimitedList(pdef))
 returns = S('->') - (SW('None') | Group(types)('returns'))
@@ -98,17 +133,20 @@ funcdef = G(_func + decorators + S('def') - cname +
 methoddef = G(_func + decorators + S('def') - cname +
               mparameters + Optional(returns - postproc))
 _cnamedef = cname + S(':') - type
-vardef = G(Tag('var') + _cnamedef + Optional(
+vardef = G(Tag('var') + Optional(decorators) + _cnamedef + Optional(
     S('=') - S('property') + PARENS(ASTRING('getter') +
                                     Optional(S(',') + ASTRING('setter')))))
-composed_type = NAME - ANGLED(pp.delimitedList(NAME))
-interface_stmt = G(K('interface') - composed_type) - BLOCK(methoddef | vardef)
-implementsdef = G(K('implements') - composed_type)
+interface_composed_type = NAME - ANGLED(pp.delimitedList(NAME))
+interface_stmt = G(K('interface') - interface_composed_type) - BLOCK(methoddef
+                                                                     | vardef)
+implements_composed_type = NAME - ANGLED(pp.delimitedList(dotted_name))
+implementsdef = G(K('implements') - implements_composed_type)
 
 nested_decl = pp.Forward()
-classdef = G(Tag('class') + decorators + S('class') - cname +
-             Group(Optional(PARENS(pp.delimitedList(cname))))('bases') -
-             BLOCK(nested_decl))
+classdef = G(
+    Tag('class') + decorators + S('class') - cname +
+    Group(Optional(PARENS(pp.delimitedList(tname))))('bases') -
+    DOCSTR_BLOCK(nested_decl))
 constdef = G(K('const') - _cnamedef)
 enumdef = G(K('enum') - cname + Optional(S('with') - BLOCK(crename)))
 capsule_def = G(K('capsule') - cname)

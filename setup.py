@@ -61,7 +61,7 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'pyclif = clif.pyclif:start',
-            'pyclif_proto = clif.python.proto:start',
+            'pyclif_proto = clif.python.proto:Start',
             ],
         },
     ext_modules=[

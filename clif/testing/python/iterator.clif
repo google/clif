@@ -18,8 +18,7 @@ from "clif/testing/iterator.h":
       def clear(self)
       def pop(self) -> int
       def push(self, v: int)
-      def __nonzero__(self) -> bool  # PY2
-      def __bool__(self) -> bool  # PY3
+      def __bool__(self) -> bool
 
       class `const_iterator` as __iter__:
         def __next__(self) -> int

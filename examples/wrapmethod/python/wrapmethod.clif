@@ -46,7 +46,7 @@ from "wrapmethod/wrapmethod.h":
       @sequential
       def `Set` as __setitem__(self, i: int, v: int)
 
-      # Wrap ClassWithMethods::Set as __delitem__ with sequence protocol
+      # Wrap ClassWithMethods::Delete as __delitem__ with sequence protocol
       @sequential
       def `Delete` as __delitem__(self, i: int)
 

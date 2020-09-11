@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+use `std::string` as str
+
 from "clif/testing/std_containers.h":
   def Mul(v: list<int>, m: int) -> list<int>
+  def Div(v: `std::array<int, 2>` as list, m: int) -> `std::array<int, 2>` as list
   def Odd(v: list<int>) -> list<bool>
   def Even(v: list<int>) -> list<bool>
   def Find(v: int, m: dict<int,int>) -> (x: bool, y: int)
@@ -22,3 +25,4 @@ from "clif/testing/std_containers.h":
   def MatrixSum(a: list<list<int>>, b: list<list<int>>) -> list<list<int>>
   def Make2By3() -> `std::tuple` as tuple<`std::tuple` as tuple<int, int, int>, `std::tuple` as tuple<int, int, int>>
   def Flatten2By3(m: `std::tuple` as tuple<`std::tuple` as tuple<int, int, int>, `std::tuple` as tuple<int, int, int>>) -> `std::tuple` as tuple<int, int, int, int, int, int>
+  def LastStringInVector(v: list<str>) -> (output: str)

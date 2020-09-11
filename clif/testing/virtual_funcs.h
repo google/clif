@@ -16,6 +16,8 @@
 #ifndef CLIF_TESTING_VIRTUAL_FUNCS_H_
 #define CLIF_TESTING_VIRTUAL_FUNCS_H_
 
+#include <Python.h>
+
 #include <memory>
 #include <vector>
 
@@ -104,4 +106,16 @@ inline int add_seq(Q* q, int step, int stop) {
 inline int DoUniq(std::unique_ptr<ClassNonDefConst> c) {
   return c->DoSomething();
 }
+
+struct TestReturnsObject {
+  virtual PyObject* CreateObject() = 0;
+  virtual ~TestReturnsObject() {}
+  int GetRefcntOfResult() {
+    PyObject* result = CreateObject();
+    int refcnt = Py_REFCNT(result);
+    Py_XDECREF(result);
+    return refcnt;
+  }
+};
+
 #endif  // CLIF_TESTING_VIRTUAL_FUNCS_H_

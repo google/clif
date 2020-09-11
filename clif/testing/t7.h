@@ -21,7 +21,7 @@
 
 char settled[20] = "not set";
 
-inline string get_settled() { return settled; }
+inline std::string get_settled() { return settled; }
 
 inline void set_callback(std::function<std::string(int)> cb) {
   strcpy(settled, cb(1).c_str());

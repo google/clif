@@ -29,44 +29,42 @@ namespace clif_proto {
 // This same info type is used for both enums as well as messages.
 struct ProtoTypeInfo {
   // The name of the message after the last '.' in its fully qualified name.
-  string name;
+  std::string name;
 
   // The fully qualified name of the message delimited by '.'.
-  string fqname;
+  std::string fqname;
 
   // The package of the proto file in which this message is declared.
-  string package;
+  std::string package;
 
   // The proto file in which this proto message is defined.
-  string srcfile;
+  std::string srcfile;
 };
 
 struct MethodInfo {
   // The method name.
-  string name;
+  std::string name;
 
   // The descriptor of the request message type.
   ProtoTypeInfo request;
 
   // The descriptor of the reply message type.
   ProtoTypeInfo reply;
-
-  };
+};
 
 struct ServiceInfo {
   // The name of the service.
-  string name;
+  std::string name;
 
   // The fulle qualified name of the service delimited by '.'.
-  string fqname;
+  std::string fqname;
 
   // The proto file in which this service is defined.
-  string srcfile;
+  std::string srcfile;
 
   // The list of methods in this service.
   std::vector<MethodInfo> methods;
-
-  };
+};
 
 class ProtoFileInfo {
  public:
@@ -74,8 +72,8 @@ class ProtoFileInfo {
   // If the proto file is succesfully parsed, then the "IsValid" method
   // returns true, else false. The errors encountered while parsing are
   // returned by the "ErrorMsg" method.
-    ProtoFileInfo(const string& proto_file_path,
-                const string& additional_import_path);
+  ProtoFileInfo(const std::string& proto_file_path,
+                const std::string& additional_import_path);
 
   bool IsValid() const {
     return valid_;
@@ -84,19 +82,13 @@ class ProtoFileInfo {
   // Returns a string of errors encountered when parsing the proto file.
   // The returned string is a true error message only when "IsValid" returns
   // false.
-  const string& ErrorMsg() const {
-    return error_msg_;
-  }
+  const std::string& ErrorMsg() const { return error_msg_; }
 
   // The getters below return meaningful values only if the "IsValid" method
   // returns true.
-  const string &SrcFile() const {
-    return proto_file_path_;
-  }
+  const std::string& SrcFile() const { return proto_file_path_; }
 
-  const string &PackageName() const {
-    return package_;
-  }
+  const std::string& PackageName() const { return package_; }
 
   const std::vector<ProtoTypeInfo> &Messages() const {
     return messages_;
@@ -115,11 +107,11 @@ class ProtoFileInfo {
   void IndexMessage(const proto2::Descriptor& d);
 
   bool valid_;
-  string proto_file_path_;
-  string additional_import_path_;
+  std::string proto_file_path_;
+  std::string additional_import_path_;
 
-  string package_;
-  string error_msg_;
+  std::string package_;
+  std::string error_msg_;
   std::vector<ProtoTypeInfo> messages_;
   std::vector<ProtoTypeInfo> enums_;
   std::vector<ServiceInfo> services_;

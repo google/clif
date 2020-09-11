@@ -24,7 +24,6 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
 
-
 namespace clif {
 
 inline void StrAppend(std::string* str) {}
@@ -90,6 +89,5 @@ class NamespaceVector {
 };
 
 }  // namespace clif
-
 
 #endif  // CLIF_BACKEND_STRUTIL_H_

@@ -32,6 +32,7 @@
 
 #include <list>
 #include <memory>
+#include <queue>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -40,7 +41,6 @@
 #include "clif/backend/code_builder.h"
 #include "clif/protos/ast.pb.h"
 #include "gtest/gtest.h"  // Defines FRIEND_TEST.
-
 
 namespace clif {
 
@@ -85,8 +85,8 @@ enum ClifErrorCode {
   kNonPointerType,
   // Output parameter can't be written.
   kConstReturnType,
-  // Output parameter is uncopyable.
-  kUncopyableReturnType,
+  // Output parameter is uncopyable and unmovable.
+  kUncopyableUnmovableReturnType,
   // Types can't be assigned to each other.
   kIncompatibleTypes,
   // Too many parameters on one side or the other.
@@ -114,6 +114,10 @@ enum ClifErrorCode {
   kCppStaticMethod,
   // Globally-declared function matches a non-static class method.
   kNonStaticClassGlobalFunctionDecl,
+  // Diamond inheritance must be virtual.
+  kNonVirtualDiamondInheritance,
+  // Clif does not allow ignoring ABSL_MUST_USE_RESULT return values.
+  kMustUseResultIgnored,
 };
 
 static const char kVariableNameForError[] = "variable";
@@ -193,6 +197,12 @@ class ClifMatcher {
 
   const std::string GetDeclCppName(const Decl& decl) const;
 
+  // The data structure to store typemaps. Uses std::vector<std::string> as the
+  // value of the hashmap because CLIF needs to retain the order of the type
+  // candidates in typemaps.
+  using CLIFToClangTypeMap =
+      std::unordered_map<std::string, std::vector<std::string>>;
+
  private:
   // Helper class to map clif::clif_type_XX to the resulting qualtypes.
   struct ClifQualTypeDecl {
@@ -203,7 +213,6 @@ class ClifMatcher {
   // Type table data structures.
   typedef std::pair<std::string, clang::QualType>  ClangTypeInfo;
   typedef std::vector<ClangTypeInfo> TypeInfoList;
-  typedef std::unordered_map<std::string, TypeInfoList> ClifToClangTypeMap;
   typedef std::unordered_map<std::string, ClifQualTypeDecl> ClifQualTypes;
 
   // Calls MatchAndSetXXXX for each decl in the list.  Returns the
@@ -223,6 +232,28 @@ class ClifMatcher {
   // Helper for MatchAndSetClass.
   bool CalculateBaseClasses(const clang::CXXRecordDecl* clang_decl,
                             ClassDecl* clif_decl) const;
+
+  // Construct the hash function for the keys of
+  // std::unordered_set<clang::ClassTemplateSpecializationDecl*>.
+  class HashFuncTemplateSpecDecl {
+   public:
+    std::size_t operator()(clang::ClassTemplateSpecializationDecl*
+                               template_specialized_decl) const {
+      return std::hash<std::string>()(
+          template_specialized_decl->getNameAsString());
+    }
+  };
+
+  using BaseSpecifierQueue = std::queue<clang::CXXBaseSpecifier>;
+  using QualTypeMap = std::unordered_map<clang::QualType, bool, HashQualType>;
+  using ClassTempSpecializedDeclMap =
+      std::unordered_map<clang::ClassTemplateSpecializationDecl*, bool,
+                         HashFuncTemplateSpecDecl>;
+
+  bool CalculateBaseClassesHelper(
+      ClassDecl* clif_decl, BaseSpecifierQueue* base_queue,
+      QualTypeMap* public_bases,
+      ClassTempSpecializedDeclMap* public_template_specialized_bases) const;
 
   bool MatchAndSetEnum(EnumDecl* clif_decl);
 
@@ -259,10 +290,8 @@ class ClifMatcher {
 
   // Helper functions for MatchAndSetSignatures
   ClifErrorCode MatchAndSetReturnValue(
-      const clang::FunctionProtoType* clang_type,
-      FuncDecl* func_decl,
-      bool* consumed_return_value,
-      std::string* message);
+      const clang::FunctionProtoType* clang_type, FuncDecl* func_decl,
+      bool* consumed_return_value, std::string* message, bool must_use_result);
 
   ClifErrorCode MatchAndSetOutputParamType(const clang::QualType& clang_type,
                                            Type* clif_type);
@@ -296,6 +325,11 @@ class ClifMatcher {
   ClifErrorCode MatchAndSetType(const clang::QualType& reffed_type,
                                 Type* clif_type,
                                 unsigned int flags = TMF_EXACT_TYPE);
+
+  // Check if clang_type is movable. If so, check if clang_type and clif_type
+  // are movable to each other.
+  ClifErrorCode MatchAndSetMovableType(const clang::QualType& clang_type,
+                                       Type* clif_type);
 
   // Handle C++ return type special cases.
   ClifErrorCode MatchAndSetReturnType(const clang::QualType& clang_ret,
@@ -348,8 +382,12 @@ class ClifMatcher {
 
   // Helper to work with function templates.
   const clang::FunctionDecl* SpecializeFunctionTemplate(
-      clang::FunctionTemplateDecl* template_decl,
-      FuncDecl* func_decl) const;
+      clang::FunctionTemplateDecl* template_decl, FuncDecl* func_decl,
+      std::string* message) const;
+
+  // Transform template type deduction error codes into error messages.
+  std::string TemplateDeductionResult(
+      clang::Sema::TemplateDeductionResult specialized_result) const;
 
   // Add the class type as the first parameter to a function.
   void AdjustForNonClassMethods(protos::FuncDecl* clif_func_decl) const;
@@ -366,6 +404,9 @@ class ClifMatcher {
   // or nullptr if that is not possible.
   template<class ClangDeclType>
   ClangDeclType* CheckDeclType(clang::NamedDecl* named_decl) const;
+
+  // Get readable decl kind names from clang decl.
+  std::string ClifDeclName(const clang::NamedDecl* named_decl) const;
 
   // Report a typecheck error and store it in named_decl's error
   // field.
@@ -397,6 +438,9 @@ class ClifMatcher {
   // Builds an internal convenience type table.
   void BuildTypeTable();
 
+  // Builds a hashmap to store all of the typemaps.
+  CLIFToClangTypeMap& BuildClifToClangTypeMap(const AST& clif_ast);
+
   // CLif forbids many normal C++ type promotions. Return true if
   // promoting from_type to to_type is a legal Clif type promotion.
   bool IsValidClifTypePromotion(clang::QualType from_type,
@@ -415,9 +459,57 @@ class ClifMatcher {
                           const clang::SourceLocation& loc,
                           clang::QualType type_b) const;
 
+  // Returns if two qualtypes are equal to each other.
+  bool AreEqualTypes(clang::QualType from_type, clang::QualType to_type) const;
+
+  // The enum ClifRetryType describes which version of the type to retry for
+  // CLIF cpp types while matching against the clang cpp type.
+  enum class ClifRetryType {
+    // Retries the pointer version of the possible CLIF cpp type.
+    kPointer,
+    // Retries the possible CLIF cpp type as an array.
+    kArray,
+    // Retries the nonconst and nonreference version of the possible CLIF cpp
+    // type.
+    kNonconstNonref,
+    // Tries the plain CLIF cpp type.
+    kPlain,
+  };
+
+  // Selects the "best type" for a specific lang_type via type selector. If the
+  // best type could be found, "type_selected" will be set to the best type and
+  // the function will return true.
+  // "best type": If a CLIF cpp type is equal to the clang type, use it.
+  // Otherwise, use the first assignable type to the clang type.
+  bool SelectTypeWithTypeSelector(clang::QualType clang_type,
+                                  ClifRetryType try_type, Type* clif_type,
+                                  clang::QualType* type_selected) const;
+
+  // Selects clif_qual_type with/without the automatic type selector depending
+  // on whether "enable_type_selector" is true or not.
+  // Parameters:
+  // 1. clang_type: the corresponding clang cpp type to match against the CLIF
+  // input.
+  // 2. try_type: specifies which version of the possible CLIF cpp type to match
+  // against the clang cpp type.
+  // 3. enable_type_selector: enable CLIF type selector or not.
+  // 4. clif_cpp_decl: If the type selector is disable, clif_cpp_decl provides
+  // the decl info of the user provided cpp type.
+  // 5. clif_type: the CLIF AST for the current CLIF type.
+  // 6. type_selected: points to the appropriate CLIF cpp type selected by the
+  // type selector if the function returns true.
+  bool SelectType(const clang::QualType& clang_type, ClifRetryType try_type,
+                  bool enable_type_selector,
+                  const ClifQualTypeDecl* clif_cpp_decl, Type* clif_type,
+                  clang::QualType* type_selected) const;
+
   // Sets various fields of a type-related clif_proto appropriately.
   template<class T>
   void SetTypeProperties(clang::QualType clang_type, T* clif_proto) const;
+
+  template <class T>
+  void SetTypePropertiesHelper(clang::CXXRecordDecl* clang_decl,
+                               T* clif_decl) const;
 
   std::string GetQualTypeClifName(clang::QualType qual_type) const;
 
@@ -454,6 +546,7 @@ class ClifMatcher {
   // name first, clif name second.
   std::vector<std::pair<std::string, std::string>> type_mismatch_stack_;
   ClifQualTypes clif_qual_types_;
+  CLIFToClangTypeMap clif_to_clang_type_map_;
   CodeBuilder builder_;
 
   FRIEND_TEST(ClifMatcherTest, TestMatchAndSetOneDecl);

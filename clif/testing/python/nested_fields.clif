@@ -30,6 +30,9 @@ from "clif/testing/nested_fields.h":
     def `c` as GetC(self) -> CC
     @setter
     def `c` as SetC(self, c: CC)
+    dp: DD
+    du: DD
+    ds: DD
 
   def ConsumeCC(cc: CC)
   def ConsumeAA(aa: AA)

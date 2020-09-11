@@ -16,7 +16,7 @@ r"""Generate CLIF extension C++ source for a protobuf.
 
 PROTO -cOUTPATH/CCNAME \
       -hOUTPATH/HNAME  \
-      --strip_dir=SYSPATH/google3 \
+      --strip_dir=SYSPATH \
       SYSPATH/PKGPATH/NAME.proto
 
 reads NAME.proto and generates C++ CCNAME source and HNAME header files.
@@ -27,11 +27,10 @@ import sys
 from clif.python import gen
 from clif.python import types
 from clif.python.utils import proto_util
+VALID_EXT = ['.proto']
 
 gen.PY3OUTPUT = None  # Generate version-agnostic headers.
 FLAGS = None
-I = '  '
-VALID_EXT = ['.proto', '.protodevel']
 
 
 class _ParseError(Exception):
@@ -68,7 +67,8 @@ def _PyName(desc, pkg):
   return desc.fqname[len(pkg)+1:]  # Add 1 for '.' between pkg and name.
 
 
-def CreatePyTypeInfo(desc, path, package_required=True):
+def CreatePyTypeInfo(desc, path,
+                     package_required=True, generate_service_info=False):
   """Create the type objects from the proto file descriptor in |desc|."""
   pypath = '' + path.replace('/', '.').replace('-', '_') + '_pb2'
   messages = []  # Proto messages.
@@ -84,9 +84,9 @@ def CreatePyTypeInfo(desc, path, package_required=True):
     messages.append(types.ProtoType(_CppName(m), _PyName(m, p), pypath, ns=n))
   for e in desc.Enums():
     messages.append(types.ProtoEnumType(_CppName(e), _PyName(e, p), ns=n))
-  for s in desc.Services():
-    messages.append(types.CapsuleType(_CppName(s), _PyName(s, p), ns=n))
-  assert messages, 'proto has no messages'
+  if generate_service_info:
+    for s in desc.Services():
+      messages.append(types.CapsuleType(_CppName(s), _PyName(s, p), ns=n))
   return messages
 
 
@@ -109,6 +109,7 @@ def GenerateFrom(messages, proto_filename, clif_hdr, proto_hdr):
 
 
 def _GenHeader(messages):
+  """Helper function for GenerateFrom."""
   for ns, ts in itertools.groupby(messages, types.Namespace):
     yield ''
     if ns == '::':
@@ -134,7 +135,7 @@ def main(_):
   hdr = FLAGS.header_out[strip_dir:]
   name = src = FLAGS.protobuf[0]
   assert not FLAGS.source_dir.endswith('/')
-  if name.startswith(FLAGS.source_dir):
+  if FLAGS.source_dir and name.startswith(FLAGS.source_dir):
     name = name[len(FLAGS.source_dir)+1:]  # +1 for '/'
   for ext in VALID_EXT:
     if name.endswith(ext):
@@ -149,10 +150,15 @@ def main(_):
   GenerateFrom(messages, name, hdr, pypath+'.pb.h')
 
 
-def start():
+def ParseFlags():
   global FLAGS
   FLAGS = _ParseCommandline(__doc__.splitlines()[0], sys.argv)
+
+
+def Start():
+  ParseFlags()
   main(0)
 
+
 if __name__ == '__main__':
-  start()
+  Start()

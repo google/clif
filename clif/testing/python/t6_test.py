@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for clif.testing.t6."""
+"""Tests for clif.testing.python.t6."""
 
 import unittest
 from clif.testing.python import t6

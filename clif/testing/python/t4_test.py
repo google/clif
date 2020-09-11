@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for clif.testing.t4."""
+"""Tests for clif.testing.python.t4."""
 
 import unittest
 from clif.protos import ast_pb2
@@ -69,6 +69,22 @@ class T4Test(unittest.TestCase):
   def testReturnSmartPtr(self):
     t4.GetUniquePtr(ast_pb2.Decl())
     t4.GetSharedPtr(ast_pb2.Decl())
+
+  def testReturnProto(self):
+    pb = nested_pb2.Outer.Inner()
+
+    pb.repeated_bytes_val.append(b'repeated')
+    pb.scalar_bytes_val = b'scalar'
+    actual = t4.ReturnProto(pb)
+
+    self.assertEqual(actual.scalar_bytes_val, b'scalar')
+    self.assertEqual(actual.repeated_bytes_val, [b'repeated'])
+
+    # We check the types to make sure that the memoryview (py3) or
+    # buffer (py2) that is passed to the protos is correctly converted
+    # to bytes
+    self.assertIsInstance(actual.scalar_bytes_val, bytes)
+    self.assertIsInstance(actual.repeated_bytes_val[0], bytes)
 
 
 if __name__ == '__main__':

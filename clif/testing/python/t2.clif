@@ -26,6 +26,14 @@ from "clif/testing/t2.h":
   def k_return() -> Klass
 
   class Derived(Klass):
+    """This class also has a docstring.
+
+    It spans multiple lines.  Plus trailing whitespace.
+
+    None of that should be a problem for the code generator that shoves
+    this text into the tp_doc char* slot C string in the generated code.
+
+    """
     j: int
     @add__init__
     def Init(self, i: int, j: int)
@@ -49,13 +57,6 @@ from "clif/testing/t2.h":
     def __init__(self, a: int=default)
     a: int = property(`A`)
 
-
-  class MovableButUncopyable:
-    def __init__(self, a: int=default)
-    a: int = property(`A`)
-
-  def take_nocopy_class(c: MovableButUncopyable)
-
   class CtxMgr:
     enum State
     state: State
@@ -75,6 +76,18 @@ from "clif/testing/t2.h":
   def all_nocopy_holds() -> list<NoCopy>
 
   def vector_inside_unique_ptr() -> list<Nested>
+
+  class MovableButUncopyable:
+    def __init__(self, a: int=default)
+    a: int = property(`get_a`, `set_a`)
+
+  def func_return_movable_but_uncopyable_type() -> MovableButUncopyable
+
+  def take_nocopy_class(c: MovableButUncopyable)
+
+  class OutputParameter:
+    def MovableButUncopyableOutputParameter1(self) -> MovableButUncopyable
+    def MovableButUncopyableOutputParameter2(self) -> MovableButUncopyable
 
   class NestedContainerAttributes:
     int_set_vector: list<`std::set` as set<int>>

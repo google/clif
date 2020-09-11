@@ -43,6 +43,9 @@ struct BB {
 struct AA {
   BB b;
   CC c;
+  DD* dp;
+  std::unique_ptr<DD> du;
+  std::shared_ptr<DD> ds;
   std::vector<int> v;
 };
 

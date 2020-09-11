@@ -148,7 +148,7 @@ inline std::nullptr_t RawPtr(std::nullptr_t) { return nullptr; }
 //     auto up = gtl::MakeUnique<int>(10);
 //     auto sp = gtl::ShareUniquePtr(std::move(up));  // shared_ptr<int>
 //     CHECK_EQ(*sp, 10);
-//     assert(up == nullptr);
+//     CHECK(up == nullptr);
 //
 // Note that this conversion is correct even when T is an array type, although
 // the resulting shared pointer may not be very useful.

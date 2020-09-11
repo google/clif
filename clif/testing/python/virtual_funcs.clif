@@ -65,3 +65,8 @@ from "clif/testing/virtual_funcs.h":
   def `DoSomething` as DoSomething2(a: ClassNonDefConst) -> int
 
   def DoUniq(c: ClassNonDefConst) -> int
+
+  class TestReturnsObject:
+    @virtual
+    def CreateObject(self) -> object
+    def GetRefcntOfResult(self) -> int

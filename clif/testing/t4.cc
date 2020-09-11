@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "clif/testing/t4.h"
-#include "clif/python/ptr_util.h"
 
 namespace clif_testing {
 
@@ -38,6 +37,6 @@ std::vector<std::unique_ptr<AST>> all_ast_holds() {
 }
 
 std::unique_ptr<std::vector<std::unique_ptr<AST>>> all_ast_holds_p() {
-  return gtl::MakeUnique<std::vector<std::unique_ptr<AST>>>(all_ast_holds());
+  return absl::make_unique<std::vector<std::unique_ptr<AST>>>(all_ast_holds());
 }
 }  // namespace clif_testing

@@ -156,7 +156,7 @@ namespace Qualified {
 class ForwardDecl;
 }
 void FunctionWithPartiallyQualifiedDecl(Qualified::ForwardDecl* d);
-};
+}  // namespace Globally
 void FuncGloballyQualifiedNamePtrParam(
     const ::Globally::Qualified::ForwardDecl* c);
 
@@ -170,7 +170,9 @@ using Namespace::UsingClass;
 
 // Declarations for testing ClifMatcher
 
-// tests for return type
+// Tests for return type
+// The return value can not be ignored.
+__attribute__((warn_unused_result)) int FuncWithMustUseReturn();
 void FuncReturnsVoid();
 int FuncReturnsInt() noexcept;
 int64_t FuncReturnsInt64();
@@ -183,6 +185,34 @@ const int* FuncReturnsConstIntPtr();
 const Class* FuncReturnsConstClassPtr();
 const int FuncReturnsConstInt();
 const Class FuncReturnsConstClass();
+
+// Test for implicit conversion between clif type and clang type.
+// If the implicit conversion between types involves adding pointers,
+// clif_matcher fails.
+struct ImplicitConvertTo {};
+
+class ImplicitConvertFrom1 {
+ public:
+  operator ImplicitConvertTo*();
+};
+
+void FuncImplicitConversion1(ImplicitConvertTo* a);
+
+// If the implicit conversion between types does not involve pointers,
+// clif_matcher passes.
+class ImplicitConvertFrom2 {
+ public:
+  operator ImplicitConvertTo();
+};
+
+void FuncImplicitConversion2(ImplicitConvertTo a);
+
+// Test for const and non-const overloading methods.
+class ConstOverloading {
+ public:
+  const int* FuncConstOverloading() const;
+  int* FuncConstOverloading();
+};
 
 namespace std {
 template< typename T > class shared_ptr;
@@ -227,25 +257,45 @@ void VoidFuncClassParamWithPrivateDefaultCtor(ClassWithPrivateDefaultCtor c);
 class ClassWithDeletedCopyCtor {
  public:
   ClassWithDeletedCopyCtor(const ClassWithDeletedCopyCtor&) = delete;
+  explicit ClassWithDeletedCopyCtor(const ClassWithDeletedCopyCtor*);
+  void DeletedFunc() = delete;
 };
 
 class ClassMovableButUncopyable {
  public:
-  // Delete copy-constructor and copy assignment operator
+  // Delete copy-constructor and copy assignment operator.
   ClassMovableButUncopyable(const ClassMovableButUncopyable&) = delete;
   ClassMovableButUncopyable& operator=(const ClassMovableButUncopyable&) =
       delete;
 
-  // Ensure move-constructor and move assignment operator exist
+  // Ensure move-constructor and move assignment operator exist.
   ClassMovableButUncopyable(ClassMovableButUncopyable&&) = default;
   ClassMovableButUncopyable& operator=(ClassMovableButUncopyable&&) = default;
 
+  // Tests for movable but uncopyable return values.
   ClassMovableButUncopyable Factory();
   ClassMovableButUncopyable* FactoryPointer();
   ClassMovableButUncopyable& FactoryRef();
   const ClassMovableButUncopyable& FactoryConstRef();
+
+  // Tests for movable but uncopyable output parameters.
+  void FuncMovableButUncopyableOutputParam(ClassMovableButUncopyable*);
+  void FuncMovableButUncopyableOutputParamNonPtr(ClassMovableButUncopyable);
+  void FuncMovableButUncopyableOutputParamConstPtr(
+      const ClassMovableButUncopyable*);
 };
 
+class UncopyableUnmovableClass {
+ public:
+  explicit UncopyableUnmovableClass(int x);
+  UncopyableUnmovableClass(const UncopyableUnmovableClass& other) = delete;
+  UncopyableUnmovableClass(UncopyableUnmovableClass&& other) = delete;
+};
+
+void FuncUncopyableClassInputParam(UncopyableUnmovableClass uc);
+void FuncUncopyableClassConstRefInputParam(const UncopyableUnmovableClass& uc);
+void FuncUncopyableUnmovableClassOutputParam(UncopyableUnmovableClass* uc);
+UncopyableUnmovableClass FuncUncopyableUnmovableClassReturnType();
 
 class ClassPureVirtual {
  public:
@@ -263,7 +313,7 @@ void FuncConstIntRefParam(const int &x);
 class AnotherClass { public: void Foo(); };
 
 template<typename T> class SpecializationsHaveConstructors {
-public:
+ public:
   SpecializationsHaveConstructors(T t);
 };
 
@@ -280,7 +330,10 @@ typedef ComposedType<int> TypedeffedTemplate;
 
 void FuncTemplateParam(ComposedType<int> x);
 void FuncTemplateParamLValue(const ComposedType<int>& x);
-template<typename A> void SimpleFunctionTemplateA(A x);
+template <typename A>
+void SimpleFunctionTemplate(A x);
+template <typename A>
+void FunctionTemplateConst(const A x);
 template<typename A, typename B> void UndeducableTemplate(A x);
 template<typename A> void PointerArgTemplate(A* x);
 ComposedType<ComposedType<int>> Clone(const ComposedType<ComposedType<int>>);
@@ -302,11 +355,33 @@ class base1_2 {};
 class base2_1 {};
 
 class base1 : public base1_1, private base1_2 {};
-class base2 : public base2_1 {};
-class base3 : public base2_1 {};
+class base2 : virtual public base2_1 {};
+class base3 : virtual public base2_1 {};
 
 class derive1 : public base1, private base2 {};
+// Virtual diamond inheritance for regular classes.
 class derive2 : public base2, public base3 {};
+
+// Virtual diamond inheritance for template classes.
+template <class T>
+class base4 {};
+
+template <class T>
+class base5 : virtual public base4<T> {};
+
+template <class T>
+class base6 : virtual public base4<T> {};
+
+template <class T>
+class derive3 : public base5<T>, public base6<T> {};
+
+using derive3_int = derive3<int>;
+
+// Non-virtual diamond inheritance will lead to an error.
+class base7 : public base2_1 {};
+class base8 : public base2_1 {};
+class derive4 : public base7, public base8 {};
+
 
 class grandfather {};
 class grandmother {};
@@ -320,16 +395,6 @@ class multichild : public multiparent {};
 
 // Output parameter before input parameter.
 void UnwrappableFunction(child* y, int z);
-
-class UncopyableClass {
-  explicit UncopyableClass(int x);
-  UncopyableClass(const UncopyableClass& other) = delete;
- private:
-};
-
-void FuncTakesUncopyableClass(UncopyableClass uc);
-void FuncTakesUncopyableClassConstRef(const UncopyableClass& uc);
-void FuncTakesUncopyableClassOutputParam(UncopyableClass* uc);
 
 class PrivateDestructorClass {
  private:
@@ -363,12 +428,21 @@ class OperatorClass {
 // Overload to be found by global lookup even though Clif defines it
 // in a class. (cpp_opfunction)
 int operator*(const OperatorClass&);
+int operator*(int, const OperatorClass&);
 
 class OperatorClass2 {
   int operator*() const { return 1; }
 };
 
 bool operator!=(const OperatorClass&, const OperatorClass&);
+
+namespace user {
+class OperatorClass3 {
+  int operator*(int) const { return 1; }
+};
+int operator*(int, const OperatorClass3&) { return 2; }
+}  // namespace user
+int operator+(int, const user::OperatorClass3&) { return 0; }
 
 class ConversionClass {
  public:
@@ -623,5 +697,100 @@ typedef std::function<void(int)> SimpleCallback;
 void FunctionSimpleCallbackNonConstRef(int input, SimpleCallback callback);
 // function with const & std::function parameters
 void FunctionSimpleCallbackConstRef(int input, const SimpleCallback& callback);
+
+// Test the automatic type selector for matching integer types(lang_type: int).
+class TypeSelectInt {
+ public:
+  char x_0;
+  signed char x_1;
+  unsigned char x_2;
+
+  int x_3;
+  short x_4;
+  long x_5;
+  long long x_6;
+
+  unsigned int x_7;
+  unsigned short x_8;
+  unsigned long x_9;
+  unsigned long long x_10;
+};
+
+// Test the automatic type selector for matching floating types(lang_type: float).
+class TypeSelectFloat {
+ public:
+  float x_0;
+  double x_1;
+};
+
+// Artificially make the string candidate C++ types.
+namespace std {
+class clif_string {
+ public:
+  clif_string(const char* char_string) {}
+};
+}  // namespace std
+
+class clif_string {};
+
+namespace absl {
+class Cord {};
+class string_view {};
+}  // namespace absl
+
+// Test the automatic type selector for matching bytes types(lang_type: bytes).
+class TypeSelectBytes {
+ public:
+  std::clif_string x_0;
+  ::clif_string x_1;
+  absl::Cord x_2;
+  absl::string_view x_3;
+};
+
+// Test the automatic type selector for matching function's input/output parameters and returns.
+class TypeSelectFunctionTypes {
+ public:
+  int Func(float p1, absl::Cord* p2);
+};
+
+// Test the automatic type selector for matching pointer types.
+class TypeSelectTypePointers {
+ public:
+  double* x_0;
+  int* Func(float* p1, absl::Cord* p2);
+};
+
+// Test the automatic type selector for matching const types.
+class TypeSelectConstTypes {
+ public:
+  const float x_0;
+  const double* x_1;
+  static constexpr char kStringConst[] = "abcdefg";
+  const int& FuncConstRefReturn(const float p1, const float& p2,
+                                const absl::Cord* p3);
+  const int* FuncConstPtrReturn();
+};
+
+template <int>
+class ClassWithIntegralTemplateParam {};
+
+typedef ClassWithIntegralTemplateParam<3> ClassWithIntegralTemplateParam3;
+
+ComposedType<ClassWithIntegralTemplateParam3>
+FuncReturnComposedIntegralTemplate();
+
+void FuncWithIntegralTemplateType(ClassWithIntegralTemplateParam3 param);
+void FuncWithIntegralTemplateTypeRef(
+    const ClassWithIntegralTemplateParam3& param);
+
+namespace absl {
+template <typename T>
+class StatusOr {
+ public:
+  StatusOr(const T&);
+};
+}  // namespace absl
+
+absl::StatusOr<int> StatusOrIntReturn();
 
 #endif  // CLIF_BACKEND_TEST_H_

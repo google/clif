@@ -106,8 +106,12 @@ def GenerateFrom(ast):
   api_header = _GetHeaders(ast)
   modname = FLAGS.modname or StripExt(os.path.basename(ast.source
                                                       )).replace('-', '_')
-  m = pyext.Module(modname, ast.typemaps, for_py3=FLAGS.py3output,
-                   indent=FLAGS.indent)
+  m = pyext.Module(
+      modname,
+      ast.typemaps,
+      ast.namemaps,
+      for_py3=FLAGS.py3output,
+      indent=FLAGS.indent)
   inc_headers.append(os.path.basename(FLAGS.header_out))
   # Order of generators is important.
   if api_header:
@@ -213,7 +217,8 @@ def _ParseClifSource(stream, dump_path):
             'from __builtin__ import chr']
   p = pytd2proto.Postprocessor(config_headers=FLAGS.prepend,
                                include_paths=FLAGS.include_paths,
-                               preamble='\n'.join(init))
+                               preamble='\n'.join(init),
+                               py3output=FLAGS.py3output)
   try:
     pb = p.Translate(stream)
   except Exception as e:  # pylint:disable=broad-except

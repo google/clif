@@ -14,15 +14,17 @@
 
 #include "clif/python/types.h"
 #include <climits>
+#include "absl/numeric/int128.h"
 
 namespace clif {
 
 //// To Python conversions.
 
 // bytes
-PyObject* Clif_PyObjFrom(const std::string& c, py::PostConv pc) {
+PyObject* Clif_PyObjFrom(const std::string& c, const py::PostConv& pc) {
   return pc.Apply(PyBytes_FromStringAndSize(c.data(), c.size()));
 }
+
 PyObject* UnicodeFromBytes(PyObject* b) {
   if (!b || PyUnicode_Check(b)) return b;
   if (!PyBytes_Check(b)) {
@@ -43,7 +45,7 @@ PyObject* UnicodeFromBytes(PyObject* b) {
 // int (long)
 
 bool Clif_PyObjAs(PyObject* py, int* c) {
-  assert(c != nullptr);
+  CHECK(c != nullptr);
   long i;  //NOLINT: runtime/int
   if (PyLong_Check(py)) {
     i = PyLong_AsLong(py);
@@ -67,7 +69,7 @@ bool Clif_PyObjAs(PyObject* py, int* c) {
 }
 
 bool Clif_PyObjAs(PyObject* py, short* c) {  //NOLINT: runtime/int
-  assert(c != nullptr);
+  CHECK(c != nullptr);
   long i;  // NOLINT: runtime/int
   if (!Clif_PyObjAs(py, &i)) {
     return false;
@@ -82,7 +84,7 @@ bool Clif_PyObjAs(PyObject* py, short* c) {  //NOLINT: runtime/int
 
 // uint8
 bool Clif_PyObjAs(PyObject* py, unsigned char* c) {
-  assert(c != nullptr);
+  CHECK(c != nullptr);
   unsigned long i;  // NOLINT: runtime/int
   if (!Clif_PyObjAs(py, &i)) {
     return false;
@@ -96,7 +98,7 @@ bool Clif_PyObjAs(PyObject* py, unsigned char* c) {
 }
 
 bool Clif_PyObjAs(PyObject* py, unsigned short* c) {  //NOLINT: runtime/int
-  assert(c != nullptr);
+  CHECK(c != nullptr);
   unsigned long i;  //NOLINT: runtime/int
   if (PyLong_Check(py)) i = PyLong_AsUnsignedLong(py);
   else  //NOLINT readability/braces
@@ -125,7 +127,7 @@ bool Clif_PyObjAs(PyObject* py, unsigned short* c) {  //NOLINT: runtime/int
 }
 
 bool Clif_PyObjAs(PyObject* py, unsigned int* c) {
-  assert(c != nullptr);
+  CHECK(c != nullptr);
   unsigned long i;  //NOLINT: runtime/int
   if (PyLong_Check(py)) i = PyLong_AsUnsignedLong(py);
   else  //NOLINT readability/braces
@@ -154,7 +156,7 @@ bool Clif_PyObjAs(PyObject* py, unsigned int* c) {
 }
 
 bool Clif_PyObjAs(PyObject* py, unsigned long* c) {  //NOLINT: runtime/int
-  assert(c != nullptr);
+  CHECK(c != nullptr);
   if (PyLong_Check(py)) *c = PyLong_AsUnsignedLong(py);
   else  //NOLINT readability/braces
 #if PY_MAJOR_VERSION < 3
@@ -176,7 +178,7 @@ bool Clif_PyObjAs(PyObject* py, unsigned long* c) {  //NOLINT: runtime/int
 }
 
 bool Clif_PyObjAs(PyObject* py, long* c) {  //NOLINT: runtime/int
-  assert(c != nullptr);
+  CHECK(c != nullptr);
   if (PyLong_Check(py)) *c = PyLong_AsSsize_t(py);
   else
 #if PY_MAJOR_VERSION < 3
@@ -193,7 +195,7 @@ bool Clif_PyObjAs(PyObject* py, long* c) {  //NOLINT: runtime/int
 // int64
 #ifdef HAVE_LONG_LONG
 bool Clif_PyObjAs(PyObject* py, long long* c) {  //NOLINT: runtime/int
-  assert(c != nullptr);
+  CHECK(c != nullptr);
 #if PY_MAJOR_VERSION < 3
   if (PyInt_Check(py)) {
     long i = PyInt_AS_LONG(py);  //NOLINT: runtime/int
@@ -211,7 +213,7 @@ bool Clif_PyObjAs(PyObject* py, long long* c) {  //NOLINT: runtime/int
 
 // uint64
 bool Clif_PyObjAs(PyObject* py, unsigned long long* c) {  //NOLINT: runtime/int
-  assert(c != nullptr);
+  CHECK(c != nullptr);
   if (PyLong_Check(py)) *c = PyLong_AsUnsignedLongLong(py);
   else
 #if PY_MAJOR_VERSION < 3
@@ -224,11 +226,37 @@ bool Clif_PyObjAs(PyObject* py, unsigned long long* c) {  //NOLINT: runtime/int
   }
   return !PyErr_Occurred();
 }
+
+// uint128
+bool Clif_PyObjAs(PyObject* py, absl::uint128* c) {  // NOLINT: runtime/int
+  CHECK(c != nullptr);
+  if (PyLong_Check(py)) {
+    auto lo = PyLong_AsUnsignedLongLong(
+        PyNumber_And(py, PyLong_FromUnsignedLongLong(0xFFFFFFFFFFFFFFFF)));
+    auto hi =
+        PyLong_AsUnsignedLongLong(PyNumber_Rshift(py, PyInt_FromLong(64)));
+    *c = absl::MakeUint128(hi, lo);
+  } else
+#if PY_MAJOR_VERSION < 3
+  if (PyInt_Check(py)) {
+    auto lo = PyInt_AsUnsignedLongLongMask(
+        PyNumber_And(py, PyLong_FromUnsignedLongLong(0xFFFFFFFFFFFFFFFF)));
+    auto hi =
+        PyInt_AsUnsignedLongLongMask(PyNumber_Rshift(py, PyInt_FromLong(64)));
+    *c = absl::MakeUint128(hi, lo);
+  } else  // NOLINT readability/braces
+#endif
+  {
+    PyErr_SetString(PyExc_TypeError, "expecting int");
+    return false;
+  }
+  return !PyErr_Occurred();
+}
 #endif  // HAVE_LONG_LONG
 
 // float (double)
 bool Clif_PyObjAs(PyObject* py, double* c) {
-  assert(c != nullptr);
+  CHECK(c != nullptr);
   double f = PyFloat_AsDouble(py);
   if (f == -1.0 && PyErr_Occurred()) return false;
   *c = f;
@@ -236,7 +264,7 @@ bool Clif_PyObjAs(PyObject* py, double* c) {
 }
 
 bool Clif_PyObjAs(PyObject* py, float* c) {
-  assert(c != nullptr);
+  CHECK(c != nullptr);
   double f = PyFloat_AsDouble(py);
   if (f == -1.0 && PyErr_Occurred()) return false;
   *c = static_cast<float>(f);
@@ -245,7 +273,7 @@ bool Clif_PyObjAs(PyObject* py, float* c) {
 
 // bool
 bool Clif_PyObjAs(PyObject* py, bool* c) {
-  assert(c != nullptr);
+  CHECK(c != nullptr);
   if (!PyBool_Check(py)) {
     PyErr_SetString(PyExc_TypeError, "expecting bool");
     return false;
@@ -258,7 +286,23 @@ namespace py {
 
 // bytes/unicode
 template<typename C>
-bool ObjToStr(PyObject* py, C copy ) {
+bool ObjToStr(PyObject* py, C copy) {
+#if PY_VERSION_HEX >= 0x03030000
+  const char* data;
+  Py_ssize_t length;
+  if (PyUnicode_Check(py)) {
+    data = PyUnicode_AsUTF8AndSize(py, &length);
+    if (!data) return false;
+  } else if (PyBytes_Check(py)) {
+    data = PyBytes_AS_STRING(py);
+    length = PyBytes_GET_SIZE(py);
+  } else {
+    PyErr_SetString(PyExc_TypeError, "expecting str");
+    return false;
+  }
+  copy(data, length);
+  return true;
+#else
   bool decref = false;
   if (PyUnicode_Check(py)) {
     py = PyUnicode_AsUTF8String(py);
@@ -271,11 +315,12 @@ bool ObjToStr(PyObject* py, C copy ) {
   copy(PyBytes_AS_STRING(py), PyBytes_GET_SIZE(py));
   if (decref) Py_DECREF(py);
   return true;
+#endif
 }
 }  // namespace py
 
 bool Clif_PyObjAs(PyObject* p, std::string* c) {
-  assert(c != nullptr);
+  CHECK(c != nullptr);
   return py::ObjToStr(p,
       [c](const char* data, size_t length) { c->assign(data, length); });
 }

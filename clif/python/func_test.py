@@ -14,9 +14,13 @@
 
 """Tests for GenFunc from clif.python.generator."""
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import textwrap
-from google.protobuf import text_format
 import unittest
+from google.protobuf import text_format
 from clif.protos import ast_pb2
 from clif.python import pyext
 
@@ -24,6 +28,7 @@ from clif.python import pyext
 class FuncTest(unittest.TestCase):
 
   def setUp(self):
+    super(FuncTest, self).setUp()
     tm = ast_pb2.Typemap()
     text_format.Parse("""
         lang_type: "str"

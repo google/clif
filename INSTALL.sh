@@ -18,7 +18,7 @@
 
 set -x -e
 
-INSTALL_DIR="$HOME/opt"
+INSTALL_DIR=${INSTALL_DIR:="$HOME/opt"}
 CLIFSRC_DIR="$PWD"
 LLVM_DIR="$CLIFSRC_DIR/../clif_backend"
 BUILD_DIR="$LLVM_DIR/build_matcher"
@@ -71,12 +71,20 @@ if [[ "$1" =~ ^-?-h ]]; then
   echo "Usage: $0 [python interpreter]"
   exit 1
 fi
-PYTHON="python"
 if [[ -n "$1" ]]; then
   PYTHON="$1"
+else
+  PYTHON=$(which python)
 fi
-echo -n "Using Python interpreter: "
-which "$PYTHON"
+echo -n "Using Python interpreter: $PYTHON"
+
+# Determine if clif is installed in verbose mode. Users could invoke the verbose
+# mode by:
+#   CLIF_VERBOSE=1 ./INSTALL.sh
+if [[ "$CLIF_VERBOSE" -eq 1 ]]; then
+  MAKE_VERBOSE="VERBOSE=1"
+  PIP_VERBOSE="-v"
+fi
 
 # Create a virtual environment for the pyclif installation.
 
@@ -84,7 +92,7 @@ CLIF_VIRTUALENV="$INSTALL_DIR"/clif
 CLIF_PIP="$CLIF_VIRTUALENV/bin/pip"
 virtualenv -p "$PYTHON" "$CLIF_VIRTUALENV"
 # Older pip and setuptools can fail.
-# 
+# TODO: These work the first time but run into errors if rerun? ugh.
 # Regardless, *necessary* on systems with older pip and setuptools.  comment
 # these out if they cause you trouble.  if the final pip install fails, you
 # may need a more recent pip and setuptools.
@@ -95,9 +103,14 @@ virtualenv -p "$PYTHON" "$CLIF_VIRTUALENV"
 
 mkdir -p "$LLVM_DIR"
 cd "$LLVM_DIR"
-svn co https://llvm.org/svn/llvm-project/llvm/trunk@307315 llvm
-cd llvm/tools
-svn co https://llvm.org/svn/llvm-project/cfe/trunk@307315 clang
+svn co https://llvm.org/svn/llvm-project/llvm/trunk@321388 llvm
+cd llvm/projects
+if [[ $(uname) == "Darwin" ]]; then
+  # Build and use libc++ on macOS.
+  svn co https://llvm.org/svn/llvm-project/libcxx/trunk@321388 libcxx
+fi
+cd ../tools
+svn co https://llvm.org/svn/llvm-project/cfe/trunk@321388 clang
 ln -s -f -n "$CLIFSRC_DIR/clif" clif
 
 # Build and install the CLIF backend.  Our backend is part of the llvm build.
@@ -112,9 +125,11 @@ cmake -DCMAKE_INSTALL_PREFIX="$CLIF_VIRTUALENV/clang" \
       -DCMAKE_BUILD_TYPE=Release \
       -DLLVM_BUILD_DOCS=false \
       -DLLVM_TARGETS_TO_BUILD=X86 \
+      -DPYTHON_EXECUTABLE="$PYTHON" \
       "${CMAKE_G_FLAGS[@]}" "$LLVM_DIR/llvm"
-"$MAKE_OR_NINJA" "${MAKE_PARALLELISM[@]}" clif-matcher clif_python_utils_proto_util
-"$MAKE_OR_NINJA" "${MAKE_INSTALL_PARALLELISM[@]}" install
+# No quotes since MAKE_VERBOSE may be an empty string for non-verbose mode.
+"$MAKE_OR_NINJA" $MAKE_VERBOSE "${MAKE_PARALLELISM[@]}" clif-matcher clif_python_utils_proto_util
+"$MAKE_OR_NINJA" $MAKE_VERBOSE "${MAKE_INSTALL_PARALLELISM[@]}" install
 
 # Get back to the CLIF Python directory and have pip run setup.py.
 
@@ -125,6 +140,7 @@ cp "$BUILD_DIR/tools/clif/protos/ast_pb2.py" clif/protos/
 cp "$BUILD_DIR/tools/clif/python/utils/proto_util.cc" clif/python/utils/
 cp "$BUILD_DIR/tools/clif/python/utils/proto_util.h" clif/python/utils/
 cp "$BUILD_DIR/tools/clif/python/utils/proto_util.init.cc" clif/python/utils/
-"$CLIF_PIP" install .
+# No quotes since PIP_VERBOSE may be an empty string for non-verbose mode.
+"$CLIF_PIP" $PIP_VERBOSE install .
 
 echo "SUCCESS - To use pyclif, run $CLIF_VIRTUALENV/bin/pyclif."

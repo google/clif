@@ -15,10 +15,17 @@
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/__init__.py" "")
 
 # Do not add build targets for header only libraries.
-
+# t2 cc_libray
 add_clif_test_cc_library(t2
   t2.h
   t2.cc
+)
+
+
+# t4 cc_library
+add_clif_test_cc_library(t4
+  t4.h
+  t4.cc
 )
 
 add_proto_library(clif_testing_nested_proto nested.proto)
@@ -27,10 +34,23 @@ add_pyclif_proto_library(clif_testing_nested_proto_wrapper
   clif_testing_nested_proto
 )
 
-add_clif_test_cc_library(t4
-  t4.h
-  t4.cc
-)
 target_link_libraries(clif_testing_t4 clif_testing_nested_proto)
+
+# t9 cc_library
+add_clif_test_cc_library(t9
+  t9.h
+  t9.cc
+)
+
+# std_variant cc_library
+# TODO: Uncomment when std::variant is straightened out for OSS.
+#add_clif_test_cc_library(std_variant
+#  std_variant.h
+#  std_variant.cc
+#)
+
+find_package(PythonLibs REQUIRED)
+include_directories(${PYTHON_INCLUDE_DIRS})
+target_link_libraries(clif_testing_t9 ${PYTHON_LIBRARIES})
 
 add_subdirectory("python")

@@ -14,7 +14,7 @@
 
 # We use a type wrapped elsewhere in this clif file.
 # Hence, import the wrapped type from the clif generated C++ header file.
-from "wrappod/python/wrappod.h" import *
+from "wrappod/python/wrappod_clif.h" import *
 
 from "wrapfunc/wrapfunc.h":
   namespace `clif_example::wrapfunc`:

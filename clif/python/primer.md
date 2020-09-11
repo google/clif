@@ -1,46 +1,146 @@
-# The Python Clif Primer
+# The Python CLIF Primer
 
-
-
-This is a user guide for using Python Clif - The Python extension module
+This is a user guide for using Python CLIF - The Python extension module
 generator that wraps C++ libraries.
 It tries to be clear and explain all the nuances involved in detail.
 
-
 The organization of this document is such that it starts with illustration of
-the simplest of Clif wrappings and progressively builds on this information
-in the following sections. Hence, if you are new to Clif, read these sections in
-the order they appear here. If you are already using Clif, you can jump to any
-section of your choice but keep in mind that some of the Clif features used in
+the simplest of CLIF wrappings and progressively builds on this information
+in the following sections. Hence, if you are new to CLIF, read these sections in
+the order they appear here. If you are already using CLIF, you can jump to any
+section of your choice but keep in mind that some of the CLIF features used in
 that section were probably introduced in earlier sections.
 
-NOTE: The examples used in this doc live in `clif/examples/`.
-Each example has its own directory. Within that directory, the Clif wrapping is
-in the subdirectory named `clif`. The `clif` directory also contains a
-test illustrating the usage of the corresponding Clif wrapping and its features.
+NOTE: The examples used in this doc live in [clif/examples](../../examples)..
+Each example has its own directory. Within that directory, the CLIF wrapping is
+in the subdirectory named `python`. The `python` directory also contains a test
+illustrating the usage of the corresponding CLIF wrapping and its features.
 
 ## The Basics {#basics}
 
 ### File Organization {#basic_file_org}
 
-Clif enables you to wrap C++ constructs defined in header files. To avoid
-[ODR](https://en.wikipedia.org/wiki/One_Definition_Rule) violations, a strict
-policy is suggested.
-* The name of the Clif file must be `<HEADER>.clif`. Note the **`.clif`**
-extension and also that the name (without the extension) **must match the name
-of the header file** (without the extension) in which the C++ constructs are
-defined. Hence, the full path to the Clif file is
-`<PROJECTDIR>/python/<HEADER>.clif`.
+CLIF enables you to wrap C++ constructs defined in header files. To avoid
+[One Definition Rule](https://en.cppreference.com/w/cpp/language/definition)
+(ODR) violations, a strict policy is suggested.
 
+## C++-side customizations in `<HEADER>_clif_aux.h` {#clif_aux_h}
+
+Generally, PyCLIF only allows wrapping functions and classes defined in one
+specific `<HEADER>.h`, as explained above. The only exception is the option
+to add a `<HEADER>_clif_aux.h` file with additional PyCLIF-specific C++ code,
+usually implementing small functions to adapt or extend the existing C++
+interface for Python. The `<HEADER>_clif_aux.h` file must be in the same
+directory as the `<HEADER>.clif` file. A minimal example, showing how to
+add in a simple function, can be found here:
+
+*   [clif/examples/clif_aux/python/lib_hello_clif_aux.h](http://clif/examples/clif_aux/python/lib_hello_clif_aux.h)
+
+Extending a C++ class with methods that only exist in Python is also possible
+but a little more involved:
+
+*   [clif/examples/extend_from_clifaux/python/](http://clif/examples/extend_from_clifaux/python/)
+*   [The unit tests](http://clif/testing/python/extend_from_clifaux.clif)
+    are also useful as a reference.
+
+C++ classes can also be extended with properties:
+
+*   [clif/testing/python/extend_properties.clif](http://clif/testing/python/extend_properties.clif)
+*   [third_party/car/embedded/common/python/can_protocol.clif](http://third_party/car/embedded/common/python/can_protocol.clif)
+
+The `_clif_aux.h` feature can also be useful to work around PyCLIF limitations
+or bugs. An interesting real-world (production) example that can be found here:
+
+  * [contentads/testing/drx/reporting/evenflow/python/sponge_uploader_clif_aux.h](http://contentads/testing/drx/reporting/evenflow/python/sponge_uploader_clif_aux.h)
+
+This `_clif_aux.h` encapsulates the entire C++ interface to be wrapped,
+to work around limitations of PyCLIF. Many more examples can easily be found
+with codesearch `f:_clif_aux.h$`.
+
+Please use `_clif_aux.h` strictly for implementing adapter code.
+Implement anything more involved in regular `.h/cc` files. A good rule of
+thumb: if your code needs unit tests to conform to best practices, do not
+implement it in `_clif_aux.h`.
+
+Current Limitations:
+
+*   Classes can be extended from `_clif_aux.h` only with instance methods or
+    properties, NOT with classmethods, staticmethods, or data members.
+*   `@extend` is incompatible with the `= default` feature For example, `@extend
+    def foo(name: str = default)` does not work.
+
+## Python-side customizations in `<HEADER>.py` {#py_library_wrapper}
+
+The need for Python-side customizations arises most commonly when an
+existing Python API is replaced with a new version building on PyCLIF,
+but there can be other reasons, even for newly designed APIs. Of course,
+Python-side customizations can be implemented in any `py_library`, but if
+`<HEADER>` is the preferred Python import for some reason, the strict file
+organization rules for `<HEADER>.clif` need a small exception. To make this
+more concrete with an example: given `mylib.h`, `mylib.clif`, and a needed
+`py_library(name="mylib")`, the standard `py_clif_cc(name="mylib")` clashes
+with the `py_library` rule. To handle this case gracefully, PyCLIF supports
+using an underscore as a prefix, with the effect to make the C++ extension
+module **private**:
+
+  ```build
+  py_clif_cc(name="_mylib")
+  ```
+
+Note that the name of the `.clif` file is unchanged, but the Python import for
+the extension changes from `mylib` to `_mylib`. With that, the Python-side
+customizations can be implemented in `mylib.py`, which will usually import
+`_mylib` either as
+
+```python
+from some.place import _mylib as ext
+```
+
+and/or (!)
+
+```python
+from some.place._mylib as *  # pylint: disable=wildcard-import
+```
+
+The second form may be preferable if `_mylib` wraps many functions or types,
+which would otherwise need to be exported via many assignments like
+`foo = ext.foo`.
+
+Free functions can trivially be added in `mylib.py`, but adding Python-only
+methods to wrapped C++ classes is slightly involved:
+
+```python
+from clif.python import type_customization
+
+Bar = ext.Bar
+
+
+@type_customization.extend(ext.Bar):
+class _(object):
+
+  def foo(self, ...):
+    ...
+```
+
+Extending methods from Python in this way is known to work not just for
+instance methods, but also for properties, classmethods, staticmethods,
+and even docstrings and other data members.
+
+Current Limitation:
+
+  * `@type_customization.extend` needs a pytype workaround as explained and
+    tracked under b/161575039. See also [extend_from_python/python/example.py](
+    http://clif/examples/extend_from_python/python/example.py).
 
 ## Wrapping POD data types {#wrappod}
 
 NOTE: The example, `wrappod`, used in this section lives in
 clif/examples/wrappod.
 
-We begin with learning how to wrap POD data types, namely, data types defined as
-simple `struct`s/`class`es containing only POD data fields in C++. Let us
-provide wrappers for the C++ struct `MyClass` defined in the file `wrappod.h`:
+We begin with learning how to wrap POD[^1] data types, namely, data types
+defined as simple `struct`s/`class`es containing only POD data fields in C++.
+Let us provide wrappers for the C++ struct `MyClass` defined in the file
+`wrappod.h`:
 
 ```c++
 namespace clif_example {
@@ -55,16 +155,16 @@ struct MyClass {
                          // getter and setter methods.
   std::pair<int, int> p; // Available in Python as a 2-tuple
 
-  double d; // Not available in wrapped Python.
+  double d; // This field is unused in this example, so no need to wrap it.
 };
 
 }  // namespace wrappod
 }  // namespace clif_example
 ```
 
-The Clif file wrapping the above struct should be named `wrappod.clif` and
+The CLIF file wrapping the above struct should be named `wrappod.clif` and
 reside in a directory named `python` (or `clif`) in the directory where the
-header file `wrappod.h` is saved. Let us consider a Clif wrapping as follows:
+header file `wrappod.h` is saved. Let us consider a CLIF wrapping as follows:
 
 ```python
 from "clif/examples/wrappod/wrappod.h":
@@ -98,14 +198,14 @@ follows:
 from "path/to/the/header/file.h":
 ```
 
-NOTE: The general rule in Clif is to enclose file names and paths in double
+NOTE: The general rule in CLIF is to enclose file names and paths in double
 quotes `"`.
 
 ### Constructs Declared in Namespaces
 
 If the C++ construct that we want wrapped into Python is defined in a namespace,
 then we should declare the namespace using the `namespace` directive. The above
-Clif example does exactly that with:
+CLIF example does exactly that with:
 
 ```
 namespace `clif_example::wrappod`:
@@ -117,7 +217,7 @@ The general syntax of a namespace directive is as follows:
 namespace `<FULLY_QUALIFIED_CPP_NAMESPACE>`:
 ```
 
-NOTE: The general rule in Clif is to enclose C++ names, that we do not want to
+NOTE: The general rule in CLIF is to enclose C++ names, that we do not want to
 expose into Python, in back-ticks.
 
 ### Classes
@@ -134,7 +234,7 @@ class MyClass:
 We will talk about the general syntax of a class declaration in a later
 section.
 
-NOTE: A Clif declaration wrapping a C++ final class should be decorated with
+NOTE: A CLIF declaration wrapping a C++ final class should be decorated with
 `@final.`
 
 ### Fields {#fields}
@@ -146,24 +246,24 @@ field we want to expose in to Python, in the following format:
 <FIELD_NAME>: <PYTHON_TYPE>
 ```
 
-Notice that the Clif file does not declare the field `d` of `MyClass`. This was
-done intentionally to illustrate that if the Clif file does not explicitly
+Notice that the CLIF file does not declare the field `d` of `MyClass`. This was
+done intentionally to illustrate that if the CLIF file does not explicitly
 specify that a particular C++ construct has to be wrapped, then it will not be
 available in Python.
 
 The wrapped fields end up in Python with types governed by the type conversion
-rules specified
-[here](README.md#type-correspondence).
+rules specified [here](README.md#type-correspondence).
+
 ### Renaming a C++ API for use in Python {#renaming}
 
 The C++ field `p` of `MyClass` has been exposed as `my_pair` in Python. While it
 was not necessary to do such a renaming for this example, it has been done to
-introduce the general Clif facility to expose an API via a different,
+introduce the general CLIF facility to expose an API via a different,
 potentially more pythonic, name in Python.
 As we will see in a later section, such a facility helps us
 expose overloaded C++ constructs, each with a different name, into Python as the
 Python language does not support overloading.  To specify a new name, at
-every place where a C++ name is to be used in a Clif declaration, replace it
+every place where a C++ name is to be used in a CLIF declaration, replace it
 with:
 
 ```
@@ -181,11 +281,11 @@ wrapped is deduced using other components of the declaration.
 
 In the above example, the field `v` was not wrapped into a Python class
 property. Instead, it was exposed via _getter_ and _setter_ methods `getv` and
-`setv` respectively. This illustrates the Clif _unproperty_ feature which
+`setv` respectively. This illustrates the CLIF _unproperty_ feature which
 enables one to expose a C++ field not as a Python class property, but via getter
 and setter methods.
 
-As can be seen in the Clif file, a getter _unproperty_ method should be
+As can be seen in the CLIF file, a getter _unproperty_ method should be
 decorated with `@getter`. It should take exactly one argument named `self` and
 return the wrapped C++ field in a Python object. The general syntax to declare a
 getter is as follows:
@@ -219,9 +319,9 @@ returns nothing:
 
 NOTE: A C++ field does not need to have both the _unproperty_ getter and setter
 methods. One can choose to provide only the getter method. However, note that
-providing only a setter is not supported by Clif and results in error.
+providing only a setter is not supported by CLIF and results in error.
 
-The above example also illustrates why Clif needs to provide the _unproperty_
+The above example also illustrates why CLIF needs to provide the _unproperty_
 feature at all. If the C++ field `v` were to be a property, an access to it from
 Python with eg. `obj.v`, actually refers to a copy of the C++ `v` and not
 to the C++ `v` itself. Hence, mutations of `v` on the Python side will not
@@ -260,7 +360,7 @@ NOTE: The example, `wrapfunc`, used in this section lives in
 clif/examples/wrapfunc.
 
 In this section, we will learn how to provide Python wrappers for plain (as in
-non-member, non-template) C++ functions using Clif. The functions we want to
+non-member, non-template) C++ functions using CLIF. The functions we want to
 wrap are present in a header file `wrapfunc.h` as follows:
 
 ```c++
@@ -303,12 +403,12 @@ void GetState(clif_example::wrappod::MyClass *s);
 Notice that some of the C++ functions defined in this header file use the struct
 `MyClass` defined in the header file from an earlier example. Likewise, the
 Python wrappings of these functions will make use of the Python wrappings of
-that struct. The Clif file wrapping these functions is as follows:
+that struct. The CLIF file wrapping these functions is as follows:
 
 ```python
 # We use a type wrapped elsewhere in this .clif file.
-# Hence, import the wrapped type from the Clif generated C++ header file.
-from "clif/examples/wrappod/python/wrappod.h" import *
+# Hence, import the wrapped type from the CLIF generated C++ header file.
+from "clif/examples/wrappod/python/wrappod_clif.h" import *
 
 from "clif/examples/wrapfunc/wrapfunc.h":
   namespace `clif_example::wrapfunc`:
@@ -327,21 +427,33 @@ from "clif/examples/wrapfunc/wrapfunc.h":
 
 ```
 
-There is an `import` statement at the top of the Clif file. This is not a normal
+There is an `import` statement at the top of the CLIF file. This is not a normal
 Python `import` statement as we are not importing from a Python module; we are
-actually importing C++ constructs that were Clif-wrapped elsewhere. The header
-file (`clif/examples/wrappod/python/wrappod.h` in this example)
+actually importing C++ constructs that were CLIF-wrapped elsewhere. The header
+file (`clif/examples/wrappod/python/wrappod_clif.h` in this example)
 from which the wrapped constructs are imported was not written by a human, but
-generated by Clif when wrapping the dependent constructs. For this example, we
+generated by CLIF when wrapping the dependent constructs. For this example, we
 are importing the constructs (which is essentially the class `MyClass`) that
-were wrapped in [this](#wrappod) example.
+were wrapped in [this][wrappod] example.
 
-The following `from` statement is a directive which tells Clif that we are
+To depend on the CLIF-generated header file, use the `clif_deps` attribute in
+your BUILD file:
+
+```bzl
+py_clif_cc(
+    name = "wrapfunc",
+    srcs = ["wrapfunc.clif"],
+    clif_deps = ["//clif/examples/wrappod/python:wrappod"],
+    deps = ["//clif/examples/wrapfunc"],
+)
+```
+
+The following `from` statement is a directive which tells CLIF that we are
 wrapping C++ constructs defined in the specified header file (the file
 `clif/examples/wrapfunc/wrapfunc.h` in this case).
 
-As explained in the earlier [example](#wrappod), the `namespace` directive tells
-Clif that the constructs being wrapped here are declared in the namespace
+As explained in the earlier [example][wrappod], the `namespace` directive tells
+CLIF that the constructs being wrapped here are declared in the namespace
 `clif_example::wrapfunc`.
 
 Following the namespace directive are the declarations of the functions to be
@@ -351,8 +463,8 @@ wrapped and made available in Python.
 
 Any function to be wrapped and made available in Python has to be declared with
 a `def` statement. The syntax of this statement is similar to the function
-header of a Python function definition. The first declaration in the above Clif
-file declares `ResetState`. This directs Clif to wrap the C++ function
+header of a Python function definition. The first declaration in the above CLIF
+file declares `ResetState`. This directs CLIF to wrap the C++ function
 `ResetState` and make it available in Python with the same name `ResetState`. As
 this function takes no arguments (and returns `void`), the argument list within
 the parentheses is empty.
@@ -372,7 +484,7 @@ names are irrelevant in C++, they can be different from the ones listed in the
 C++ source. You should choose names idiomatic in Python as they can be used as
 keyword arguments.
 
-The declaration of `SetState` directs Clif to wrap the C++ function `SetState`
+The declaration of `SetState` directs CLIF to wrap the C++ function `SetState`
 and make it available in Python also with the same name `SetState`.
 
 ### Function Overloading
@@ -380,10 +492,10 @@ and make it available in Python also with the same name `SetState`.
 The C++ header file, which contains the constructs that we want to wrap,
 overloads the `SetState` function. Since Python does not support function
 overloading, if we want to wrap overloaded C++ functions and make them available
-in Python, we have to specify an different Python name for each of the
-overloaded C++ functions and they all will be available in Python. The Clif file
-above declares two additional flavors of the `SetState` function, one taking two
-`int` arguments and the other taking a `MyClass` argument, with Python names
+in Python, we have to specify a different Python name for each of the overloaded
+C++ functions and they all will be available in Python. The CLIF file above
+declares two additional flavors of the `SetState` function, one taking two `int`
+arguments and the other taking a `MyClass` argument, with Python names
 `SetStateFromSum` and `SetStateFromMyClass` respectively. With this, all three
 overloaded flavors of the C++ `SetState` function are now available in Python
 with different names.
@@ -391,7 +503,7 @@ with different names.
 ### Functions With Return Values
 
 One flavor of the C++ function `GetState` returns an `int` value. We can wrap
-such a function with Clif by providing the return value type in the function
+such a function with CLIF by providing the return value type in the function
 declaration as follows:
 
 ```
@@ -406,7 +518,7 @@ Python, one can wrap it in two flavors:
 1. A function which takes a `MyClass` object as argument.
 2. A function which takes no arguments but returns a new `MyClass` object.
 
-The Clif file above makes two functions, `Store` and `StoreInNew`, available in
+The CLIF file above makes two functions, `Store` and `StoreInNew`, available in
 Python corresponding to the two options above respectively.
 
 In general, non-const pointers at the end of a C++
@@ -416,7 +528,7 @@ made to return a tuple of values with the first element of tuple corresponding
 to the actual C++ return value. The general syntax to declare a function which
 returns a tuple of values is as follows:
 
-```
+```python
 def <FUNC_NAME>(<ARG_LIST>) -> (<RET1_NAME>: <RET1_TYPE>, <RET2_NAME>: <RET2_TYPE>, ...)
 ```
 
@@ -425,7 +537,7 @@ def <FUNC_NAME>(<ARG_LIST>) -> (<RET1_NAME>: <RET1_TYPE>, <RET2_NAME>: <RET2_TYP
 NOTE: The example, `callbacks`, used in this section lives in
 clif/examples/callbacks.
 
-With Clif, one can wrap functions returning or receiving callbacks. When a
+With CLIF, one can wrap functions returning or receiving callbacks. When a
 function receiving a callback argument is wrapped, it enables one to pass
 Python callable objects as arguments to the wrapped function in Python.
 Likewise, if a function returning a callable is wrapped, then the object
@@ -433,23 +545,19 @@ returned by calling the wrapped function in Python can be treated as a Python
 callable.
 
 NOTE: For constructs (functions/methods) involving callback types to be
-wrappable with Clif, the callback types should be overloads of the
+wrappable with CLIF, the callback types should be overloads of the
 `std::function` template class.
 
 Consider the following C++ class and function definitions:
 
-```live-snippet
-cs/file:clif/examples/callbacks/callbacks.h
-```
+Look in the examples/callbacks/callbacks.h [file](../../examples/callbacks/callbacks.h).
 
-The Clif file wrapping the class `Data` and the functions `Get`, `Set` and
+The CLIF file wrapping the class `Data` and the functions `Get`, `Set` and
 `GetCallback` is as follows:
 
-```live-snippet
-cs/file:clif/examples/callbacks/python/callbacks.clif
-```
+Look in the examples/callbacks/python/callbacks.clif [file](../../examples/callbacks/python/callbacks.clif).
 
-As can be seen in the above Clif file, a callback parameter or a callback return
+As can be seen in the above CLIF file, a callback parameter or a callback return
 value, both are listed as one would list any normal parameter or a return
 value. The syntax to convey that a particular parameter or a return value is a
 callback, though very intuitive, is special; The general syntax to specify
@@ -468,12 +576,10 @@ respective callback receives as arguments. It has the general form as follows:
 For a callback taking no arguments, the `PARAM_LIST` can be empty. The return
 type should either be `None` or a concrete type.
 
-The following unit test illustrates the usage of the above Clif wrapping in
+The following unit test illustrates the usage of the above CLIF wrapping in
 Python code.
 
-```live-snippet
-cs/file:clif/examples/callbacks/python/callbacks_test.py
-```
+Look in the examples/callbacks/python/callbacks_test.py [file](../../examples/callbacks/python/callbacks_test.py).
 
 ### Function with Default Values for Arguments
 
@@ -481,18 +587,14 @@ If desired, and if the C++ function declaration lists default values for its
 arguments, then the function can be wrapped such that the same default values
 reflect in the Python side as well. Consider the following C++ functions:
 
-```live-snippet
-cs/file:clif/examples/wrapfunc/default_args.h
-```
+Look in the examples/wrapfunc/default_args.h [file](../../examples/wrapfunc/default_args.h).
 
-The Clif file wrapping the above functions is as follows:
+The CLIF file wrapping the above functions is as follows:
 
-```live-snippet
-cs/file:clif/examples/wrapfunc/python/default_args.clif
-```
+Look in the examples/wrapfunc/python/default_args.clif [file](../../examples/wrapfunc/python/default_args.clif).
 
-Let us first focus on the Clif declaration of the function `Inc`. Its second
-argument is _assigned_ a value of `default`. This indicates to Clif that the
+Let us first focus on the CLIF declaration of the function `Inc`. Its second
+argument is _assigned_ a value of `default`. This indicates to CLIF that the
 argument's default value, as specified in the C++ declaration, should carry over
 into Python. The wrapped function `Inc` can then be called in Python without
 the second argument. In such a case, the second argument takes the value `1`,
@@ -506,10 +608,10 @@ assert Inc(5, 2) == 7
 
 NOTE: It is an error to assign an argument to `default` if the C++ declaration
 does not list a default value for that argument. On the other hand,
-it is _not_ a requirement to assign arguments to `default` in the Clif
+it is _not_ a requirement to assign arguments to `default` in the CLIF
 declaration even if the C++ declaration lists default values. One should do so
 only if the default value is relevant in Python as well. If such an argument is
-not assigned to `default` in the Clif declaration, then it will be like an
+not assigned to `default` in the CLIF declaration, then it will be like an
 argument without a default value in Python.
 
 Let us now turn our attention to the other function `Scale` in the above C++
@@ -521,7 +623,7 @@ passing an argument while passing an explicit value for an argument later in the
 declaration order. However, when the default value of an argument in the C++
 declaration is a
 [constexpr](http://en.cppreference.com/w/cpp/language/constexpr) of a
-[fundamental type](http://en.cppreference.com/w/cpp/language/types), the Clif
+[fundamental type](http://en.cppreference.com/w/cpp/language/types), the CLIF
 wrapped Python function will follow Python rules. With the wrapped `Scale`
 function for example, one can omit the value of the argument `ratio` while
 specifying the value of `offset`. This is illustrated in the following Python
@@ -532,7 +634,7 @@ assert Scale(5) == 10
 assert Scale(5, offset=2) == 14  # passing a value for |ratio| is omitted
 ```
 
-Currently, Clif is unable to generate the default value if the value as
+Currently, CLIF is unable to generate the default value if the value as
 listed in the C++ declaration is not a `constexpr` or is not of a fundamental
 type. Since C++ requires arguments (even if having default values) be passed in
 the declaration order, we _can not_ omit such an argument value while specifying
@@ -549,53 +651,53 @@ ScaleWithRatios(5, offset=2)  # Raises ValueError as a value for
 
 Coming soon!
 
-## Naming Rules in Clif Files {#naming_rules}
+## Naming Rules in CLIF Files {#naming_rules}
 
-We have seen in previous sections that Clif enables one to wrap named C++
+We have seen in previous sections that CLIF enables one to wrap named C++
 constructs and expose them into Python as named Python constructs. Every C++
 construct wrapped is exposed with a Python name. There are a few rules to follow
-when declaring and using such Python names within a single Clif file, and across
-multiple Clif files.
+when declaring and using such Python names within a single CLIF file, and across
+multiple CLIF files.
 
 1. A Python name defining a construct should be unique to the scope in which the
-construct is being defined. In Clif, there are only two scopes: _module scope_
-and _class scope_. Module scope is the top-level scope of a Clif file, while
-class scope is the scope within a class definition in a Clif file.
+construct is being defined. In CLIF, there are only two scopes: _module scope_
+and _class scope_. Module scope is the top-level scope of a CLIF file, while
+class scope is the scope within a class definition in a CLIF file.
 
 2. A Python name, say to name a function argument type, can only be used after
 a construct with that name has been previously defined. It could either be
-defined in the same Clif file where it is used, or in another Clif wrapping
-imported by the Clif file.
+defined in the same CLIF file where it is used, or in another CLIF wrapping
+imported by the CLIF file.
 
 3. Ambiguous names are resolved with full scope qualification using the '.'
 (dot) notation. For example, if a class named `MyClass` is defined within
 classes `OuterOne` and `OuterTwo`, then to specify the one in class `OuterOne`,
 use the name `OuterOne.MyClass`.
 
-4. Ambiguous names between different Clif files are resolved with the help of
-_import renaming_. The usual way to _import_ constructs wrapped in other Clif
+4. Ambiguous names between different CLIF files are resolved with the help of
+_import renaming_. The usual way to _import_ constructs wrapped in other CLIF
 files is to list a `from <path_to_generated_header> import *` at the top of the
-Clif file. If the imported names clash with names in the current Clif file, then
+CLIF file. If the imported names clash with names in the current CLIF file, then
 the imported _module_ should be renamed using this syntax:
 `from <path_to_generated_header> import * as <renamed>`. Then, the imported
 constructs can be used within the current file after prepending the scope
 qualification prefix `<renamed>.`.
 
 The above naming rules are illustrated in the declarations of the following
-example Clif file:
+example CLIF file:
 
 ```python
-from `/a/different/wrapping.h` import * as other
+from `/a/different/wrapping_clif.h` import * as other
 
 from `/my/header/file.h`:
   namespace `my::header::file`:
     class OuterOne:
       class MyClass:
-        def __init__(self)
+        pass
 
     class OuterTwo:
       class MyClass:
-        def __init__(self)
+        pass
 
     # The two argument types are scope qualified. Likewise, the return type is
     # scope qualified with the renamed imported module.
@@ -611,15 +713,11 @@ Wrapping methods is very similar to wrapping functions but with one difference:
 the method to be wrapped should take `self` as the first argument. Let us wrap
 the class `ClassWithMethods` and its methods defined in `wrapmethod.h`.
 
-```live-snippet
-cs/file:clif/examples/wrapmethod/wrapmethod.h
-```
+Look in the examples/wrapmethod/wrapmethod.h [file](../../examples/wrapmethod/wrapmethod.h).
 
-The Clif wrapping for the above class and its methods is as follows:
+The CLIF wrapping for the above class and its methods is as follows:
 
-```live-snippet
-cs/file:clif/examples/wrapmethod/python/wrapmethod.clif
-```
+Look in the examples/wrapmethod/python/wrapmethod.clif [file](../../examples/wrapmethod/python/wrapmethod.clif).
 
 As can be seen above, the method wrappings are listed under the class
 definition. Also, since they are methods, their first argument is `self` without
@@ -635,7 +733,7 @@ flavors to expose them in Python with different names.
 
 2. to show that C++ methods can be wrapped into special Python methods.
 
-In the above Clif example, the alternative wrapping of the C++ `Size` method
+In the above CLIF example, the alternative wrapping of the C++ `Size` method
 wraps it into the special method `__len__` in Python. This make the wrapping
 more Pythonic as one can now get the size of the object using the Python built-
 in function `len`:
@@ -645,20 +743,20 @@ obj = wrapmethod.ClassWithMethods(10)
 assert len(obj) == 10
 ```
 
-See [this](#specialmethods) for information more about wrapping C++ methods into
+See [this][specialmethods] for information more about wrapping C++ methods into
 special Python methods.
 
 ### Wrapping Constructors
 
-The above Clif example also wraps one of the constructors for the C++ class
+The above CLIF example also wraps one of the constructors for the C++ class
 `ClassWithMethods` into a constructor in Python as well. As Python does not have
 name overloading, we can have only one constructor for the wrapped Python class.
-However, since the wrapped C++ class can have multiple constructors, Clif
+However, since the wrapped C++ class can have multiple constructors, CLIF
 provides a way to wrap such constructors as well, but into static methods of the
 containing class (**and not into class methods!**). The additional
-_constructors_ are declared in Clif with the `@add__init__` decorator. For
+_constructors_ are declared in CLIF with the `@add__init__` decorator. For
 example, the other constructor of the class `ClassWithMethods` can be wrapped in
-Clif as follows:
+CLIF as follows:
 
 ```python
 from "clif/examples/wrapmethod/wrapmethod.h":
@@ -701,7 +799,7 @@ class ClassWithMethods {
 Without `explicit`, there could be implicit type conversions from `int` to
 `ClassWithMethods` with the above single argument constructor. The C++ compiler
 will always declare a copy constructor as a non-explicit public member of the
-class if there is no user-defined copy/move constructor. Then Clif would treat
+class if there is no user-defined copy/move constructor. Then CLIF would treat
 `ClassWithMethods`'s implicitly-declared copy constructor as a valid candidate
 while it's not, and report a multi match error. The same process could also
 happen to move constructors if there exist.
@@ -709,18 +807,18 @@ happen to move constructors if there exist.
 #### Default Constructor
 
 If a wrapped C++ class has a default constructor, and if one wants to expose it
-on the Python side as a constructor, it need not be listed in the Clif
-file. Clif _wraps_ it implicitly. The default C++ constructor gets invoked when
+on the Python side as a constructor, it need not be listed in the CLIF
+file. CLIF _wraps_ it implicitly. The default C++ constructor gets invoked when
 one instantiates a wrapped class as follows:
 
 ```python
 obj = wrapped_module.WrappedClass() # Constructor with no args
 ```
 
-even when the Clif file does not list the default constructor (and, since this
-is Python, Clif should not define an `__init__` method at all).
+even when the CLIF file does not list the default constructor (and, since this
+is Python, CLIF should not define an `__init__` method at all).
 
-NOTE: One _can_ list a wrapper for the default constructor in the Clif file. It
+NOTE: One _can_ list a wrapper for the default constructor in the CLIF file. It
 is not an error, but is redundant.
 
 ### Wrapping Static Methods
@@ -737,7 +835,7 @@ class methods.
 
 #### Wrapping as Functions in the Module Scope
 
-Wrapping a static C++ method can be done with `using` statement.
+Wrapping a static C++ method can be done with the `staticmethods` statement.
 The following snippet illustrates this
 for the static method `GetStaticNumber` of the C++ class `ClassWithMethods` of
 the above example:
@@ -753,7 +851,7 @@ The syntax to wrap a static method of a C++ class as a class method of the
 Python class is very similar to wrapping an instance method, except that,
 instead of the `self` argument, the class method needs `cls` as the first
 argument. Also, a class method declaration should be decorated with the
-`@classmethod` decorator. The Clif declaration which wraps the static method
+`@classmethod` decorator. The CLIF declaration which wraps the static method
 `GetStaticNumber` of the above C++ class `ClassWithMethods` as class method is
 as follows:
 
@@ -771,18 +869,18 @@ as follows:
 
 We have seen an example above wherein wrapping a C++ method into the special
 method `__len__` on the Python side enables one to use the `len` built-in
-function on the object. Similarly, Clif provides a way to wrap getters and
+function on the object. Similarly, CLIF provides a way to wrap getters and
 setters into other special methods on the Python side so that one can use the
 wrapped objects as sequences (this enables one to use the subscript operator
 `[]` on the wrapped object). To wrap a class into one supporting the sequence
 protocol on the Python side, one has to wrap the C++ element access getter and
 setter methods with Python names `__getitem__` and `__setitem__` respectively.
-Python use the same `[item]` syntax for accessing sequences (eg. lists, tuples)
+Python uses the same `[item]` syntax for accessing sequences (eg. lists, tuples)
 with the index as `item` and mappings (dicts) with a key as `item`. We need to
 decorate the definitions of these methods with `@sequential` to indicate that
 these methods are for using an index.
 
-The Clif declaration which wraps the C++ methods `Get` and `Set`
+The CLIF declaration which wraps the C++ methods `Get` and `Set`
 (of class `ClassWithMethods` from above) into the sequence protocol is as
 follows:
 
@@ -810,7 +908,7 @@ from "clif/examples/wrapmethod/wrapmethod.h":
     class ClassWithMethods:
       ...
 
-      # Wrap ClassWithMethods::Set as __delitem__ with sequence protocol
+      # Wrap ClassWithMethods::Delete as __delitem__ with sequence protocol
       @sequential
       def `Delete` as __delitem__(self, i: int)
 ```
@@ -826,9 +924,9 @@ assert len(obj) == 9
 
 NOTE: `__setitem__` and `__delitem__` occupy the same slot, so defining only one
 of them prevents calling the other from a base class. Just repeat the "missing"
-definition in the derived class
-.
-Clif protects the C++ side from invalid indices. That is, if Python code
+definition in the derived class.
+
+CLIF protects the C++ side from invalid indices. That is, if Python code
 uses a bad index to access a sequence element (from an instance whose class
 satisfies the sequence protocol), then an `IndexError` is raised even if the
 backing C++ code does not provide such a protection. [This is not to imply that
@@ -837,9 +935,9 @@ contract.]
 
 ### Sequences are Iterable
 
-When a Clif wrapped class contains the special methods `__getitem__` under the
+When a CLIF wrapped class contains the special methods `__getitem__` under the
 sequence protocol, and also the method `__len__`, then instances of such a class
-can are iterable in Python. That is, with the wrappings for `__getitem__` and
+are iterable in Python. That is, with the wrappings for `__getitem__` and
 `__len__` added as above for the class `ClassWithMethods`, one can now iterate
 over the elements of its instance, for example in a `for` loop, as follows:
 
@@ -855,23 +953,19 @@ for i in obj:
 NOTE: The example used in this section lives in
 clif/examples/property.
 
-We have previously seen Clif's [unproperty](#unproperty) feature where in data
+We have previously seen CLIF's [unproperty][unproperty] feature where in data
 members of a C++ class are exposed via setter/getter methods on the wrapped
-class. Clif also provides a way to do its inverse: expose C++ getter/setter
+class. CLIF also provides a way to do its inverse: expose C++ getter/setter
 methods via a property (or attribute) of the wrapped class. This enables one to
 expose C++ classes with a concise Pythonic API. Consider the following C++ class
 definition:
 
-```live-snippet
-cs/file:clif/examples/property/myoptions.h
-```
+Look in the examples/property/myoptions.h [file](../../examples/property/myoptions.h).
 
 One can wrap the getter and setter methods of the class `MyClass` into instance
-properties in Python as shown in the following Clif file:
+properties in Python as shown in the following CLIF file:
 
-```live-snippet
-cs/file:clif/examples/property/python/myoptions.clif
-```
+Look in the examples/property/python/myoptions.clif [file](../../examples/property/python/myoptions.clif).
 
 The general syntax to list a class property (as a replacement for its C++ getter
 and setter) is as follows:
@@ -890,7 +984,7 @@ backticks.
 Providing a setter for a property is optional. If a setter is not specified
 in the property declaration, then the property is not writable in Python. The
 code snippet below illustrates the usage of the Python class wrapped in the
-above Clif file.
+above CLIF file.
 
 ```python
 opts = MyOptions('options')
@@ -901,7 +995,7 @@ opts.name = 'new_name' # This line will raise AttributeError as the attribute
                        # 'name' is not writable.
 ```
 
-NOTE: Like the normal [fields](#fields) exposed in to Python, the properties
+NOTE: Like the normal [fields][fields] exposed in to Python, the properties
 exposed in the above fashion are also _returned_ by value.
 
 ## Inheritance
@@ -915,20 +1009,16 @@ In many cases C++ inheritance is an implementation detail and should not be
 visible to Python users.
 
 If exposing the C++ inheritance hierarchy into Python is
-not required, one can wrap only the relevant classes using Clif and ignore
+not required, one can wrap only the relevant classes using CLIF and ignore
 linking them with an inheritance relationship in Python. For example, consider
 the following C++ class hierarchy:
 
-```live-snippet
-cs/file:clif/examples/inheritance/hidden_base.h
-```
+Look in the examples/inheritance/hidden_base.h [file](../../examples/inheritance/hidden_base.h).
 
 If exposing the class `Base` into Python is not necessary, one can wrap only the
 derived class `Derived` as follows:
 
-```live-snippet
-cs/file:clif/examples/inheritance/python/hidden_base.clif
-```
+Look in the examples/inheritance/python/hidden_base.clif [file](../../examples/inheritance/python/hidden_base.clif).
 
 Notice that, since the Python class `Derived` is not inherited from the class
 `Base` (in fact, Python is not aware of the existence of a base class), one will
@@ -937,26 +1027,22 @@ wrapping (if they should be made available in Python at all).
 
 ### Exposing Inheritance Relationship into Python
 
-Wrapping C++ class inheritance hierarchy into Python class hierarchy using Clif
+Wrapping C++ class inheritance hierarchy into Python class hierarchy using CLIF
 is straightforward.
 
-NOTE: Clif does not support multiple inheritance on the Python side. The C++
+NOTE: CLIF does not support multiple inheritance on the Python side. The C++
 side can use multiple inheritance as suitable (and as allowed).
 
 Let us wrap the following C++ class hierarchy:
 
-```live-snippet
-cs/file:clif/examples/inheritance/inheritance.h
-```
+Look in the examples/inheritance/inheritance.h [file](../../examples/inheritance/inheritance.h).
 
-The Clif-wrapping for the above class hierarchy is as follows:
+The CLIF-wrapping for the above class hierarchy is as follows:
 
-```live-snippet
-cs/file:clif/examples/inheritance/python/inheritance.clif
-```
+Look in the examples/inheritance/python/inheritance.clif [file](../../examples/inheritance/python/inheritance.clif).
 
 The wrapping for the base class `Base` is like wrapping any other class (as
-described [here](#wrappod) and [here](#wrapmethod)). The wrapping for the
+described [here][wrappod] and [here][wrapmethod]). The wrapping for the
 derived classes `Derived1` and `Derived2` uses the general Python syntax of
 specifying a base class in the class definition header:
 
@@ -965,11 +1051,11 @@ class <DERIVED_CLASS_NAME>(<BASE_CLASS_NAME>):
 ```
 
 Both, `DERIVED_CLASS_NAME` and `BASE_CLASS_NAME`, can be specified with
-different Python names as well (as described in [renaming](#renaming)).
+different Python names as well (as described in [renaming][renaming]).
 
 Following the class declaration header are the method declarations as usual.
-Declaring a class as inheriting another class in Clif guarantees that all the
-methods declared in the Clif wrapping of the base class are inherited by the
+Declaring a class as inheriting another class in CLIF guarantees that all the
+methods declared in the CLIF wrapping of the base class are inherited by the
 derived class. Notice that, for the class `Derived2`, we did not list any
 methods, but just used the `pass` statement. This was done to illustrate that,
 when appropriate, one can make the derived class _empty_ (as in, at the syntax
@@ -977,10 +1063,9 @@ level) and make only the inherited members available.
 
 ## Overriding Virtual Methods in Python
 
-A very useful feature that Clif provides is to be able to override virtual
-methods in Python. This enables one to provide implementations for
-abstract C++ classes in Python and pass them over to C++ for further
-computation.
+A very useful feature that CLIF provides is overriding virtual methods in
+Python. This enables one to provide implementations for abstract C++ classes in
+Python and pass them over to C++ for further computation.
 
 Note: The example `operation` used in this section lives in
 clif/examples/inheritance.
@@ -989,19 +1074,15 @@ We will use a fairly simple example to illustrate this feature of overriding
 virtual methods. Consider the following abstract C++ class, and a function which
 takes a pointer to an instance of that class as argument:
 
-```live-snippet
-cs/file:clif/examples/inheritance/operation.h
-```
+Look in the examples/inheritance/operation.h [file](../../examples/inheritance/operation.h).
 
-The Clif wrapping for the above class is as follows:
+The CLIF wrapping for the above class is as follows:
 
-```live-snippet
-cs/file:clif/examples/inheritance/python/operation.clif
-```
+Look in the examples/inheritance/python/operation.clif [file](../../examples/inheritance/python/operation.clif).
 
-Most of the Clif wrapping above looks like any normal Clif wrapping of a C++
+Most of the CLIF wrapping above looks like any normal CLIF wrapping of a C++
 class and function. The key difference however is the decorator `@virtual` used
-to decorate the virtual method `Run`. This is a directive to Clif informing it
+to decorate the virtual method `Run`. This is a directive to CLIF informing it
 that a concrete class derived from class `Operation` in Python will override it.
 For example, one can override the `Run` method in a derived Python class as
 follows:
@@ -1028,39 +1109,38 @@ r = operation.Perform(a)
 assert r == 123
 ```
 
-NOTE: It is an error to decorate the Clif declaration of a non-virtual method
+NOTE: It is an error to decorate the CLIF declaration of a non-virtual method
 with `@virtual`.
 
 NOTE: Do not decorate C++ virtual methods with `@virtual` unless you need to
 (re)implement them in Python.
+
+NOTE: When a virtual function returns an object from Python, it follows the
+usual Python convention and returns a new reference.
 
 ## Wrapping C++ Templates
 
 NOTE: The example, `templates`, used in this section lives in
 clif/examples/templates.
 
-NOTE: Clif only supports wrapping template instantiations. This does not mean
+NOTE: CLIF only supports wrapping template instantiations. This does not mean
 that the C++ code should have explicit instantiations declared. Rather that,
-Clif does not provide a way to define classes in a templatized manner.
+CLIF does not provide a way to define classes in a templatized manner.
 
 ### Wrapping Template Classes
 
 Wrapping a template instantiation should be done using the normal way of
-wrapping classes and methods. The C++ name in the Clif declaration should
+wrapping classes and methods. The C++ name in the CLIF declaration should
 include all the non-default template parameters of the C++ template. The Python
 name _must_ be provided. Consider the following C++ template definition:
 
-```live-snippet
-cs/file:clif/examples/templates/templates.h
-```
+Look in the examples/templates/templates.h [file](../../examples/templates/templates.h).
 
-The Clif wrapping for the above class in two different flavors is as follows:
+The CLIF wrapping for the above class in two different flavors is as follows:
 
-```live-snippet
-cs/file:clif/examples/templates/python/templates.clif
-```
+Look in the examples/templates/python/templates.clif [file](../../examples/templates/python/templates.clif).
 
-The first flavor in the above Clif file wraps the template instantiation
+The first flavor in the above CLIF file wraps the template instantiation
 `MyClass<int, string>`, and the second flavor wraps the template instantiation
 `MyClass<string, string>`. Notice that, one will need to declare the
 methods, attributes and properties that they want to expose into Python
@@ -1068,13 +1148,13 @@ explicitly and separately for each flavor.
 
 ### Wrapping Template Functions
 
-NOTE: Clif only supports wrapping template functions whose template arguments
+NOTE: CLIF only supports wrapping template functions whose template arguments
 can be deduced from the function's argument types.
 
 When wrapping template functions, unlike with wrapping template classes, one
 should __not__ list the template arguments in the C++ name. Apart from that, it
 is very similar to wrapping any normal function. This is illustrated in the
-above Clif file which wraps the C++ template function `MyAdd` into two flavors
+above CLIF file which wraps the C++ template function `MyAdd` into two flavors
 `MyAddInt` and `MyAddFloat`.
 
 ## Wrapping Protocol Buffers {#protos}
@@ -1082,89 +1162,47 @@ above Clif file which wraps the C++ template function `MyAdd` into two flavors
 NOTE: The example `wrap_protos` used in this section lives in
 clif/examples/wrap_protos.
 
-Wrapping protocol buffers with Clif requires setting up certain build rules and
+Wrapping protocol buffers with CLIF requires setting up certain build rules and
 targets following a certain pattern. There are no constructs to wrap them
-explicitly in a Clif file. Consider an example proto definition as follows:
+explicitly in a CLIF file. Consider an example proto definition as follows:
 
-```live-snippet
-cs/file:clif/examples/wrap_protos/protos/sample.proto
-```
+Look in the examples/wrap_protos/protos/sample.proto [file](../../examples/wrap_protos/protos/sample.proto).
 
-NOTE: Only proto2 (and `cc_api_version=2`) supported by Clif. If the proto rule
+NOTE: Only proto2 (and `cc_api_version=2`) is currently supported by CLIF.
+If the proto file or build rule
 has `cc_api_version=1`, then protoc generates a `.pb.h` file incompatible with
-Clif (nested message typedefs are not generated). Under certain conditions,
+CLIF (nested message typedefs are not generated). Under certain conditions,
 the `proto_library` rule falls back to proto1 even if `cc_api_version=2` is
-specified in the rule. Such cases are also not supported by Clif.
+specified in the rule. Such cases are also not supported by CLIF.
 
-To use the protobufs generated from the above definition in Python together with
-other Clif-wrapped constructs, one will have to list a `pyclif_proto_library`
-target in the `BUILD` file:
-
-```live-snippet
-cs/file:clif/examples/wrap_protos/protos/BUILD
-```
-
-There are a few rules to follow when specifying `pyclif_proto_library` targets
-in `BUILD` files:
-
-1. A `pyclif_proto_library` target should be listed in the same package in which
-the proto file lives.
-
-2. The name of the `pyclif_proto_library` target should be of the form
-`<MY_PROTO_FILE>_pyclif`, if one is wrapping the proto file named
-`<MY_PROTO_FILE>.proto`.
-
-NOTE: The rule `pyclif_proto_library` should first be loaded from the file
-`clif/python/clif_build_rule.bzl` before it can be used.
-
-To see how the Clif wrappings for the above proto definitions can be used along
-with Clif-wrapped Python code, let us consider C++ code which operates with the
+To see how the CLIF wrappings for the above proto definitions can be used along
+with CLIF-wrapped Python code, let us consider C++ code which operates with the
 proto `MyMessage` as follows:
 
-```live-snippet
-cs/file:clif/examples/wrap_protos/wrap_protos.h
-```
+Look in the examples/wrap_protos/wrap_protos.h [file](../../examples/wrap_protos/wrap_protos.h).
 
 Make special note of two constructs from the above C++ header: The function
 `DefaultInitMyMessage` which takes a pointer to the proto `MyMessage` as
 argument, and the method `GetMyMessage` which returns a pointer to the proto
-`MyMessage`. With these in mind, let us look at the following Clif file which
+`MyMessage`. With these in mind, let us look at the following CLIF file which
 wraps the C++ class `ProtoManager` and the function `DefaultInitMyMessage` as
 follows:
 
-```live-snippet
-cs/file:clif/examples/wrap_protos/python/wrap_protos.clif
-```
+Look in the examples/wrap_protos/python/wrap_protos.clif [file](../../examples/wrap_protos/python/wrap_protos.clif).
 
-Since we are using the Clif wrapped protobuf types in our Clif file, we have to
-_import_ them using the `from` statement in a manner similar to importing Clif
-wrapped constructs from other Clif modules. As before, the name of the header
-file (without the `.h` extension), from which the Clif wrappings should be
-imported, should match the name of the build target which builds the Clif
+Since we are using the CLIF wrapped protobuf types in our CLIF file, we have to
+_import_ them using the `from` statement in a manner similar to importing CLIF
+wrapped constructs from other CLIF modules. As before, the name of the header
+file (without the `.h` extension), from which the CLIF wrappings should be
+imported, should match the name of the build target which builds the CLIF
 wrappings. This import statement makes the protobuf message names available for
-use in the Clif file. Nested messages and enums should be specified using the
+use in the CLIF file. Nested messages and enums should be specified using the
 '`.`' notation.
 
 NOTE: If a protobuf message name conflicts with another name used or defined in
-a Clif file, then the protobuf wrapping should be imported using the
+a CLIF file, then the protobuf wrapping should be imported using the
 `from <proto_wrapping_header_file> import * as <local_name>` syntax. The message
-name can then be used in the Clif file with the `<local_name>.` prefix.
-
-### Using pyclif_deps for pyclif_proto_library targets
-
-Another vital point of using protocol buffers in CLIF is that it must be used in
-the `pyclif_deps =` clause of a `py_clif_cc` rule as shown in:
-
-```live-snippet
-cs/file:clif/examples/wrap_protos/python/BUILD
-```
-
-Using `pyclif_deps =` instead of deps tells `py_clif_cc` to add a "missing"
-py_proto_lib dependency that adds a proper `_pb2` Python protobuf.
-
-WARNING: If by mistake `pyclif_proto_library` target goes into `deps` instead,
-the consumers of the `py_clif_cc` rule will not be able to use it properly
-unless they add a proper `_pb2` Python protobuf dependency of their own.
+name can then be used in the CLIF file with the `<local_name>.` prefix.
 
 ### Passing protobufs by value
 
@@ -1180,19 +1218,29 @@ though the method `GetMyMessage` returns a non-const pointer, changes made to
 the returned protobuf on the Python side do not get reflected on the C++ side.
 This is illustrated by the following test:
 
-```live-snippet
-cs/file:clif/examples/wrap_protos/python/wrap_protos_test.py
-```
+Look in the examples/wrap_protos/python/wrap_protos_test.py [file](../../examples/wrap_protos/python/wrap_protos_test.py).
 
 ## Providing a Python Wrapper Layer
 
-[More details coming soon!]
+(More details coming ...)
 
-The raw Clif wrappings might not be Pythonic enough. For example, a C++ method
+The raw CLIF wrappings might not be Pythonic enough. For example, a C++ method
 could be silent or just crash on invalid input arguments. When such a method is
-wrapped into Python, instead of making this raw Clif wrapping as a user facing
+wrapped into Python, instead of making this raw CLIF wrapping as a user facing
 API, a good approach would be to provide a different layer which is actually the
-user facing API instead of the raw Clif wrapping. This helps in two ways:
+user facing API instead of the raw CLIF wrapping. This helps in two ways:
 
 1. Isolate Python users from C++ API changes.
 2. Provide a more Pythonic API, instead of possibly a non-Pythonic one.
+
+[wrappod]: #wrapping_pod_data_types
+[wrapmethod]: #wrapping_methods
+[specialmethods]: #wrapping_c_methods_into_special_methods_in_python
+[unproperty]: #unproperty_exposing_c_fields_via_settersgetters_in_python
+[renaming]: #renaming_a_c_api_for_use_in_python
+[protos]: #Wrapping_Protocol_Buffers
+[naming_rules]: #Naming_Rules_in_Clif_Files
+
+[^1]: "plain old data", i.e. [passive data
+    structures](https://en.wikipedia.org/wiki/Passive_data_structure) like
+    records.

@@ -25,7 +25,7 @@
 
 namespace clif {
 
-PyObject* Clif_PyObjFrom(const std::list<int>& c, py::PostConv pc) {
+PyObject* Clif_PyObjFrom(const std::list<int>& c, const py::PostConv& pc) {
   return py::ListFromSizableCont(c, pc);
 }
 
@@ -33,6 +33,5 @@ bool Clif_PyObjAs(PyObject* py, std::list<int>* c) {
   return py::IterToCont<int>(py, [&c](int&& i) { c->push_back(i); });  //NOLINT: build/c++11
 }
 }  // namespace clif
-
 
 #endif  // CLIF_TESTING_PYTHON_T6_LIST_H_

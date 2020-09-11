@@ -36,7 +36,6 @@
 
 #include "clif/protos/ast.pb.h"
 
-
 namespace clif {
 
 using protos::AST;
@@ -52,7 +51,15 @@ class CodeBuilder {
  public:
   typedef std::unordered_map<std::string, std::string> NameMap;
 
-  const std::string& BuildCode(protos::AST* clif_ast);
+  // The data structure to store typemaps. Uses std::vector<std::string> as the
+  // value of the hashmap because CLIF needs to retain the order of the type
+  // candidates in typemaps.
+  using CLIFToClangTypeMap =
+      std::unordered_map<std::string, std::vector<std::string> >;
+
+  // Builds code for CLIF AST with the typemaps built by the matcher.
+  const std::string& BuildCode(protos::AST* clif_ast,
+                               CLIFToClangTypeMap* clif_to_clang_type_map);
 
   // Returns a mapping from the code builder declared typedefs to their
   // fully qualified names.
@@ -86,7 +93,7 @@ class CodeBuilder {
   // top level decls.
   void BuildCodeForTopLevelDecls(DeclList* decls);
 
-  // Generate the specific code needed for a single decl, ignoring
+  // Generates the specific code needed for a single decl, ignoring
   // namespaces and related issues.
   void BuildCodeForDecl(Decl* decl);
 
@@ -96,13 +103,16 @@ class CodeBuilder {
 
   void BuildCodeForClass(ClassDecl* decl);
 
-  // Return the complete cpp_type made by code builder for the type.
-  std::string BuildCodeForType(Type* type);
+  // Returns the complete cpp_type made by CLIF code builder for the type.
+  // Triggers CLIF automatic type selector by setting type_selector_enable to
+  // true.
+  std::string BuildCodeForType(Type* type, bool type_selector_enable = false);
 
-  // Return the complete cpp_type made by code builder for the function decl.
+  // Returns the complete cpp_type made by CLIF code builder for the function
+  // decl.
   std::string BuildCodeForFunc(FuncDecl* decl);
 
-  // Return the complete cpp_type made by code builder for the container.
+  // Returns the complete cpp_type made by CLIF code builder for the container.
   std::string BuildCodeForContainer(Type* type);
 
   std::string BuildCodeForContainerHelper(Type* type);
@@ -114,6 +124,9 @@ class CodeBuilder {
   NameGenerator name_gen_;
   NameMap fq_typedefs_;
   NameMap original_names_;
+  // Code builder also needs access to typemaps' hashmap while using the
+  // automatic type selector.
+  CLIFToClangTypeMap* code_builder_clif_to_clang_type_map_;
 };
 }  // namespace clif
 

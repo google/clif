@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for clif.examples.wrap_protos.python.wrap_protos."""
+"""Tests for clif.examples.wrap_protos.python.wrap_protos.
+"""
 
 import unittest
-import wrap_protos
 import sample_pb2
+import wrap_protos
 
 
 class WrapProtosTest(unittest.TestCase):
@@ -52,11 +53,11 @@ class WrapProtosTest(unittest.TestCase):
     nested.value = sample_pb2.MyMessage.Nested.DEFAULT
     # And pass them to a wrapped functions as usual.
     msg = wrap_protos.MakeMyMessageFromNested(nested)
-    self.assertEquals(msg.name, 'from_nested')
+    self.assertEqual(msg.name, 'from_nested')
 
     enum_val = sample_pb2.MyMessage.Nested.EXPLICIT
     msg = wrap_protos.MakeMyMessageFromNestedEnum(enum_val)
-    self.assertEquals(msg.name, 'from_nested_enum')
+    self.assertEqual(msg.name, 'from_nested_enum')
 
 
 if __name__ == '__main__':

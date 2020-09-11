@@ -44,6 +44,9 @@ inline const proto2::Message* GetCProto(PyObject* py) {
   return nullptr;
 }
 
+// Did we copy pyproto into C++ generated pool message.
+bool InGeneratedPool(PyObject*, proto2::Message*);
+
 // Return pyproto converted from cproto.
 PyObject* PyProtoFrom(const ::proto2::Message* cproto,
                       PyObject* imported_pyproto_class,

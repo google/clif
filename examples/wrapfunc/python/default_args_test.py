@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for clif.examples.wrapfunc.python.default_args.
-"""
+"""Tests for clif.examples.wrapfunc.python.default_args."""
 
 import absolute_import
 import division

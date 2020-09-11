@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for clif.testing.t1."""
+"""Tests for testing.t1."""
 
 import unittest
 from clif.testing.python import t1
@@ -51,6 +51,11 @@ class T1Test(unittest.TestCase):
 
   def testBytes(self):
     self.assertEqual(t1.StdBytes(), b'std')
+
+  def testFunctionDocstring(self):
+    self.assertIn('function has a docstring.\n\n', t1.Sum3.__doc__)
+    self.assertIn('spans multiple lines', t1.Sum3.__doc__)
+    self.assertEqual(t1.Sum3.__doc__, t1.Sum3.__doc__.strip())
 
 
 if __name__ == '__main__':

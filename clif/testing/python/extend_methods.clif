@@ -1,0 +1,36 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from "clif/testing/extend_methods.h":
+  namespace `clif_testing`:
+    class ConcreteHolder:
+      def __init__(self)
+      def Get(self) -> int
+      def Set(self, value: int)
+
+    class VirtualBaseHolder:
+      # PyCLIF generates special code when it sees "@virtual" here.
+      # Usually "@virtual" is used to override C++ methods in Python.
+      # Here we just want VirtualBaseHolder to be the special kind.
+      @virtual
+      def Get(self) -> int
+      @virtual
+      def Set(self, value: int)
+
+    class VirtualDerivedHolder(VirtualBaseHolder):
+      def __init__(self)
+      # Using the C++ methods anyway for simplicity. It does not matter for
+      # this test.
+      def Get(self) -> int
+      def Set(self, value: int)

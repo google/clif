@@ -38,6 +38,15 @@ class OperatorsTest(unittest.TestCase):
     self.assertEqual(abc[0], 'c')
     self.assertIn(ord('c'), abc)
 
+  def testNum(self):
+    n = operators.Num()
+    self.assertEqual(n%1, 1)
+    self.assertEqual(2%n, 2)
+    self.assertEqual(n+2, 2)
+    with self.assertRaises(TypeError):
+      _ = 2+n  # The lack of __radd__ makes this fail.
+    self.assertEqual(3-n, 3)
+
 
 if __name__ == '__main__':
   unittest.main()

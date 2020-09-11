@@ -33,10 +33,11 @@ namespace {
 
 class ProtoFileErrorCollector : public MultiFileErrorCollector {
  public:
-  explicit ProtoFileErrorCollector(string* error_str) : error_str_(error_str) {}
+  explicit ProtoFileErrorCollector(std::string* error_str)
+      : error_str_(error_str) {}
 
-  void AddError(
-      const string& file, int line, int col, const string& msg) override {
+  void AddError(const std::string& file, int line, int col,
+                const std::string& msg) override {
     std::ostringstream stream;
     stream << "Error parsing " << file;
     if (line > 0) {
@@ -49,7 +50,7 @@ class ProtoFileErrorCollector : public MultiFileErrorCollector {
   }
 
  private:
-  string* error_str_;
+  std::string* error_str_;
 };
 
 template <typename T>
@@ -64,8 +65,8 @@ clif_proto::ProtoTypeInfo MakeProtoTypeInfo(const T& d) {
 
 namespace clif_proto {
 
-ProtoFileInfo::ProtoFileInfo(const string& proto_file_path,
-                             const string& additional_import_path)
+ProtoFileInfo::ProtoFileInfo(const std::string& proto_file_path,
+                             const std::string& additional_import_path)
     : valid_(false),  // The 'Index' method will set it to the correct validity.
       proto_file_path_(proto_file_path),
       additional_import_path_(additional_import_path) {
@@ -107,12 +108,12 @@ void ProtoFileInfo::Index() {
     csd.name = sd->name();
     csd.fqname = sd->full_name();
     csd.srcfile = sd->file()->name();
-    
+
     for (int j = 0; j < sd->method_count(); ++j) {
       const MethodDescriptor* m = sd->method(j);
       MethodInfo md;
       md.name = m->name();
-      
+
       const Descriptor* d = m->input_type();
       md.request = MakeProtoTypeInfo(*d);
 

@@ -51,13 +51,11 @@ int as_cmp(PyObject* res);
 int ignore(PyObject* res);
 
 template<PyObject* (*Wrapper)(PyObject*, PyObject*, PyObject*)>
-PyObject* getitem(PyObject* self, Py_ssize_t idx) {
-  idx = item_index(self, idx);
-  if (idx < 0) return nullptr;
+PyObject* repeat(PyObject* self, Py_ssize_t count) {
 #if PY_MAJOR_VERSION >= 3
-  PyObject* i = PyLong_FromSize_t(idx);
+  PyObject* i = PyLong_FromSsize_t(count);
 #else
-  PyObject* i = PyInt_FromSize_t(idx);
+  PyObject* i = PyInt_FromSsize_t(count);
 #endif
   if (i == nullptr) return nullptr;
 
@@ -72,6 +70,13 @@ PyObject* getitem(PyObject* self, Py_ssize_t idx) {
   Py_DECREF(i);
 
   return res;
+}
+
+template<PyObject* (*Wrapper)(PyObject*, PyObject*, PyObject*)>
+PyObject* getitem(PyObject* self, Py_ssize_t idx) {
+  idx = item_index(self, idx);  // Out-of-bounds check.
+  if (idx < 0) return nullptr;
+  return repeat<Wrapper>(self, idx);  // Happens to be reusable for getitem.
 }
 
 template<typename R> R error_value();  // Common error value for type R.

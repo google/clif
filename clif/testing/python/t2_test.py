@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for clif.testing.t2."""
+"""Tests for clif.testing.python.t2."""
 
 import unittest
 from clif.testing.python import t2
@@ -60,6 +60,13 @@ class T2Test(unittest.TestCase):
     with self.assertRaises(TypeError):
       t2.Derived(1)
 
+  def testDerivedClassDocstring(self):
+    # Nothing special about this being a derived class; that is just the
+    # one our test .clif file has a docstring on.
+    self.assertIn('class also has a docstring.\n\n', t2.Derived.__doc__)
+    self.assertIn('spans multiple lines', t2.Derived.__doc__)
+    self.assertIn(t2.Derived.__doc__, t2.Derived.__doc__.strip())
+
   def testDerivedInit(self):
     k = t2.Derived.Init(1, 2)
     self.assertEqual(k.i, 1)
@@ -78,10 +85,10 @@ class T2Test(unittest.TestCase):
   def testNoDefaultConstructor(self):
     with self.assertRaises(ValueError):
       # true error, no def ctor
-      self.assertEqual(t2.NoDefaultConstructor().a, 1)
+      _ = t2.NoDefaultConstructor().a
     with self.assertRaises(ValueError):
       # true error, non-def ctor not wrapped
-      self.assertEqual(t2.NoDefaultConstructor(1).a, 1)
+      _ = t2.NoDefaultConstructor(1).a
 
   # This test works as expected when the "user error" in .clif is fixed.
   # def testExplicitConstructor(self):
@@ -145,6 +152,16 @@ class T2Test(unittest.TestCase):
 
   def testReturnNoDefaultConstructor(self):
     self.assertIsInstance(t2.make_ndefctor(1), t2.NoDefaultConstructor)
+
+  def testMovableButUncopyableClass(self):
+    self.assertEqual(t2.func_return_movable_but_uncopyable_type().a, 100)
+
+  def testMovableButUncopyableOutputParameter(self):
+    output_param = t2.OutputParameter()
+    movable_return = output_param.MovableButUncopyableOutputParameter1()
+    self.assertEqual(movable_return.a, 100)
+    movable_return = output_param.MovableButUncopyableOutputParameter2()
+    self.assertEqual(movable_return.a, 1)
 
 
 if __name__ == '__main__':

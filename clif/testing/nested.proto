@@ -25,6 +25,8 @@ message Outer {
       B = 2;
     };
     optional Nested val = 1;
+    repeated bytes repeated_bytes_val = 2;
+    optional bytes scalar_bytes_val = 3;
   };
   optional Inner sub = 1;
 };

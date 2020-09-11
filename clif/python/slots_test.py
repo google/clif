@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for clif.python.slots."""
+"""Tests for slots."""
 
 import textwrap
-import unittest
+from absl.testing import absltest
 from clif.python import py2slots
 from clif.python import py3slots
 from clif.python import slots
 
 
-class SlotsTest(unittest.TestCase):
+class SlotsTest(absltest.TestCase):
 
   def testRichcmp(self):
     code = '\n'.join(
@@ -54,21 +54,11 @@ class SlotsTest(unittest.TestCase):
         }"""))
 
   def testGetItem(self):
+    # GenSlots is still needed for its sideeffects, but the output was
+    # removed in the transition to Py_TPFLAGS_HEAPTYPE.
     code = '\n'.join(
         slots.GenSlots([('__getitem__#', 'wrap_get')], {'tp_flags': []}))
-    self.assertMultiLineEqual(code, textwrap.dedent("""
-        PySequenceMethods AsSequence = {
-          nullptr,                             // sq_length
-          nullptr,                             // sq_concat
-          nullptr,                             // sq_repeat
-          slot::getitem<wrap_get>,             // sq_item
-          nullptr,                             // sq_slice
-          nullptr,                             // sq_ass_item
-          nullptr,                             // sq_ass_slice
-          nullptr,                             // sq_contains
-          nullptr,                             // sq_inplace_concat
-          nullptr,                             // sq_inplace_repeat
-        };"""))
+    self.assertMultiLineEqual(code, textwrap.dedent(''))
 
   def testSetItem(self):
     code = '\n'.join(
@@ -90,20 +80,7 @@ class SlotsTest(unittest.TestCase):
             PyErr_SetNone(PyExc_NotImplementedError);
             return -1;
           }
-        }
-
-        PySequenceMethods AsSequence = {
-          nullptr,                             // sq_length
-          nullptr,                             // sq_concat
-          nullptr,                             // sq_repeat
-          nullptr,                             // sq_item
-          nullptr,                             // sq_slice
-          slot_seti,                           // sq_ass_item
-          nullptr,                             // sq_ass_slice
-          nullptr,                             // sq_contains
-          nullptr,                             // sq_inplace_concat
-          nullptr,                             // sq_inplace_repeat
-        };"""))
+        }"""))
 
   def testSetItemMap(self):
     code = '\n'.join(
@@ -120,13 +97,22 @@ class SlotsTest(unittest.TestCase):
             PyErr_SetNone(PyExc_NotImplementedError);
             return -1;
           }
-        }
+        }"""))
 
-        PyMappingMethods AsMapping = {
-          nullptr,                             // mp_length
-          nullptr,                             // mp_subscript
-          slot_seto,                           // mp_ass_subscript
-        };"""))
+  def testRop(self):
+    code = '\n'.join(list(
+        slots.GenSlots([('__add__', 'wrap_add'),
+                        ('__radd__', 'wrap_radd')], {'tp_flags': []}))[:15])
+    self.assertMultiLineEqual(code, textwrap.dedent("""
+        extern PyTypeObject* wrapper_Type;
+        PyObject* slot_nb_add(PyObject* v, PyObject* w) {
+          if (PyObject_TypeCheck(v, wrapper_Type))
+            return slot::adapter<wrap_add, PyObject*>(v, w);
+          if (PyObject_TypeCheck(w, wrapper_Type))
+            return slot::adapter<wrap_radd, PyObject*>(v, w);
+          Py_INCREF(Py_NotImplemented);
+          return Py_NotImplemented;
+        }"""))
 
   def testSizeof(self):
     with self.assertRaises(NameError):
@@ -134,13 +120,13 @@ class SlotsTest(unittest.TestCase):
 
   def testTypeSlotsPy2(self):
     tp_slots = py2slots.PyTypeObject
-    self.assertEqual(len(tp_slots), 46)
+    self.assertLen(tp_slots, 46)
     self.assertEqual(tp_slots[0], 'tp_name')
     self.assertEqual(tp_slots[-1], 'tp_version_tag')
 
   def testTypeSlotsPy3(self):
     tp_slots = py3slots.PyTypeObject
-    self.assertEqual(len(tp_slots), 47)
+    self.assertLen(tp_slots, 47)
     self.assertEqual(tp_slots[0], 'tp_name')
     self.assertEqual(tp_slots[-1], 'tp_finalize')
 
@@ -173,4 +159,4 @@ def _SlotFunc(self, d, py3):
                         name+' func type not found')
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

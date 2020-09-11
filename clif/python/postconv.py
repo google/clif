@@ -40,7 +40,6 @@ list<str> -> {_1}
 dict<int, pair<str, ztype>> -> {_0,{_1,_2}}
 """
 
-I = '  '
 PASS = '{}'
 
 
@@ -60,13 +59,15 @@ def GenPostConvTable(postconv_types):
 def Initializer(ast_type, postconv_types_index_map, nested=False):
   """Tranform [complex] ast_type to a postconversion initializer_list."""
   if ast_type.HasField('callable'):
-    # 
+    # TODO: Fix postconv for callable.
     # print ast_type
     return PASS
   if not postconv_types_index_map: return PASS
-  index = ('{%s}' % ','.join(Initializer(t, postconv_types_index_map,
-                                         nested=True) for t in ast_type.params)
-           if ast_type.params  # container type
-           else postconv_types_index_map.get(ast_type.lang_type, '_0'))
+  if ast_type.params:  # container type
+    index = '{%s}' % ','.join(
+        Initializer(t, postconv_types_index_map, nested=True)
+        for t in ast_type.params)
+  else:
+    index = postconv_types_index_map.get(ast_type.lang_type, '_0')
   # If no table-based conversions needed, return "no_conversion".
   return index if nested or index.strip('{_0,}') else PASS

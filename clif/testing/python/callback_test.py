@@ -75,7 +75,6 @@ class CallbackTest(unittest.TestCase):
       self.assertEqual(s, 'foo')
     callback.StringCallback(cb)
 
-
   def testCallableOutput(self):
     returned_callback = callback.FunctionWithCallableReturn(Callback2)
     self.assertEqual(returned_callback(5), 5)

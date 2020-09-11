@@ -21,7 +21,7 @@
 #include <type_traits>
 #include <utility>
 
-#include <cassert>
+#include "glog/logging.h"
 
 namespace gtl {
 
@@ -53,7 +53,7 @@ namespace gtl {
 //
 // Synopsis:
 //
-//     #include "clif/python/optional.h"
+//     #include "util/gtl/optional.h"
 //
 //     gtl::optional<string> f() {
 //       string result;
@@ -202,7 +202,7 @@ class optional {
     if (engaged_) {
       destruct();
     }
-    assert(!engaged_);
+    DCHECK(!engaged_);
   }
 
   // Emplace reconstruction.  (Re)constructs the underlying T in-place with the
@@ -252,27 +252,27 @@ class optional {
   // member `m`, respectively.  If the optional is empty, behaviour is
   // undefined.
   const T* operator->() const {
-    assert(engaged_);
+    DCHECK(engaged_);
     return pointer();
   }
   T* operator->() {
-    assert(engaged_);
+    DCHECK(engaged_);
     return pointer();
   }
   const T& operator*() const & {
-    assert(engaged_);
+    DCHECK(engaged_);
     return reference();
   }
   T& operator*() & {
-    assert(engaged_);
+    DCHECK(engaged_);
     return reference();
   }
   const T&& operator*() const && {
-    assert(engaged_);
+    DCHECK(engaged_);
     return std::move(reference());
   }
   T&& operator*() && {
-    assert(engaged_);
+    DCHECK(engaged_);
     return std::move(reference());
   }
 
@@ -294,19 +294,19 @@ class optional {
   // and lvalue/rvalue-ness of `opt` is preserved to the view of the T
   // subobject.
   const T& value() const & {
-    assert((*this) && "Bad optional access");
+    CHECK(*this) << "Bad optional access";
     return reference();
   }
   T& value() & {
-    assert((*this) && "Bad optional access");
+    CHECK(*this) << "Bad optional access";
     return reference();
   }
   T&& value() && {  // NOLINT(build/c++11)
-    assert((*this) && "Bad optional access");
+    CHECK(*this) << "Bad optional access";
     return std::move(reference());
   }
   const T&& value() const && {  // NOLINT(build/c++11)
-    assert((*this) && "Bad optional access");
+    CHECK(*this) << "Bad optional access";
     return std::move(reference());
   }
 
@@ -343,20 +343,20 @@ class optional {
   // Postcondition: engaged_ is true
   template <class... Args>
   void construct(Args&&... args) {
-    assert(!engaged_);
+    DCHECK(!engaged_);
     engaged_ = true;
     new (pointer()) T(std::forward<Args>(args)...);
-    assert(engaged_);
+    DCHECK(engaged_);
   }
 
   // Destruct inner T.
   // Precondition: engaged_ is true
   // Postcondition: engaged_ is false
   void destruct() {
-    assert(engaged_);
+    DCHECK(engaged_);
     pointer()->T::~T();
     engaged_ = false;
-    assert(!engaged_);
+    DCHECK(!engaged_);
   }
 
   // The internal storage for a would-be T value, constructed and destroyed

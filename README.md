@@ -1,9 +1,4 @@
-# WARNING: This repo is currently in an unmaintained / experimental state.
-
-The last full update was in December 2017. We are now (2020-09-09) exploring
-a new direction.
-
-## C++ Language Interface Foundation (CLIF)
+# C++ Language Interface Foundation (CLIF)
 
 CLIF provides a common foundation for creating C++ wrapper generators for
 various languages.
@@ -73,8 +68,14 @@ subdirectory.  Both Python 2 and 3 are supported.
 
 ### Building
 
-The steps below are in `INSTALL.sh` but outlined here for clarification.
-The install script sets up a Python virtual environment where it installs CLIF.
+To build and install CLIF, run:
+
+```bash
+./INSTALL.sh
+```
+
+The following outlines the steps in `INSTALL.sh` for clarification.
+`INSTALL.sh` sets up a Python virtual environment where it installs CLIF.
 
 1.  Checkout LLVM and Clang source trees (the exact SVN version as specified
     here is *required*)
@@ -83,10 +84,10 @@ The install script sets up a Python virtual environment where it installs CLIF.
     # We keep it separate of the CLIF tree to avoid pip unwanted copying.
     mkdir $LLVMSRC_DIR
     cd $LLVMSRC_DIR
-    svn co https://llvm.org/svn/llvm-project/llvm/trunk@307315 llvm
+    svn co https://llvm.org/svn/llvm-project/llvm/trunk@321388 llvm
     cd llvm/tools
-    svn co https://llvm.org/svn/llvm-project/cfe/trunk@307315 clang
-    ln -sf "$CLIFSRC_DIR/clif" clif
+    svn co https://llvm.org/svn/llvm-project/cfe/trunk@321388 clang
+    ln -s -f -n "$CLIFSRC_DIR/clif" clif
     ```
 
 1.  Build and install the CLIF backend. If you use
@@ -118,8 +119,8 @@ The install script sets up a Python virtual environment where it installs CLIF.
 
     If you have more than one Python version installed (eg. python2.7 and
     python3.6) cmake may have problems finding python libraries for the Python
-    you specified as INSTALL.sh argument and uses the default Python instead.
-    To help cmake use the correct Python add the following options to the cmake
+    you specified as INSTALL.sh argument and uses the default Python instead. To
+    help cmake use the correct Python add the following options to the cmake
     command (substitute the correct path for your system):
 
     ```bash
@@ -149,6 +150,12 @@ INSTALL.sh will build and install CLIF for Python (and LLVM Clang as an internal
 tool) to your system by default in `$HOME/opt/clif` and `$HOME/opt/clif/clang`.
 
 To run Python CLIF use `$HOME/opt/clif/bin/pyclif`.
+
+NOTE: In CLIF, [optional.h](clif/python/optional.h),
+[optional.cc](clif/python/optional.cc) and [ptr_util.h](clif/python/ptr_util.h)
+are a temporary clone of [abseil-cpp]
+(https://github.com/abseil/abseil-cpp/tree/master/absl/types). Anyone including
+CLIF developers and OSS contributors are not supposed to modify these files.
 
 ## Using your newly built pyclif
 

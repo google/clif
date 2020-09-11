@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "clif/python/postconv.h"
-#include "testing/base/public/gunit.h"
+#include "gtest/gtest.h"
 
 namespace {
 PyObject* pc1(PyObject* i) { return i; }

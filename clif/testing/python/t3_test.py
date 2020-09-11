@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for clif.testing.t3."""
+"""Tests for clif.testing.python.t3."""
 
 import unittest
 from clif.testing.python import t3
@@ -31,7 +31,8 @@ class T3Test(unittest.TestCase):
     self.assertEqual(t3.K.OldE.ONE, 1)
     self.assertEqual(t3.K.NewE.ONE.value, 11)
     self.assertRaises(TypeError, t3.K().M, (5))
-
+    # This is necessary for proper pickling.
+    self.assertEqual(t3._New.__module__, t3.__name__)
 
 if __name__ == '__main__':
   unittest.main()

@@ -28,3 +28,4 @@ from "clif/testing/t4.h":
   def nested(pb: Outer.Inner) -> Outer.Inner.Nested
   def GetUniquePtr(pb: Decl) -> Decl
   def GetSharedPtr(pb: Decl) -> Decl
+  def ReturnProto(pb: Outer.Inner) -> Outer.Inner

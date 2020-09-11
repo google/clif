@@ -1,0 +1,59 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from clif.testing.python.pickle_compatibility_helper import ReduceStoreTwo
+
+from "clif/testing/pickle_compatibility.h":
+  namespace `clif_testing`:
+    class StoreTwoUsingPostproc:
+      def __init__(self, v0: int, v1: int)
+      def Get(self, i: int) -> int
+      def `Self` as __reduce_ex__(self, protocol: int) -> StoreTwoUsingPostproc:
+        return ReduceStoreTwo(...)
+
+    class StoreTwoUsingExtend:
+      def __init__(self, v0: int, v1: int)
+      def Get(self, i: int) -> int
+
+    class `StoreTwoWithState<0>` as StoreTwoIGS:
+      def __init__(self, v0: int, v1: int)
+      def `GetInitArgs` as __getinitargs__(self) -> list<int>
+      def `GetState` as __getstate__(self) -> str
+      def `SetState` as __setstate__(self, state: str)
+
+    class `StoreTwoWithState<1>` as StoreTwoI:
+      def __init__(self, v0: int, v1: int)
+      def `GetInitArgs` as __getinitargs__(self) -> list<int>
+      def GetState(self) -> str
+      def SetState(self, state: str)
+
+    class `StoreTwoWithState<2>` as StoreTwoGS:
+      def __init__(self)
+      @add__init__
+      def SetValues(self, v0: int, v1: int)
+      def GetInitArgs(self) -> list<int>
+      def `GetState` as __getstate__(self) -> str
+      def `SetState` as __setstate__(self, state: str)
+
+    class `StoreTwoWithState<3>` as StoreTwoG:
+      def __init__(self)
+      def `GetState` as __getstate__(self) -> str
+
+    class `StoreTwoWithState<4>` as StoreTwoS:
+      def __init__(self)
+      def `SetState` as __setstate__(self, state: str)
+
+    class `StoreTwoWithState<5>` as StoreTwoImixup:
+      def __init__(self)
+      def `GetState` as __getinitargs__(self) -> str

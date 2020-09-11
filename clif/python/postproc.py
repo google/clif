@@ -24,13 +24,28 @@ to get clean list<int> for output and ValueError on error.
 """
 
 
-def ValueErrorOnFalse(ok, *args):
-  """Returns None / arg / (args,...) if ok."""
+def _RaiseOnFalse(caller_name, error_class, ok, *args):
+  """Returns None / arg / (args,...) if ok, otherwise raises error_class."""
   if not isinstance(ok, bool):
-    raise TypeError("Use ValueErrorOnFalse only on bool return value")
-  if not ok:
-    raise ValueError("CLIF wrapped call returned False")
+    raise TypeError('Use %s only on bool return value' % caller_name)
+  if not ok and error_class is not None:
+    raise error_class('CLIF wrapped call returned False')
   # Plain return args will turn 1 into (1,)  and None into () which is unwanted.
   if args:
     return args if len(args) > 1 else args[0]
   return None
+
+
+def ValueErrorOnFalse(ok, *args):
+  """Returns None / arg / (args,...) if ok, otherwise raises ValueError."""
+  return _RaiseOnFalse('ValueErrorOnFalse', ValueError, ok, *args)
+
+
+def RuntimeErrorOnFalse(ok, *args):
+  """Returns None / arg / (args,...) if ok, otherwise raises RuntimeError."""
+  return _RaiseOnFalse('RuntimeErrorOnFalse', RuntimeError, ok, *args)
+
+
+def IgnoreTrueOrFalse(ok, *args):
+  """Returns None / arg / (args,...) unconditionally, ignoring ok value."""
+  return _RaiseOnFalse('IgnoreTrueOrFalse', None, ok, *args)

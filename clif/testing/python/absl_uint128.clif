@@ -1,0 +1,7 @@
+from "clif/testing/absl_uint128.h":
+  namespace `clif_test_absl_uint128`:
+    def Zero() -> int
+    def One() -> int
+    def SetHighLsb() -> int
+    def Max() -> int
+    def AddUint128(a: int, b: int) -> int

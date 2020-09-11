@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for clif.testing.std_containers."""
+"""Tests for clif.testing.python.std_containers."""
 
 import unittest
 from clif.testing.python import std_containers
@@ -23,14 +23,20 @@ class StdContainersTest(unittest.TestCase):
   def testVector(self):
     self.assertEqual(std_containers.Mul([1, 2, 3], 2), [2, 4, 6])
 
+  def testArray(self):
+    self.assertEqual(std_containers.Div([2, 4], 2), [1, 2])
+
+    # Exceed bounds of array.
+    self.assertRaises(ValueError, lambda: std_containers.Div([2, 4, 6], 2))
+
   def testVectorBool(self):
     self.assertEqual(std_containers.Odd([1, 2, 3]), [True, False, True])
     self.assertEqual(std_containers.Even([1, 2, 3]), [False, True, False])
 
   def testMap(self):
     # pylint: disable=bad-whitespace
-    self.assertEqual(std_containers.Find(0, {1:2, 3:4, 5:0}), (True, 5))
-    r = std_containers.Find(6, {1:2, 3:4, 5:0})
+    self.assertEqual(std_containers.Find(0, {1: 2, 3: 4, 5: 0}), (True, 5))
+    r = std_containers.Find(6, {1: 2, 3: 4, 5: 0})
     self.assertIsInstance(r, tuple)
     self.assertIs(r[0], False)
 
@@ -71,6 +77,9 @@ class StdContainersTest(unittest.TestCase):
     for e, i in zip(t, range(1, 7)):
       self.assertEqual(e, i)
 
+  def testTakeVectorOfStrings(self):
+    self.assertEqual(std_containers.LastStringInVector(['hello', 'world']),
+                     'world')
 
 if __name__ == '__main__':
   unittest.main()

@@ -93,7 +93,6 @@ const char kClifTypedefPrefix[] = "clif_type_";
 
 }  // anonymous namespace
 
-
 namespace clif {
 
 std::string CodeBuilder::NameGenerator::NextClassName() {
@@ -116,11 +115,11 @@ std::string CodeBuilder::GenerateTypedefString(const std::string& cpp_type) {
     StrAppend(&fully_qualified_name, class_name, "::");
   }
   StrAppend(&fully_qualified_name, clif_declared_type);
-  DEBUG(llvm::dbgs() << "Inserting cpp_type: " << cpp_type
+  LLVM_DEBUG(llvm::dbgs() << "Inserting cpp_type: " << cpp_type
         << " fq_name " << fully_qualified_name);
   fq_typedefs_.insert({clif_declared_type, fully_qualified_name});
   original_names_.insert({clif_declared_type, cpp_type});
-  StrAppend(&code_, "typedef \n");
+  StrAppend(&code_, "typedef\n");
   if (!current_line_.empty() && !current_file_.empty()) {
     StrAppend(&code_, "#line ", current_line_.back(),
               " \"", current_file_.front(), "\"\n");
@@ -163,18 +162,92 @@ void CodeBuilder::BuildCodeForClass(ClassDecl* decl) {
   }
 }
 
-std::string CodeBuilder::BuildCodeForType(Type* type) {
+std::string CodeBuilder::BuildCodeForType(Type* type,
+                                          bool type_selector_enable) {
   if (!type->params().empty()) {
     return BuildCodeForContainer(type);
   }
   if (type->has_callable()) {
     return BuildCodeForFunc(type->mutable_callable());
   }
-  std::string type_name = type->cpp_type();
-  type->set_cpp_type(GenerateTypedefString(type->cpp_type()));
-  return type_name;
+  const std::string cpp_type_name = type->cpp_type();
+  const std::string lang_type_name = type->lang_type();
+  auto type_map_iter =
+      code_builder_clif_to_clang_type_map_->find(lang_type_name);
+  // A type in CLIF AST must specify either [cpp_type] or [lang_type + the
+  // corresponding typemap].
+  if (cpp_type_name.empty() &&
+      type_map_iter == code_builder_clif_to_clang_type_map_->end()) {
+    llvm::errs()
+        << "Neither [cpp_type] or [lang_type + typemap] is specified for "
+        << lang_type_name << " (With C++ type: " << cpp_type_name
+        << ")\nPlease specify at least one of them\n";
+    // An empty type will cause compiling failure with the above error message.
+    // TODO: Adds the error checking for absence of [cpp_type] and
+    // [lang_type + the corresponding typemap] in CLIF parser because CLIF
+    // parser could also report the exact file and the line where the info is
+    // missed. Temporarily keeps this error checking in code builder before
+    // adding it in the parser.
+    return "";
+  }
+
+  // For non template types in automatic type selector:
+  // Builds all of the possible cpp_types in the corresponding typemap if
+  // the current typemap has not been processed by the code builder.
+
+  // Example:
+  // CLIF AST:
+  //    "type {lang_type: bytes}"
+  //
+  // typemap:
+  //    "typemaps { "
+  //    "  lang_type: bytes"
+  //    "  cpp_type: ::absl::Cord"
+  //    "  cpp_type: ::absl::string_view"
+  //    "  cpp_type: string"
+  //    "}"
+  //
+  // The following process will look up lang_type("bytes") in the hashmap for
+  // all of the possible cpp_types. For each possible cpp_type, like
+  // "::absl::Cord", the code builder builds a typedef for it like "typedef
+  // ::absl::Cord clif_type_*", and replaces the corresponding hashmap's
+  // cpp_type with "clif_type_*" to store the mapping information.
+  if (cpp_type_name.empty() && type_selector_enable) {
+    auto& cpp_type_vector = type_map_iter->second;
+    for (auto& cpp_type : cpp_type_vector) {
+      if (strncmp(cpp_type.c_str(), kClifTypedefPrefix,
+                  strlen(kClifTypedefPrefix))) {
+        cpp_type = GenerateTypedefString(cpp_type);
+      }
+    }
+  } else {
+    // If the user specifies the cpp_type field of CLIF type, CLIF will use the
+    // user-provided cpp_type and disable the automatic type selector.
+    type->set_cpp_type(GenerateTypedefString(cpp_type_name));
+  }
+  return cpp_type_name;
 }
 
+// When CLIF automatically type selector is not triggered, to build code for a
+// template type, CLIF code builder assembles the cpp_type field both from
+// the template type and the nested types, generates a typedef for the
+// assembled cpp name.
+//
+// Example: CLIF AST for a template type:
+//   "type {"
+//   "  lang_type: set<int> "
+//   "  cpp_type: std::set"
+//   "  params { "
+//   "    lang_type: int "
+//   "    cpp_type: int "
+//   "  }"
+//   "}"
+//
+// Given the above CLIF input AST, CLIF code builder will assemble the
+// cpp_type field from the template type("std::set") and the nested
+// type("int"), compose the complete cpp_type as "std::set<int>" and generate
+// the typedef as "typedef std::set<int> clif_type_*". The following function
+// will return the corresponding "clif_type_*" of the typedef statement.
 std::string CodeBuilder::BuildCodeForContainerHelper(Type* type) {
   std::string template_name;
   StrAppend(&template_name, type->cpp_type(), "<");
@@ -193,7 +266,7 @@ std::string CodeBuilder::BuildCodeForContainerHelper(Type* type) {
       StrAppend(&template_name, BuildCodeForContainerHelper(element));
     } else {
       StrAppend(&template_name, element->cpp_type());
-      BuildCodeForType(element);
+      BuildCodeForType(element, false);
     }
     if (idx != type->params().size() - 1) {
       StrAppend(&template_name, ", ");
@@ -221,7 +294,7 @@ std::string CodeBuilder::BuildCodeForFunc(FuncDecl* decl) {
     // If decl is a callable(std::function), returns_size can not be greater
     // than 1. Otherwise, the compiler will report an error.
     std::string type_name =
-        BuildCodeForType(decl->mutable_returns(i)->mutable_type());
+        BuildCodeForType(decl->mutable_returns(i)->mutable_type(), true);
     StrAppend(&func_type_name, type_name);
     if (i != decl->returns_size() - 1) StrAppend(&func_type_name, ", ");
   }
@@ -231,7 +304,7 @@ std::string CodeBuilder::BuildCodeForFunc(FuncDecl* decl) {
   StrAppend(&func_type_name, "(");
   for (int i = 0; i < decl->params_size(); ++i) {
     std::string type_name =
-        BuildCodeForType(decl->mutable_params(i)->mutable_type());
+        BuildCodeForType(decl->mutable_params(i)->mutable_type(), true);
     StrAppend(&func_type_name, type_name);
     if (i != decl->params_size() - 1) StrAppend(&func_type_name, ", ");
   }
@@ -251,7 +324,7 @@ void CodeBuilder::BuildCodeForDecl(Decl* decl) {
       BuildCodeForName(decl->mutable_enum_()->mutable_name());
       break;
     case Decl::VAR:
-      BuildCodeForType(decl->mutable_var()->mutable_type());
+      BuildCodeForType(decl->mutable_var()->mutable_type(), true);
       // VAR decls can have getter/setter FUNC decls.
       if (decl->var().has_cpp_get()) {
         BuildCodeForFunc(decl->mutable_var()->mutable_cpp_get());
@@ -261,7 +334,7 @@ void CodeBuilder::BuildCodeForDecl(Decl* decl) {
       }
       break;
     case Decl::CONST:
-      BuildCodeForType(decl->mutable_const_()->mutable_type());
+      BuildCodeForType(decl->mutable_const_()->mutable_type(), true);
       break;
     case Decl::FUNC:
       BuildCodeForFunc(decl->mutable_func());
@@ -295,7 +368,9 @@ void CodeBuilder::BuildCodeForTopLevelDecls(DeclList* decls) {
   }
 }
 
-const std::string& CodeBuilder::BuildCode(AST* clif_ast) {
+const std::string& CodeBuilder::BuildCode(
+    AST* clif_ast, CLIFToClangTypeMap* clif_to_clang_type_map) {
+  code_builder_clif_to_clang_type_map_ = clif_to_clang_type_map;
   for (const auto& file : clif_ast->usertype_includes()) {
     if (!file.empty()) {
       StrAppend(&code_, "#include \"", file, "\"\n");
@@ -315,9 +390,8 @@ const std::string& CodeBuilder::BuildCode(AST* clif_ast) {
     current_line_.pop_back();
     current_file_.pop_back();
   }
-  DEBUG(llvm::dbgs() << clif_ast->DebugString());
-  DEBUG(llvm::dbgs() << code_);
+  LLVM_DEBUG(llvm::dbgs() << clif_ast->DebugString());
+  LLVM_DEBUG(llvm::dbgs() << code_);
   return code_;
 }
 }  // namespace clif
-

@@ -23,7 +23,7 @@ namespace hidden_base {
 
 class Base {
  public:
-  string AsString() {
+  std::string AsString() {
     return "string_rep";
   }
 };

@@ -31,17 +31,17 @@
 #include <vector>
 
 #include "gtest/gtest.h"  // Defines FRIEND_TEST.
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/raw_ostream.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/CXXInheritance.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/PrettyPrinter.h"
 #include "clang/Frontend/ASTUnit.h"
 #include "clang/Sema/Lookup.h"
+#include "clang/Sema/SemaDiagnostic.h"
+#include "llvm/Support/CommandLine.h"
+#include "llvm/Support/raw_ostream.h"
 
 extern llvm::cl::opt<std::string> install_location;
-
 
 namespace clif {
 
@@ -121,6 +121,24 @@ class DeclClassification {
 
  private:
   DeclMap map_;
+};
+
+// Encapsulate the necessary machinery to fake a tu-level scope.
+class FakeTUScope {
+ private:
+  std::unique_ptr<clang::Scope> scope;
+  std::unique_ptr<clang::DiagnosticsEngine> diag_engine;
+
+ public:
+  FakeTUScope() {
+    diag_engine.reset(
+        new clang::DiagnosticsEngine(new clang::DiagnosticIDs(),
+                                     new clang::DiagnosticOptions()));
+    scope.reset(
+        new clang::Scope(nullptr, clang::Scope::DeclScope, *diag_engine.get()));
+  }
+  // This class retains ownership of the TU scope.
+  clang::Scope* getFakeTUScope() { return scope.get(); }
 };
 
 class TranslationUnitAST {
@@ -270,14 +288,14 @@ class TranslationUnitAST {
 
   std::string GetClangDeclLocForError(
       const clang::NamedDecl& clang_decl) const {
-    return clang_decl.getLocStart().printToString(
+    return clang_decl.getBeginLoc().printToString(
         ast_->getASTContext().getSourceManager());
   }
 
   std::string GetSourceFile(const clang::NamedDecl& clang_decl) const {
     clang::PresumedLoc start =
         ast_->getASTContext().getSourceManager().getPresumedLoc(
-            clang_decl.getLocStart());
+            clang_decl.getBeginLoc());
     // Certain built-ins don't have valid start locations, and clang
     // returns the empty string during normal builds, but asserts in
     // debug builds. Match that behavior for all builds. From Clif's
@@ -310,7 +328,7 @@ class TranslationUnitAST {
 
   bool IsClifCopyable(clang::CXXRecordDecl* class_decl) const;
 
-  bool IsCppMovable(clang::CXXRecordDecl* class_decl) const;
+  bool IsClifMovable(clang::CXXRecordDecl* class_decl) const;
 
   bool ConstructorIsAccessible(clang::CXXConstructorDecl* ctor) const;
 
@@ -352,6 +370,16 @@ class TranslationUnitAST {
   clang::QualType BuildTemplateType(clang::ClassTemplateDecl* template_decl,
                                     clang::QualType arg_qual_type);
 
+  void PushFakeTUScope() {
+    GetSema().TUScope = fake_tu_scope_.getFakeTUScope();
+    GetSema().TUScope->setEntity(GetTU());
+  }
+
+  void PopFakeTUScope() {
+    GetSema().TUScope->setEntity(nullptr);
+    GetSema().TUScope = nullptr;
+  }
+
  private:
   clang::DeclarationNameInfo GetDeclarationName(const std::string& name);
 
@@ -369,6 +397,7 @@ class TranslationUnitAST {
 
   clang::CompilerInvocation* invocation_;
   std::unique_ptr<clang::ASTUnit> ast_;
+  FakeTUScope fake_tu_scope_;
 
   class ClassifyDeclsVisitor;
   class ConversionFunctionFinder;
@@ -380,7 +409,6 @@ class TranslationUnitAST {
 
   FRIEND_TEST(TranslationUnitASTTest, FindConversionFunctions);
 };
-
 }  // namespace clif
 
 #endif  // CLIF_BACKEND_AST_H_

@@ -1,0 +1,4 @@
+from "clif/testing/overload.h":
+  namespace `overload`:
+    staticmethods from `Accessor`:
+      def `Create` as CreateWithAddress(address: str) -> bool

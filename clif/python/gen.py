@@ -19,10 +19,60 @@ Produces pieces of generated code.
 
 from clif.python import astutils
 from clif.python import postconv
+from clif.python import slots
 
 VERSION = '0.3'   # CLIF generated API version. Pure informative.
 PY3OUTPUT = None  # Target Python3 on True, Py2 on False, None-don't care.
 I = '  '
+
+
+def TopologicalSortSimple(ideps):
+  """Simple topological sort working on sequence of integer indices."""
+  # Returns permutation indices (list of integers).
+  # Using variable names `cons` for dependent, `prod` for dependency
+  # (consumer, producer) to increase readability.
+  # cons is implied by the index into ideps.
+  # prod is the elmement of ideps (integer or None).
+  # This implies that each cons can only have one or no prod.
+  # Example: ideps = [2, None, 1]
+  # Read as:
+  #   0 depends on 2
+  #   1 has no dependency
+  #   2 depends on 1
+  # Expected output permutation: [1, 2, 0]
+  # The output permutation guarantees that prod appears before cons.
+  # Recursive implementation, subject to maximum recursion limit
+  # (sys.getrecursionlimit(), usually 1000).
+  permutation = []
+  permutation_set = set()
+  def FollowDeps(root, cons):
+    """Recursively follows dependencies."""
+    if cons in permutation_set:
+      return
+    prod = ideps[cons]
+    if prod is not None:
+      if prod < 0:
+        raise ValueError(
+            'Negative value in ideps: ideps[%s] = %s' % (cons, prod))
+      if prod >= len(ideps):
+        raise ValueError(
+            'Value in ideps exceeds its length: ideps[%s] = %s >= %s'
+            % (cons, prod, len(ideps)))
+      if prod == cons:
+        raise ValueError(
+            'Trivial cyclic dependency in ideps: ideps[%s] = %s'
+            % (cons, prod))
+      if prod == root:
+        raise ValueError(
+            'Cyclic dependency in ideps: following dependencies from'
+            ' %s leads back to %s.' % (root, root))
+      FollowDeps(root, prod)
+    permutation.append(cons)
+    permutation_set.add(cons)
+  for cons in range(len(ideps)):
+    FollowDeps(cons, cons)
+  assert len(permutation) == len(ideps)
+  return permutation
 
 
 def WriteTo(channel, lines):
@@ -103,11 +153,14 @@ def TypeConverters(type_namespace, types, *gen_cvt_args):
 def _DefLine(pyname, cname, meth, doc):
   if 'KEYWORD' in meth or 'NOARGS' in meth:
     cname = '(PyCFunction)'+cname
-  return '{C("%s"), %s, %s, C("%s")}' % (pyname, cname, meth, doc)
+  if doc is None:
+    doc = 'nullptr'
+  else:
+    doc = 'C("%s")' % doc
+  return '{C("%s"), %s, %s, %s}' % (pyname, cname, meth, doc)
 
 
 def _DefTable(ctype, cname, lines):
-  yield ''
   yield 'static %s %s[] = {' % (ctype, cname)
   for p in lines:
     yield I+_DefLine(*p)+','
@@ -115,81 +168,152 @@ def _DefTable(ctype, cname, lines):
   yield '};'
 
 
-def MethodDef(methods):
-  for s in _DefTable('PyMethodDef', 'Methods', methods):
-    yield s
-MethodDef.name = 'Methods'
+class _MethodDef(object):
+  name = 'MethodsStaticAlloc'
+
+  def __call__(self, methods):
+    yield ''
+    for s in _DefTable('PyMethodDef', self.name, methods):
+      yield s
+
+MethodDef = _MethodDef()  # pylint: disable=invalid-name
 
 
-def GetSetDef(properties):
-  for s in _DefTable('PyGetSetDef', 'Properties', properties):
-    yield s
-GetSetDef.name = 'Properties'
+class _GetSetDef(object):
+  # pylint: disable=missing-class-docstring
+  name = 'Properties'
+
+  def __call__(self, properties, enable_instance_dict):
+    props = properties
+    if enable_instance_dict:
+      props = [
+          ('__dict__',
+           'pyclif_instance_dict_get',
+           'pyclif_instance_dict_set',
+           None)] + props
+    for s in _DefTable('PyGetSetDef', 'Properties', props):
+      yield s
+
+GetSetDef = _GetSetDef()  # pylint: disable=invalid-name
+
+
+def _TypesInitInDependencyOrder(types_init, raise_if_reordering=False):
+  """Yields type_init items in dependency order: base classes before derived."""
+  cppname_indices = {}
+  for index, (cppname, _, _, _) in enumerate(types_init):
+    cppname_indices[cppname] = index
+  assert len(cppname_indices) == len(types_init)
+  ideps = []
+  for cppname, _, wrapped_base, _ in types_init:
+    if wrapped_base is not None and wrapped_base not in cppname_indices:
+      # INDIRECT DETECTION. Considering current development plans, this code
+      # generator is not worth more effort detecting the issue in a more direct
+      # way. This is still far better than crashing with a KeyError, or failing
+      # at compile time.
+      raise NotImplementedError(
+          'SORRY: Currently PyCLIF does not support inheriting from a'
+          ' base class declared in another header:'
+          ' wrapped_derived=%s, wrapped_base=%s' % (cppname, wrapped_base))
+    ideps.append(
+        None if wrapped_base is None else
+        cppname_indices[wrapped_base])
+  permutation = TopologicalSortSimple(ideps)
+  if raise_if_reordering:  # For development / debugging.
+    if list(sorted(permutation)) != permutation:
+      msg = [
+          'Derived class appearing before base in .clif file: %s'
+          % str(permutation)]
+      for cppname, _, wrapped_base, _ in types_init:
+        msg.append('    %s -> %s' % (cppname, wrapped_base))
+      raise RuntimeError('\n'.join(msg))
+  for index in permutation:
+    yield types_init[index]
 
 
 def ReadyFunction(types_init):
   """Generate Ready() function to call PyType_Ready for wrapped types."""
   yield ''
   yield 'bool Ready() {'
+  have_modname = False
   pybases = set()
   last_pybase = ''
-  for cppname, base, _ in types_init:
+  for cppname, base, wrapped_base, _ in _TypesInitInDependencyOrder(types_init):
+    yield I+'%s =' % cppname
+    yield I+'%s::_build_heap_type();' % cppname.rsplit('::', 1)[0]
     if base:
-      if '.' in base:
-        # |base| is a fully qualified Python name.
-        # The caller ensures we have only one Python base per each class.
-        if base == last_pybase:
-          yield I+'Py_INCREF(base_cls);'
-        else:
-          yield I+'%sbase_cls = ImportFQName("%s");' % (
-              '' if pybases else 'PyObject* ', base)
-        if base not in pybases:
-          yield I+'if (base_cls == nullptr) return false;'
-          yield I+'if (!PyObject_TypeCheck(base_cls, &PyType_Type)) {'
-          yield I+I+'Py_DECREF(base_cls);'
-          yield I+I+('PyErr_SetString(PyExc_TypeError, "Base class %s is not a '
-                     'new style class inheriting from object.");' % base)
-          yield I+I+'return false;'
-          yield I+'}'
-        yield I+cppname+'.tp_base = %s(base_cls);' % _Cast('PyTypeObject')
-        if base not in pybases:
-          yield I+'// Check that base_cls is a *statically* allocated PyType.'
-          yield I+'if (%s.tp_base->tp_alloc == PyType_GenericAlloc) {' % cppname
-          yield I+I+'Py_DECREF(base_cls);'
-          yield I+I+('PyErr_SetString(PyExc_TypeError, "Base class %s is a'
-                     ' dynamic (Python defined) class.");' % base)
-          yield I+I+'return false;'
-          yield I+'}'
-          last_pybase = base
-          pybases.add(base)
+      fq_name, toplevel_fq_name = base
+      # |base| is a fully qualified Python name.
+      # The caller ensures we have only one Python base per each class.
+      if base == last_pybase:
+        yield I+'Py_INCREF(base_cls);'
       else:
-        # base is Python wrapper type in a C++ class namespace defined locally.
-        # Allow to inherit only from top-level classes.
-        yield I+'%s.tp_base = &%s;' % (cppname, base)
-    yield I+'if (PyType_Ready(&%s) < 0) return false;' % cppname
-    yield I+'Py_INCREF(&%s);  // For PyModule_AddObject to steal.' % cppname
+        type_prefix = '' if pybases else 'PyObject* '
+        if toplevel_fq_name:
+          yield I+('%sbase_cls = ImportFQName("%s", "%s");' %
+                   (type_prefix, fq_name, toplevel_fq_name))
+        else:
+          yield I+('%sbase_cls = ImportFQName("%s");' %
+                   (type_prefix, fq_name))
+      if base not in pybases:
+        yield I+'if (base_cls == nullptr) return false;'
+        yield I+'if (!PyObject_TypeCheck(base_cls, &PyType_Type)) {'
+        yield I+I+'Py_DECREF(base_cls);'
+        yield I+I+(
+            'PyErr_SetString(PyExc_TypeError, "Base class %s is not a '
+            'new style class inheriting from object.");' % fq_name)
+        yield I+I+'return false;'
+        yield I+'}'
+      yield I+cppname + '->tp_base = %s(base_cls);' % _Cast('PyTypeObject')
+      if base not in pybases:
+        yield I+'// Check that base_cls is a *statically* allocated PyType.'
+        yield I+'if (%s->tp_base->tp_alloc == PyType_GenericAlloc) {' % cppname
+        yield I+I+'Py_DECREF(base_cls);'
+        yield I+I+('PyErr_SetString(PyExc_TypeError, "Base class %s is a'
+                   ' dynamic (Python defined) class.");' % fq_name)
+        yield I+I+'return false;'
+        yield I+'}'
+        last_pybase = base
+        pybases.add(base)
+    elif wrapped_base:
+      # base is Python wrapper type in a C++ class namespace defined locally.
+      yield I+'Py_INCREF(%s);' % wrapped_base
+      yield I+'%s->tp_base = %s;' % (cppname, wrapped_base)
+
+    yield I+'if (PyType_Ready(%s) < 0) return false;' % cppname
+    if not have_modname:
+      pystr = ('PyUnicode_FromString' if PY3OUTPUT else
+               'PyString_FromString')
+      yield I+'PyObject *modname = %s(ThisModuleName);' % pystr
+      yield I+'if (modname == nullptr) return false;'
+      have_modname = True
+    yield I+('PyObject_SetAttrString((PyObject *) %s, "__module__", modname);'
+             % cppname)
+    yield I+'Py_INCREF(%s);  // For PyModule_AddObject to steal.' % cppname
   yield I+'return true;'
   yield '}'
 
 
-def InitFunction(pathname, doc, meth_ref, init, dict_):
+def InitFunction(doc, meth_ref, init, dict_):
   """Generate a function to create the module and initialize it."""
   if PY3OUTPUT:
     yield ''
     yield 'static struct PyModuleDef Module = {'
     yield I+'PyModuleDef_HEAD_INIT,'
-    yield I+'"%s",  // module name' % pathname
+    yield I+'ThisModuleName,'
     yield I+'"%s", // module doc' % doc
     yield I+'-1,  // module keeps state in global variables'
-    yield I+meth_ref
+    yield I+meth_ref+','
+    yield I+'nullptr,  // m_slots a.k.a. m_reload'
+    yield I+'nullptr,  // m_traverse'
+    yield I+'ClearImportCache  // m_clear'
     yield '};'
   yield ''
   yield 'PyObject* Init() {'
   if PY3OUTPUT:
     yield I+'PyObject* module = PyModule_Create(&Module);'
   else:
-    yield I+'PyObject* module = Py_InitModule3("%s", %s, "%s");' % (
-        pathname, meth_ref, doc)
+    yield I+'PyObject* module = Py_InitModule3(%s, %s, "%s");' % (
+        'ThisModuleName', meth_ref, doc)
   yield I+'if (!module) return nullptr;'
   init_needs_err = False
   for s in init:
@@ -222,7 +346,8 @@ def PyModInitFunction(init_name='', modname='', ns='', py3=False):
   yield '}'
 
 
-def WrapperClassDef(name, ctype, cname, is_iter, has_iter, iter_ns):
+def WrapperClassDef(name, ctype, cname, is_iter, has_iter, iter_ns,
+                    enable_instance_dict):
   """Generate wrapper class."""
   assert not (has_iter and is_iter)
   yield ''
@@ -232,8 +357,11 @@ def WrapperClassDef(name, ctype, cname, is_iter, has_iter, iter_ns):
     yield I+'iterator iter;'
   else:
     yield I+'::clif::Instance<%s> cpp;' % ctype
+    if enable_instance_dict:
+      yield I+'PyObject* instance_dict;'
   yield '};'
   if has_iter:
+    yield ''
     yield 'namespace %s {' % iter_ns
     yield 'typedef ::clif::Iterator<%s, %s> iterator;' % (cname, has_iter)
     yield '}'
@@ -247,29 +375,36 @@ def VirtualOverriderClass(name, pyname, cname, cfqname, isabstract, idfunc,
   yield I+'using %s;' % cfqname
   for f in vfuncs:
     for s in _VirtualFunctionCall(
-        idfunc(f.name.cpp_name), f, pyname, isabstract, pcfunc): yield s
+        idfunc(f.name.cpp_name), f, pyname, isabstract, pcfunc):
+      yield s
   yield '};'
 
 
-def TypeObject(tp_slots, slotgen, pyname, ctor, wname, fqclassname,
-               abstract, iterator, need_dtor=True, subst_cpp_ptr=''):
+def TypeObject(ht_qualname, tracked_slot_groups,
+               tp_slots, pyname, ctor, wname, fqclassname,
+               abstract, iterator, trivial_dtor, subst_cpp_ptr,
+               enable_instance_dict):
   """Generate PyTypeObject methods and table.
 
   Args:
+    ht_qualname: str - e.g. Struct or Outer.Inner
+    tracked_slot_groups: dict - from gen.GenSlots() call
     tp_slots: dict - values for PyTypeObject slots
-    slotgen: generator to produce body of PyTypeObject using tp_slots
     pyname: str - Python class name
     ctor: str - (WRAPped/DEFault/None) type of generated ctor
     wname: str - C++ wrapper class name
     fqclassname: str - FQ C++ class (being wrapped) name
     abstract: bool - wrapped C++ class is abstract
     iterator: str - C++ iterator object if wrapping an __iter__ class else None
-    need_dtor: bool - allow Python threads during C++ destructor
+    trivial_dtor: bool - if C++ destructor is trivial, no need to allow threads
     subst_cpp_ptr: str - C++ "replacement" class (being wrapped) if any
+    enable_instance_dict: bool - add __dict__ to instance
 
   Yields:
      Source code for PyTypeObject and tp_alloc / tp_init / tp_free methods.
   """
+  # NOTE: tracked_slot_groups['tp_slots'] and tp_group are similar but
+  #       NOT identical. tp_group has additional customizations.
   if ctor:
     yield ''
     yield '// %s __init__' % pyname
@@ -282,23 +417,27 @@ def TypeObject(tp_slots, slotgen, pyname, ctor, wname, fqclassname,
     tp_slots['tp_new'] = 'PyType_GenericNew'
   yield ''
   yield '// %s __del__' % pyname
-  if need_dtor or iterator:
-    # Use dtor for dynamic types (derived) to wind down malloc'ed C++ obj, so
-    # the C++ dtors are run.
-    tp_slots['tp_dealloc'] = '_dtor'
-    yield 'static void _dtor(PyObject* self) {'
+  # Use dtor for dynamic types (derived) to wind down malloc'ed C++ obj, so
+  # the C++ dtors are run.
+  tp_slots['tp_dealloc'] = '_dtor'
+  yield 'static void _dtor(PyObject* self) {'
+  if iterator or not trivial_dtor:
     yield I+'Py_BEGIN_ALLOW_THREADS'
-    if iterator:
-      yield I+iterator+'.~iterator();'
-    else:
-      # Using ~Instance() leads to AddressSanitizer: heap-use-after-free.
-      yield I+'%s(self)->cpp.Destruct();' % _Cast(wname)
+  if iterator:
+    yield I+iterator+'.~iterator();'
+  else:
+    # Using ~Instance() leads to AddressSanitizer: heap-use-after-free.
+    yield I+'%s(self)->cpp.Destruct();' % _Cast(wname)
+  if iterator or not trivial_dtor:
     yield I+'Py_END_ALLOW_THREADS'
-    yield I+'Py_TYPE(self)->tp_free(self);'
-    yield '}'
+  if not iterator and enable_instance_dict:
+    yield I+'Py_CLEAR(%s(self)->instance_dict);' % _Cast(wname)
+  yield I+'Py_TYPE(self)->tp_free(self);'
+  yield '}'
   if not iterator:
     # Use delete for static types (not derived), allocated with _new.
     tp_slots['tp_free'] = '_del'
+    yield ''
     yield 'static void _del(void* self) {'
     yield I+'delete %s(self);' % _Cast(wname)
     yield '}'
@@ -307,19 +446,49 @@ def TypeObject(tp_slots, slotgen, pyname, ctor, wname, fqclassname,
   tp_slots['tp_itemsize'] = tp_slots['tp_version_tag'] = '0'
   tp_slots['tp_dictoffset'] = tp_slots['tp_weaklistoffset'] = '0'
   tp_slots['tp_flags'] = ' | '.join(tp_slots['tp_flags'])
-  tp_slots['tp_doc'] = '"CLIF wrapper for %s"' % fqclassname
+  if not tp_slots.get('tp_doc'):
+    tp_slots['tp_doc'] = '"CLIF wrapper for %s"' % fqclassname
   wtype = '%s_Type' % wname
   yield ''
-  yield 'PyTypeObject %s = {' % wtype
-  yield I+'PyVarObject_HEAD_INIT(&PyType_Type, 0)'
-  for s in slotgen(tp_slots):
-    yield s
-  yield '};'
+  yield 'PyTypeObject* %s = nullptr;' % wtype
   yield ''
+  yield 'static PyTypeObject* _build_heap_type() {'
+  # http://third_party/pybind11/include/pybind11/detail/class.h?l=571&rcl=276599738
+  # was used as a reference for the code generated here.
+  yield I+'PyHeapTypeObject *heap_type ='
+  yield I+I+I+'(PyHeapTypeObject *) PyType_Type.tp_alloc(&PyType_Type, 0);'
+  yield I+'if (!heap_type)'
+  yield I+I+'return nullptr;'
+  if PY3OUTPUT:
+    # ht_qualname requires Python >= 3.3 (alwyas true for PyCLIF).
+    yield I+'heap_type->ht_qualname = (PyObject *) PyUnicode_FromString('
+    yield I+I+I+'"%s");' % ht_qualname
+    # Following the approach of pybind11 (ignoring the Python docs).
+    yield I+'Py_INCREF(heap_type->ht_qualname);'
+    yield I+'heap_type->ht_name = heap_type->ht_qualname;'
+  else:
+    yield I+'heap_type->ht_name = (PyObject *) PyString_FromString('
+    # Following the approach of pybind11 (ignoring the Python docs).
+    yield I+I+I+'"%s");' % ht_qualname
+  yield I+'PyTypeObject *ty = &heap_type->ht_type;'
+  yield I+'ty->tp_as_number = &heap_type->as_number;'
+  yield I+'ty->tp_as_sequence = &heap_type->as_sequence;'
+  yield I+'ty->tp_as_mapping = &heap_type->as_mapping;'
+  yield '#if PY_VERSION_HEX >= 0x03050000'
+  yield I+'ty->tp_as_async = &heap_type->as_async;'
+  yield '#endif'
+  for s in slots.GenTypeSlotsHeaptype(tracked_slot_groups, tp_slots, PY3OUTPUT):
+    yield s
+  if not iterator and enable_instance_dict:
+    yield I+'pyclif_instance_dict_enable(ty, offsetof(%s, instance_dict));' % (
+        wname)
+  yield I+'return ty;'
+  yield '}'
   if ctor:
+    yield ''
     yield 'static int _ctor(PyObject* self, PyObject* args, PyObject* kw) {'
     if abstract:
-      yield I+'if (Py_TYPE(self) == &%s) {' % wtype
+      yield I+'if (Py_TYPE(self) == %s) {' % wtype
       yield I+I+'return Clif_PyType_Inconstructible(self, args, kw);'
       yield I+'}'
     cpp = '%s(self)->cpp' % _Cast(wname)
@@ -356,14 +525,20 @@ def TypeObject(tp_slots, slotgen, pyname, ctor, wname, fqclassname,
   if not iterator:
     yield ''
     yield 'static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems) {'
-    yield I+'assert(nitems == 0);'
-    yield I+'PyObject* self = %s(new %s);' % (_Cast(), wname)
-    yield I+'return PyObject_Init(self, &%s);' % wtype
+    yield I+'DCHECK(nitems == 0);'
+    yield I+'%s* wobj = new %s;' % (wname, wname)
+    if enable_instance_dict:
+      yield I+'wobj->instance_dict = nullptr;'
+    yield I+'PyObject* self = %s(wobj);' % _Cast()
+    yield I+'return PyObject_Init(self, %s);' % wtype
     yield '}'
 
 
 def _CreateInputParameter(func_name, ast_param, arg, args):
-  """Return a string to create C++ stack var named arg. args += arg getter."""
+  """Returns tuple of (bool, str) and appends to args."""
+  # First return value is bool check_nullptr.
+  # Second return value is a string to create C++ stack var named arg.
+  # Sideeffect: args += arg getter.
   ptype = ast_param.type
   ctype = ptype.cpp_type
   smartptr = (ctype.startswith('::std::unique_ptr') or
@@ -376,27 +551,29 @@ def _CreateInputParameter(func_name, ast_param, arg, args):
                        '%s param %s has %d' % (func_name, ast_param.name.native,
                                                len(ptype.callable.returns)-1))
     args.append('std::move(%s)' % arg)
-    return 'std::function<%s> %s;' % (astutils.StdFuncParamStr(ptype.callable),
-                                      arg)
+    return (
+        False,
+        'std::function<%s> %s;' % (
+            astutils.StdFuncParamStr(ptype.callable), arg))
   # T*
   if ptype.cpp_raw_pointer:
     if ptype.cpp_toptr_conversion:
       args.append(arg)
-      return '%s %s;' % (ctype, arg)
+      return (False, '%s %s;' % (ctype, arg))
     t = ctype[:-1]
     if ctype.endswith('*'):
       if ptype.cpp_abstract:
         if ptype.cpp_touniqptr_conversion:
           args.append(arg+'.get()')
-          return '::std::unique_ptr<%s> %s;' % (t, arg)
+          return (False, '::std::unique_ptr<%s> %s;' % (t, arg))
       elif ptype.cpp_has_public_dtor:
         # Create a copy on stack and pass its address.
         if ptype.cpp_has_def_ctor:
           args.append('&'+arg)
-          return '%s %s;' % (t, arg)
+          return (False, '%s %s;' % (t, arg))
         else:
           args.append('&%s.value()' % arg)
-          return '::gtl::optional<%s> %s;' % (t, arg)
+          return (False, '::absl::optional<%s> %s;' % (t, arg))
     raise TypeError("Can't convert %s to %s" % (ptype.lang_type, ctype))
   if (smartptr or ptype.cpp_abstract) and not ptype.cpp_touniqptr_conversion:
     raise TypeError('Can\'t create "%s" variable (C++ type %s) in function %s'
@@ -405,21 +582,21 @@ def _CreateInputParameter(func_name, ast_param, arg, args):
   # unique_ptr<T>, shared_ptr<T>
   if smartptr:
     args.append('std::move(%s)' % arg)
-    return '%s %s;' % (ctype, arg)
+    return (False, '%s %s;' % (ctype, arg))
   # T, [const] T&
   if ptype.cpp_toptr_conversion:
     args.append('*'+arg)
-    return '%s* %s;' % (ctype, arg)
+    return (True, '%s* %s;' % (ctype, arg))
   if ptype.cpp_abstract:  # for AbstractType &
     args.append('*'+arg)
-    return 'std::unique_ptr<%s> %s;' % (ctype, arg)
+    return (False, 'std::unique_ptr<%s> %s;' % (ctype, arg))
   # Create a copy on stack (even fot T&, most cases should have to_T* conv).
   if ptype.cpp_has_def_ctor:
     args.append('std::move(%s)' % arg)
-    return '%s %s;' % (ctype, arg)
+    return (False, '%s %s;' % (ctype, arg))
   else:
     args.append(arg+'.value()')
-    return '::gtl::optional<%s> %s;' % (ctype, arg)
+    return (False, '::absl::optional<%s> %s;' % (ctype, arg))
 
 
 def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
@@ -459,6 +636,7 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
   xouts = nret > (0 if void_return_type else 1)
   params = []  # C++ parameter names.
   nargs = len(func_ast.params)
+  is_ternaryfunc_slot = pyname == '__call__'
   yield ''
   if func_ast.classmethod:
     yield '// @classmethod ' + doc
@@ -466,11 +644,16 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
   else:
     yield '// ' + doc
     arg0 = 'self'
+  needs_kw = nargs or is_ternaryfunc_slot
   yield 'static PyObject* %s(PyObject* %s%s) {' % (
-      wrapper, arg0, ', PyObject* args, PyObject* kw' if nargs else '')
+      wrapper, arg0, ', PyObject* args, PyObject* kw' if needs_kw else '')
+  if is_ternaryfunc_slot and not nargs:
+    yield I+('if (!ensure_no_args_and_kw_args("%s", args, kw)) return nullptr;'
+             % pyname)
   if prepend_self:
-    yield I+_CreateInputParameter(pyname+' line %d' % lineno, prepend_self,
-                                  'arg0', params)
+    unused_check_nullptr, out = _CreateInputParameter(
+        pyname+' line %d' % lineno, prepend_self, 'arg0', params)
+    yield I+out
     yield I+'if (!Clif_PyObjAs(self, &arg0)) return nullptr;'
   minargs = sum(1 for p in func_ast.params if not p.default_value)
   if nargs:
@@ -493,17 +676,29 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
     for i, p in enumerate(func_ast.params):
       n = i+1
       arg = 'arg%d' % n
-      yield I+_CreateInputParameter(pyname+' line %d' % lineno, p, arg, params)
-      cvt = ('if (!Clif_PyObjAs(a[{i}], &{cvar}{postconv})) return ArgError'
-             '("{func_name}", names[{i}], "{ctype}", a[{i}]);'
-            ).format(i=i, cvar=arg, func_name=pyname, ctype=astutils.Type(p),
+      check_nullptr, out = _CreateInputParameter(
+          pyname+' line %d' % lineno, p, arg, params)
+      yield I+out
+      return_arg_err = (
+          'return ArgError("{func_name}", names[{i}], "{ctype}", a[{i}]);'
+      ).format(i=i, func_name=pyname, ctype=astutils.Type(p))
+      cvt = ('if (!Clif_PyObjAs(a[{i}], &{cvar}{postconv})) {return_arg_err}'
+            ).format(i=i, cvar=arg, return_arg_err=return_arg_err,
                      # Add post conversion parameter for std::function.
                      postconv='' if p.type.cpp_type else ', {%s}' % ', '.join(
                          postconv.Initializer(t.type, typepostconversion)
                          for t in p.type.callable.params))
+      def YieldCheckNullptr(ii):
+        # pylint: disable=cell-var-from-loop
+        if check_nullptr:
+          yield ii+'if (%s == nullptr) {' % arg
+          yield ii+I+return_arg_err
+          yield ii+'}'
       if i < minargs:
         # Non-default parameter.
         yield I+cvt
+        for s in YieldCheckNullptr(I):
+          yield s
       else:
         if xouts:
           _I = ''  # pylint: disable=invalid-name
@@ -522,6 +717,8 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
             yield I+I+('if (!a[{i}]) return DefaultArgMissedError('
                        '"{}", names[{i}]);'.format(pyname, i=i))
           yield I+I+cvt
+          for s in YieldCheckNullptr(I+I):
+            yield s
         elif (p.default_value and
               params[-1].startswith('&') and p.type.cpp_raw_pointer):
           # Special case for a pointer to an integral type param (like int*).
@@ -536,6 +733,8 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
           yield _I+I+'if (!a[%d]) %s = (%s)%s;' % (i, arg, astutils.Type(p),
                                                    p.default_value)
           yield _I+I+'else '+cvt
+          for s in YieldCheckNullptr(_I+I):
+            yield s
         if not xouts:
           yield I+'}'
   # Create input parameters for extra return values.
@@ -561,7 +760,7 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
     else:
       # Using optional<> requires T be have T(x) and T::op=(x) available.
       # While we need only t=x, implementing it will be a pain we skip for now.
-      yield I+'::gtl::optional<%s> ret0;' % return_type
+      yield I+'::absl::optional<%s> ret0;' % return_type
       optional_ret0 = True
   if catch:
     for s in _GenExceptionTry():
@@ -690,8 +889,10 @@ def _VirtualFunctionCall(fname, f, pyname, abstract, postconvinit):
   yield I+I+'if (impl.get()) {'
   ret_st = 'return ' if ret != 'void' else ''
   yield I+I+I+'%s::clif::callback::Func<%s>(impl.get(), {%s})%s;' % (
-      ret_st, ', '.join([ret] + list(astutils.Type(a) for a in f.params)
-                        + list(astutils.FuncReturns(f))),
+      ret_st, ', '.join(
+          [ret] +
+          list(astutils.ExactTypeOrType(a) for a in f.params) +
+          list(astutils.FuncReturns(f))),
       ', '.join(postconvinit(a.type) for a in f.params), params)
   yield I+I+'} else {'
   if abstract:
@@ -718,32 +919,42 @@ def CastAsCapsule(wrapped_cpp, pointer_name, wrapper):
   yield '}'
 
 
-def NewIter(wrapped_iter, ns, wrapper, wrapper_type):
-  yield ''
-  yield 'PyObject* new_iter(PyObject* self) {'
-  yield I+'if (!ThisPtr(self)) return nullptr;'
-  yield I+'%s* it = PyObject_New(%s, &%s);' % (wrapper, wrapper, wrapper_type)
-  yield I+'if (!it) return nullptr;'
-  yield I+'using std::equal_to;  // Often a default template argument.'
-  yield I+'new(&it->iter) %siterator(MakeStdShared(%s));' % (ns, wrapped_iter)
-  yield I+'return %s(it);' % _Cast()
-  yield '}'
-NewIter.name = 'new_iter'
+class _NewIter(object):
+  """Generate the new_iter function."""
+  name = 'new_iter'
+
+  def __call__(self, wrapped_iter, ns, wrapper, wrapper_type):
+    yield ''
+    yield 'PyObject* new_iter(PyObject* self) {'
+    yield I+'if (!ThisPtr(self)) return nullptr;'
+    yield I+'%s* it = PyObject_New(%s, %s);' % (wrapper, wrapper, wrapper_type)
+    yield I+'if (!it) return nullptr;'
+    yield I+'using std::equal_to;  // Often a default template argument.'
+    yield I+'new(&it->iter) %siterator(MakeStdShared(%s));' % (ns, wrapped_iter)
+    yield I+'return %s(it);' % _Cast()
+    yield '}'
+
+NewIter = _NewIter()  # pylint: disable=invalid-name
 
 
-def IterNext(wrapped_iter, async, postconversion):
-  """Generate tp_iternext method implementation."""
-  yield ''
-  yield 'PyObject* iternext(PyObject* self) {'
-  if async:
-    yield I+'PyThreadState* _save;'
-    yield I+'Py_UNBLOCK_THREADS'
-  yield I+'auto* v = %s.Next();' % wrapped_iter
-  if async:
-    yield I+'Py_BLOCK_THREADS'
-  yield I+'return v? Clif_PyObjFrom(*v, %s): nullptr;' % postconversion
-  yield '}'
-IterNext.name = 'iternext'
+class _IterNext(object):
+  """Generate the iternext function."""
+  name = 'iternext'
+
+  def __call__(self, wrapped_iter, is_async, postconversion):
+    """Generate tp_iternext method implementation."""
+    yield ''
+    yield 'PyObject* iternext(PyObject* self) {'
+    if is_async:
+      yield I+'PyThreadState* _save;'
+      yield I+'Py_UNBLOCK_THREADS'
+    yield I+'auto* v = %s.Next();' % wrapped_iter
+    if is_async:
+      yield I+'Py_BLOCK_THREADS'
+    yield I+'return v? Clif_PyObjFrom(*v, %s): nullptr;' % postconversion
+    yield '}'
+
+IterNext = _IterNext()  # pylint: disable=invalid-name
 
 
 def FromFunctionDef(ctype, wdef, wname, flags, doc):
@@ -752,19 +963,18 @@ def FromFunctionDef(ctype, wdef, wname, flags, doc):
   return 'static PyMethodDef %s = %s;' % (wdef, _DefLine('', wname, flags, doc))
 
 
-def VarGetter(name, cfunc, error, cvar, cobj, get_nested, pc):
+def VarGetter(name, cfunc, error, cvar, pc, is_extend=False):
   """Generate var getter."""
   xdata = '' if cfunc else ', void* xdata'
   yield ''
   yield 'static PyObject* %s(PyObject* self%s) {' % (name, xdata)
-  if error:
+  if error and not is_extend:
     yield I+error+'return nullptr;'
-  if get_nested: cvar = '::clif::MakeStdShared(%s, &%s)' % (cobj, cvar)
   yield I+'return Clif_PyObjFrom(%s, %s);' % (cvar, pc)
   yield '}'
 
 
-def VarSetter(name, cfunc, error, cvar, v, csetter, as_str):
+def VarSetter(name, cfunc, error, cvar, v, csetter, as_str, is_extend=False):
   """Generate var setter.
 
   Args:
@@ -775,6 +985,7 @@ def VarSetter(name, cfunc, error, cvar, v, csetter, as_str):
     v: VAR AST
     csetter: C++ call expression to set var (without '(newvalue)') if any
     as_str: Python str -> C str function (different for Py2/3)
+    is_extend: True for @extend properties in the .clif file.
 
   Yields:
      Source code for setter function.
@@ -800,7 +1011,10 @@ def VarSetter(name, cfunc, error, cvar, v, csetter, as_str):
       yield I+'if (Clif_PyObjAs(value, &cval)) {'
       if error:
         yield I+I+error+ret_error
-      yield I+I+csetter + '(cval);'
+      if is_extend:
+        yield I+I+csetter + '(*cpp, cval);'
+      else:
+        yield I+I+csetter + '(cval);'
       yield I+I+ret_ok
       yield I+'}'
   if not csetter:

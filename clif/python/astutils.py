@@ -27,11 +27,14 @@ def Type(p):
   return p.type.cpp_type
 
 
+def ExactTypeOrType(p, cpp_type_suffix=''):
+  # Use cpp_type if cpp_exact_type is empty (eg. for C++ builtin types).
+  return p.cpp_exact_type or Type(p) + cpp_type_suffix
+
+
 def FuncReturnType(fdecl, true_cpp_type=False):
   if not fdecl.cpp_void_return and fdecl.returns:
-    # Use cpp_type if cpp_exact_type is empty (eg. for C++ builtin types).
-    return true_cpp_type and fdecl.returns[0].cpp_exact_type or Type(
-        fdecl.returns[0])
+    return (ExactTypeOrType if true_cpp_type else Type)(fdecl.returns[0])
   return 'void'
 
 
@@ -56,9 +59,10 @@ def FuncParamStr(fdecl, arg_name=None, true_cpp_type=False):
     return TupleStr(itertools.chain((Type(a) for a in fdecl.params),
                                     FuncReturns(fdecl)))
   assert true_cpp_type, 'arg_name make sense only for true_cpp_type'
-  args = (list(a.cpp_exact_type or Type(a) for a in fdecl.params) +
-          list(a.cpp_exact_type or Type(a)+'*' for a in fdecl.returns
-               [not fdecl.cpp_void_return:]))  # Skip returns[0] if not void.
+  # Skip returns[0] if not void.
+  returns = fdecl.returns if fdecl.cpp_void_return else fdecl.returns[1:]
+  args = ([ExactTypeOrType(a) for a in fdecl.params] +
+          [ExactTypeOrType(a, '*') for a in returns])
   return TupleStr('%s %s%d' % (a, arg_name, i) for i, a in enumerate(args))
 
 
@@ -73,6 +77,12 @@ def Docstring(method):
                ('=default' if a.default_value else '') for a in method.params)
   # Gen Python signature
   yield method.name.native + i + out
+  # Docstring provided in the CLIF file.
+  for line in method.docstring.splitlines():
+    if str is bytes:  # PY2
+      yield line.encode('unicode-escape')
+    else:
+      yield line
   yield '  Calls C++ function'
   # Gen C++ signature
   cname = method.name.cpp_name or method.name.native

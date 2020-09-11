@@ -13,6 +13,10 @@
 // limitations under the License.
 
 #include "clif/python/runtime.h"
+// This should be removed once CLIF depends on Abseil.
+#include <cassert>
+// NOLINTNEXTLINE(whitespace/line_length) because of MOE, result is within 80.
+#define CHECK_NOTNULL(condition) (assert((condition) != nullptr),(condition))
 
 extern "C"
 int Clif_PyType_Inconstructible(PyObject* self, PyObject* a, PyObject* kw) {
@@ -31,7 +35,7 @@ void PyObjRef::Init(PyObject* self) {
 }
 
 void PyObjRef::HoldPyObj(PyObject* self) {
-    pyowner_ = self;
+  pyowner_ = self;
   Py_INCREF(pyowner_);
 }
 void PyObjRef::DropPyObj() {
@@ -44,7 +48,7 @@ PyObject* PyObjRef::PoisonPill() const {
 }
 
 PyObject* PyObjRef::self() const {
-    if (self_ == nullptr) return nullptr;
+  if (self_ == nullptr) return nullptr;
   PyGILState_STATE threadstate = PyGILState_Ensure();
   PyObject* py = PyWeakref_GetObject(self_);
   if (py == Py_None) py = nullptr;
@@ -82,11 +86,15 @@ SafeAttr::~SafeAttr() {
   }
 }
 
+int ClearImportCache(PyObject* module) {
+  return 0;
+}
+
 // Given full.path.to.a.module.Name import module and return Name from module.
-PyObject* ImportFQName(const string& full_class_name) {
+PyObject* ImportFQName(const std::string& full_class_name) {
   // Split full_class_name at the last dot.
   auto last_dot = full_class_name.find_last_of('.');
-  if (last_dot == string::npos) {
+  if (last_dot == std::string::npos) {
     PyErr_Format(PyExc_ValueError, "No dot in full_class_name '%s'",
                  full_class_name.c_str());
     return nullptr;
@@ -100,14 +108,56 @@ PyObject* ImportFQName(const string& full_class_name) {
   return py;
 }
 
+// Given full.path.to.a.module.Name.A.B, and toplevel class name
+// full.path.to.a.module.Name, import Name from module, and return Name.A.B.
+PyObject* ImportFQName(const std::string& full_class_name,
+                       const std::string& toplevel_class_name) {
+  if (full_class_name == toplevel_class_name || toplevel_class_name.empty()) {
+    return ImportFQName(toplevel_class_name);
+  }
+  if (full_class_name.rfind(toplevel_class_name + ".", 0) != 0) {
+    PyErr_Format(
+        PyExc_ValueError,
+        "toplevel class name '%s' is not a prefix of full_class_name '%s'",
+        toplevel_class_name.c_str(), full_class_name.c_str());
+    return nullptr;
+  }
+  PyObject* py = ImportFQName(toplevel_class_name);
+  auto dot = full_class_name.find_first_of('.', toplevel_class_name.size());
+  while (dot != std::string::npos) {
+    const auto name = dot + 1;
+    const auto next_dot = full_class_name.find_first_of('.', name);
+    const auto len =
+        (next_dot != std::string::npos) ? next_dot - name : std::string::npos;
+    const auto attr_name = full_class_name.substr(name, len);
+    if (len == 0) {
+      Py_DECREF(py);
+      PyErr_Format(PyExc_ValueError,
+                   "name '%s' is not a valid fully qualified class name",
+                   full_class_name.c_str());
+      return nullptr;
+    }
+    PyObject* next = PyObject_GetAttrString(py, attr_name.c_str());
+    Py_DECREF(py);
+    if (next == nullptr) {
+      return nullptr;
+    }
+    py = next;
+    dot = next_dot;
+  }
+  return py;
+}
+
 // py.__class__.__name__
 const char* ClassName(PyObject* py) {
   /* PyPy doesn't have a separate C API for old-style classes. */
 #if PY_MAJOR_VERSION < 3 && !defined(PYPY_VERSION)
-  if (PyClass_Check(py)) return PyString_AS_STRING(CHECK_NOTNULL(
-      reinterpret_cast<PyClassObject*>(py)->cl_name));
-  if (PyInstance_Check(py)) return PyString_AS_STRING(CHECK_NOTNULL(
-      reinterpret_cast<PyInstanceObject*>(py)->in_class->cl_name));
+  if (PyClass_Check(py))
+    return PyString_AS_STRING(CHECK_NOTNULL(
+        reinterpret_cast<PyClassObject*>(py)->cl_name));
+  if (PyInstance_Check(py))
+    return PyString_AS_STRING(CHECK_NOTNULL(
+        reinterpret_cast<PyInstanceObject*>(py)->in_class->cl_name));
 #endif
   if (Py_TYPE(py) == &PyType_Type) {
     return reinterpret_cast<PyTypeObject*>(py)->tp_name;
@@ -179,13 +229,13 @@ PyObject* ArgError(const char func[],
 
 namespace python {
 
-string ExcStr(bool add_type) {
+std::string ExcStr(bool add_type) {
   PyObject* exc, *val, *tb;
   PyErr_Fetch(&exc, &val, &tb);
   if (!exc) return "";
   PyErr_NormalizeException(&exc, &val, &tb);
-  string err;
-  if (add_type) err = string(ClassName(exc)) + ": ";
+  std::string err;
+  if (add_type) err = std::string(ClassName(exc)) + ": ";
   Py_DECREF(exc);
   if (val) {
     PyObject* val_str = PyObject_Str(val);
@@ -203,4 +253,187 @@ string ExcStr(bool add_type) {
   return err;
 }
 }  // namespace python
+
+// The pyclif_instance_dict_* functions are heavily modified versions of
+// pybind11 code:
+// http://google3/third_party/pybind11/include/pybind11/detail/class.h?l=449&rcl=276599738
+extern "C" PyObject* pyclif_instance_dict_get(PyObject* self, void*) {
+  PyObject** dictptr = _PyObject_GetDictPtr(self);
+  if (dictptr == nullptr) {
+    return nullptr;
+  }
+  if (*dictptr == nullptr) {
+    *dictptr = PyDict_New();
+  }
+  Py_XINCREF(*dictptr);
+  return *dictptr;
+}
+
+extern "C" int pyclif_instance_dict_set(
+    PyObject* self, PyObject* new_dict, void*) {
+  if (!PyDict_Check(new_dict)) {
+    PyErr_Format(
+        PyExc_TypeError, "__dict__ must be set to a dict, not a %s",
+        Py_TYPE(new_dict)->tp_name);
+    return -1;
+  }
+  PyObject** dictptr = _PyObject_GetDictPtr(self);
+  if (dictptr == nullptr) {
+    PyErr_Format(
+        PyExc_SystemError,
+        "pyclif_instance_dict_set dictptr == nullptr for type %s",
+        Py_TYPE(self)->tp_name);
+    return -1;
+  }
+  Py_CLEAR(*dictptr);
+  *dictptr = new_dict;
+  Py_INCREF(*dictptr);
+  return 0;
+}
+
+extern "C" int pyclif_instance_dict_traverse(
+    PyObject *self, visitproc visit, void *arg) {
+  PyObject** dictptr = _PyObject_GetDictPtr(self);
+  if (dictptr != nullptr) {
+    Py_VISIT(*dictptr);
+  }
+  return 0;
+}
+
+extern "C" int pyclif_instance_dict_clear(PyObject *self) {
+  PyObject** dictptr = _PyObject_GetDictPtr(self);
+  if (dictptr != nullptr) {
+    Py_CLEAR(*dictptr);
+  }
+  return 0;
+}
+
+void pyclif_instance_dict_enable(PyTypeObject* ty, std::size_t dictoffset) {
+  ty->tp_dictoffset = (Py_ssize_t) dictoffset;
+  // Currently the generated tp_alloc, tp_new, tp_dealloc, tp_free code is
+  // incompatible with garbage collection.
+  // Note: clif/testing/python/enable_instance_dict_test.py
+  // includes testReferenceCycle, which doubles as a reminder.
+  // Envisioned future: when switching to generating pybind11 code, this code
+  // will be obsolete and purged, testReferenceCycle will "break" and then
+  // adjusted to exercise the behavior with GC enabled.
+  // ty->tp_flags |= Py_TPFLAGS_HAVE_GC;
+  // ty->tp_traverse = pyclif_instance_dict_traverse;
+  // ty->tp_clear = pyclif_instance_dict_clear;
+  // tp_getset generated by gen.GetSetDef().
+}
+
+bool ensure_no_args_and_kw_args(const char* func, PyObject* args,
+                                PyObject* kw) {
+  if (kw != nullptr) {
+    PyErr_Format(PyExc_TypeError, "%s() takes no keyword arguments", func);
+    return false;
+  }
+  if (args != nullptr) {
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    if (nargs != 0) {
+      PyErr_Format(PyExc_TypeError, "%s() takes no arguments (%zd given)", func,
+                   nargs);
+      return false;
+    }
+  }
+  return true;
+}
+
+PyObject* ReduceExImpl(PyObject* self, PyObject* args, PyObject* kw) {
+  static char* kwlist[] = {C("protocol"), nullptr};
+  int protocol = -1;
+  if (!PyArg_ParseTupleAndKeywords(args, kw, "|i:__reduce_ex__", kwlist,
+                                   &protocol)) {
+    return nullptr;
+  }
+  // Similar to time-tested approach used in Boost.Python:
+  // https://www.boost.org/doc/libs/1_55_0/libs/python/doc/v2/pickle.html
+  // https://github.com/boostorg/python/blob/develop/src/object/pickle_support.cpp
+  PyObject* getinitargs = PyObject_GetAttrString(self, "__getinitargs__");
+  if (getinitargs == nullptr) {
+    PyErr_Clear();
+  }
+  PyObject* getstate = PyObject_GetAttrString(self, "__getstate__");
+  if (getstate == nullptr) {
+    PyErr_Clear();
+  }
+  PyObject* setstate = PyObject_GetAttrString(self, "__setstate__");
+  if (setstate == nullptr) {
+    PyErr_Clear();
+  }
+  PyTypeObject* cls = Py_TYPE(self);
+  PyObject* initargs_or_empty_tuple = nullptr;
+  PyObject* empty_tuple = nullptr;
+  PyObject* initargs = nullptr;
+  PyObject* state = nullptr;
+  PyObject* reduced = nullptr;
+  const char* can_t_pickle_reason = nullptr;
+  if (getinitargs == nullptr && getstate == nullptr && setstate == nullptr) {
+    can_t_pickle_reason = "missing __getinitargs__ and/or __getstate__";
+    goto cleanup_and_exit;
+  }
+  if (getstate == nullptr && setstate != nullptr) {
+    can_t_pickle_reason = "has __getstate__ but missing __setstate__";
+    goto cleanup_and_exit;
+  }
+  if (getstate != nullptr && setstate == nullptr) {
+    can_t_pickle_reason = "has __setstate__ but missing __getstate__";
+    goto cleanup_and_exit;
+  }
+  empty_tuple = PyTuple_New(0);
+  if (!empty_tuple) {
+    goto cleanup_and_exit;  // Keep the original error message.
+  }
+  if (getinitargs != nullptr) {
+    initargs = PyObject_Call(getinitargs, empty_tuple, nullptr);
+    if (initargs == nullptr) {
+      goto cleanup_and_exit;  // Keep the original error message.
+    }
+    if (!PyTuple_CheckExact(initargs)) {
+      // Preempts less informative exception raised otherwise in pickle module.
+      if (!PyList_CheckExact(initargs)) {
+        PyErr_Format(PyExc_ValueError,
+                     "%s.__getinitargs__ must return a tuple or list (got %s)",
+                     cls->tp_name, Py_TYPE(initargs)->tp_name);
+        goto cleanup_and_exit;
+      }
+      // PyCLIF as-is makes it hard to return a C++ array as a Python tuple.
+      // Lending a helping hand here.
+      PyObject* initargs_as_tuple = PySequence_Tuple(initargs);
+      if (initargs_as_tuple == nullptr) {
+        goto cleanup_and_exit;  // Keep the original error message.
+      }
+      Py_DECREF(initargs);
+      initargs = initargs_as_tuple;
+    }
+  }
+  if (getstate != nullptr) {
+    state = PyObject_Call(getstate, empty_tuple, nullptr);
+    if (state == nullptr) {
+      goto cleanup_and_exit;  // Keep the original error message.
+    }
+  }
+  initargs_or_empty_tuple = (initargs != nullptr ? initargs : empty_tuple);
+  if (state == nullptr) {
+    reduced = Py_BuildValue("OO", (PyObject*)cls, initargs_or_empty_tuple);
+  } else {
+    reduced =
+        Py_BuildValue("OOO", (PyObject*)cls, initargs_or_empty_tuple, state);
+  }
+  // Keep the original error message, if any.
+cleanup_and_exit:
+  if (can_t_pickle_reason != nullptr) {
+    PyErr_Format(PyExc_TypeError, "can't pickle %s object: %s", cls->tp_name,
+                 can_t_pickle_reason);
+  }
+  Py_XDECREF(getinitargs);
+  Py_XDECREF(getstate);
+  Py_XDECREF(setstate);
+  Py_XDECREF(empty_tuple);
+  Py_XDECREF(initargs);
+  Py_XDECREF(state);
+  return reduced;
+}
+
 }  // namespace clif

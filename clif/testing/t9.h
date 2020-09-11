@@ -15,12 +15,13 @@
  */
 #ifndef CLIF_TESTING_T9_H_
 #define CLIF_TESTING_T9_H_
-#include "clif/python/types.h"
 
 // Testing "capsule".
 //
 // We have some class hierarhies and test how they passed up/down those
 // hierarhies with "class"/"capsule" intermix capabilities.
+
+#include <memory>
 
 namespace t9 {
 
@@ -66,8 +67,6 @@ class Concrete : public Abstract {
 };
 
 inline Abstract* NewAbstract() { return new Concrete; }
-
-inline PyObject* ConversionFunctionCheck(PyObject* x) { return x; }
 
 }  // namespace t9
 

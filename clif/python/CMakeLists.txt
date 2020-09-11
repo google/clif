@@ -44,7 +44,7 @@ target_include_directories(pyClifRuntime PUBLIC
 )
 
 add_target_protobuf_link_libraries(pyClifRuntime)
-target_link_libraries(pyClifRuntime
+target_link_libraries(pyClifRuntime PRIVATE
   "${PYTHON_LIBRARIES}"
 )
 
@@ -67,7 +67,7 @@ target_include_directories(proto_util_cc
   ${PYTHON_INCLUDE_DIRS}
 )
 
-target_link_libraries(proto_util_cc
+target_link_libraries(proto_util_cc PRIVATE
   pyClifRuntime
   ${PYTHON_LIBRARIES}
 )

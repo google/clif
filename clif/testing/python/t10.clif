@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from "clif/testing/python/t2.h" import *
+from "clif/testing/python/t2_clif.h" import *
 from "clif/testing/t10.h":
 
   def CreateK() -> Klass
@@ -22,3 +22,7 @@ from "clif/testing/t10.h":
   class A:
     const C: int
     def __str__(self) -> object
+
+
+  def ConversionFunctionCheck(x: object) -> object
+

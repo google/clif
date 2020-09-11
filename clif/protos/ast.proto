@@ -16,7 +16,6 @@ syntax = "proto2";
 
 package clif.protos;
 
-
 // AST message - abstract API representation.
 // Is sent in both directions to/from Clang C++ matcher.
 message AST {
@@ -25,9 +24,10 @@ message AST {
   repeated Decl decls = 3;
   repeated string extra_init = 4;  // C++ code lines for Init() body.
   optional bool catch_exceptions = 5;  // C++ code may throw.
-  repeated Typemap typemaps = 6;   // C++ types and processors for a lang type
-  repeated Macro macros = 7;       // Macro definitions to pass through.
-};
+  repeated Typemap typemaps = 6;  // C++ types and processors for a lang type
+  repeated Macro macros = 7;      // Macro definitions to pass through.
+  repeated Namemap namemaps = 8;  // Imported names.
+}
 
 message Decl {
   enum Type {
@@ -59,13 +59,16 @@ message ClassDecl {
   repeated Name bases = 2;
   repeated Decl members = 3;
   optional bool final = 4;        // No derived classes allowed.
+  optional bool enable_instance_dict = 16;  // Add __dict__ to instance.
   optional bool shared = 5  [deprecated = true];
+  optional string docstring = 15;
   optional bool cpp_has_def_ctor = 6 [default = true];  // C++ class has a default constructor.
   optional bool cpp_has_trivial_defctor = 12;  // Set to true if C++ class default ctor is trivial.
   optional bool cpp_has_trivial_dtor = 13;  // Set to true if C++ class dtor is trivial.
   optional bool cpp_has_public_dtor = 9 [default = true];  // C++ class can be destroyed.
   optional bool async_dtor = 10;  // Release Python GIL while deleting C++ instance.
   optional bool cpp_copyable = 7 [default = true];  // C++ class can be copied.
+  optional bool cpp_movable = 14 [default = true];  // C++ class can be moved.
   optional bool cpp_abstract = 8;  // C++ class is an abstract base class.
   message Base {
     optional string name = 1;
@@ -73,7 +76,7 @@ message ClassDecl {
     optional string filename = 3;
   };
   repeated Base cpp_bases = 11;   // Additional info for C++ base classes.
-  // Next available: 14
+  // Next available: 17
 };
 
 message EnumDecl {
@@ -88,6 +91,7 @@ message VarDecl {
   optional Type type = 2;
   optional FuncDecl cpp_get = 3;  // Property getter name.
   optional FuncDecl cpp_set = 4;  // Property setter name.
+  optional bool is_extend_variable = 5;
 };
 
 message ConstDecl {
@@ -111,6 +115,7 @@ message FuncDecl {
   repeated ParamDecl returns = 3;
   repeated Exception excepts = 4;
   optional string postproc = 5;    // Replace results with native postproc(results).
+  optional string docstring = 6;
   optional bool constructor = 18;  // Set to true iff this function is a constructor
   optional bool classmethod = 11;  // C++ class static function member.
   optional bool py_keep_gil = 12;  // Do not release Python GIL while running C++.
@@ -120,7 +125,8 @@ message FuncDecl {
   optional bool cpp_noexcept = 14;  // Set to true if C++ func is noexcept(true).
   optional bool cpp_opfunction = 17;  // Invoke C++ operator function.
   optional bool cpp_const_method = 19;  // Set to true if C++ func is const.
-  // Next available: 20
+  optional bool is_extend_method = 20;  // Set to true if ClassName__extend__method_name.
+  // Next available: 21
 };
 
 // ForwardDecl describe a C++ name declaration match (only make sense for
@@ -147,12 +153,13 @@ message Type {
   optional FuncDecl callable = 4;     // For lambda it has params and returns.
   optional bool cpp_has_def_ctor = 5 [default = true];  // true iff the type has a default constructor
   optional bool cpp_copyable = 6 [default = true];  // true if the type is copyable.
+  optional bool cpp_movable = 12 [default = true];  // C++ class can be moved.
   optional bool cpp_raw_pointer = 7;  // true iff is a C++ raw pointer type.
   optional bool cpp_toptr_conversion = 8;  // true iff there is a Lang to T* conversion.
   optional bool cpp_touniqptr_conversion = 11;  // true iff there is a Lang to unique_ptr<T> conversion.
   optional bool cpp_abstract = 9;  // true iff the type is a C++ abstract class.
   optional bool cpp_has_public_dtor = 10 [default = true];  // C++ class can be destroyed.
-  // Next available: 12
+  // Next available: 13
 };
 
 message Exception {
@@ -170,6 +177,11 @@ message Typemap {
   repeated string cpp_type = 2;   // C++ types to try (the order is important).
   optional string postconversion = 3;  // C++ func to apply on C++ -> lang path
 };
+
+message Namemap {
+  optional string name = 1;  // e.g. 'A' in `from full.module import A`.
+  optional string fq_name = 2;  // FQName. e.g. full.module.A.
+}
 
 message Macro {
   optional string name = 1;

@@ -66,6 +66,15 @@ inline bool Abc_has(Abc const& abc, uint8_t c) {
   const int offset = c - abc.s;
   return offset >= 0 && offset < abc.l;
 }
+
+
+struct Num {
+  int operator+(int) { return 2; }
+};
+int operator%(const Num& a, int) { return 1; }
+int operator%(int, const Num& a) { return 2; }
+int operator-(int, const Num& a) { return 3; }
+
 }  // namespace clif_ops_test
 
 #endif  // CLIF_TESTING_OPERATORS_H_

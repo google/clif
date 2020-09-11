@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for clif.examples.inheritance.python.inheritance."""
+"""Tests for clif.examples.inheritance."""
 
 import unittest
 import base
@@ -39,7 +39,6 @@ class InheritanceTest(unittest.TestCase):
     self.assertRaises(AttributeError, l)
 
 
-# Test for clif.examples.inheritance.python.python_inheritance
 class PythonInheritanceTest(unittest.TestCase):
 
   def testBase(self):

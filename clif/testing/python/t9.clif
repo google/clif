@@ -18,8 +18,6 @@ from "clif/testing/t9.h":
 
     def IsDerived(klass: Base) -> bool
 
-    def ConversionFunctionCheck(x: object) -> object
-
     class Core:
       def CoreValue(self) -> int
       @classmethod

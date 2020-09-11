@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for clif.python.pytd2proto."""
+"""Tests for pytd2proto."""
 
 from __future__ import print_function
 import os
 import textwrap
-from google.protobuf import text_format
 import unittest
+from google.protobuf import text_format
 from clif.python import pytd2proto
 from clif.python import pytd_parser
 
@@ -27,31 +27,50 @@ from clif.python import pytd_parser
 TMP_FILE = 'clif_python_pytd2proto_test'
 
 
+def _ParseFile(pytd, types, py3output):
+  with open(TMP_FILE, 'w') as pytd_file:
+    pytd_file.write(pytd)
+  p = pytd2proto.Postprocessor(
+      config_headers=types,
+      include_paths=[os.environ['CLIF_DIR']],
+      py3output=py3output)
+  with open(TMP_FILE, 'r') as pytd_file:
+    pb = p.Translate(pytd_file)
+  return pb
+
+
+def FixTypes(text):
+  # If executed with a different defaults for types, text type representation
+  # should be fixed here.
+  return text
+
+
 class ToprotoTest(unittest.TestCase):
 
-  def ClifEqual(self, pytd, clif, types=None,
-                include_typemaps=False, add_extra_init=True):
+  def ClifEqual(self,
+                pytd,
+                clif,
+                types=None,
+                include_typemaps=False,
+                include_namemaps=False,
+                add_extra_init=True,
+                py3output=True):
     pytd = textwrap.dedent(pytd)
-    with open(TMP_FILE, 'w') as pytd_file:
-      pytd_file.write(pytd)
-    p = pytd2proto.Postprocessor(
-        config_headers=types,
-        include_paths=[os.environ['CLIF_DIR']])
-    with open(TMP_FILE, 'r') as pytd_file:
-      try:
-        pb = p.Translate(pytd_file)
-      except:
-        print('\nLine', '.123456789' * 4)
-        for i, s in enumerate(pytd.splitlines()):
-          print('%4d:%s\\n' % (i+1, s))
-        raise
+    try:
+      pb = _ParseFile(pytd, types, py3output)
+    except:
+      print('\nLine', '.123456789' * 4)
+      for i, s in enumerate(pytd.splitlines()):
+        print('%4d:%s\\n' % (i+1, s))
+      raise
     if not include_typemaps:
       del pb.typemaps[:]
+    if not include_namemaps:
+      del pb.namemaps[:]
     for m in pb.macros:
       m.definition = b''
     out = text_format.MessageToString(pb)
-    expected = textwrap.dedent(clif).replace(
-        'cpp_type: "string"', 'cpp_type: "std::string"')
+    expected = FixTypes(textwrap.dedent(clif))
     if add_extra_init:
       expected += 'extra_init: "PyEval_InitThreads();"\n'
     self.assertMultiLineEqual(out, expected)
@@ -60,7 +79,188 @@ class ToprotoTest(unittest.TestCase):
     self.ClifEqual(pytd, clif, types=['clif/python/types.h'], **kw)
 
   def setUp(self):
+    super(ToprotoTest, self).setUp()
     pytd_parser.reset_indentation()
+
+  def testParsingNonzeroRaisesNameError(self):
+    with self.assertRaises(NameError):
+      self.ClifEqualWithTypes("""\
+        from "foo.h":
+          namespace `TheNamespace`:
+            class `CppAlpha` as Alpha:
+              def __nonzero__(self) -> bool
+        """, '')
+
+  def testParsingBoolGeneratesNonzeroForPY2(self):
+    self.ClifEqualWithTypes("""\
+        from "foo.h":
+          namespace `TheNamespace`:
+            class `CppAlpha` as Alpha:
+              def `IsValid` as __bool__(self) -> bool
+      """, """\
+        source: "clif_python_pytd2proto_test"
+        usertype_includes: "clif/python/types.h"
+        decls {
+          decltype: CLASS
+          cpp_file: "foo.h"
+          line_number: 3
+          namespace_: "TheNamespace"
+          class_ {
+            name {
+              native: "Alpha"
+              cpp_name: "TheNamespace::CppAlpha"
+            }
+            members {
+              decltype: FUNC
+              line_number: 4
+              func {
+                name {
+                  native: "__nonzero__"
+                  cpp_name: "IsValid"
+                }
+                returns {
+                  type {
+                    lang_type: "bool"
+                    cpp_type: "bool"
+                  }
+                }
+              }
+            }
+          }
+        }
+      """, py3output=False)
+
+  def testForwardAndCircularTypeUsages(self):
+    self.ClifEqualWithTypes("""\
+        from "foo.h":
+          namespace `TheNamespace`:
+
+            class `CppAlpha` as Alpha:
+              def TakeBeta(self, b: list<Beta>)
+              def TakeNested(self, n: Beta.Nested)
+            class Beta:
+              def TakeAlpha(self, a: Alpha)
+              class Nested:
+                pass
+              def GiveNested(self) -> Nested
+      """, """\
+        source: "clif_python_pytd2proto_test"
+        usertype_includes: "clif/python/types.h"
+        decls {
+          decltype: CLASS
+          cpp_file: "foo.h"
+          line_number: 4
+          namespace_: "TheNamespace"
+          class_ {
+            name {
+              native: "Alpha"
+              cpp_name: "TheNamespace::CppAlpha"
+            }
+            members {
+              decltype: FUNC
+              line_number: 5
+              func {
+                name {
+                  native: "TakeBeta"
+                  cpp_name: "TakeBeta"
+                }
+                params {
+                  name {
+                    native: "b"
+                    cpp_name: "b"
+                  }
+                  type {
+                    lang_type: "list<Beta>"
+                    cpp_type: "std::vector"
+                    params {
+                      lang_type: "Beta"
+                      cpp_type: "TheNamespace::Beta"
+                    }
+                  }
+                }
+              }
+            }
+            members {
+              decltype: FUNC
+              line_number: 6
+              func {
+                name {
+                  native: "TakeNested"
+                  cpp_name: "TakeNested"
+                }
+                params {
+                  name {
+                    native: "n"
+                    cpp_name: "n"
+                  }
+                  type {
+                    lang_type: "Beta.Nested"
+                    cpp_type: "TheNamespace::Beta::Nested"
+                  }
+                }
+              }
+            }
+          }
+        }
+        decls {
+          decltype: CLASS
+          cpp_file: "foo.h"
+          line_number: 7
+          namespace_: "TheNamespace"
+          class_ {
+            name {
+              native: "Beta"
+              cpp_name: "TheNamespace::Beta"
+            }
+            members {
+              decltype: FUNC
+              line_number: 8
+              func {
+                name {
+                  native: "TakeAlpha"
+                  cpp_name: "TakeAlpha"
+                }
+                params {
+                  name {
+                    native: "a"
+                    cpp_name: "a"
+                  }
+                  type {
+                    lang_type: "Alpha"
+                    cpp_type: "TheNamespace::CppAlpha"
+                  }
+                }
+              }
+            }
+            members {
+              decltype: CLASS
+              line_number: 9
+              class_ {
+                name {
+                  native: "Nested"
+                  cpp_name: "Nested"
+                }
+              }
+            }
+            members {
+              decltype: FUNC
+              line_number: 11
+              func {
+                name {
+                  native: "GiveNested"
+                  cpp_name: "GiveNested"
+                }
+                returns {
+                  type {
+                    lang_type: "Nested"
+                    cpp_type: "Nested"
+                  }
+                }
+              }
+            }
+          }
+        }
+      """)
 
   def testFromDef(self):
     self.ClifEqualWithTypes("""\
@@ -100,7 +300,7 @@ class ToprotoTest(unittest.TestCase):
                   returns {
                     type {
                       lang_type: "str"
-                      cpp_type: "string"
+                      cpp_type: "std::string"
                     }
                   }
                 }
@@ -112,7 +312,7 @@ class ToprotoTest(unittest.TestCase):
                 cpp_type: "std::vector"
                 params {
                   lang_type: "str"
-                  cpp_type: "string"
+                  cpp_type: "std::string"
                 }
               }
             }
@@ -152,7 +352,7 @@ class ToprotoTest(unittest.TestCase):
                     }
                     type {
                       lang_type: "str"
-                      cpp_type: "string"
+                      cpp_type: "std::string"
                     }
                   }
                 }
@@ -217,7 +417,7 @@ class ToprotoTest(unittest.TestCase):
               }
               type {
                 lang_type: "str"
-                cpp_type: "string"
+                cpp_type: "std::string"
               }
               default_value: "default"
             }
@@ -230,6 +430,35 @@ class ToprotoTest(unittest.TestCase):
       self.ClifEqualWithTypes("""\
         use `Foo<int>` as foo
         """, '')
+
+  def testUseLastWins(self):
+    self.ClifEqualWithTypes("""
+        use `FIRST` as dict
+        use `SECOND` as dict
+        use `FIRST` as dict
+        from "foo.h":
+          def f() -> dict
+      """, """\
+        source: "clif_python_pytd2proto_test"
+        usertype_includes: "clif/python/types.h"
+        decls {
+          decltype: FUNC
+          cpp_file: "foo.h"
+          line_number: 6
+          func {
+            name {
+              native: "f"
+              cpp_name: "f"
+            }
+            returns {
+              type {
+                lang_type: "dict"
+                cpp_type: "FIRST"
+              }
+            }
+          }
+        }
+      """)
 
   def testRenameAsNewName(self):
     with self.assertRaises(NameError):
@@ -245,6 +474,7 @@ class ToprotoTest(unittest.TestCase):
           class O:
             class I:
               x: int
+              enum IE
           def set_a(a: O.I)
       """, """\
         source: "clif_python_pytd2proto_test"
@@ -280,6 +510,16 @@ class ToprotoTest(unittest.TestCase):
                     }
                   }
                 }
+                members {
+                  decltype: ENUM
+                  line_number: 5
+                  enum {
+                    name {
+                      native: "IE"
+                      cpp_name: "IE"
+                    }
+                  }
+                }
               }
             }
           }
@@ -287,7 +527,7 @@ class ToprotoTest(unittest.TestCase):
         decls {
           decltype: FUNC
           cpp_file: "foo.h"
-          line_number: 5
+          line_number: 6
           func {
             name {
               native: "set_a"
@@ -301,6 +541,237 @@ class ToprotoTest(unittest.TestCase):
               type {
                 lang_type: "O.I"
                 cpp_type: "O::I"
+              }
+            }
+          }
+        }
+      """)
+
+  def testNestedNameWithinNamespace(self):
+    self.ClifEqualWithTypes("""\
+        from "foo.h":
+          namespace `bar`:
+            class O:
+              class I:
+                def __init__(self)
+        """, """\
+        source: "clif_python_pytd2proto_test"
+        usertype_includes: "clif/python/types.h"
+        decls {
+          decltype: CLASS
+          cpp_file: "foo.h"
+          line_number: 3
+          namespace_: "bar"
+          class_ {
+            name {
+              native: "O"
+              cpp_name: "bar::O"
+            }
+            members {
+              decltype: CLASS
+              line_number: 4
+              class_ {
+                name {
+                  native: "I"
+                  cpp_name: "I"
+                }
+                members {
+                  decltype: FUNC
+                  line_number: 5
+                  func {
+                    name {
+                      native: "__init__"
+                      cpp_name: "I"
+                    }
+                    constructor: true
+                  }
+                }
+              }
+            }
+          }
+        }
+        """)
+
+  def testNestedNameUsage(self):
+    self.ClifEqualWithTypes("""\
+        from "foo.h":
+          class O:
+            enum E
+            class I:
+              local_i: E
+              abs_i: O.E
+            local_o: I
+            abs_o: O.I
+        """, """\
+          source: "clif_python_pytd2proto_test"
+          usertype_includes: "clif/python/types.h"
+          decls {
+            decltype: CLASS
+            cpp_file: "foo.h"
+            line_number: 2
+            class_ {
+              name {
+                native: "O"
+                cpp_name: "O"
+              }
+              members {
+                decltype: ENUM
+                line_number: 3
+                enum {
+                  name {
+                    native: "E"
+                    cpp_name: "E"
+                  }
+                }
+              }
+              members {
+                decltype: CLASS
+                line_number: 4
+                class_ {
+                  name {
+                    native: "I"
+                    cpp_name: "I"
+                  }
+                  members {
+                    decltype: VAR
+                    line_number: 5
+                    var {
+                      name {
+                        native: "local_i"
+                        cpp_name: "local_i"
+                      }
+                      type {
+                        lang_type: "E"
+                        cpp_type: "E"
+                      }
+                    }
+                  }
+                  members {
+                    decltype: VAR
+                    line_number: 6
+                    var {
+                      name {
+                        native: "abs_i"
+                        cpp_name: "abs_i"
+                      }
+                      type {
+                        lang_type: "O.E"
+                        cpp_type: "O::E"
+                      }
+                    }
+                  }
+                }
+              }
+              members {
+                decltype: VAR
+                line_number: 7
+                var {
+                  name {
+                    native: "local_o"
+                    cpp_name: "local_o"
+                  }
+                  type {
+                    lang_type: "I"
+                    cpp_type: "I"
+                  }
+                }
+              }
+              members {
+                decltype: VAR
+                line_number: 8
+                var {
+                  name {
+                    native: "abs_o"
+                    cpp_name: "abs_o"
+                  }
+                  type {
+                    lang_type: "O.I"
+                    cpp_type: "O::I"
+                  }
+                }
+              }
+            }
+          }
+      """)
+
+  def testNestedNameWithDuplicates(self):
+    self.ClifEqualWithTypes("""\
+        from "foo.h":
+          class O1:
+            class I:
+              x: int
+          class O2:
+            class I:
+              y: int
+      """, """\
+        source: "clif_python_pytd2proto_test"
+        usertype_includes: "clif/python/types.h"
+        decls {
+          decltype: CLASS
+          cpp_file: "foo.h"
+          line_number: 2
+          class_ {
+            name {
+              native: "O1"
+              cpp_name: "O1"
+            }
+            members {
+              decltype: CLASS
+              line_number: 3
+              class_ {
+                name {
+                  native: "I"
+                  cpp_name: "I"
+                }
+                members {
+                  decltype: VAR
+                  line_number: 4
+                  var {
+                    name {
+                      native: "x"
+                      cpp_name: "x"
+                    }
+                    type {
+                      lang_type: "int"
+                      cpp_type: "int"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        decls {
+          decltype: CLASS
+          cpp_file: "foo.h"
+          line_number: 5
+          class_ {
+            name {
+              native: "O2"
+              cpp_name: "O2"
+            }
+            members {
+              decltype: CLASS
+              line_number: 6
+              class_ {
+                name {
+                  native: "I"
+                  cpp_name: "I"
+                }
+                members {
+                  decltype: VAR
+                  line_number: 7
+                  var {
+                    name {
+                      native: "y"
+                      cpp_name: "y"
+                    }
+                    type {
+                      lang_type: "int"
+                      cpp_type: "int"
+                    }
+                  }
+                }
               }
             }
           }
@@ -355,7 +826,8 @@ class ToprotoTest(unittest.TestCase):
       """, include_typemaps=True, add_extra_init=False)
 
   def testImport(self):
-    self.ClifEqual("""\
+    self.ClifEqual(
+        """\
       # It's a PYTD comment!
       from "clif/python/types.h" import *
 
@@ -367,7 +839,7 @@ class ToprotoTest(unittest.TestCase):
       from "foo.h":
         def f() -> (a:str, b:str):
           return Replacer(...)
-      """, """\
+        """, """\
         source: "clif_python_pytd2proto_test"
         usertype_includes: "clif/python/types.h"
         decls {
@@ -402,7 +874,14 @@ class ToprotoTest(unittest.TestCase):
             postproc: "clif.helpers.Replacer"
           }
         }
-      """)
+        extra_init: "PyEval_InitThreads();"
+        namemaps {
+          name: "Replacer"
+          fq_name: "clif.helpers.Replacer"
+        }
+        """,
+        include_namemaps=True,
+        add_extra_init=False)
 
   def testFromStaticmethods(self):
     self.ClifEqual("""\
@@ -599,6 +1078,8 @@ class ToprotoTest(unittest.TestCase):
       from "foo.h":
         class Foo(Bar):
           pass
+        class Baz:
+          pass
       """, """\
         source: "clif_python_pytd2proto_test"
         decls {
@@ -611,7 +1092,90 @@ class ToprotoTest(unittest.TestCase):
               cpp_name: "Foo"
             }
             bases {
-              native: "a.b.c.Bar"
+              native: "Bar"
+            }
+          }
+        }
+        decls {
+          decltype: CLASS
+          cpp_file: "foo.h"
+          line_number: 5
+          class_ {
+            name {
+              native: "Baz"
+              cpp_name: "Baz"
+            }
+          }
+        }
+      """)
+
+  def testFromRenamedClass(self):
+    self.ClifEqual(
+        """\
+      from "foo.h":
+        class `Foo` as PyFoo:
+          pass
+      """, """\
+        source: "clif_python_pytd2proto_test"
+        decls {
+          decltype: CLASS
+          cpp_file: "foo.h"
+          line_number: 2
+          class_ {
+            name {
+              native: "PyFoo"
+              cpp_name: "Foo"
+            }
+          }
+        }
+      """)
+
+  def testFromRenamedFQClass(self):
+    with self.assertRaises(NameError):
+      self.ClifEqual(
+          """\
+        from "foo.h":
+          class `ns::Foo` as PyFoo:
+            pass
+        """, '')
+
+  def testFromRenamedClassTemplate(self):
+    self.ClifEqual(
+        """\
+      from "foo.h":
+        class `Foo<int>` as PyFoo:
+          pass
+      """, """\
+        source: "clif_python_pytd2proto_test"
+        decls {
+          decltype: CLASS
+          cpp_file: "foo.h"
+          line_number: 2
+          class_ {
+            name {
+              native: "PyFoo"
+              cpp_name: "Foo<int>"
+            }
+          }
+        }
+      """)
+
+  def testFromRenamedClassTemplateWithFQParameter(self):
+    self.ClifEqual(
+        """\
+      from "foo.h":
+        class `Foo<ns::Type>` as PyFoo:
+          pass
+      """, """\
+        source: "clif_python_pytd2proto_test"
+        decls {
+          decltype: CLASS
+          cpp_file: "foo.h"
+          line_number: 2
+          class_ {
+            name {
+              native: "PyFoo"
+              cpp_name: "Foo<ns::Type>"
             }
           }
         }
@@ -687,23 +1251,25 @@ class ToprotoTest(unittest.TestCase):
   def testFromClassRightOp(self):
     self.ClifEqualWithTypes("""\
       from "foo.h":
-        class Foo:
-          def __radd__(self, other: int) -> int
+        namespace `userns`:
+          class Foo:
+            def __radd__(self, other: int) -> int
       """, """\
         source: "clif_python_pytd2proto_test"
         usertype_includes: "clif/python/types.h"
         decls {
           decltype: CLASS
           cpp_file: "foo.h"
-          line_number: 2
+          line_number: 3
+          namespace_: "userns"
           class_ {
             name {
               native: "Foo"
-              cpp_name: "Foo"
+              cpp_name: "userns::Foo"
             }
             members {
               decltype: FUNC
-              line_number: 3
+              line_number: 4
               func {
                 name {
                   native: "__radd__"
@@ -726,7 +1292,7 @@ class ToprotoTest(unittest.TestCase):
                   }
                   type {
                     lang_type: "Foo"
-                    cpp_type: "Foo"
+                    cpp_type: "userns::Foo"
                   }
                 }
                 returns {
@@ -741,38 +1307,6 @@ class ToprotoTest(unittest.TestCase):
           }
         }
       """)
-
-  def testFromReplacementClass(self):
-    self.ClifEqual("""\
-      from "foo.h":
-        class Foo(`Bar` as replacement):
-          pass
-      """, """\
-        source: "clif_python_pytd2proto_test"
-        decls {
-          decltype: CLASS
-          cpp_file: "foo.h"
-          line_number: 2
-          class_ {
-            name {
-              native: "Foo"
-              cpp_name: "Foo"
-            }
-            bases {
-              native: "replacement"
-              cpp_name: "Bar"
-            }
-          }
-        }
-      """)
-
-  def testFromReplacementClassErrNoCppNameForReplacememt(self):
-    with self.assertRaises(NameError):
-      self.ClifEqual("""\
-        from "foo.h":
-          class Foo(replacement):
-            pass
-        """, '')
 
   def testFromReplacementClassErrExtraCppName(self):
     with self.assertRaises(NameError):
@@ -896,7 +1430,7 @@ class ToprotoTest(unittest.TestCase):
                     cpp_type: "std::unordered_map"
                     params {
                       lang_type: "str"
-                      cpp_type: "string"
+                      cpp_type: "std::string"
                     }
                     params {
                       lang_type: "list<int>"
@@ -915,7 +1449,7 @@ class ToprotoTest(unittest.TestCase):
                   }
                   type {
                     lang_type: "str"
-                    cpp_type: "string"
+                    cpp_type: "std::string"
                   }
                 }
                 returns {
@@ -925,7 +1459,7 @@ class ToprotoTest(unittest.TestCase):
                   }
                   type {
                     lang_type: "str"
-                    cpp_type: "string"
+                    cpp_type: "std::string"
                   }
                 }
                 py_keep_gil: true
@@ -936,7 +1470,7 @@ class ToprotoTest(unittest.TestCase):
       """)
 
   def testFromClassBadInitName(self):
-    # 
+    # TODO: Add check for warning about Init->Foo renaming.
     self.ClifEqualWithTypes("""\
       from "foo.h":
         class Foo:
@@ -995,15 +1529,24 @@ class ToprotoTest(unittest.TestCase):
             def __iadd__(self, other: int)  # "-> self" missed
         """, '')
 
+  def testFromClassBadROp(self):
+    with self.assertRaises(NameError):
+      self.ClifEqual("""\
+        from "foo.h":
+          class Foo:
+            def __radd__(self, other: int)
+            @sequential
+            def __getitem__(self, i: int)
+        """, '')
+
   def testFromClassOps(self):
-    # 
+    # TODO: Extend the test to all special names when C++ back is ready
     self.ClifEqualWithTypes("""\
       from "foo.h":
         class Foo:
           def __init__(self, a: int)
           def __eq__(self, other: Foo) -> bool
           def __le__(self, other: Foo) -> bool
-          def __nonzero__(self) -> bool
           def __bool__(self) -> bool
           def __iadd__(self, other: int) -> self
       """, """\
@@ -1096,22 +1639,6 @@ class ToprotoTest(unittest.TestCase):
               line_number: 6
               func {
                 name {
-                  native: "__nonzero__"
-                  cpp_name: "operator bool"
-                }
-                returns {
-                  type {
-                    lang_type: "bool"
-                    cpp_type: "bool"
-                  }
-                }
-              }
-            }
-            members {
-              decltype: FUNC
-              line_number: 7
-              func {
-                name {
                   native: "__bool__"
                   cpp_name: "operator bool"
                 }
@@ -1125,7 +1652,7 @@ class ToprotoTest(unittest.TestCase):
             }
             members {
               decltype: FUNC
-              line_number: 8
+              line_number: 7
               func {
                 name {
                   native: "__iadd__"
@@ -1443,7 +1970,7 @@ class ToprotoTest(unittest.TestCase):
                   }
                   type {
                     lang_type: "str"
-                    cpp_type: "string"
+                    cpp_type: "std::string"
                   }
                 }
                 returns {
@@ -1469,7 +1996,7 @@ class ToprotoTest(unittest.TestCase):
                   }
                   type {
                     lang_type: "str"
-                    cpp_type: "string"
+                    cpp_type: "std::string"
                   }
                 }
                 params {
@@ -1540,7 +2067,7 @@ class ToprotoTest(unittest.TestCase):
                   cpp_type: "std::unordered_map"
                   params {
                     lang_type: "bytes"
-                    cpp_type: "string"
+                    cpp_type: "std::string"
                   }
                 }
               }
@@ -1560,13 +2087,13 @@ class ToprotoTest(unittest.TestCase):
                   }
                   type {
                     lang_type: "str"
-                    cpp_type: "string"
+                    cpp_type: "std::string"
                   }
                 }
                 returns {
                   type {
                     lang_type: "bytes"
-                    cpp_type: "string"
+                    cpp_type: "std::string"
                   }
                 }
               }
@@ -1586,7 +2113,7 @@ class ToprotoTest(unittest.TestCase):
                   }
                   type {
                     lang_type: "str"
-                    cpp_type: "string"
+                    cpp_type: "std::string"
                   }
                 }
                 params {
@@ -1596,7 +2123,7 @@ class ToprotoTest(unittest.TestCase):
                   }
                   type {
                     lang_type: "bytes"
-                    cpp_type: "string"
+                    cpp_type: "std::string"
                   }
                 }
               }
@@ -1626,34 +2153,112 @@ class ToprotoTest(unittest.TestCase):
         }
         """, add_extra_init=False)
 
+  def testDocString(self):
+    self.ClifEqualWithTypes('''\
+      from clif.helpers import Replacer
+      from "animals.h":
+        class Animal:
+          """Animal class comment"""
+        class DogCat:
+          """DogCat
+          multiline
+          comment"""
+          def bark(self) -> None:
+            """bark comment"""
+          def meow(self) -> int:
+            """meow
+            multiline"""
+            return Replacer(...)
+      ''', """\
+      source: "clif_python_pytd2proto_test"
+      usertype_includes: "clif/python/types.h"
+      decls {
+        decltype: CLASS
+        cpp_file: "animals.h"
+        line_number: 3
+        class_ {
+          name {
+            native: "Animal"
+            cpp_name: "Animal"
+          }
+          docstring: "Animal class comment"
+        }
+      }
+      decls {
+        decltype: CLASS
+        cpp_file: "animals.h"
+        line_number: 5
+        class_ {
+          name {
+            native: "DogCat"
+            cpp_name: "DogCat"
+          }
+          members {
+            decltype: FUNC
+            line_number: 9
+            func {
+              name {
+                native: "bark"
+                cpp_name: "bark"
+              }
+              docstring: "bark comment"
+            }
+          }
+          members {
+            decltype: FUNC
+            line_number: 11
+            func {
+              name {
+                native: "meow"
+                cpp_name: "meow"
+              }
+              returns {
+                type {
+                  lang_type: "int"
+                  cpp_type: "int"
+                }
+              }
+              postproc: "clif.helpers.Replacer"
+              docstring: "meow\\n      multiline"
+            }
+          }
+          docstring: "DogCat\\n    multiline\\n    comment"
+        }
+      }
+    """, add_extra_init=True)
+
 
 class IncludeTest(unittest.TestCase):
 
   def setUp(self):
+    super(IncludeTest, self).setUp()
     self._path_prefix = os.environ['CLIF_DIR']
     self._cpp_string = 'std::string'
 
   def testInclude(self):
-    typetable = {}
+    typetable = pytd2proto._TypeTable()
     capsule = {}
     macro = {}
     init = []
-    with open(self._path_prefix + '/clif/python/types.h') as t:
+    with open(self._path_prefix + '/python/types.h') as t:
       list(pytd2proto._read_include(t, 'fname', '', typetable, capsule, macro,
                                     init))
-    self.assertIn(self._cpp_string, typetable.get('bytes'), str(typetable))
+    self.assertIn(self._cpp_string, typetable.get_last_cpp_type('bytes'),
+                  str(typetable))
     self.assertFalse(init)
 
   def testIncludeAs(self):
-    typetable = {}
+    typetable = pytd2proto._TypeTable()
     capsule = {}
     macro = {}
     init = []
-    with open(self._path_prefix + '/clif/python/types.h') as t:
+    with open(self._path_prefix + '/python/types.h') as t:
       list(pytd2proto._read_include(t, 'fname', 'v.', typetable, capsule, macro,
                                     init))
-    self.assertIn(self._cpp_string, typetable.get('v.bytes'), str(typetable))
-    self.assertNotIn('bytes', typetable, str(typetable))
+
+    actual_cpp_types = typetable.get_last_cpp_type('v.bytes')
+    self.assertIn(self._cpp_string, actual_cpp_types, str(typetable))
+    self.assertFalse(typetable.has_type('bytes'), str(typetable))
     self.assertFalse(init)
 
 

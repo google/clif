@@ -17,11 +17,10 @@
 #define CLIF_TESTING_T10_H_
 
 #include <Python.h>
-#include "clif/testing/t2.h"
 
-namespace t9 {
-class Base;
-}
+#include "clif/testing/t2.h"
+#include "clif/testing/t9.h"
+
 void TakeBase(std::unique_ptr<t9::Base>) {}
 
 K* CreateK() { return new K(0); }
@@ -34,4 +33,7 @@ struct A : K {
   PyObject* __str__() { return PyUnicode_FromString("A"); }
 #endif
 };
+
+inline PyObject* ConversionFunctionCheck(PyObject* x) { return x; }
+
 #endif  // CLIF_TESTING_T10_H_

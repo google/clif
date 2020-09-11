@@ -43,6 +43,10 @@ std::unique_ptr<std::vector<Nested>> vector_inside_unique_ptr() {
   return v;
 }
 
+MovableButUncopyable func_return_movable_but_uncopyable_type() {
+  return MovableButUncopyable(100);
+}
+
 void take_nocopy_class(MovableButUncopyable*) {
 }
 

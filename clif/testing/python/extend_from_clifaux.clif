@@ -1,0 +1,90 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from "clif/testing/python/extend_from_clifaux_clif_aux.h":
+  namespace `clif_testing::extend_from_clifaux`:
+    class WhatHappened:
+      def __init__(self)
+      def Record(self, event: str)
+      def Last(self) -> str
+
+      @extend
+      def void_raw_ptr(self)
+      @extend
+      def void_shared_ptr(self)
+      @extend
+      def void_by_value(self)
+      @extend
+      def void_cref(self)
+      @extend
+      def void_ref(self)
+
+      @extend
+      def int_raw_ptr(self) -> int
+      @extend
+      def int_shared_ptr(self) -> int
+      @extend
+      def int_by_value(self) -> int
+      @extend
+      def int_cref(self) -> int
+      @extend
+      def int_ref(self) -> int
+
+      @extend
+      def void_raw_ptr_int(self, i: int)
+      @extend
+      def void_shared_ptr_int(self, i: int)
+      @extend
+      def void_by_value_int(self, i: int)
+      @extend
+      def void_cref_int(self, i: int)
+      @extend
+      def void_ref_int(self, i: int)
+
+      @extend
+      def int_raw_ptr_int(self, i: int) -> int
+      @extend
+      def int_shared_ptr_int(self, i: int) -> int
+      @extend
+      def int_by_value_int(self, i: int) -> int
+      @extend
+      def int_cref_int(self, i: int) -> int
+      @extend
+      def int_ref_int(self, i: int) -> int
+
+      @extend
+      def int_raw_ptr_int_int(self, i: int, j: int) -> int
+      @extend
+      def int_shared_ptr_int_int(self, i: int, j: int) -> int
+      @extend
+      def int_by_value_int_int(self, i: int, j: int) -> int
+      @extend
+      def int_cref_int_int(self, i: int, j: int) -> int
+      @extend
+      def int_ref_int_int(self, i: int, j: int) -> int
+
+      @extend
+      def `custom_function_name` as chosen_method_name(self, i: int, j: int) -> int
+      @extend
+      def `::clif_testing::extend_from_clifaux::ns_down::function` as ns_down_method(self, i: int, j: int) -> int
+      @extend
+      def `::clif_testing::ns_up_function` as ns_up_method(self, i: int, j: int) -> int
+
+    class `ToBeRenamed` as RenamedForPython(WhatHappened):
+      @extend
+      def int_raw_ptr_int_int(self, i: int, j: int) -> int
+      @extend
+      def `tbr_custom_function_name` as chosen_method_name(self, i: int, j: int) -> int
+      @extend
+      def `::clif_testing::extend_from_clifaux::ns_down::tbr_function` as ns_down_method(self, i: int, j: int) -> int

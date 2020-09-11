@@ -1,206 +1,0 @@
-
-$clif/testing/python/t2.clifclif/python/types.h�clif/testing/t2.h R�
-
-
-KlassK. r(
-
-__init__K
-
-ii
-
-intint� j
-
-CC
-
-intint' r!
-
-C2	getCplus2
-
-intintX  r
-
-
-Int1i1
-
-intintK bE
-
-ii
-
-intint
-get
-
-intint"
-set
-
-intint�4 	b.
-
-i2i2
-
-intint
-get2
-
-intintZclif/testing/t2.h 
-r8
-
-k_checktakeK
-
-kk
-
-KlassK
-boolbooldclif/testing/t2.h rB
-
-k_modifyk_modify
-
-kk
-
-KlassK
-
-vv
-
-intintFclif/testing/t2.h r$
-
-k_returnk_return
-
-KlassK�clif/testing/t2.h R�
-
-DerivedDerived
-Klass b
-
-jj
-
-intintF r@
-
-InitDerived
-
-ii
-
-intint
-
-jj
-
-intint�A r;
-
-__contains__has
-
-kk
-
-intint
-boolbool�clif/testing/t2.h Re
-
-AbstractAbstract% j
-
-KINDKIND
-bytesstring& r 
-
-FutureFuture
-
-intintXclif/testing/t2.h r6
-&
-InconstructibleFInconstructible::F
-
-intint�clif/testing/t2.h R_
-,
-NoDefaultConstructorNoDefaultConstructor/ b)
-
-aa
-
-intint
-A
-
-intint�clif/testing/t2.h R�
-
-NoCopyNoCopy< r6
-
-__init__NoCopy
-
-aa
-
-intintdefault�/  b)
-
-aa
-
-intint
-A
-
-intint�clif/testing/t2.h "R�
-
-
-NoCopyCtor
-NoCopyCtor@ #r:
-
-__init__
-NoCopyCtor
-
-aa
-
-intintdefault�/ $b)
-
-aa
-
-intint
-A
-
-intint�clif/testing/t2.h &R�
-$
-NoCopyAssignCtorNoCopyAssignCtorF 'r@
-
-__init__NoCopyAssignCtor
-
-aa
-
-intintdefault�/ (b)
-
-aa
-
-intint
-A
-
-intint�clif/testing/t2.h *R�
-
-NoCopyAssignNoCopyAssignB +r<
-
-__init__NoCopyAssign
-
-aa
-
-intintdefault�/ ,b)
-
-aa
-
-intint
-A
-
-intintmclif/testing/t2.h .RK
-
-CtxMgrCtxMgr /r
-
-
-__enter__@Lock 1r
-
-	__exit__@Unlock�clif/testing/t2.h 4Ry
-
-NestedNested2 5R,
-
-InnerInner 6b
-
-aa
-
-intint1 7b+
-i
-InnerInner	
-
-get_i"	
-
-set_iyclif/testing/t2.h <rW
-$
-all_nocopy_holdsall_nocopy_holds/-
-list<NoCopy>std::vector
-NoCopyNoCopy�clif/testing/t2.h >rg
-4
-vector_inside_unique_ptrvector_inside_unique_ptr/-
-list<Nested>std::vector
-NestedNested�clif/testing/t2.h @Ry
-6
-NestedContainerAttributesNestedContainerAttributes? Ab9
- 
-int_set_vectorint_set_vector
-_vector<set<int>>

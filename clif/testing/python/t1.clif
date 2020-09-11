@@ -14,6 +14,13 @@
 
 from "clif/testing/t1.h":
   def `int_id` as IntId(x: int) -> int
-  def `int_plus3` as Sum3(a:int, b:int=default, c:int=default) -> int
+  def `int_plus3` as Sum3(a:int, b:int=default, c:int=default) -> int:
+    """This function has a docstring.
+
+    It spans multiple lines.  Plus trailing whitespace.
+
+    None of that should be a problem for the parser or code generator.
+
+    """
   def StdString() -> str
   def `StdString` as StdBytes() -> bytes

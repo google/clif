@@ -20,6 +20,9 @@
 #include <vector>
 #include <set>
 
+// This comment intentionally includes UTF-8 characters as an IO test.
+//   "Use pytype 🦆✔  - make code maintainers happy!"
+
 class K {
  public:
   explicit K(int i): i_(i) {}
@@ -90,15 +93,6 @@ class NoMove {
   int A() { return a_; }
 };
 
-class MovableButUncopyable {
-  std::unique_ptr<int> a_;
- public:
-  explicit MovableButUncopyable(int a = 0) : a_(new int(a)) {}
-  int A() { return *a_; }
-};
-
-void take_nocopy_class(MovableButUncopyable*);
-
 struct CtxMgr {
   CtxMgr(): state(CtxMgr::UNDEFINED) {}
   enum State { UNDEFINED, UNLOCKED, LOCKED };
@@ -119,6 +113,43 @@ struct NestedContainerAttributes {
 
 std::vector<std::unique_ptr<NoCopy>> all_nocopy_holds();
 std::unique_ptr<std::vector<Nested>> vector_inside_unique_ptr();
+
+class MovableButUncopyable {
+ public:
+  explicit MovableButUncopyable(int a = 0) : a_(new int(a)) {}
+  MovableButUncopyable(MovableButUncopyable&&) = default;
+  MovableButUncopyable& operator=(MovableButUncopyable&&) = default;
+  int get_a() { return *a_; }
+  void set_a(int value) { a_.reset(new int(value)); }
+
+ private:
+  std::unique_ptr<int> a_;
+};
+
+MovableButUncopyable func_return_movable_but_uncopyable_type();
+
+void take_nocopy_class(MovableButUncopyable*);
+
+class OutputParameter {
+ public:
+  // The initial value of the output parameter "output" will not be reflected at
+  // Python side. CLIF generated code constructs a "MovableButUncopyable" type
+  // object and passes the address of the object into the function.
+  //
+  // The output parameter "output" can either modify the "MovableButUncopyable"
+  // type object in CLIF generated code:
+  void MovableButUncopyableOutputParameter1(MovableButUncopyable* output) {
+    if (output) {
+      output->set_a(100);
+    }
+  }
+
+  // Or point to another "MovableButUncopyable" type object:
+  void MovableButUncopyableOutputParameter2(MovableButUncopyable* output) {
+    MovableButUncopyable temp(1);
+    *output = std::move(temp);
+  }
+};
 
 inline NoDefaultConstructor make_ndefctor(int x = 0) {
   return NoDefaultConstructor(x);

@@ -16,7 +16,6 @@
 
 #include "gtest/gtest.h"
 
-
 namespace clif {
 
 using clif::TranslationUnitAST;
@@ -115,4 +114,3 @@ TEST_F(TranslationUnitASTTest, FindConversionFunctions) {
 }
 
 }  // namespace clif
-

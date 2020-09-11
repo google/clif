@@ -14,10 +14,13 @@
 
 """Tests for clif.python.pytd_parser."""
 
+from __future__ import absolute_import
+from __future__ import division
 from __future__ import print_function
+
 import textwrap
+from absl.testing import absltest
 import pyparsing as pp
-import unittest
 from clif.python.pytd_parser import *  # pylint: disable=wildcard-import
 # pylint: disable=undefined-variable
 
@@ -32,9 +35,10 @@ def Parse(string):
     raise
 
 
-class PytdParserTest(unittest.TestCase):
+class PytdParserTest(absltest.TestCase):
 
   def setUp(self):
+    super(PytdParserTest, self).setUp()
     reset_indentation()
 
   def _Parse(self, t, a, unused_b=''):
@@ -86,12 +90,12 @@ class PytdParserTest(unittest.TestCase):
             [['::x', 'x'], ['y']])
 
   def testVar(self):
-    self.EQ(vardef, 'x : str', ['var', 0, ['x'], [['str']]])
-    self.EQ(vardef, '`::x` as x: str', ['var', 0, ['::x', 'x'], [['str']]])
+    self.EQ(vardef, 'x : str', ['var', 0, [], ['x'], [['str']]])
+    self.EQ(vardef, '`::x` as x: str', ['var', 0, [], ['::x', 'x'], [['str']]])
     self.EQ(vardef, 'x : dict<str, String>',
-            ['var', 0, ['x'], [['dict'], [[['str']]], [[['String']]]]])
+            ['var', 0, [], ['x'], [['dict'], [[['str']]], [[['String']]]]])
     self.EQ(vardef, 'x: str = property(`A`, `setA`)',
-            ['var', 0, ['x'], [['str']], 'A', 'setA'])
+            ['var', 0, [], ['x'], [['str']], 'A', 'setA'])
 
   def testFunc(self):
     self.EQ(funcdef, 'def `F` as f()', ['func', 0, [], ['F', 'f'], []])
@@ -145,22 +149,22 @@ class PytdParserTest(unittest.TestCase):
 
   def testFromNsErr(self):
     # Keep feature parity with unittest (avoid assertRaisesWithPredicateMatch).
-    with self.assertRaises(pp.ParseSyntaxException) as exception_ctx:
+    with self.assertRaises(pp.ParseSyntaxException) as ctx:
       self._Parse(from_stmt, ('from "abc":\n'
                               '  namespace `x`:\n'
                               '    namespace `y`:\n'
                               '      def f()'))
-      self.assertIn('indented block (at char 33)', exception_ctx)
+    self.assertIn('indented block (at char 33)', str(ctx.exception))
 
   def testFromErr1(self):
     # Keep feature parity with unittest (avoid assertRaisesWithPredicateMatch).
-    with self.assertRaises(pp.ParseSyntaxException) as exception_ctx:
+    with self.assertRaises(pp.ParseSyntaxException) as ctx:
       self._Parse(from_stmt, textwrap.dedent('''\
           from "wireless/android/contentreview/label/app_category.h":
             namespace `wireless_android_contentreview_label`:
               app_category_map: `std::map` as dict<int, str>
           '''))
-      self.assertIn('indented block (at char 116)', exception_ctx)
+    self.assertIn('indented block (at char 116)', str(ctx.exception))
 
   def testFromF1(self):
     self.EQ(from_stmt, 'from "abc":\n  def f()',
@@ -192,6 +196,11 @@ class PytdParserTest(unittest.TestCase):
             ['class', 0, [], ['Abc'], [['B']],
              [['func', 16, [], ['f'], 'self', []]]])
     reset_indentation()
+    self.EQ(classdef, 'class Abc(B.C):\n  def f(self)', [
+        'class', 0, [], ['Abc'], [['B.C']],
+        [['func', 18, [], ['f'], 'self', []]]
+    ])
+    reset_indentation()
     self.EQ(classdef, 'class Abc(A, B):\n  def f(self)',
             ['class', 0, [], ['Abc'], [['A'], ['B']],
              [['func', 19, [], ['f'], 'self', []]]])
@@ -206,8 +215,13 @@ class PytdParserTest(unittest.TestCase):
              [['func', 36, [], ['f'], 'self', []]]])
     reset_indentation()
     self.EQ(classdef, 'class Abc:\n  implements f<x, y>',
-            ['class', 0, [], ['Abc'], [],
-             [['implements', 13, 'f', 'x', 'y']]])
+            ['class', 0, [], ['Abc'], [], [['implements', 13, 'f', 'x', 'y']]])
+    reset_indentation()
+    # b/158116013
+    self.EQ(classdef, 'class Abc:\n  implements f<dotted.x, dotted.y>', [
+        'class', 0, [], ['Abc'], [],
+        [['implements', 13, 'f', 'dotted.x', 'dotted.y']]
+    ])
 
   def testClassDecorators(self):
     self.EQ(classdef, '@shared\nclass Abc:\n  def f(self)',
@@ -286,4 +300,4 @@ class PytdParserTest(unittest.TestCase):
       '''))
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

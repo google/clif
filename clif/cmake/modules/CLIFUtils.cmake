@@ -50,7 +50,7 @@ endfunction(add_protobuf_library_directories)
 
 function(add_target_protobuf_link_libraries target)
   if(GOOGLE_PROTOBUF_LIBRARIES)
-    target_link_libraries(${target} ${GOOGLE_PROTOBUF_LIBRARIES})
+    target_link_libraries(${target} PUBLIC ${GOOGLE_PROTOBUF_LIBRARIES})
   endif(GOOGLE_PROTOBUF_LIBRARIES)
 endfunction(add_target_protobuf_link_libraries target)
 
@@ -224,7 +224,12 @@ function(add_pyclif_library name pyclif_file)
   )
 
   add_target_protobuf_link_libraries(${lib_target_name})
-  target_link_libraries(${lib_target_name}
+
+  # Specify the keyword for target_link_libraries because add_llvm_executable
+  # uses keyword target_link_libraries signature.
+  # Plain and keyword target_link_libraries signatures cannot be mixed.
+  # https://cmake.org/cmake/help/v3.0/policy/CMP0023.html
+  target_link_libraries(${lib_target_name} PUBLIC
     ${PYCLIF_LIBRARY_CC_DEPS}
     ${PYCLIF_LIBRARY_CLIF_DEPS}
     ${PYCLIF_LIBRARY_PROTO_DEPS}

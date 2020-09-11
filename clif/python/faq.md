@@ -81,7 +81,7 @@ NumPy types to/from. Users must write the conversions.
 CLIF input parameter add the following to the SWIG-wrapper:
 ```
 %extend %{
-PyObject* as_my_Foo() { return PyCapsule_New($self, “::my::Foo”, NULL); }
+PyObject* as_my_Foo() { return PyCapsule_New($self, "::my::Foo", NULL); }
 %}
 ```
 
@@ -160,17 +160,23 @@ on base class pointer assignment) but CLIF will know that a proper derived class
 
 #### **Q:** I'm getting a compile error: no matching function for call to 'Clif_PyObjAs'
 
-**A:** The .clif file declares a valid C++ type but does not import a CLIF
+**A:** Consider if your case matches with any of the following two conditions:
+
+**Case1:** The .clif file declares a valid C++ type but does not import a CLIF
 wrapper for that type, so CLIF does not know how to deal with it. Look at the
-error - next lines show candidates with that type <code>no known conversion
-from <strong>'unknown_type</strong> *'</code>.
-Use a [c_header_import](README.md#c_header-import-statement-cimport) statement
-to tell CLIF about this type.
+error - next lines show candidates with that type <code>no known conversion from
+<strong>'unknown_type</strong> *'</code>. Use a
+[c_header_import](README.md#c_header-import-statement-cimport) statement to tell
+CLIF about this type.
+
+**Case2:** Clif does not support wrapping C++’s pointers to containers types as
+functions' input parameters. Change C++ function’s interface or add a wrapper,
+make sure the C++ input container type being wrapped is not a pointer.
 
 #### **Q:** I'm getting a compile error: call to deleted function 'Clif_PyObjFrom'
 
 **A:** Python was trying create a copy on non-copyable C++ object. Either it was
-an attempt of passing it by value or by const* (see [above](#q-what-about-const-t)).
+an attempt of passing it by value or by const* (see [above][q-what-about-const-t]).
 
 #### **Q:** I’m getting a compile error: functions that differ only in their return type cannot be overloaded
 
@@ -181,7 +187,9 @@ with a standard function. You need to rename the C++ header file.
 
 #### **Q:** I’m getting a TypeError: {function} argument {name} is not valid for ::absl::string_view (unicode given): expecting str.
 
-**A:** This is a Python 2 only problem. Due to a limited API, there is nobody
+**A:** Usually, the solution is to wrap the argument with str({name}).
+
+This is a Python 2 only problem. Due to a limited API, there is nobody
 to handle intermediate PyObject with encoded str. Consider a
 `std::vector<absl::string_view>` getting unicode input. Each str creates an
 encoded PyObject and either they leak or get destroyed immediately after we

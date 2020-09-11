@@ -14,8 +14,8 @@
 
 """Tests for clif.testing.python.virtual_funcs."""
 
-import weakref
 import unittest
+import weakref
 from clif.testing.python import virtual_funcs
 
 
@@ -127,6 +127,16 @@ class VirtualTest(unittest.TestCase):
     del non_def_impl
     # test non_def_impl deleted ...
     self.assertIsNone(wr())
+
+  def testReturnsObject(self):
+
+    class TestReturnsObjectImpl(virtual_funcs.TestReturnsObject):
+
+      def CreateObject(self):
+        return object()
+
+    instance = TestReturnsObjectImpl()
+    self.assertEqual(instance.GetRefcntOfResult(), 1)
 
 
 class SmartPtrsTest(unittest.TestCase):

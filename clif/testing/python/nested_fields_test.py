@@ -65,7 +65,7 @@ class NestedFieldsTest(unittest.TestCase):
 
   def testNestedProperties(self):
     # Properties and unproperties call functions which return the field values.
-    # We copy the returned values and do not modidy in-place (infact,
+    # We copy the returned values and do not modify in-place (infact,
     # "in-place" does not have any meaning for such cases.)
     c = nested_fields.CC()
     c.i = 123
@@ -83,6 +83,39 @@ class NestedFieldsTest(unittest.TestCase):
     b.d.i = 321
     # Modifying |d| above did not modify the field in |b|.
     self.assertEqual(b.d.i, 123)
+
+  def testNestedPointers(self):
+    # Wrapped borrowed pointer vars do not modify in-place.
+    d = nested_fields.DD()
+    d.i = 123
+    a = nested_fields.AA()
+    a.dp = d
+    self.assertEqual(a.dp.i, 123)
+    a.dp.i = 321
+    self.assertEqual(a.dp.i, 123)
+    x = a.dp
+    self.assertIsNot(d, x)
+    self.assertEqual(d.i, x.i)
+    x.i = 321
+    self.assertEqual(a.dp.i, 123)
+
+    # Wrapped shared_ptr vars modify in-place.
+    a.ds = d
+    self.assertEqual(a.ds.i, 123)
+    a.ds.i = 456
+    self.assertEqual(a.ds.i, 456)
+    self.assertEqual(d.i, 456)
+
+    # Wrapped unique_ptr vars takes ownership (original var no longer valid)
+    # and do not modify in-place.
+    d = nested_fields.DD()
+    d.i = 321
+    a.du = d
+    with self.assertRaises(ValueError):
+      _ = d.i
+    self.assertEqual(a.du.i, 321)
+    a.du.i = 123
+    self.assertEqual(a.du.i, 321)
 
   def testNestedContainers(self):
     a = nested_fields.AA()

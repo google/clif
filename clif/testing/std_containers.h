@@ -16,6 +16,8 @@
 #ifndef CLIF_TESTING_STD_CONTAINERS_H_
 #define CLIF_TESTING_STD_CONTAINERS_H_
 
+#include <array>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -24,6 +26,10 @@
 inline std::vector<int> Mul(std::vector<int> v, int m) {
   for (auto& i : v) { i *= m; }
   return v;
+}
+
+inline std::array<int, 2> Div(std::array<int, 2> v, int m) {
+  return {v[0] / m, v[1] / m};
 }
 
 inline std::vector<bool> Even(const std::vector<int>& v) {
@@ -59,11 +65,11 @@ inline std::vector<std::vector<int>> Ones(int r, int c) {
 }
 
 // list of tuples return value
-inline std::vector<std::pair<string, string>> Capitals() {
-  std::vector<std::pair<string, string>> capitals;
-  capitals.push_back(std::pair<string, string>("CA", "Sacramento"));
-  capitals.push_back(std::pair<string, string>("OR", "Salem"));
-  capitals.push_back(std::pair<string, string>("WA", "Olympia"));
+inline std::vector<std::pair<std::string, std::string>> Capitals() {
+  std::vector<std::pair<std::string, std::string>> capitals;
+  capitals.push_back(std::pair<std::string, std::string>("CA", "Sacramento"));
+  capitals.push_back(std::pair<std::string, std::string>("OR", "Salem"));
+  capitals.push_back(std::pair<std::string, std::string>("WA", "Olympia"));
   return capitals;
 }
 
@@ -93,6 +99,14 @@ const std::tuple<std::tuple<int, int, int>, std::tuple<int, int, int>>& m) {
                          std::get<0>(std::get<1>(m)),
                          std::get<1>(std::get<1>(m)),
                          std::get<2>(std::get<1>(m)));
+}
+
+inline void LastStringInVector(const std::vector<std::string>& v,
+                               std::string* output) {
+  if (!v.empty())
+    *output = v.back();
+  else
+    output->clear();
 }
 
 #endif  // CLIF_TESTING_STD_CONTAINERS_H_

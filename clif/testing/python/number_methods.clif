@@ -1,0 +1,66 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from "clif/testing/number_methods.h":
+  namespace `clif_testing`:
+    class Number:
+      # The class includes all PyNumberMethods listed on the following link
+      # https://docs.python.org/3.7/c-api/typeobj.html#c.PyNumberMethods
+      # except "nb_matrix_multiply" and "nb_inplace_matrix_multiply", which are
+      # PY3 only.
+      value: float
+
+      def __init__(self, v: float)
+
+      def `operator+` as __add__(self, other: Number) -> Number
+      def `operator-` as __sub__(self, other: Number) -> Number
+      def `operator*` as __mul__(self, other: Number) -> Number
+      def `operator/` as __div__(self, other: Number) -> Number
+      def `operator%` as __mod__(self, other: Number) -> Number
+      def `clif_testing::power` as __pow__(self, exponent: Number, modulus: Number) -> Number
+      # https://bugs.python.org/issue36379
+      # def `inplace_power` as __ipow__(self, exponent: Number, modulus: Number) -> self
+      def `clif_testing::divmod` as __divmod__(self, other: Number) -> tuple<Number, Number>
+
+      def `negative` as __neg__(self) -> Number
+      def `positive` as __pos__(self) -> Number
+      def `absolute` as __abs__(self) -> Number
+      def `operator~` as __invert__(self) -> Number
+      def `operator<<` as __lshift__(self, n: int) -> Number
+      def `operator>>` as __rshift__(self, n: int) -> Number
+      def `operator&` as __and__(self, other: Number) -> Number
+      def `operator^` as __xor__(self, other: Number) -> Number
+      def `operator|` as __or__(self, other: Number) -> Number
+
+      def `to_int` as __int__(self) -> int
+      def `to_float` as __float__(self) -> float
+      def `to_bool` as __bool__(self) -> bool
+
+      def `operator+=` as __iadd__(self, other: Number) -> self
+      def `operator-=` as __isub__(self, other: Number) -> self
+      def `operator*=` as __imul__(self, other: Number) -> self
+      def `operator/=` as __idiv__(self, other: Number) -> self
+      def `operator%=` as __imod__(self, other: Number) -> self
+      def `operator<<=` as __ilshift__(self, n: int) -> self
+      def `operator>>=` as __irshift__(self, n: int) -> self
+      def `operator&=` as __iand__(self, other: Number) -> self
+      def `operator^=` as __ixor__(self, other: Number) -> self
+      def `operator|=` as __ior__(self, other: Number) -> self
+
+      def `clif_testing::floor_division` as __floordiv__(self, other: Number) -> Number
+      def `operator/` as __truediv__(self, other: Number) -> Number
+      def `inplace_floor_division` as __ifloordiv__(self, other: Number) -> self
+      def `operator/=` as __itruediv__(self, b:Number) -> self
+
+      def `to_int` as __index__(self) -> int

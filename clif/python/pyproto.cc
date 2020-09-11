@@ -74,18 +74,37 @@ class ModNameComponents {
 
 namespace clif {
 
-bool Clif_PyObjAs(PyObject* py, std::unique_ptr<::proto2::Message>* c) {
-  assert(c != nullptr);
+namespace proto {
+
+// Get py.DESCRIPTOR.full_name as a new object.
+PyObject* GetMessageName(PyObject* py) {
   PyObject* pyd = PyObject_GetAttrString(py, C("DESCRIPTOR"));
-  if (pyd == nullptr) return false;
+  if (pyd == nullptr) return nullptr;
   PyObject* fn = PyObject_GetAttrString(pyd, C("full_name"));
   Py_DECREF(pyd);
-  if (fn == nullptr) return false;
+  if (fn == nullptr) return nullptr;
+#if PY_MAJOR_VERSION < 3
+  // Global DB returns unicode names.
+  if (PyUnicode_Check(fn)) {
+    PyObject* s = PyUnicode_AsUTF8String(fn);
+    Py_DECREF(fn);
+    if (s == nullptr) return nullptr;
+    fn = s;
+  }
+#endif
   if (!DESCRIPTOR_TypeCheck(fn)) {
     PyErr_SetString(PyExc_TypeError, "DESCRIPTOR.full_name must return str");
     Py_DECREF(fn);
-    return false;
+    return nullptr;
   }
+  return fn;
+}
+}  // namespace proto
+
+bool Clif_PyObjAs(PyObject* py, std::unique_ptr<::proto2::Message>* c) {
+  CHECK(c != nullptr);
+  PyObject* fn = proto::GetMessageName(py);
+  if (fn == nullptr) return false;
   const proto2::DescriptorPool* dp = proto2::DescriptorPool::generated_pool();
   if (dp == nullptr) {
     PyErr_SetNone(PyExc_MemoryError);
@@ -107,23 +126,20 @@ bool Clif_PyObjAs(PyObject* py, std::unique_ptr<::proto2::Message>* c) {
     PyErr_SetNone(PyExc_MemoryError);
     return false;
   }
-  {
-    if (!proto::TypeCheck(
-        py, ImportFQName("google.protobuf.message.Message"),
-        "", "proto2_Message_subclass")) return false;
-    PyObject* ser = proto::Serialize(py);
-    if (ser == nullptr) return false;
-    std::unique_ptr<proto2::io::CodedInputStream> coded_input_stream(new
-        proto2::io::CodedInputStream(
-            reinterpret_cast<uint8_t*>(PyBytes_AS_STRING(ser)),
-            PyBytes_GET_SIZE(ser)));
-    if (!m->MergePartialFromCodedStream(coded_input_stream.get())) {
-      PyErr_SetString(PyExc_ValueError, "Parse from serialization failed");
-      Py_DECREF(ser);
-      return false;
-    }
+  if (!proto::TypeCheck(
+      py, ImportFQName("google.protobuf.message.Message"),
+      "", "proto2_Message_subclass")) return false;
+  PyObject* ser = proto::Serialize(py);
+  if (ser == nullptr) return false;
+  proto2::io::CodedInputStream coded_input_stream(
+      reinterpret_cast<uint8_t*>(PyBytes_AS_STRING(ser)),
+      PyBytes_GET_SIZE(ser));
+  if (!m->MergePartialFromCodedStream(&coded_input_stream)) {
+    PyErr_SetString(PyExc_ValueError, "Parse from serialization failed");
     Py_DECREF(ser);
+    return false;
   }
+  Py_DECREF(ser);
   *c = ::std::unique_ptr<::proto2::Message>(m);
   return true;
 }
@@ -131,13 +147,18 @@ bool Clif_PyObjAs(PyObject* py, std::unique_ptr<::proto2::Message>* c) {
 namespace proto {
 
 bool SetNestedName(PyObject** module_name, const char* nested_name) {
-  assert(module_name != nullptr);
-  assert(*module_name != nullptr);
-  assert(nested_name != nullptr);
+  DCHECK(module_name != nullptr);
+  DCHECK(*module_name != nullptr);
+  DCHECK(nested_name != nullptr);
   if (*nested_name) {
     for (const auto& n : ModNameComponents(nested_name)) {
-      PyObject* atr = PyObject_GetAttr(
-          *module_name, PyString_FromStringAndSize(n.data(), n.size()));
+      PyObject* attr_name = PyString_FromStringAndSize(n.data(), n.size());
+      if (attr_name == nullptr) {
+        Py_DECREF(*module_name);
+        return false;
+      }
+      PyObject* atr = PyObject_GetAttr(*module_name, attr_name);
+      Py_DECREF(attr_name);
       Py_DECREF(*module_name);
       if (atr == nullptr) return false;
       *module_name = atr;
@@ -149,10 +170,10 @@ bool SetNestedName(PyObject** module_name, const char* nested_name) {
 // Check the given pyproto to be class_name instance.
 bool TypeCheck(PyObject* pyproto,
               PyObject* imported_pyproto_class,  // takes ownership
-              const char* nested_name,
+              const char* element_name,
               const char* class_name) {
   if (imported_pyproto_class == nullptr) return false;  // Import failed.
-  if (!SetNestedName(&imported_pyproto_class, nested_name)) return false;
+  if (!SetNestedName(&imported_pyproto_class, element_name)) return false;
   int proto_instance = PyObject_IsInstance(pyproto, imported_pyproto_class);
   Py_DECREF(imported_pyproto_class);
   if (proto_instance < 0 ) return false;  // Exception already set.
@@ -177,17 +198,40 @@ PyObject* Serialize(PyObject* pyproto) {
   return raw;
 }
 
+// If pyproto.DESCRIPTOR.full_name in C++ generated pool and is same as cproto,
+// copy pyproto into cproto and return true else return false.
+bool InGeneratedPool(PyObject* pyproto, proto2::Message* cproto) {
+  if (cproto->GetDescriptor()) {
+    PyObject *ptype, *pvalue, *ptraceback;
+    PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+    if (PyObject* full_name = GetMessageName(pyproto)) {
+      std::string py_name(PyString_AS_STRING(full_name));
+      Py_DECREF(full_name);
+      if (py_name == cproto->GetDescriptor()->full_name()) {
+        // Try to get the named message from the C++ generated pool.
+        std::unique_ptr<proto2::Message> temp;
+        PyErr_Clear();
+        if (Clif_PyObjAs(pyproto, &temp)) {
+          cproto->CopyFrom(*temp);
+          return true;
+        }
+      }
+    }
+    PyErr_Restore(ptype, pvalue, ptraceback);
+  }
+  return false;
+}
 
 PyObject* PyProtoFrom(const ::proto2::Message* cproto,
                       PyObject* imported_pyproto_class,
-                      const char* nested_name) {
-  assert(cproto != nullptr);
+                      const char* element_name) {
+  DCHECK(cproto != nullptr);
   if (imported_pyproto_class == nullptr) return nullptr;  // Import failed.
-  if (!SetNestedName(&imported_pyproto_class, nested_name)) return nullptr;
+  if (!SetNestedName(&imported_pyproto_class, element_name)) return nullptr;
   PyObject* pb = PyObject_CallObject(imported_pyproto_class, nullptr);
   Py_DECREF(imported_pyproto_class);
   if (pb == nullptr) return nullptr;
-    string bytes = cproto->SerializePartialAsString();
+  std::string bytes = cproto->SerializePartialAsString();
 #if PY_MAJOR_VERSION < 3
   // Python will automatically intern strings that are small, or look like
   // identifiers, so there is no actual need to call InternFromString and it's

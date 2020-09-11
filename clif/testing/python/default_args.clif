@@ -26,6 +26,7 @@ from "clif/testing/default_args.h":
     def MethodWithDefaultPtrArg(self, a: Arg = default, i: int = default) -> int
     def MethodWithDefaultFlag(self, f: int = default, i: int = default) -> int
     def MethodThrowAwayDefault(self, input1: int, input2: int) -> int
+    def `MethodThrowAwayDefault` as MethodThrowAwayDefault2 (self, input1: int, input2: int)
 
     # ValueError: A default for integral type pointer argument is not supported. Drop =default in def MethodWithOutputDefault1(input2).
     # def `MethodWithOutputDefault` as MethodWithOutputDefault1(self, input1: int = default, input2: int = default)

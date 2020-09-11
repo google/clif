@@ -18,7 +18,7 @@
 
 #include <memory>
 #include <vector>
-#include "clif/python/ptr_util.h"
+#include "absl/memory/memory.h"
 #include "clif/protos/ast.pb.h"
 #include "clif/testing/nested.pb.h"
 
@@ -39,7 +39,7 @@ inline Decl::Type decl_type_uniq_in(std::unique_ptr<Decl> t) {
   return t->decltype_();
 }
 inline std::unique_ptr<Decl::Type> decl_type_uniq_out(const Decl& pb) {
-  return gtl::MakeUnique<Decl::Type>(pb.decltype_());
+  return absl::make_unique<Decl::Type>(pb.decltype_());
 }
 
 inline int size_any_ref(const ::proto2::Message& pb) { return pb.ByteSize(); }
@@ -53,10 +53,12 @@ using clif::testing::Outer;
 inline Outer::Inner::Nested nested(const Outer::Inner& pb) { return pb.val(); }
 
 inline std::unique_ptr<Decl> GetUniquePtr(const Decl& pb) {
-  return gtl::MakeUnique<Decl>(pb);
+  return absl::make_unique<Decl>(pb);
 }
 inline std::shared_ptr<Decl> GetSharedPtr(const Decl& pb) {
   return std::make_shared<Decl>(pb);
 }
+
+inline Outer::Inner ReturnProto(const Outer::Inner& pb) { return pb; }
 }  // namespace clif_testing
 #endif  // CLIF_TESTING_T4_H_

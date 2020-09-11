@@ -25,9 +25,6 @@ headers are included.
 #include <Python.h>
 #include <string>
 #include "clif/python/instance.h"
-// CHECK_NOTNULL used in generated code, so it belongs here.
-// NOLINTNEXTLINE(whitespace/line_length) because of MOE, result is within 80.
-#define CHECK_NOTNULL(condition) (assert((condition) != nullptr),(condition))
 using std::string;
 
 extern "C" int Clif_PyType_Inconstructible(PyObject*, PyObject*, PyObject*);
@@ -35,14 +32,18 @@ extern "C" int Clif_PyType_Inconstructible(PyObject*, PyObject*, PyObject*);
 namespace clif {
 namespace python {
 
-string ExcStr(bool add_type = true);
+std::string ExcStr(bool add_type = true);
 
 template <typename T>
 T* Get(const clif::Instance<T>& cpp, bool set_err = true) {
   T* d = cpp.get();
   if (set_err && d == nullptr) {
-    PyErr_SetString(PyExc_ValueError,
-                    "Value invalidated due to capture by std::unique_ptr.");
+    PyErr_Format(PyExc_ValueError,
+                 "Missing value for wrapped C++ type `%s`. "
+                 "Potential root causes: "
+                 "original value captured by std::unique_ptr; "
+                 "or missing call of base class __init__.",
+                 typeid(T).name());
   }
   return d;
 }
@@ -53,7 +54,10 @@ const char* ClassName(PyObject* py);
 const char* ClassType(PyObject* py);
 
 // Load the base Python class.
-PyObject* ImportFQName(const string& full_class_name);
+PyObject* ImportFQName(const std::string& full_class_name);
+PyObject* ImportFQName(const std::string& full_class_name,
+                       const std::string& toplevel_class_name);
+int ClearImportCache(PyObject*);
 
 // Ensure we have enough args for callable.
 bool CallableNeedsNarguments(PyObject* callable, int nargs);
@@ -101,7 +105,7 @@ class SafePyObject {
 };
 
 // When we share a C++ instance to a shared_ptr<T> C++ consumer, we need to make
-// sure that its owner implementing virual functions (Python object) will not
+// sure that its owner implementing virtual functions (Python object) will not
 // go away or leak and keep ownership while we use it.
 template<typename T>
 struct SharedVirtual {
@@ -126,7 +130,7 @@ std::shared_ptr<T> MakeSharedVirtual(Instance<U> cpp, PyObject* py) {
 // It weakrefs back to "self" to get the virtual method object.
 // Also if C++ instance memory ownership moved to C++ code, it owns the "self"
 // object.
-// 
+// TODO: Create a shared __dict__ copy of 'self' that will not lose
 // the C++ pointer after the normal 'self' renounced ownership, for potential
 // use in virtual method run. Currently 'self' can't access C++ class content
 // after it renounced ownership.
@@ -165,6 +169,20 @@ class PyObjRef {
   // Transfer python ownership here when 'self' released to an unique_ptr.
   PyObject* pyowner_;
 };
+
+extern "C" PyObject* pyclif_instance_dict_get(PyObject* self, void*);
+extern "C" int pyclif_instance_dict_set(
+    PyObject* self, PyObject* new_dict, void*);
+extern "C" int pyclif_instance_dict_traverse(
+    PyObject *self, visitproc visit, void *arg);
+extern "C" int pyclif_instance_dict_clear(PyObject *self);
+void pyclif_instance_dict_enable(PyTypeObject* ty, std::size_t dictoffset);
+bool ensure_no_args_and_kw_args(const char* func, PyObject* args, PyObject* kw);
+
+// https://docs.python.org/2/library/pickle.html#pickling-and-unpickling-extension-types
+// https://docs.python.org/3/library/pickle.html#object.__reduce_ex__
+PyObject* ReduceExImpl(PyObject* self, PyObject* args, PyObject* kw);
+
 }  // namespace clif
 
 #endif  // CLIF_PYTHON_RUNTIME_H_

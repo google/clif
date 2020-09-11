@@ -1,5 +1,5 @@
 This dir contains various examples on how to use CLIF to wrap typical code.
-See detailed explanation in [CLIF Python Primer](../clif/python/primer.md).
+See detailed explanation in [CLIF Python Primer](../python/g3doc/primer.md).
 
 Some examples depend on each other, so we create a virtualenv to install
 resulting Python extension modules.
@@ -8,7 +8,8 @@ To build all examples run
 
 ```
 virtualenv /tmp/examples
-cmake -DPYCLIF=${PWD}/../bin/pyclif  -DPYCLIF_PROTO=${PWD}/../bin/pyclif_proto .
+# Modify location of pyclif based on your install. Defaults to ~/opt/clif/bin
+cmake -DPYCLIF=~/opt/clif/bin/pyclif  -DPYCLIF_PROTO=~/opt/clif/bin/pyclif_proto -DCLIF_INSTALL_DIR=../ .
 
 make callbacks
 cd callbacks

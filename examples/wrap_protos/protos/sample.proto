@@ -16,7 +16,6 @@ syntax = "proto2";
 
 package clif_example.wrap_protos.protos;
 
-
 message MyMessage {
   optional string name = 1;
   optional EmbeddedMsg msg = 2;

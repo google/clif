@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for clif.python.pyext."""
+"""Tests for pyext."""
 
 import os
 import textwrap
@@ -27,20 +27,26 @@ from clif.python import types
 TMP_FILE = 'clif_python_pyext_test'
 
 
+def _ParseFile(pytd, type_headers):
+  with open(TMP_FILE, 'w') as pytd_file:
+    pytd_file.write(pytd)
+  p = pytd2proto.Postprocessor(
+      config_headers=type_headers,
+      include_paths=[os.environ['CLIF_DIR']])
+  with open(TMP_FILE, 'r') as pytd_file:
+    pb = p.Translate(pytd_file)
+  return pb
+
+
 class TypesNsTest(unittest.TestCase):
 
   def setUp(self):
+    super(TypesNsTest, self).setUp()
     pytd_parser.reset_indentation()
 
   def assertNsEqual(self, proto, ns):
     pytd = textwrap.dedent(proto)
-    with open(TMP_FILE, 'w') as pytd_file:
-      pytd_file.write(pytd)
-    p = pytd2proto.Postprocessor(
-        config_headers=['clif/python/types.h'],
-        include_paths=[os.environ['CLIF_DIR']])
-    with open(TMP_FILE, 'r') as pytd_file:
-      ast = p.Translate(pytd_file)
+    ast = _ParseFile(pytd, type_headers=['clif/python/types.h'])
     m = pyext.Module('my.path.py.ext')
     for d in ast.decls:
       list(m.WrapDecl(d))
@@ -72,20 +78,13 @@ class TypesNsTest(unittest.TestCase):
       from "my/path/ext.h":
         namespace `a`:
           class A:
+            \"\"\"This is a docstring.\"\"\"
             class B:
               x: int
         namespace `b::c`:
           class D:
             y: int
     """, ['a', 'b::c'])
-
-  def testTypesNs3(self):
-    self.assertNsEqual("""\
-      from "my/path/ext.h":
-        namespace `a`:
-          class A(`b::B` as replacement):
-            x: int
-    """, [''])  # ideally 'b' iff b is a namespace
 
 
 if __name__ == '__main__':

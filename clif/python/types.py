@@ -20,6 +20,13 @@ header (GenHeader) and implementation (GenConverters) for that API.
 import re
 
 I = '  '
+FIND_CPP_CHAR_LITERAL = re.compile(r"'(\\(?:"
+                                   '[0-7]{1,3}|'  # octal escapes
+                                   'x[0-9A-Fa-f]{2}|'  # hexadecimal escapes
+                                   'u[0-9]{4}|'  # short unicode escapes
+                                   'U[0-9]{8}|'  # long unicode escapes
+                                   r"[abfnrtv'\"\\]"  # ASCII escapes
+                                   r")|.)'")
 
 
 def _ClifUse(cname, pyname):
@@ -60,7 +67,7 @@ class ClassType(TypeDef):
   """C++ class as Python type."""
 
   def __init__(self, cpp_name, pypath, wclass, wtype, wnamespace,
-               can_copy, can_destruct, down_cast, virtual, ns=None):
+               can_copy, can_move, can_destruct, virtual, ns=None):
     """Register a new class.
 
     Args:
@@ -69,9 +76,9 @@ class ClassType(TypeDef):
       wclass: wrapper class (module_wrap::pyFoo::wrapper)
       wtype: wrapper type (...+_Type)
       wnamespace: wrapper ns (module_wrap::pyFoo::)
-      can_copy: True if can copy C++ class
+      can_copy: True if can copy the non-abstract C++ class
+      can_move: True if can move the non-abstract C++ class
       can_destruct: True if C++ class has a public dtor
-      down_cast: None of FQ C++ [replacement] class (another:FooCpp)
       virtual: True if class has @virtual method(s) and needs a redirector
       ns: namespace where class defined
     """
@@ -79,19 +86,41 @@ class ClassType(TypeDef):
     self.wrapper_obj = wclass
     self.wrapper_type = wtype
     self.wrapper_ns = wnamespace
-    self.down_cast = down_cast
+    self.can_move = can_move
     self.virtual = virtual
     # Argument list for Clif_PyObjFrom().
+    # Generate the conversion function for movable but uncopyable classes
+    # in the form of:
+    #   a. PyObject* Clif_PyObjFrom(UncopyableButMovableClass&& c,
+    #                            py::PostConv unused);
+    # Keep the conversion function for copyable classes in the form of:
+    #   b. PyObject* Clif_PyObjFrom(const CopyableClass& c,
+    #                             py::PostConv unused);
+    #
+    # 1. For movable but uncopyable C++ objects, conversion
+    # function (b) is marked as delete in the generated code to avoid
+    # copying an uncopyable object. C++ does not need to keep a copy of the
+    # returned object. We support this condition by moving the object and
+    # shifting object ownership to Python.
+    #
+    # 2. For copyable and movable C++ objects, we would generate both conversion
+    # function (a) and (b) and let the compiler choose the rigth one to invoke.
+    #
+    # 3. Uncopyable and unmovable C++ objects are prohibited.
     self._from = []  # [C++ Argument, Can get NULL, Init expression]
     if not virtual:
       self._from = [
           ('%s*', True, '::clif::Instance<%s>(c, ::clif::UnOwnedResource());'),
           ('std::shared_ptr<%s>', True, '::clif::Instance<%s>(c);')]
-      if can_destruct: self._from.append(
-          ('std::unique_ptr<%s>', True, '::clif::Instance<%s>(std::move(c));'))
+      if can_destruct:
+        self._from.append((
+            'std::unique_ptr<%s>', True, '::clif::Instance<%s>(std::move(c));'))
+        if can_move: self._from.append(
+            ('%s&&', False, '::clif::MakeShared<%s>(std::move(c));'))
       if can_copy:
-        self._from.append(
-            ('const %s&', False, '::clif::MakeShared<%s>(c);'))
+        self._from.extend([
+            ('const %s&', False, '::clif::MakeShared<%s>(c);'),
+            ('const %s*', True, '::clif::MakeShared<%s>(*c);')])
       else:
         # Explicitly delete signatures that do pass-by-value (set ptr to None).
         self._from.extend([
@@ -104,11 +133,7 @@ class ClassType(TypeDef):
     if can_destruct:
       self._as.append(('std::unique_ptr<%s>', ''))
     if can_copy and not virtual:
-      self._as.extend([
-          ('%s', '*'),
-          ('::gtl::optional<%s>', '*')])
-    if down_cast:
-      self._as.append((down_cast, ''))
+      self._as.append(('%s', '*'))
 
   def GenHeader(self):
     yield _ClifUse(self.cname, self.pyname)
@@ -116,10 +141,13 @@ class ClassType(TypeDef):
       yield 'bool Clif_PyObjAs(PyObject* input, %s* output);' % (
           arg % self.cname if '%s' in arg else arg)
     for arg, ptr, _ in self._from:
-      yield 'PyObject* Clif_PyObjFrom(%s, py::PostConv)%s;' % (
-          arg % self.cname, ' = delete' if ptr is None else '')
-    if self.down_cast:
-      yield 'PyObject* Clif_PyObjFrom(%s&&, py::PostConv);' % self.down_cast
+      if ptr is None:
+        yield 'template<typename T>'
+        yield ('typename std::enable_if<std::is_same<T, %s>::value>::type'
+               ' Clif_PyObjFrom(%s, py::PostConv) = delete;'
+              ) % (self.cname, arg % self.cname)
+      else:
+        yield 'PyObject* Clif_PyObjFrom(%s, py::PostConv);' % (arg % self.cname)
 
   def GenConverters(self, ns, unused_py3=False):
     """Generate Clif_PyObjAs() and Clif_PyObjFrom() definitions."""
@@ -133,7 +161,7 @@ class ClassType(TypeDef):
       yield ''
       if '%s' in arg:
         yield 'bool Clif_PyObjAs(PyObject* py, %s* c) {' % (arg % self.cname)
-        yield I+'assert(c != nullptr);'
+        yield I+'CHECK(c != nullptr);'
         if arg.endswith('*'):  # raw ptr
           yield I+'if (Py_None == py) {'
           yield I+I+'*c = nullptr;'
@@ -171,7 +199,7 @@ class ClassType(TypeDef):
         yield I+'return true;'
       else:
         yield 'bool Clif_PyObjAs(PyObject* py, %s* c) {' % arg
-        yield I+'assert(c != nullptr);'
+        yield I+'DCHECK(c != nullptr);'
         yield I+'return Clif_PyObjAs(py, static_cast<%s*>(c));' % self.cname
       yield '}'
     # C++ -> Python
@@ -180,22 +208,20 @@ class ClassType(TypeDef):
       yield ''
       yield 'PyObject* Clif_PyObjFrom(%s c, py::PostConv unused) {' % (
           arg % self.cname)
+      yield I+'CHECK(%s != nullptr) <<' % pytype  # See cl/307519921.
+      yield I+I+'"---> Function Clif_PyObjFrom(%s) called before " <<' % (
+          self.cname)
+      yield I+I+'%s::ThisModuleName  <<' % ns
+      yield I+I+'" was imported from Python.";'
       if ptr:
         yield I+'if (c == nullptr) Py_RETURN_NONE;'
-      yield I+'PyObject* py = PyType_GenericNew(&%s, NULL, NULL);' % pytype
+      yield I+'PyObject* py = PyType_GenericNew(%s, NULL, NULL);' % pytype
       cname = ns+'::'+self.virtual if self.virtual else self.cname
       init %= (cname,) * init.count('%s')
       yield I+shared+' = '+init
       if self.virtual:
         yield I+shared+'->::clif::PyObjRef::Init(py);'
       yield I+'return py;'
-      yield '}'
-    if self.down_cast:
-      yield ''
-      yield ('PyObject* Clif_PyObjFrom(%s&& c, py::PostConv pc) {'
-             % self.down_cast)
-      yield I+('return Clif_PyObjFrom(std::move(static_cast<%s&&>(c)), pc);'
-               % self.cname)
       yield '}'
 
 
@@ -214,8 +240,10 @@ class EnumType(TypeDef):
     yield '// Create Python Enum object (cached in %s) for %s' % (varname,
                                                                   self.cname)
     yield 'static PyObject* %s() {' % wname
-    yield I+('PyObject *py, *py_enum_class{}, *names = PyTuple_New(%d);'
-             % len(items))
+    yield I+'PyObject *py_enum_class = nullptr;'
+    yield I+'PyObject *modname = nullptr;'
+    yield I+'PyObject *py = nullptr;'
+    yield I+'PyObject *names = PyTuple_New(%d);' % len(items)
     yield I+'if (names == nullptr) return nullptr;'
     for i, pair in enumerate(items):
       yield I+'if ((py = Py_BuildValue("(NN)", %s, %s)' % pair
@@ -225,13 +253,28 @@ class EnumType(TypeDef):
       yield I+'py = PyUnicode_FromString("%s");' % self.pyname
     else:
       yield I+'py = PyString_FromString("%s");' % self.pyname
+    yield I+'if (py == nullptr) {'
+    yield I+'  goto err;'
+    yield I+'}'
+    if py3:
+      yield I+'modname = PyUnicode_FromString(ThisModuleName);'
+    else:
+      yield I+'modname = PyString_FromString(ThisModuleName);'
+    yield I+'if (modname == nullptr) {'
+    yield I+'  goto err;'
+    yield I+'}'
     yield I+('py_enum_class = PyObject_CallFunctionObjArgs(_%s, py, names, '
              'nullptr);' % self.wrapper_type)
-    yield I+'Py_DECREF(py);'
+    yield I+'if (py_enum_class != nullptr) {'
+    yield I+I+'PyObject_SetAttrString(py_enum_class, "__module__", modname);'
+    yield I+'}'
     yield 'err:'
-    yield I+'Py_DECREF(names);'
+    yield I+'Py_XDECREF(modname);'
+    yield I+'Py_XDECREF(py);'
+    yield I+'Py_XDECREF(names);'
     yield I+'return py_enum_class;'
     yield '}'
+    yield ''
     yield 'static PyObject* %s{};  // set by above func in Init()' % varname
 
   def GenConverters(self, ns, unused_py3=False):
@@ -242,7 +285,7 @@ class EnumType(TypeDef):
         self.pyname, self.wrapper_type, self.cname)
     yield ''
     yield 'bool Clif_PyObjAs(PyObject* py, %s* c) {' % self.cname
-    yield I+'assert(c != nullptr);'
+    yield I+'CHECK(c != nullptr);'
     yield I+'if (!PyObject_IsInstance(py, %s)) {' % wname
     yield I+I+('PyErr_Format(PyExc_TypeError, "expecting enum {}, got %s %s", '
                'ClassName(py), ClassType(py));').format(self.pyname)
@@ -265,7 +308,7 @@ class EnumType(TypeDef):
 class ProtoType(TypeDef):
   """C++ proto2 Message as Python proto."""
   _genclifuse = True
-  # 
+  # TODO: Consider removing generated proto conversions in favor of
   # generic template using protodb.
 
   def __init__(self, cpp_name, pyname, pymodule, ns=None):
@@ -278,7 +321,7 @@ class ProtoType(TypeDef):
   def GenHeader(self):
     for s in TypeDef.GenHeader(self): yield s  # pylint: disable=multiple-statements
     yield 'bool Clif_PyObjAs(PyObject*, std::unique_ptr<%s>*);' % self.cname
-    # 
+    # TODO: Add As(self.cname+'**', ...) to avoid proto copying.
     yield ('PyObject* Clif_PyObjFrom(std::unique_ptr<const %s>, py::PostConv);'
            % self.cname)
     yield ('PyObject* Clif_PyObjFrom(std::shared_ptr<const %s>, py::PostConv);'
@@ -288,15 +331,20 @@ class ProtoType(TypeDef):
     """Create convertors for C++ proto to/from Python protobuf."""
     top_name, _, el_name = self.pyname.partition('.')
     import_name = self.module + '.' + top_name
+    third_party_path = 'py.'
+    if import_name.startswith(third_party_path):
+      import_name = import_name[len(third_party_path):]
     ctype = self.cname
     yield ''
     yield '// %s to/from %s conversion' % (self.pyname, ctype)
     yield ''
     yield 'bool Clif_PyObjAs(PyObject* py, %s* c) {' % ctype
-    yield I+'assert(c != nullptr);'
+    yield I+'CHECK(c != nullptr);'
     yield I+'PyObject* type = ImportFQName("%s");' % import_name
-    yield I+('if (!::clif::proto::TypeCheck(py, type, "%s", "%s"))'
-             ' return false;' % (el_name, self.pyname))
+    yield I+('if (!::clif::proto::TypeCheck(py, type, "%s", "%s") ) {'
+             % (el_name, self.pyname))
+    yield I+I+'return ::clif::proto::InGeneratedPool(py, c);'
+    yield I+'}'
     # Use underlying C++ protocol message pointer if available.
     yield I+'if (const proto2::Message* cpb = ::clif::proto::GetCProto(py)) {'
     yield I+I+'c->CopyFrom(*cpb);'
@@ -304,8 +352,9 @@ class ProtoType(TypeDef):
     yield I+'}'
     yield I+'PyObject* ser = ::clif::proto::Serialize(py);'
     yield I+'if (ser == nullptr) return false;'
-    yield I+('bool ok = c->ParsePartialFromArray('
-             'PyBytes_AS_STRING(ser), PyBytes_GET_SIZE(ser));')
+    yield I + (
+        'bool ok = c->ParsePartialFromArray('
+        'PyBytes_AS_STRING(ser), static_cast<int>(PyBytes_GET_SIZE(ser)));')
     yield I+'Py_DECREF(ser);'
     yield I+('if (!ok) PyErr_SetString(PyExc_ValueError, "Serialized bytes '
              'can\'t be parsed into C++ proto");')
@@ -313,7 +362,7 @@ class ProtoType(TypeDef):
     yield '}'
     yield ''
     yield 'bool Clif_PyObjAs(PyObject* py, std::unique_ptr<%s>* c) {' % ctype
-    yield I+'assert(c != nullptr);'
+    yield I+'CHECK(c != nullptr);'
     yield I+'if (!*c) c->reset(new %s);' % ctype
     yield I+'return Clif_PyObjAs(py, c->get());'
     yield '}'
@@ -345,7 +394,7 @@ class ProtoEnumType(TypeDef):
     yield ''
     yield '// %s to/from enum %s conversion' % (self.pyname, self.cname)
     yield 'bool Clif_PyObjAs(PyObject* py, %s* c) {' % self.cname
-    yield I+'assert(c != nullptr);'
+    yield I+'CHECK(c != nullptr);'
     yield I+'int v;'
     yield I+'if (!Clif_PyObjAs(py, &v)) return false;'
     yield I+'*c = static_cast<%s>(v);' % self.cname
@@ -386,8 +435,7 @@ class CapsuleType(TypeDef):
 
   def GenHeader(self):
     # We're using trailing '*' to distinguish capsule type in included files.
-    # Space is needed for matcher to string compare with C++ return type
-    yield _ClifUse(self.cname+' *', self.pyname)
+    yield _ClifUse(self.cname+'*', self.pyname)
     yield 'bool Clif_PyObjAs(PyObject* input, %s** output);' % self.cname
     yield 'PyObject* Clif_PyObjFrom(const %s*, py::PostConv);' % self.cname
 
@@ -397,7 +445,7 @@ class CapsuleType(TypeDef):
     yield '// %s to/from %s conversion' % (self.pyname, self.cname)
     yield ''
     yield 'bool Clif_PyObjAs(PyObject* py, %s** c) {' % self.cname
-    yield I+'assert(c != nullptr);'
+    yield I+'CHECK(c != nullptr);'
     yield I+'if (Py_None == py) {'
     yield I+I+'*c = nullptr;'
     yield I+I+'return true;'
@@ -436,7 +484,7 @@ def GenThisPointerFunc(cname, w='wrapper', final=False):
                      '(py)->cpp);' % w)
   yield ''
   yield 'static %s* ThisPtr(PyObject* py) {' % cname
-  yield I+'if (Py_TYPE(py) == &%s) {' % t
+  yield I+'if (Py_TYPE(py) == %s) {' % t
   yield I+I+return_this_cpp
   yield I+'}'
   if final:
@@ -448,7 +496,6 @@ def GenThisPointerFunc(cname, w='wrapper', final=False):
     # as_Base returned an error / wrong capsule
     yield I+'if (PyObject_IsInstance(py, %s)) {' % AsPyObj(t)
     yield I+I+'if (!base) {'  # base set in _GenBaseCapsule
-    yield I+I+I+'PyErr_Clear();'
     yield I+I+I+return_this_cpp
     yield I+I+'}'
     yield I+I+('PyErr_Format(PyExc_ValueError, "can\'t convert %s %s to {}*", '
@@ -456,7 +503,7 @@ def GenThisPointerFunc(cname, w='wrapper', final=False):
     yield I+'} else {'
     _I=I  # pylint: disable=bad-whitespace,invalid-name
   yield _I+I+('PyErr_Format(PyExc_TypeError, "expecting %s instance, got %s %s"'
-              ', {}.tp_name, ClassName(py), ClassType(py));'.format(t))
+              ', {}->tp_name, ClassName(py), ClassType(py));'.format(t))
   if not final:
     yield I+'}'
   yield I+'return nullptr;'
@@ -470,7 +517,9 @@ def _GenBaseCapsule(cname, retptr=False):
   # - from -/- and GenThisPointerFunc to use 'py' argument and 'base' object.
   yield I+('PyObject* base = PyObject_CallMethod(py, C("as_%s"), nullptr);'
            % Mangle(cname))
-  yield I+'if (base) {'
+  yield I+'if (base == nullptr) {'
+  yield I+I+'PyErr_Clear();'
+  yield I+'} else {'
   yield I+I+'if (PyCapsule_CheckExact(base)) {'
   yield I+I+I+'void* p = PyCapsule_GetPointer(base, C("%s"));' % cname
   yield I+I+I+'if (!PyErr_Occurred()) {'
@@ -488,12 +537,23 @@ def EnumIntType(enum):
   return 'typename std::underlying_type<%s>::type' % enum
 
 
+def _MangleCharacterLiteral(char_literal):
+  """Escapes a char-valued template parameter."""
+  if str is not bytes:
+    char_literal = char_literal.encode()
+
+  return 'c{}_'.format(ord(bytes(char_literal).decode('unicode_escape')))
+
+
 def Mangle(cname):
-  """Transorm canonical LLVM type output to a valid Python id."""
+  """Transform canonical LLVM type output to a valid Python id."""
   # Mangle does not make unique id, so A::B and A_B are the same.
   # It's intended to be used inside one class/namespace where collisions
   # should not happen.
-  c = (cname.strip(' :>')
+  c = FIND_CPP_CHAR_LITERAL.sub(lambda m: _MangleCharacterLiteral(m.group(1)),
+                                cname)
+  c = (c
+       .strip(' :>')
        .replace('::', '_')
        .replace('<', '_')
        .replace('-', '_')
@@ -511,4 +571,4 @@ def AsType(t, v):
 
 
 def AsPyObj(s):
-  return 'reinterpret_cast<PyObject*>(&%s)' % s
+  return 'reinterpret_cast<PyObject*>(%s)' % s

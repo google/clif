@@ -49,6 +49,6 @@ from "clif/python/proto_util.h":
 
       def Services(self) -> list<ServiceInfo>
 
-      def `IsValid` as __nonzero__(self) -> bool
+      def `IsValid` as __bool__(self) -> bool
 
       def ErrorMsg(self) -> str

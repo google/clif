@@ -52,11 +52,11 @@ class PostConv {
   typedef std::vector<PostConv> Array;
   PyObject* Apply(PyObject* x) const {
     if (noop_) return x;
-        return f_(x);
+    return f_(x);
   }
   const PostConv& Get(Array::size_type i) const {
     if (noop_) return getNoop();
-        return c_.at(i);
+    return c_.at(i);
   }
   PostConv() : noop_(true), f_(nullptr) {}
   PostConv(Func f) : noop_(false), f_(f ? f : postconv::PASS) {}

@@ -55,7 +55,6 @@ add_llvm_library(clifMatcher
   clangSema
   clangSerialization
   clangTooling
-  clangToolingCore
 
   # LLVM Libraries
   LLVMSupport
@@ -85,13 +84,12 @@ set(CLIF_BACKEND_LINK_LIBRARIES
   clangSema
   clangSerialization
   clangTooling
-  clangToolingCore
 
   # LLVM Libraries
   LLVMSupport
 )
 
-target_link_libraries(clif-matcher
+target_link_libraries(clif-matcher PRIVATE
   ${CLIF_BACKEND_LINK_LIBRARIES}
 )
 add_target_protobuf_link_libraries(clif-matcher)
@@ -111,7 +109,7 @@ function(add_clif_backend_unittest name cc_file)
   target_compile_options(${name}
     PRIVATE "-DCLIF_BACKEND_SOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\""
   )
-  target_link_libraries(${name}
+  target_link_libraries(${name} PRIVATE
     ${CLIF_BACKEND_LINK_LIBRARIES}
   )
   add_target_protobuf_link_libraries(${name})
