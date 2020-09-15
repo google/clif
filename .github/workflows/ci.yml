@@ -1,0 +1,87 @@
+# Copyright 2020 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Continuous integration workflow via Github Actions
+# This workflow is triggered during a push or a pull request and run the
+# steps below across various configurations specified in the matrix
+# (eg. python3.7, etc.):
+#
+#  - Setup docker environment and caching strategy
+#  - Build base docker image with dependencies required for building CLIF
+#  - TODO: Configure CLIF build to use python version
+#  - TODO: Build CLIF
+#  - TODO: Run unit tests
+#  - TODO: Run integration tests
+#
+# Workflow can also be triggered manually via workflow_dispatch.
+
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+
+jobs:
+  standard:
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu:
+        - 18.04
+        python:
+        - 3.6
+        - 3.7
+        - 3.8
+
+    name: "Ubuntu ${{ matrix.ubuntu }} - Python ${{ matrix.python }}"
+    runs-on: ubuntu-latest
+
+    # Registry service is required for the docker image built via
+    # docker/build-push-actions to be usable in folllowing steps.
+    services:
+        registry:
+            image: registry:2
+            ports:
+                - 5000:5000
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+          driver-opts: network=host
+
+    # Use cached docker layers to avoid rebuilding docker image if the same
+    # Dockerfile and python/ubuntu configurations have already been cached,
+    # based on the hash of the Dockerfile and ubuntu/python version keys.
+    # Otherwise, docker build could take up to 10 minutes.
+    # See https://github.com/marketplace/actions/build-and-push-docker-images
+    - name: Cache Docker Layers
+      uses: actions/cache@v2
+      with:
+          path: /tmp/.buildx-cache
+          key: ubuntu-${{ matrix.ubuntu }}-python-${{ matrix.python }}-buildx-${{ hashFiles('Dockerfile') }}
+
+    - name: Create Docker Image
+      id: docker_build
+      uses: docker/build-push-action@v2
+      with:
+          tags: localhost:5000/clif
+          push: true
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+          build-args: |
+              PYTHON_VERSION=${{ matrix.python }}
