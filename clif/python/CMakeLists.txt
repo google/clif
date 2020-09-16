@@ -14,6 +14,8 @@
 
 # This CMake file will build the PyCLIF runtime along with the CLIF backend.
 
+include(GoogleTest)
+
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/__init__.py"
   "import pkgutil; __path__ = pkgutil.extend_path(__path__, __name__)"
 )
@@ -22,10 +24,7 @@ add_protobuf_include_directories()
 add_protobuf_library_directories()
 
 add_library(pyClifRuntime SHARED
-  optional.h
-  optional.cc
   postconv.h
-  ptr_util.h
   pyproto.h
   pyproto.cc
   runtime.cc
@@ -39,19 +38,24 @@ add_library(pyClifRuntime SHARED
 )
 
 target_include_directories(pyClifRuntime PUBLIC
-  "${LLVM_MAIN_SRC_DIR}/tools"
+  "${CLIF_SRC_DIR}"
   "${PYTHON_INCLUDE_DIRS}"
+  "${GOOGLE_GLOG_INCLUDE_DIRS}"
 )
 
 add_target_protobuf_link_libraries(pyClifRuntime)
 target_link_libraries(pyClifRuntime PRIVATE
   "${PYTHON_LIBRARIES}"
+  "${GOOGLE_GLOG_LIBRARIES}"
+
+  absl::memory
+  absl::optional
 )
 
 add_custom_target(runPyClifUnitTests
   COMMAND
-    "PYTHONPATH=${LLVM_TOOLS_DIR}" "CLIF_DIR=${LLVM_TOOLS_DIR}" ${PYTHON_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR} -p "*_test.py"
-  WORKING_DIRECTORY ${LLVM_TOOLS_BIN_DIR}
+    "PYTHONPATH=${CLIF_SRC_DIR}" "CLIF_DIR=${CLIF_SRC_DIR}" ${PYTHON_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR} -p "*_test.py"
+  WORKING_DIRECTORY ${CLIF_BIN_DIR}
   DEPENDS clifAstProto
 )
 
@@ -62,8 +66,8 @@ add_library(proto_util_cc STATIC
 
 target_include_directories(proto_util_cc
   PUBLIC
-  ${LLVM_TOOLS_DIR}
-  ${LLVM_TOOLS_BIN_DIR}
+  ${CLIF_SRC_DIR}
+  ${CLIF_BIN_DIR}
   ${PYTHON_INCLUDE_DIRS}
 )
 
@@ -74,3 +78,29 @@ target_link_libraries(proto_util_cc PRIVATE
 add_target_protobuf_link_libraries(proto_util_cc)
 
 add_subdirectory(utils)
+
+function(add_clif_python_unittest name cc_file)
+  clif_target_name(${name} test_target_name)
+
+  add_executable(${test_target_name} ${cc_file})
+  add_dependencies(${test_target_name}
+    pyClifRuntime
+  )
+  target_link_libraries(${test_target_name} PRIVATE
+    pyClifRuntime
+    ${PYTHON_LIBRARIES}
+
+    gtest
+    gtest_main
+    pthread
+  )
+  add_target_protobuf_link_libraries(${test_target_name})
+
+  gtest_discover_tests(${test_target_name})
+endfunction(add_clif_python_unittest)
+
+add_clif_python_unittest(instance_test instance_test.cc)
+
+add_clif_python_unittest(postconv_test postconv_test.cc)
+
+add_clif_python_unittest(pyobj_test pyobj_test.cc)

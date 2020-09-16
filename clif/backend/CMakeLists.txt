@@ -12,22 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+include(GoogleTest)
+
 include_directories(
-  # Path to LLVM include directory
-  "${LLVM_MAIN_SRC_DIR}/include"
+  ${LLVM_INCLUDE_DIRS}
+)
 
-  # Path to gtest directory
-  "${LLVM_MAIN_SRC_DIR}/utils/unittest/googletest/include"
-
-  # Path to Clang include directories
-  "${LLVM_MAIN_SRC_DIR}/tools/clang/include"
-  "${LLVM_BINARY_DIR}/tools/clang/include"
-
-  # Add path to the clif directory. Since the "clif" directory does not follow
-  # the layout conventions of other LLVM projects, we will have to add path to
-  # the "tools" directory instead of to a "clif" or a "clif/include" directory.
-  "${LLVM_MAIN_SRC_DIR}/tools"
-  "${LLVM_BINARY_DIR}/tools"
+link_directories(
+  ${LLVM_LIBRARY_DIR}
 )
 
 add_protobuf_include_directories()
@@ -39,37 +31,14 @@ add_definitions(
   -DGOOGLE_PROTOBUF_NO_RTTI
 )
 
-add_llvm_library(clifMatcher
+add_library(clifMatcher
   ast.cc
   matcher.cc
   code_builder.cc
-
-  DEPENDS
-  # CLIF proto
-  clifAstProto
-
-  # Clang libraries
-  clangAST
-  clangASTMatchers
-  clangFrontend
-  clangSema
-  clangSerialization
-  clangTooling
-
-  # LLVM Libraries
-  LLVMSupport
 )
 
-add_llvm_executable(clif-matcher
+add_executable(clif-matcher
   matcher_main.cc
-
-  DEPENDS
-  clifMatcher
-  clifAstProto
-  # We want the clang binary also to be available before we can start using
-  # clif-matcher. Hence, let it depend on clang to avoid all confusions.
-  # This way, the clang binaries will be built before clif-matcher is built.
-  clang
 )
 
 set(CLIF_BACKEND_LINK_LIBRARIES
@@ -78,6 +47,7 @@ set(CLIF_BACKEND_LINK_LIBRARIES
   clifAstProto
 
   # Clang libraries
+  clang
   clangAST
   clangASTMatchers
   clangFrontend
@@ -86,7 +56,7 @@ set(CLIF_BACKEND_LINK_LIBRARIES
   clangTooling
 
   # LLVM Libraries
-  LLVMSupport
+  LLVM
 )
 
 target_link_libraries(clif-matcher PRIVATE
@@ -94,41 +64,31 @@ target_link_libraries(clif-matcher PRIVATE
 )
 add_target_protobuf_link_libraries(clif-matcher)
 
-# The test suite target to be used with the function add_unittest.
-# Building this one target will build all the individual unittest targets.
-add_custom_target(clifBackendUnitTests)
-
 function(add_clif_backend_unittest name cc_file)
-  add_unittest(clifBackendUnitTests ${name}
-    ${cc_file}
-  )
-  add_dependencies(${name}
+  clif_target_name(${name} test_target_name)
+
+  add_executable(${test_target_name} ${cc_file})
+  add_dependencies(${test_target_name}
     clifMatcher
   )
   # Set the path to source directory as the test data will picked from here.
-  target_compile_options(${name}
+  target_compile_options(${test_target_name}
     PRIVATE "-DCLIF_BACKEND_SOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\""
   )
-  target_link_libraries(${name} PRIVATE
+  target_link_libraries(${test_target_name} PRIVATE
     ${CLIF_BACKEND_LINK_LIBRARIES}
+
+    gtest
+    gtest_main
+    pthread
   )
-  add_target_protobuf_link_libraries(${name})
+  add_target_protobuf_link_libraries(${test_target_name})
+
+  gtest_discover_tests(${test_target_name})
 endfunction(add_clif_backend_unittest)
 
-add_clif_backend_unittest(clifMatcherUnitTest
-  matcher_test.cc
-)
-add_clif_backend_unittest(clifAstUnitTest
-  ast_test.cc
-)
+add_clif_backend_unittest(matcher_test matcher_test.cc)
 
-add_custom_target(runClifBackendUnitTests
-  COMMAND
-    $<TARGET_FILE:clifMatcherUnitTest>
-  COMMAND
-    $<TARGET_FILE:clifAstUnitTest>
-  DEPENDS
-    clifBackendUnitTests
-)
+add_clif_backend_unittest(ast_test ast_test.cc)
 
 install(TARGETS clif-matcher DESTINATION "bin")

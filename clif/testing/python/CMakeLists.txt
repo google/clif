@@ -19,8 +19,8 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/__init__.py" "")
 #
 # $> ninja runPyClifIntegrationTests
 add_custom_target(runPyClifIntegrationTests
-  COMMAND "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}" ${PYTHON_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR} -p "*_test.py"
-  WORKING_DIRECTORY ${LLVM_TOOLS_BIN_DIR}
+  COMMAND "PYTHONPATH=${CLIF_BIN_DIR}:${CLIF_SRC_DIR}" ${PYTHON_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR} -p "*_test.py"
+  WORKING_DIRECTORY ${CLIF_BIN_DIR}
 )
 
 # A convenience function to add a pyclif_library as a dependency for the target
@@ -38,8 +38,8 @@ function(add_pyclif_library_for_test name)
   add_dependencies(runPyClifIntegrationTests ${lib_target_name})
 
   add_custom_target("${lib_target_name}_test"
-    COMMAND "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}" ${PYTHON_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR} -p "${name}_test.py"
-    WORKING_DIRECTORY ${LLVM_TOOLS_BIN_DIR}
+    COMMAND "PYTHONPATH=${CLIF_BIN_DIR}:${CLIF_SRC_DIR}" ${PYTHON_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR} -p "${name}_test.py"
+    WORKING_DIRECTORY ${CLIF_BIN_DIR}
     DEPENDS ${lib_target_name}
   )
 endfunction(add_pyclif_library_for_test name)
@@ -70,13 +70,33 @@ add_pyclif_library_for_test(t10 t10.clif
 
 add_pyclif_library_for_test(t12 t12.clif)
 
+add_pyclif_library_for_test(absl_uint128 absl_uint128.clif)
+
 add_pyclif_library_for_test(callback callback.clif)
+
+add_pyclif_library_for_test(call_method call_method.clif)
+
+add_pyclif_library_for_test(circular circular.clif)
+
+add_pyclif_library_for_test(class_module_attr class_module_attr.clif)
+
+add_pyclif_library_for_test(const_char_ptr const_char_ptr.clif)
 
 add_pyclif_library_for_test(const_pointer_return const_pointer_return.clif)
 
 add_pyclif_library_for_test(default_args default_args.clif)
 
 add_pyclif_library_for_test(diamond_inheritance diamond_inheritance.clif)
+
+add_pyclif_library_for_test(enable_instance_dict enable_instance_dict.clif)
+
+add_pyclif_library_for_test(extend_from_clifaux extend_from_clifaux.clif)
+
+add_pyclif_library_for_test(extend_methods extend_methods.clif)
+
+add_pyclif_library_for_test(extend_properties extend_properties.clif)
+
+add_pyclif_library_for_test(extension_type_refcount extension_type_refcount.clif)
 
 add_pyclif_library_for_test(_hidden hidden.clif)
 
@@ -86,13 +106,25 @@ add_pyclif_library_for_test(iterator iterator.clif)
 
 add_pyclif_library_for_test(implicit_conversion implicit_conversion.clif)
 
+add_pyclif_library_for_test(nested_callbacks nested_callbacks.clif)
+
 add_pyclif_library_for_test(nested_fields nested_fields.clif)
 
 add_pyclif_library_for_test(nested_types nested_types.clif)
 
+add_pyclif_library_for_test(nonzero_mapping nonzero_mapping.clif)
+
+add_pyclif_library_for_test(number_methods number_methods.clif)
+
 add_pyclif_library_for_test(operators operators.clif)
 
 add_pyclif_library_for_test(output_parameter output_parameter.clif)
+
+add_pyclif_library_for_test(overload overload.clif)
+
+add_pyclif_library_for_test(pass_none pass_none.clif)
+
+add_pyclif_library_for_test(sequence_methods sequence_methods.clif)
 
 add_pyclif_library_for_test(slots slots.clif)
 
@@ -111,4 +143,4 @@ add_pyclif_library_for_test(templates templates.clif)
 
 add_pyclif_library_for_test(virtual_funcs virtual_funcs.clif)
 
-add_pyclif_library_for_test(circular circular.clif)
+add_pyclif_library_for_test(virtual_derived_before_base virtual_derived_before_base.clif)

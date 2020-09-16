@@ -1,4 +1,4 @@
-# Copyright 2017 Google Inc.
+# Copyright 2020 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,31 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(CLIF_PYTHON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/python")
+cmake_minimum_required(VERSION 3.10)
 
-# Set the additional module path to the CLIF CMake utilities and load them.
-set(CMAKE_MODULE_PATH
-  "${CMAKE_MODULE_PATH}"
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
-)
-include(CLIFUtils)
+project(CLIF)
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+include(CTest)
 
-include_directories(
-    ${CLIF_SRC_DIR}
-    ${CLIF_BIN_DIR}
-)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(PYCLIF "${CMAKE_CURRENT_SOURCE_DIR}/pyclif.py")
-set(PYCLIF_PROTO "${CMAKE_CURRENT_SOURCE_DIR}/python/proto.py")
-set(CLIF_MATCHER "${CMAKE_CURRENT_BINARY_DIR}/backend/clif-matcher")
+set(CLIF_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(CLIF_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/__init__.py"
   "import pkgutil; __path__ = pkgutil.extend_path(__path__, __name__)"
 )
 
-add_subdirectory("backend")
-add_subdirectory("protos")
-add_subdirectory("python")
-add_subdirectory("testing")
+include_directories(
+    "${CMAKE_CURRENT_BINARY_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+add_subdirectory("clif")

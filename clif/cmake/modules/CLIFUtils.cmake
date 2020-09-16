@@ -30,6 +30,13 @@ include(FindPkgConfig)
 # Lookup include and library directories using pkg-config.
 pkg_check_modules(GOOGLE_PROTOBUF REQUIRED protobuf)
 
+pkg_check_modules(GOOGLE_GLOG REQUIRED libglog)
+
+find_package(absl REQUIRED)
+find_package(Clang REQUIRED)
+find_package(LLVM 11 REQUIRED)
+find_package(GTest REQUIRED)
+
 function(add_protobuf_include_directories)
   if(GOOGLE_PROTOBUF_INCLUDE_DIRS)
     include_directories(${GOOGLE_PROTOBUF_INCLUDE_DIRS})
@@ -65,13 +72,13 @@ include(CMakeParseArguments)
 # Then, a variable with name "full_target_name" will be inserted into the
 # callers scope and will have a value "path_to_target_my_target".
 function(clif_target_name name target_var)
-  string(REPLACE "${LLVM_TOOLS_DIR}/" "" relative_path ${CMAKE_CURRENT_SOURCE_DIR})
+  string(REPLACE "${CLIF_SRC_DIR}/" "" relative_path ${CMAKE_CURRENT_SOURCE_DIR})
   string(REPLACE "/" "_" target_prefix ${relative_path})
   set(${target_var} "${target_prefix}_${name}" PARENT_SCOPE)
 endfunction(clif_target_name name)
 
 function(clif_extension_module_name name name_var)
-  string(REPLACE "${LLVM_TOOLS_DIR}/" "" relative_path ${CMAKE_CURRENT_SOURCE_DIR})
+  string(REPLACE "${CLIF_SRC_DIR}/" "" relative_path ${CMAKE_CURRENT_SOURCE_DIR})
   string(REPLACE "/" "." path_prefix ${relative_path})
   string(REPLACE "-" "_" ${path_prefix} ${path_prefix})
   string(REPLACE "-" "_" clean_name ${name})
@@ -136,8 +143,8 @@ function(add_clif_test_cc_library name)
 
   target_include_directories(${lib_target_name}
     PRIVATE
-      ${LLVM_TOOLS_DIR}
-      ${LLVM_TOOLS_BIN_DIR}
+      ${CLIF_SRC_DIR}
+      ${CLIF_BIN_DIR}
   )
 
   set_target_properties(${lib_target_name}
@@ -169,7 +176,7 @@ function(add_pyclif_library name pyclif_file)
 
   string(REPLACE ".clif" "" pyclif_file_basename ${pyclif_file})
   set(gen_cc "${CMAKE_CURRENT_BINARY_DIR}/${pyclif_file_basename}.cc")
-  set(gen_h "${CMAKE_CURRENT_BINARY_DIR}/${pyclif_file_basename}.h")
+  set(gen_h "${CMAKE_CURRENT_BINARY_DIR}/${pyclif_file_basename}_clif.h")
   set(gen_init "${CMAKE_CURRENT_BINARY_DIR}/${pyclif_file_basename}.init.cc")
 
   clif_extension_module_name(${name} module_name)
@@ -183,12 +190,12 @@ function(add_pyclif_library name pyclif_file)
     COMMAND
       # List LLVM_TOOLS_BIN_DIR before LLVM_TOOLS_DIR in PYTHONPATH as we
       # want to first load the __init__.py in LLVM_TOOLS_BIN_DIR.
-      "PYTHONPATH=${LLVM_TOOLS_BIN_DIR}:${LLVM_TOOLS_DIR}" ${PYTHON_EXECUTABLE} ${PYCLIF}
+      "PYTHONPATH=${CLIF_BIN_DIR}:${CLIF_SRC_DIR}" ${PYTHON_EXECUTABLE} ${PYCLIF}
       -p${CLIF_PYTHON_DIR}/types.h -c${gen_cc} -g${gen_h} -i${gen_init}
-      -I${LLVM_TOOLS_DIR} -I${LLVM_TOOLS_BIN_DIR}
+      -I${CLIF_SRC_DIR} -I${CLIF_BIN_DIR}
       --modname=${module_name}
       --matcher_bin=${CLIF_MATCHER}
-      "-f-I${PYTHON_INCLUDE_DIRS} -I${LLVM_TOOLS_DIR} -I${LLVM_TOOLS_BIN_DIR} ${GOOGLE_PROTOBUF_CXX_FLAGS} -std=c++11 ${PYCLIF_LIBRARY_CXX_FLAGS}"
+      "-f-I${PYTHON_INCLUDE_DIRS} -I${CLIF_SRC_DIR} -I${CLIF_BIN_DIR} ${GOOGLE_PROTOBUF_CXX_FLAGS} -std=c++11 ${PYCLIF_LIBRARY_CXX_FLAGS}"
       ${CMAKE_CURRENT_SOURCE_DIR}/${pyclif_file}
     VERBATIM
     # This step invokes the clif-matcher. Hence, we need it to be built before
@@ -218,8 +225,9 @@ function(add_pyclif_library name pyclif_file)
   add_target_protobuf_include_directories(${lib_target_name})
   target_include_directories(${lib_target_name}
     PRIVATE
-      ${LLVM_TOOLS_DIR}
-      ${LLVM_TOOLS_BIN_DIR}
+      ${CLIF_SRC_DIR}
+      ${CLIF_BIN_DIR}
+      ${GOOGLE_GLOG_INCLUDE_DIRS}
       ${PYTHON_INCLUDE_DIRS}
   )
 
@@ -230,11 +238,15 @@ function(add_pyclif_library name pyclif_file)
   # Plain and keyword target_link_libraries signatures cannot be mixed.
   # https://cmake.org/cmake/help/v3.0/policy/CMP0023.html
   target_link_libraries(${lib_target_name} PUBLIC
+    ${GOOGLE_GLOG_LIBRARIES}
     ${PYCLIF_LIBRARY_CC_DEPS}
     ${PYCLIF_LIBRARY_CLIF_DEPS}
     ${PYCLIF_LIBRARY_PROTO_DEPS}
     pyClifRuntime
     ${PYTHON_LIBRARIES}
+
+    absl::memory
+    absl::optional
   )
 endfunction(add_pyclif_library)
 
@@ -243,14 +255,14 @@ function(add_pyclif_proto_library name proto_file proto_lib)
   set(gen_cc "${CMAKE_CURRENT_BINARY_DIR}/${proto_file_basename}_pyclif.cc")
   set(gen_h "${CMAKE_CURRENT_BINARY_DIR}/${proto_file_basename}_pyclif.h")
 
-  add_custom_target(${name}_pyclif
+  add_custom_command(
+    OUTPUT ${gen_cc} ${gen_h}
     COMMAND
-      "PYTHONPATH=${LLVM_TOOLS_BIN_DIR}:${LLVM_TOOLS_DIR}" ${PYTHON_EXECUTABLE} ${PYCLIF_PROTO}
+      "PYTHONPATH=${CLIF_BIN_DIR}:${CLIF_SRC_DIR}" ${PYTHON_EXECUTABLE} ${PYCLIF_PROTO}
       "${CMAKE_CURRENT_SOURCE_DIR}/${proto_file}"
       -c ${gen_cc} -h ${gen_h}
-      -s ${LLVM_TOOLS_DIR}
-      -d ${LLVM_TOOLS_BIN_DIR}
-    BYPRODUCTS ${gen_cc} ${gen_h}
+      -s ${CLIF_SRC_DIR}
+      -d ${CLIF_BIN_DIR}
     VERBATIM
     DEPENDS clif_python_utils_proto_util
   )
@@ -263,8 +275,9 @@ function(add_pyclif_proto_library name proto_file proto_lib)
 
   target_include_directories(${name}
     PRIVATE
-      ${LLVM_TOOLS_DIR}
-      ${LLVM_TOOLS_BIN_DIR}
+      ${CLIF_SRC_DIR}
+      ${CLIF_BIN_DIR}
+      ${GOOGLE_GLOG_INCLUDE_DIRS}
       ${PYTHON_INCLUDE_DIRS}
   )
 
@@ -272,7 +285,11 @@ function(add_pyclif_proto_library name proto_file proto_lib)
     clif_python_utils_proto_util
     pyClifRuntime
     ${proto_lib}
+    ${GOOGLE_GLOG_LIBRARIES}
     ${PYTHON_LIBRARIES}
+
+    absl::memory
+    absl::optional
   )
 endfunction(add_pyclif_proto_library name proto_file)
 
@@ -284,8 +301,8 @@ function(add_pyclif_library_and_test name)
   clif_target_name(${name} lib_target_name)
 
   add_custom_target("${lib_target_name}_test"
-    COMMAND "PYTHONPATH=${LLVM_TOOLS_BIN_DIR}" ${PYTHON_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR} -p "${name}_test.py"
-    WORKING_DIRECTORY ${LLVM_TOOLS_BIN_DIR}
+    COMMAND "PYTHONPATH=${CLIF_BIN_DIR}" ${PYTHON_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR} -p "${name}_test.py"
+    WORKING_DIRECTORY ${CLIF_BIN_DIR}
     DEPENDS ${lib_target_name}
   )
 endfunction(add_pyclif_library_and_test)
