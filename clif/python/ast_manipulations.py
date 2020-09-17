@@ -48,6 +48,9 @@ import collections
 from clif.protos import ast_pb2
 
 EXTEND_INFIX = '__extend__'
+# Allow user to define `Class__extend__init__` instead of
+# `Class__extend____init__` for extended constructors.
+EXTEND_INFIX_CONSTRUCTOR = '__extend'
 
 
 def MoveExtendsOutOfClassesInPlace(ast):
@@ -169,24 +172,18 @@ def MoveExtendMethodsToFunctionsInPlace(ast):
         continue
       if not member.func.is_extend_method:
         continue
-      func_decl = ast_pb2.Decl()
-      func_decl.CopyFrom(member)
-      func_decl.func.name.native = (
-          decl.class_.name.native + EXTEND_INFIX + member.func.name.native)
-      if member.func.name.cpp_name == member.func.name.native:
-        func_decl.func.name.cpp_name = (
-            decl.class_.name.native + EXTEND_INFIX + member.func.name.cpp_name)
+
       if member.func.classmethod:
-        if (func_decl.func.params and
-            func_decl.func.params[0].name.native == 'cls'):
-          del func_decl.func.params[0]
+        func_decl = _MoveOutOfClassScope('cls', decl, member)
+      elif member.func.constructor:
+        func_decl = _MoveOutOfClassScope('self', decl, member)
       else:
-        if (func_decl.func.params and
-            func_decl.func.params[0].name.native == 'self'):
-          # A fully-qualified cpp_name was specified.
-          del func_decl.func.params[0]
+        func_decl = _MoveOutOfClassScope('self', decl, member)
         p = _GenerateParameterSelf(decl.class_)
         func_decl.func.params.insert(0, p)
+      assert func_decl is not None, (
+          'failed to manipulate extended method `%s`' % member.func.name.native)
+
       extend_methods_func_decls.append(func_decl)
       member_delete_indices.append(member_index)
     for member_index in reversed(member_delete_indices):
@@ -203,15 +200,21 @@ def MoveExtendFunctionsBackIntoClassesInPlace(ast, omit_self=False):
       continue
     if not decl.func.is_extend_method:
       continue
-    if not decl.func.classmethod:
-      assert decl.func.params
-      assert decl.func.params[0].name.native == 'self'
+    if not decl.func.classmethod and not decl.func.constructor:
+      assert decl.func.params, 'extended method does not have any parameters'
+      assert decl.func.params[0].name.native == 'self', (
+          'the first parameter of extended method `%s` is not `self`' %
+          decl.func.name.native)
+    if decl.func.constructor:
+      extend_infix = EXTEND_INFIX_CONSTRUCTOR
+    else:
+      extend_infix = EXTEND_INFIX
     class_name_from_func, method_name_from_func = decl.func.name.native.split(
-        EXTEND_INFIX, 1)
+        extend_infix, 1)
     method_decl = ast_pb2.Decl()
     method_decl.CopyFrom(decl)
     method_decl.func.name.native = method_name_from_func
-    if omit_self and not decl.func.classmethod:
+    if omit_self and not decl.func.classmethod and not decl.func.constructor:
       # Explicit self is needed for the PyCLIF code generator,
       # but confuses pytype.
       del method_decl.func.params[0]
@@ -232,3 +235,34 @@ def MoveExtendFunctionsBackIntoClassesInPlace(ast, omit_self=False):
       target_decl.class_.members.append(extracted_decl)
     del extracted_method_decls_by_class_name[class_name]
   assert not extracted_method_decls_by_class_name
+
+
+def _MoveOutOfClassScope(param0_name_native, class_decl, orig_func_decl):
+  """Move extended method declaration out of its class declaration."""
+  func_decl = ast_pb2.Decl()
+  func_decl.CopyFrom(orig_func_decl)
+
+  if orig_func_decl.func.constructor:
+    extend_infix = EXTEND_INFIX_CONSTRUCTOR
+  else:
+    extend_infix = EXTEND_INFIX
+  name_native = (
+      class_decl.class_.name.native + extend_infix +
+      orig_func_decl.func.name.native)
+  name_cpp_name = (
+      class_decl.class_.name.native + extend_infix +
+      orig_func_decl.func.name.cpp_name)
+
+  func_decl.func.name.native = name_native
+  if orig_func_decl.func.name.cpp_name == orig_func_decl.func.name.native:
+    func_decl.func.name.cpp_name = name_cpp_name
+  elif orig_func_decl.func.constructor:
+    # cpp_name of constructors is equal to the class name. We need to change it
+    # to be the extended function name.
+    func_decl.func.name.cpp_name = func_decl.func.name.native
+
+  if (func_decl.func.params and
+      func_decl.func.params[0].name.native == param0_name_native):
+    # A fully-qualified cpp_name was specified.
+    del func_decl.func.params[0]
+  return func_decl

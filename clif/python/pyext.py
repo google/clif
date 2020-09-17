@@ -189,6 +189,11 @@ class Module(object):
       fqn = (f.name for f in self.nested)
     return '::'.join(fqn)
 
+  def FQClassName(self):
+    """Get FQ current class name."""
+    fqn = (f.fqname for f in self.nested)
+    return '::'.join(fqn)
+
   def WrapDecl(self, decl, parent_ns='', class_ns=''):
     """Process AST.Decl decl."""
     decl_type = decl.WhichOneof('decl')
@@ -222,7 +227,8 @@ class Module(object):
       del f.returns[:]
     for s in self._WrapAllCallables(f, cname, ln, class_ns, False):
       yield s
-    if f.cpp_opfunction or (f.is_extend_method and not f.classmethod):
+    if f.cpp_opfunction or (f.is_extend_method and not f.classmethod and
+                            not f.constructor):
       self_param = f.params.pop(0)
     else:
       self_param = None
@@ -254,10 +260,13 @@ class Module(object):
   def _FunctionCallExpr(self, f, cname, pyname):
     """Find function call/postcall C++ expression."""
     call = f.name.cpp_name
-    if (self.nested and
-        not f.classmethod and
-        not f.cpp_opfunction and
-        not f.is_extend_method):
+    if f.is_extend_method:
+      if f.constructor:
+        cpp = _GetCppObj()
+        call = ('%s = ::clif::Instance<%s>' % (cpp, self.FQClassName()) +
+                '(%s%s)')  # % (fully-qualified function name, params_list)
+        return call
+    elif (self.nested and not f.classmethod and not f.cpp_opfunction):
       cpp = _GetCppObj()
       if f.constructor:
         assert not f.returns, cname+' ctor must return void'

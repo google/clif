@@ -774,7 +774,10 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
       yield I+I+'%s; break;' % (call+astutils.TupleStr(params[:n]))
     yield I+'}'
   else:
-    call += astutils.TupleStr(params)
+    if func_ast.is_extend_method and func_ast.constructor:
+      call = call % (func_ast.name.cpp_name, astutils.TupleStr(params))
+    else:
+      call += astutils.TupleStr(params)
     _I = I if catch else ''  # pylint: disable=invalid-name
     if void_return_type:
       yield _I+I+call+';'
