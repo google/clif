@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "clif/python/pyobj.h"
-#include "testing/base/public/googletest.h"
 #include "gtest/gtest.h"
 
 namespace clif {

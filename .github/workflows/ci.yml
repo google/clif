@@ -94,4 +94,7 @@ jobs:
             -DPYTHON_EXECUTABLE="/usr/bin/python${{ matrix.python }}"'
 
     - name: Build
-      run: docker run -v $GITHUB_WORKSPACE:/clif -w /clif/build localhost:5000/clif make clif-matcher
+      run: docker run -v $GITHUB_WORKSPACE:/clif -w /clif/build localhost:5000/clif make
+
+    - name: Unit Tests
+      run: docker run -v $GITHUB_WORKSPACE:/clif -w /clif/build localhost:5000/clif ctest

@@ -39,6 +39,10 @@ headers are included.
 #ifdef __EXCEPTIONS
 #include <system_error>  // NOLINT(build/c++11)
 #endif  // __EXCEPTIONS
+
+#include "absl/base/config.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "clif/python/types.h"
 
 namespace clif {

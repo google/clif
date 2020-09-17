@@ -45,6 +45,16 @@ headers are included.
 
 #include "gflags/gflags.h"
 #include "glog/logging.h"
+#include "absl/base/config.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
+#include "absl/numeric/int128.h"
+
+// std::variant support is implemented in stltypes.h which our generated code
+// #include's directly.  But that file is not parsed for "CLIF" use statements.
+// CLIF use `::std::variant` as OneOf
 
 #include "clif/python/postconv.h"
 // Protobuf type declared here because subincludes are not scanned for types.
