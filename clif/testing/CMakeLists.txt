@@ -43,11 +43,10 @@ add_clif_test_cc_library(t9
 )
 
 # std_variant cc_library
-# TODO: Uncomment when std::variant is straightened out for OSS.
-#add_clif_test_cc_library(std_variant
-#  std_variant.h
-#  std_variant.cc
-#)
+add_clif_test_cc_library(std_variant
+  std_variant.h
+  std_variant.cc
+)
 
 find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})

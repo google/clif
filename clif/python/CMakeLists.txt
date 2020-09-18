@@ -77,6 +77,8 @@ target_link_libraries(proto_util_cc PRIVATE
 )
 add_target_protobuf_link_libraries(proto_util_cc)
 
+configure_file(type_customization.py type_customization.py COPYONLY)
+
 add_subdirectory(utils)
 
 function(add_clif_python_unittest name cc_file)

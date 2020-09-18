@@ -37,6 +37,8 @@ add_library(clifMatcher
   code_builder.cc
 )
 
+add_dependencies(clifMatcher clifAstProto)
+
 add_executable(clif-matcher
   matcher_main.cc
 )

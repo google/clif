@@ -91,8 +91,8 @@ RUN wget "https://github.com/abseil/abseil-cpp/archive/$ABSL_VERSION.tar.gz" && 
     rm -rf "/abseil-cpp-$ABSL_VERSION" "/$ABSL_VERSION.tar.gz"
 
 # Compile and install protobuf from source
-RUN wget "https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOBUF_VERSION/protobuf-all-$PROTOBUF_VERSION.tar.gz" && \
-    tar -xf "protobuf-all-$PROTOBUF_VERSION.tar.gz" && \
+RUN wget "https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOBUF_VERSION/protobuf-cpp-$PROTOBUF_VERSION.tar.gz" && \
+    tar -xf "protobuf-cpp-$PROTOBUF_VERSION.tar.gz" && \
     cd "protobuf-$PROTOBUF_VERSION" && \
     # Configure and install C++ libraries
     ./autogen.sh && \
@@ -100,12 +100,15 @@ RUN wget "https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOB
     make -j$(nproc) && \
     make install && \
     ldconfig && \
-    # Install python protobuf library
-    cd python && \
-    python3 setup.py install && \
     rm -rf "/protobuf-$PROTOBUF_VERSION" "/protobuf-cpp-$PROTOBUF_VERSION.tar.gz"
 
 # Install googletest
 RUN cd /usr/src/gtest && \
     cmake . && \
     make install
+
+# Install python runtime and test dependencies
+RUN "python$PYTHON_VERSION" -m pip install \
+    absl-py \
+    parameterized \
+    protobuf=="$PROTOBUF_VERSION"

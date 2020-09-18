@@ -19,7 +19,7 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/__init__.py" "")
 #
 # $> ninja runPyClifIntegrationTests
 add_custom_target(runPyClifIntegrationTests
-  COMMAND "PYTHONPATH=${CLIF_BIN_DIR}:${CLIF_SRC_DIR}" ${PYTHON_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR} -p "*_test.py"
+  COMMAND ${PYTHON_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_BINARY_DIR} -p "*_test.py"
   WORKING_DIRECTORY ${CLIF_BIN_DIR}
 )
 
@@ -30,6 +30,11 @@ add_custom_target(runPyClifIntegrationTests
 #
 # $> ninja [pyclif_library_target_name]_test
 function(add_pyclif_library_for_test name)
+  cmake_parse_arguments(PYCLIF_TEST_LIBRARY "" "" "TEST" ${ARGN})
+  if (NOT DEFINED PYCLIF_TEST_LIBRARY_TEST)
+    set(PYCLIF_TEST_LIBRARY_TEST "${name}_test.py")
+  endif()
+
   add_pyclif_library(${name}
     ${ARGN}
   )
@@ -37,8 +42,10 @@ function(add_pyclif_library_for_test name)
   clif_target_name(${name} lib_target_name)
   add_dependencies(runPyClifIntegrationTests ${lib_target_name})
 
+  configure_file(${PYCLIF_TEST_LIBRARY_TEST} ${PYCLIF_TEST_LIBRARY_TEST} COPYONLY)
+
   add_custom_target("${lib_target_name}_test"
-    COMMAND "PYTHONPATH=${CLIF_BIN_DIR}:${CLIF_SRC_DIR}" ${PYTHON_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR} -p "${name}_test.py"
+    COMMAND ${PYTHON_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_BINARY_DIR} -p "${PYCLIF_TEST_LIBRARY_TEST}"
     WORKING_DIRECTORY ${CLIF_BIN_DIR}
     DEPENDS ${lib_target_name}
   )
@@ -98,7 +105,8 @@ add_pyclif_library_for_test(extend_properties extend_properties.clif)
 
 add_pyclif_library_for_test(extension_type_refcount extension_type_refcount.clif)
 
-add_pyclif_library_for_test(_hidden hidden.clif)
+add_pyclif_library_for_test(_hidden hidden.clif
+  TEST hidden_test.py)
 
 add_pyclif_library_for_test(imported_methods imported_methods.clif)
 
@@ -126,6 +134,9 @@ add_pyclif_library_for_test(pass_none pass_none.clif)
 
 add_pyclif_library_for_test(sequence_methods sequence_methods.clif)
 
+add_pyclif_library_for_test(shared_ptr_proto_member shared_ptr_proto_member.clif
+  PROTO_DEPS clifAstProtoWrapper)
+
 add_pyclif_library_for_test(slots slots.clif)
 
 add_pyclif_library_for_test(smart_ptrs smart_ptrs.clif)
@@ -134,8 +145,8 @@ add_pyclif_library_for_test(static_methods static_methods.clif)
 
 add_pyclif_library_for_test(std_containers std_containers.clif)
 
-# TODO: Uncomment when std::variant is straightened out for OSS.
-#add_pyclif_library_for_test(std_variant std_variant.clif)
+add_pyclif_library_for_test(std_variant std_variant.clif
+  CC_DEPS clif_testing_std_variant)
 
 add_pyclif_library_for_test(template_alias template_alias.clif)
 

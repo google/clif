@@ -114,7 +114,7 @@ function(add_proto_library name proto_srcfile)
             --python_out=${CMAKE_CURRENT_BINARY_DIR}
   )
 
-  add_library(${name}
+  add_library(${name} SHARED
     ${CMAKE_CURRENT_BINARY_DIR}/${gen_cc}
     ${CMAKE_CURRENT_BINARY_DIR}/${gen_h}
   )
@@ -195,7 +195,7 @@ function(add_pyclif_library name pyclif_file)
       -I${CLIF_SRC_DIR} -I${CLIF_BIN_DIR}
       --modname=${module_name}
       --matcher_bin=${CLIF_MATCHER}
-      "-f-I${PYTHON_INCLUDE_DIRS} -I${CLIF_SRC_DIR} -I${CLIF_BIN_DIR} ${GOOGLE_PROTOBUF_CXX_FLAGS} -std=c++11 ${PYCLIF_LIBRARY_CXX_FLAGS}"
+      "-f-I${PYTHON_INCLUDE_DIRS} -I${CLIF_SRC_DIR} -I${CLIF_BIN_DIR} ${GOOGLE_PROTOBUF_CXX_FLAGS} -std=c++17 ${PYCLIF_LIBRARY_CXX_FLAGS}"
       ${CMAKE_CURRENT_SOURCE_DIR}/${pyclif_file}
     VERBATIM
     # This step invokes the clif-matcher. Hence, we need it to be built before
