@@ -771,7 +771,12 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
     yield I+'switch (nargs) {'
     for n in range(minargs, nargs+1):
       yield I+'case %d:' % n
-      yield I+I+'%s; break;' % (call+astutils.TupleStr(params[:n]))
+      num_params = n
+      # extended methods need to include `self` as the first parameter.
+      if func_ast.is_extend_method:
+        num_params += 1
+      yield I+I+'%s; break;' % (call+astutils.TupleStr(
+          params[:num_params]))
     yield I+'}'
   else:
     if func_ast.is_extend_method and func_ast.constructor:
