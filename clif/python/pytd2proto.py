@@ -734,6 +734,12 @@ class Postprocessor(object):
     pb.decltype = pb.FUNC
     f = pb.func
     modified_ast_name = ast.name
+    if modified_ast_name[-1] == '__reduce__':
+      raise NameError('Please define `__reduce_ex__` instead of `__reduce__`. '
+                      'Pickle prefers `__reduce_ex__` over `__reduce__`. '
+                      '`__reduce__` is a legacy API and only used if '
+                      '`__reduce_ex__` does not exist. See go/pyclif-pickle '
+                      'for details.')
     if modified_ast_name[-1] == '__nonzero__':
       raise NameError('Please define `__bool__` instead of `__nonzero__`. '
                       'See b/62796379 for details.')
