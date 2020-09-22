@@ -67,8 +67,6 @@ Current Limitations:
 
 *   Classes can be extended from `_clif_aux.h` only with instance methods or
     properties, NOT with classmethods, staticmethods, or data members.
-*   `@extend` is incompatible with the `= default` feature For example, `@extend
-    def foo(name: str = default)` does not work.
 
 ## Python-side customizations in `<HEADER>.py` {#py_library_wrapper}
 
