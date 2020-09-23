@@ -42,7 +42,11 @@ but a little more involved:
 *   [clif/examples/extend_from_clifaux/python/](http://clif/examples/extend_from_clifaux/python/)
 *   [The unit tests](http://clif/testing/python/extend_from_clifaux.clif)
     are also useful as a reference.
-*   [Example for extending constructors](http://clif/testing/python/extend_init.clif)
+
+Extending a C++ class with constructors is special. All extended constructors
+should return a unique_ptr to the created instance:
+
+*   [Example for extending constructors](http://clif/testing/python/extend_init_clif_aux.h)
 
 C++ classes can also be extended with properties:
 
