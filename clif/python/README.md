@@ -659,14 +659,15 @@ the _namespace_ statement, this statement puts a limit where CLIF can find the
 function, ie. search only inside the named class.
 
 ```python
-from "some/file.h":
+from "some/path/my_library.h"
   staticmethods from `Foo`:
     def Bar()
     def Baz()
 ```
 
 In that example `Foo::Bar` and `Foo::Baz` must be static members of class `Foo`
-and will be wrapped as functions file.Bar and file.Baz.
+and will be wrapped as module-level functions `some.path.my_library.Bar` and
+`some.path.my_library.Baz`.
 
 TIP: The C++ class name can be fully qualified.
 
