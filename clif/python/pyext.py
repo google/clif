@@ -474,6 +474,7 @@ class Module(object):
         enable_instance_dict=c.enable_instance_dict):
       yield s
     tracked_slot_groups = {}
+    cpp_has_ext_def_ctor = False
     if iter_class:
       # Special-case nested __iter__ class.
       for s in _WrapIterSubclass(c.members, self.typemap):
@@ -502,7 +503,13 @@ class Module(object):
               # Clif class declaration.
               f.virtual = True
             if not f.params:
-              continue  # Skip generating wrapper function for default ctor.
+              if f.is_extend_method:
+                cpp_has_ext_def_ctor = True
+              else:
+                # Skip generating wrapper function for unextended default
+                # ctor. But wrapper function for extended default ctor is still
+                # necessary.
+                continue
             ctor = 'wrap%s_as___init__' % types.Mangle(cname)
           elif c.cpp_abstract and f.virtual:
             continue  # Skip calling virtual func from the abstract base class.
@@ -575,7 +582,8 @@ class Module(object):
         iterator=_GetCppObj('iter') if iter_class else None,
         trivial_dtor=c.cpp_has_trivial_dtor,
         subst_cpp_ptr=VIRTUAL_OVERRIDER_CLASS if virtual else '',
-        enable_instance_dict=c.enable_instance_dict):
+        enable_instance_dict=c.enable_instance_dict,
+        cpp_has_ext_def_ctor=cpp_has_ext_def_ctor):
       yield s
     if not iter_class:
       for s in types.GenThisPointerFunc(c.name.cpp_name, WRAPPER_CLASS_NAME,

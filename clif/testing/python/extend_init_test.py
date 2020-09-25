@@ -58,6 +58,21 @@ class ExtendInitTest(unittest.TestCase):
     with self.assertRaises(ValueError):
       obj.get_value()
 
+  def test_extend_init_without_default_constructor(self):
+    expected_value = 0
+    obj = extend_init.TestNoDefaultConstructor()
+    self.assertEqual(obj.get_value(), expected_value)
+    # Make sure other methods of the instance work as intended
+    expected_value = 3
+    obj.set_value(expected_value)
+    self.assertEqual(obj.get_value(), expected_value)
+
+  def test_extend_init_without_default_constructor_with_args(self):
+    with self.assertRaises(TypeError):
+      extend_init.TestNoDefaultConstructor(1)
+    with self.assertRaises(TypeError):
+      extend_init.TestNoDefaultConstructor(a=1)
+
 
 if __name__ == '__main__':
   unittest.main()

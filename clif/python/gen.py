@@ -383,7 +383,7 @@ def VirtualOverriderClass(name, pyname, cname, cfqname, isabstract, idfunc,
 def TypeObject(ht_qualname, tracked_slot_groups,
                tp_slots, pyname, ctor, wname, fqclassname,
                abstract, iterator, trivial_dtor, subst_cpp_ptr,
-               enable_instance_dict):
+               enable_instance_dict, cpp_has_ext_def_ctor):
   """Generate PyTypeObject methods and table.
 
   Args:
@@ -399,6 +399,7 @@ def TypeObject(ht_qualname, tracked_slot_groups,
     trivial_dtor: bool - if C++ destructor is trivial, no need to allow threads
     subst_cpp_ptr: str - C++ "replacement" class (being wrapped) if any
     enable_instance_dict: bool - add __dict__ to instance
+    cpp_has_ext_def_ctor: bool - if the C++ class has extended ctor
 
   Yields:
      Source code for PyTypeObject and tp_alloc / tp_init / tp_free methods.
@@ -512,7 +513,17 @@ def TypeObject(ht_qualname, tracked_slot_groups,
         yield I+'%s->::clif::PyObjRef::Init(self);' % cpp
       yield I+'return 0;'
     else:  # ctor is WRAP (holds 'wrapper name')
-      yield I+'PyObject* init = %s(self, args, kw);' % ctor
+      if cpp_has_ext_def_ctor:
+        yield I+('if ((args && PyTuple_GET_SIZE(args) != 0) ||'
+                 ' (kw && PyDict_Size(kw) != 0)) {')
+        yield I+I+(
+            'PyErr_SetString(PyExc_TypeError, "%s takes no arguments");' %
+            pyname)
+        yield I+I+'return -1;'
+        yield I+'}'
+        yield I+'PyObject* init = %s(self);' % ctor
+      else:
+        yield I+'PyObject* init = %s(self, args, kw);' % ctor
       if subst_cpp_ptr:
         yield I+'if (!init) return -1;'
         yield I+'Py_DECREF(init);'

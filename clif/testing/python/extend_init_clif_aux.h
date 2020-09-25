@@ -42,6 +42,12 @@ inline std::unique_ptr<TestCase3> TestCase3__extend__init__(int v) {
   return nullptr;
 }
 
+inline std::unique_ptr<TestNoDefaultConstructor>
+TestNoDefaultConstructor__extend__init__() {
+  auto res = std::make_unique<TestNoDefaultConstructor>(0);
+  return res;
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_PYTHON_EXTEND_INIT_CLIF_AUX_H_

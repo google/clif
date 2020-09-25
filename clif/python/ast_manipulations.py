@@ -61,6 +61,25 @@ def MoveExtendsOutOfClassesInPlace(ast):
 def MoveExtendsBackIntoClassesInPlace(ast, omit_self=False):
   MoveExtendFunctionsBackIntoClassesInPlace(ast, omit_self)
   MoveExtendPropertiesBackIntoClassesInPlace(ast)
+  FixCppHasDefaultCtor(ast)
+
+
+def FixCppHasDefaultCtor(ast):
+  """Set cpp_has_def_ctor to True if a class has extended default ctor."""
+  for decl in ast.decls:
+    if decl.decltype != ast_pb2.Decl.Type.CLASS:
+      continue
+    if decl.class_.cpp_has_def_ctor:
+      continue
+    for member in decl.class_.members:
+      if member.decltype != ast_pb2.Decl.Type.FUNC:
+        continue
+      if (member.func.is_extend_method and
+          member.func.constructor and
+          member.func.name.native == '__init__' and
+          not member.func.params):
+        decl.class_.cpp_has_def_ctor = True
+        break
 
 
 def _GenerateParameterSelf(class_decl):

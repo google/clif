@@ -43,6 +43,13 @@ struct TestCase3 {
   int value;
 };
 
+struct TestNoDefaultConstructor {
+  TestNoDefaultConstructor(int v): value(v) {}
+  int get_value() { return value; }
+  void set_value(int v) { value = v; }
+  int value;
+};
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_EXTEND_INIT_H_
