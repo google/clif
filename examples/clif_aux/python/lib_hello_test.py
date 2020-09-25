@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import absolute_import
-import division
-import print_function
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-import lib_hello
-import googletest
+from clif_aux.python import lib_hello
+import unittest
 
 
-class LibHello(googletest.TestCase):
+class LibHello(unittest.TestCase):
 
   def testHello(self):
     res = lib_hello.hello('world')
@@ -31,4 +31,4 @@ class LibHello(googletest.TestCase):
     self.assertEqual(res, 'Hello, world! Bye, world!')
 
 if __name__ == '__main__':
-  googletest.main()
+  unittest.main()

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from base import Base
+from inheritance.python.base import Base
 
 from "inheritance/python_inheritance.h":
   namespace `clif_example::python_inheritance`:

@@ -15,9 +15,9 @@
 """Tests for clif.examples.inheritance."""
 
 import unittest
-import base
-import inheritance
-import python_inheritance
+from inheritance.python import base
+from inheritance.python import inheritance
+from inheritance.python import python_inheritance
 
 
 class InheritanceTest(unittest.TestCase):

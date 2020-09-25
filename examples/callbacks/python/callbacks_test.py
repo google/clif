@@ -15,7 +15,7 @@
 """Tests for clif.examples.callbacks.python.callback."""
 
 import unittest
-import callbacks
+from callbacks.python import callbacks
 
 
 def MyGetCallback(data):

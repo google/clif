@@ -21,3 +21,9 @@ from "clif/testing/python/extend_default_value_clif_aux.h":
       def sum_and_set_values(self, v1: int = default, v2: int = default)
 
       def get_value(self) -> int
+
+    class DefaultValueInConstructor:
+      @extend
+      def __init__(self, v: int = default)
+
+      value: int

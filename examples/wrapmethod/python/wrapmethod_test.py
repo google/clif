@@ -16,7 +16,7 @@
 """
 
 import unittest
-import wrapmethod
+from wrapmethod.python import wrapmethod
 
 
 class WrapmethodTest(unittest.TestCase):

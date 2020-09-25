@@ -15,8 +15,8 @@
 """Tests for clif.examples.wrapfunc.python.wrapfunc."""
 
 import unittest
-import wrapfunc
-import wrappod
+from wrapfunc.python import wrapfunc
+from wrappod.python import wrappod
 
 
 class WrapfuncTest(unittest.TestCase):

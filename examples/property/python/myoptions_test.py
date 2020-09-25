@@ -15,7 +15,7 @@
 """Tests for clif.examples.property.python.myoptions."""
 
 import unittest
-import myoptions
+from property.python import myoptions
 
 
 class MyoptionsTest(unittest.TestCase):

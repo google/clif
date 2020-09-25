@@ -15,7 +15,7 @@
 """Tests for clif.examples.inheritence.python.operation."""
 
 import unittest
-import operation
+from inheritance.python import operation
 
 
 class Add(operation.Operation):

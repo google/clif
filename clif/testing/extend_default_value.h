@@ -9,6 +9,11 @@ struct Abc {
   int value;
 };
 
+struct DefaultValueInConstructor {
+  DefaultValueInConstructor(): value(0) {}
+  int value;
+};
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_EXTEND_DEFAULT_VALUE_H_

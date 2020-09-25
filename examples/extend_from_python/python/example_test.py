@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import googletest
+import unittest
 
-import example
+from extend_from_python.python import example
 
 
-class ExampleTest(googletest.TestCase):
+class ExampleTest(unittest.TestCase):
 
   def testAll(self):
     mc = example.MyClass()
@@ -30,4 +30,4 @@ class ExampleTest(googletest.TestCase):
 
 
 if __name__ == '__main__':
-  googletest.main()
+  unittest.main()

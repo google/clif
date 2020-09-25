@@ -16,8 +16,8 @@
 """
 
 import unittest
-import sample_pb2
-import wrap_protos
+from wrap_protos.protos import sample_pb2
+from wrap_protos.python import wrap_protos
 
 
 class WrapProtosTest(unittest.TestCase):

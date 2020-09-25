@@ -14,12 +14,12 @@
 
 """Tests for clif.examples.wrapfunc.python.default_args."""
 
-import absolute_import
-import division
-import print_function
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import unittest
-import default_args
+from wrapfunc.python import default_args
 
 
 class DefaultArgTest(unittest.TestCase):

@@ -15,7 +15,7 @@
 """Tests for clif.examples.inheritance.python.hidden_base."""
 
 import unittest
-import hidden_base
+from inheritance.python import hidden_base
 
 
 class HiddenBaseTest(unittest.TestCase):

@@ -52,6 +52,13 @@ class ExtendDefaultValueTest(unittest.TestCase):
     abc.sum_and_set_values(v1=v1, v2=v2)
     self.assertEqual(abc.get_value(), expected_value)
 
+  def test_default_value_in_constructor(self):
+    expected_value = 10
+    obj = extend_default_value.DefaultValueInConstructor()
+    self.assertEqual(obj.value, expected_value)
+    obj = extend_default_value.DefaultValueInConstructor(123)
+    self.assertEqual(obj.value, 123)
+
 
 if __name__ == '__main__':
   unittest.main()

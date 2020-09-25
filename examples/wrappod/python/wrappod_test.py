@@ -15,7 +15,7 @@
 """Tests for clif.examples.wrappod.python.wrappod."""
 
 import unittest
-import wrappod
+from wrappod.python import wrappod
 
 
 class WrappodTest(unittest.TestCase):

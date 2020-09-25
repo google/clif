@@ -15,7 +15,7 @@
 """Tests for clif.examples.templates.python.templates."""
 
 import unittest
-import templates
+from templates.python import templates
 
 
 class TemplatesTest(unittest.TestCase):
