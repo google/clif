@@ -1,4 +1,4 @@
-# Copyright 2017 Google Inc.
+# Copyright 2017-2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 # We need the Python libraries for generating PyCLIF wrappers.
 find_package(PythonInterp REQUIRED)
@@ -43,8 +43,28 @@ if(NOT PYCLIF_PROTO)
   endif(NOT PYCLIF_PROTO)
 endif(NOT PYCLIF_PROTO)
 
+execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -c "import clif; print(clif.__path__[0])"
+    OUTPUT_VARIABLE CLIF_INSTALL_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
 set(CLIF_EXAMPLES_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(CLIF_EXAMPLES_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+function(clif_target_name name target_var)
+  string(REPLACE "${CLIF_EXAMPLES_SOURCE_DIR}/" "" relative_path ${CMAKE_CURRENT_SOURCE_DIR})
+  string(REPLACE "/" "_" target_prefix ${relative_path})
+  set(${target_var} "${target_prefix}_${name}" PARENT_SCOPE)
+endfunction(clif_target_name name)
+
+function(clif_extension_module_name name name_var)
+  string(REPLACE "${CLIF_EXAMPLES_SOURCE_DIR}/" "" relative_path ${CMAKE_CURRENT_SOURCE_DIR})
+  string(REPLACE "/" "." path_prefix ${relative_path})
+  string(REPLACE "-" "_" ${path_prefix} ${path_prefix})
+  string(REPLACE "-" "_" clean_name ${name})
+  set(${name_var} "${path_prefix}.${clean_name}" PARENT_SCOPE)
+endfunction(clif_extension_module_name name_var)
 
 # Function to set up rules to invoke pyclif on a .clif file and generate
 # the wrapper .cc, and .h files.
@@ -63,27 +83,30 @@ function(add_pyclif_library name pyclif_file)
 
   string(REPLACE ".clif" "" pyclif_file_basename ${pyclif_file})
   set(gen_cc "${CMAKE_CURRENT_BINARY_DIR}/${pyclif_file_basename}.cc")
-  set(gen_h "${CMAKE_CURRENT_BINARY_DIR}/${pyclif_file_basename}.h")
+  set(gen_h "${CMAKE_CURRENT_BINARY_DIR}/${pyclif_file_basename}_clif.h")
   set(gen_init "${CMAKE_CURRENT_BINARY_DIR}/${pyclif_file_basename}_init.cc")
 
-  string(REPLACE "-" "_" module_name ${pyclif_file_basename})
+  clif_extension_module_name(${pyclif_file_basename} module_name)
+  clif_target_name(${pyclif_file_basename} target_name)
 
   if (GOOGLE_PROTOBUF_INCLUDE_DIRS)
     set(GOOGLE_PROTOBUF_CXX_FLAGS "-I${GOOGLE_PROTOBUF_INCLUDE_DIRS}")
   endif(GOOGLE_PROTOBUF_INCLUDE_DIRS)
 
   add_custom_target(
-    ${name}
+    ${target_name}
+    ALL
     BYPRODUCTS ${gen_cc} ${gen_h} ${gen_init}
     COMMAND
       ${PYCLIF}
       # If this is not run in a virtualenv after INSTALL.sh, then the following
       # two lines should be uncommented to point to the correct types.h and
       # the matcher binary.
-      # -p${CLIF_INSTALL_DIR}/python/types.h
-      # --matcher_bin=${CLIF_INSTALL_DIR}/clang/bin/clif-matcher
+      -p${CLIF_INSTALL_DIR}/python/types.h
+      --matcher_bin=${CMAKE_INSTALL_PREFIX}/bin/clif-matcher
       -c${gen_cc} -g${gen_h} -i${gen_init}
       # Specify the path to the generated files.
+      --py3output
       -I${CLIF_EXAMPLES_BINARY_DIR}
       --modname=${module_name}
       "-f-I${PYTHON_INCLUDE_DIRS} -I${CLIF_INSTALL_DIR}/.. -I${CLIF_EXAMPLES_SOURCE_DIR} -I${CLIF_EXAMPLES_BINARY_DIR} ${GOOGLE_PROTOBUF_CXX_FLAGS} -std=c++11 ${PYCLIF_LIBRARY_CXX_FLAGS}"
@@ -139,6 +162,9 @@ endfunction(add_pyclif_proto_library)
 include_directories(${CLIF_EXAMPLES_SOURCE_DIR}/../..)
 
 add_subdirectory("callbacks")
+add_subdirectory("clif_aux")
+add_subdirectory("extend_from_clifaux")
+add_subdirectory("extend_from_python")
 add_subdirectory("inheritance")
 add_subdirectory("property")
 add_subdirectory("templates")

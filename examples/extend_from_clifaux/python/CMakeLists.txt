@@ -1,4 +1,4 @@
-# Copyright 2017-2020 Google LLC
+# Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_pyclif_library("default_args" default_args.clif)
-
-add_pyclif_library("wrapfunc" wrapfunc.clif
-  CC_DEPS wrapfunc_cc_lib
-  CLIF_DEPS wrappod_python_wrappod
-)
-
+add_pyclif_library("example" example.clif)
