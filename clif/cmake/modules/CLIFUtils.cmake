@@ -114,7 +114,7 @@ function(add_proto_library name proto_srcfile)
             --python_out=${CMAKE_CURRENT_BINARY_DIR}
   )
 
-  add_library(${name} SHARED
+  add_library(${name} STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/${gen_cc}
     ${CMAKE_CURRENT_BINARY_DIR}/${gen_h}
   )
@@ -273,6 +273,12 @@ function(add_pyclif_proto_library name proto_file proto_lib)
     ${gen_h}
   )
 
+  add_library(${name}Shared SHARED
+    EXCLUDE_FROM_ALL
+    ${gen_cc}
+    ${gen_h}
+  )
+
   target_include_directories(${name}
     PRIVATE
       ${CLIF_SRC_DIR}
@@ -281,7 +287,7 @@ function(add_pyclif_proto_library name proto_file proto_lib)
       ${PYTHON_INCLUDE_DIRS}
   )
 
-  target_link_libraries(${name}
+  set(PYCLIF_PROTO_LINK_LIBRARIES
     clif_python_utils_proto_util
     pyClifRuntime
     ${proto_lib}
@@ -291,6 +297,9 @@ function(add_pyclif_proto_library name proto_file proto_lib)
     absl::memory
     absl::optional
   )
+
+  target_link_libraries(${name} ${PYCLIF_PROTO_LINK_LIBRARIES})
+  target_link_libraries(${name}Shared ${PYCLIF_PROTO_LINK_LIBRARIES})
 endfunction(add_pyclif_proto_library name proto_file)
 
 function(add_pyclif_library_and_test name)

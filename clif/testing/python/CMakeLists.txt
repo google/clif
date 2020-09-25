@@ -61,7 +61,7 @@ add_pyclif_library_for_test(t3 t3.clif)
 
 add_pyclif_library_for_test(t4 t4.clif
   CC_DEPS clif_testing_t4
-  PROTO_DEPS clif_testing_nested_proto_wrapper clifAstProtoWrapper
+  PROTO_DEPS clif_testing_nested_proto_wrapper clifAstProtoWrapperShared
 )
 
 add_pyclif_library_for_test(t6 t6.clif)
@@ -135,7 +135,7 @@ add_pyclif_library_for_test(pass_none pass_none.clif)
 add_pyclif_library_for_test(sequence_methods sequence_methods.clif)
 
 add_pyclif_library_for_test(shared_ptr_proto_member shared_ptr_proto_member.clif
-  PROTO_DEPS clifAstProtoWrapper)
+  PROTO_DEPS clifAstProtoWrapperShared)
 
 add_pyclif_library_for_test(slots slots.clif)
 

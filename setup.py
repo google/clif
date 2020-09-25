@@ -11,40 +11,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Setup configuration."""
 
-import glob
+from distutils import sysconfig
 import os
-import platform
-# pylint: disable=g-import-not-at-top
-try:
-  import setuptools
-except ImportError:
-  from ez_setup import use_setuptools
-  use_setuptools()
-  import setuptools
+import setuptools
 
-py_version = platform.python_version_tuple()
-if py_version < ('2', '7') or py_version[0] == '3' and py_version < ('3', '4'):
-  raise RuntimeError('Python version 2.7 or 3.4+ required')
 
 if not os.path.exists('clif/protos/ast_pb2.py'):
   raise RuntimeError('clif/protos/ast_pb2.py not found. See INSTALL.sh.')
 
-examples_tree = [('examples', glob.glob('examples/*.*'))]
-for d in filter(os.path.isdir, glob.glob('examples/*')):
-  examples_tree.append((d, glob.glob(d+'/*.*')))
-  examples_tree.append((d+'/python', glob.glob(d+'/python/*')))
-  if 'wrap_protos' in d:
-    examples_tree.append((d+'/protos', glob.glob(d+'/protos/*')))
 
 setuptools.setup(
     name='pyclif',
-    version='0.3',
+    version='0.4',
     description='Python CLIF C++ wrapper generator',
     long_description=('Python extension module generator based on CLIF\n'
-                      'framework. It uses Clang for C++ header analisys\n'
+                      'framework. It uses Clang for C++ header analysis\n'
                       'and a runtime library supporting std:: type convertions.'
                       '\n'),
     url='https://github.com/google/clif',
@@ -52,45 +35,51 @@ setuptools.setup(
     author_email='pyclif@googlegroups.com',
     # Contained modules and scripts.
     packages=['clif', 'clif.protos', 'clif.python', 'clif.python.utils'],
-    data_files=[
-        # pylint: disable=bad-continuation
-        ('python', glob.glob('clif/python/*.cc') +
-                   glob.glob('clif/python/*.h') +
-                   glob.glob('clif/python/*.md')),
-        ] + examples_tree,
+    package_data={'clif': ['python/*.cc', 'python/*.h']},
+    include_package_data=True,
     entry_points={
         'console_scripts': [
             'pyclif = clif.pyclif:start',
             'pyclif_proto = clif.python.proto:Start',
-            ],
-        },
+        ],
+    },
     ext_modules=[
         setuptools.Extension(
-            'clif.python.utils.proto_util', [
+            'clif.python.utils.proto_util',
+            [
                 # proto_util cc lib
                 'clif/python/proto_util.cc',
                 # CLIF-generated sources for proto_util wrapper
                 'clif/python/utils/proto_util.cc',
                 'clif/python/utils/proto_util.init.cc',
-                # 'clif_runtime',
+                # CLIF runtime
                 'clif/python/pyproto.cc',
                 'clif/python/runtime.cc',
                 'clif/python/slots.cc',
                 'clif/python/types.cc',
-                ],
+            ],
             include_dirs=[
+                # Path to python header
+                sysconfig.get_python_inc(),
                 # Path to CLIF runtime headers
                 './',
-                ],
-            extra_compile_args=['-std=c++11'],
-            libraries=['protobuf'],
-            ),
-        ],
+            ],
+            extra_compile_args=['-std=c++17'],
+            libraries=[
+                'absl_bad_optional_access',
+                'absl_raw_logging_internal',
+                'absl_log_severity',
+                'glog',
+                'protobuf',
+            ],
+        ),
+    ],
+    python_requires='>=3.6.0,<3.8.0',
     install_requires=[
-        'setuptools>=18.5',
-        'pyparsing>=2.2.0',
-        'protobuf>=3.2',
-        ],
+        'setuptools>=24.2.0',
+        'pyparsing==2.2.0',
+        'protobuf>=3.8.0',
+    ],
     # PyPI package information.
     classifiers=[
         'Development Status :: 5 - Production/Stable',
@@ -100,15 +89,12 @@ setuptools.setup(
         'Operating System :: POSIX :: Linux',
         'Programming Language :: C++',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Software Development :: Code Generators',
-        ],
+    ],
     license='Apache 2.0',
     keywords='Google C++ extension module wrapper generator clif',
-    )
+)

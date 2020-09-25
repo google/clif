@@ -1,5 +1,7 @@
 # C++ Language Interface Foundation (CLIF)
 
+![CI](https://github.com/google/clif/workflows/CI/badge.svg?branch=main&event=push)
+
 CLIF provides a common foundation for creating C++ wrapper generators for
 various languages.
 
@@ -51,44 +53,30 @@ subdirectory.  Both Python 2 and 3 are supported.
  1. We use Google
     [protobuf](https://developers.google.com/protocol-buffers/docs/downloads)
     for inter-process communication between the CLIF frontend and backend.
-    Version 3.2.0 or later is required.
+    Version 3.8.0 or later is required.
     Please install protobuf for both C++ and Python from source, as we will
     need some protobuf source code later on.
 
  1. You must have [virtualenv](https://pypi.python.org/pypi/virtualenv)
     installed.
 
- 1. You must have Subversion installed, so we can fetch LLVM.
-
  1. You must have pyparsing installed, so we can build protobuf. Use
-    `pip install 'pyparsing>=2.2.0'` to fetch the correct version.
+    `pip install 'pyparsing==2.2.0'` to fetch the correct version.
 
  1. Make sure `pkg-config --libs python` works (e.g. install `python-dev` and
     `pkg-config`).
 
 ### Building
 
-To build and install CLIF, run:
+To build and install CLIF to a virtualenv, run:
 
 ```bash
-./INSTALL.sh
+virtualenv --python=python3.x clif-venv
+./INSTALL.sh clif-venv/bin/python
 ```
 
+
 The following outlines the steps in `INSTALL.sh` for clarification.
-`INSTALL.sh` sets up a Python virtual environment where it installs CLIF.
-
-1.  Checkout LLVM and Clang source trees (the exact SVN version as specified
-    here is *required*)
-
-    ```bash
-    # We keep it separate of the CLIF tree to avoid pip unwanted copying.
-    mkdir $LLVMSRC_DIR
-    cd $LLVMSRC_DIR
-    svn co https://llvm.org/svn/llvm-project/llvm/trunk@321388 llvm
-    cd llvm/tools
-    svn co https://llvm.org/svn/llvm-project/cfe/trunk@321388 clang
-    ln -s -f -n "$CLIFSRC_DIR/clif" clif
-    ```
 
 1.  Build and install the CLIF backend. If you use
     [Ninja](https://ninja-build.org/) instead of `make` your build will go
@@ -97,10 +85,9 @@ The following outlines the steps in `INSTALL.sh` for clarification.
     `cmake` command here:
 
     ```bash
-    # Builds must be done outside of the LLVM tree.
-    mkdir ../../build_matcher
-    cd ../../build_matcher
-    cmake ...flags... $LLVMSRC_DIR/llvm
+    mkdir build
+    cd build
+    cmake ...flags... $CLIFSRC_DIR
     make clif-matcher
     make install
     ```
@@ -108,17 +95,13 @@ The following outlines the steps in `INSTALL.sh` for clarification.
     Replace the cmake and make commands with these to use Ninja:
 
     ```bash
-    cmake -G Ninja ...flags... $LLVMSRC_DIR/llvm
+    cmake -G Ninja ...flags... $CLIFSRC_DIR
     ninja clif-matcher
     ninja -j 2 install
     ```
 
-    If the clif-matcher build target is not found, check that you created the
-    correct `llvm/tools/clif` symlink in the previous step. The CLIF backend
-    builds as _part_ of an LLVM build.
-
-    If you have more than one Python version installed (eg. python2.7 and
-    python3.6) cmake may have problems finding python libraries for the Python
+    If you have more than one Python version installed (eg. python3.6 and
+    python3.7) cmake may have problems finding python libraries for the Python
     you specified as INSTALL.sh argument and uses the default Python instead. To
     help cmake use the correct Python add the following options to the cmake
     command (substitute the correct path for your system):
@@ -128,41 +111,34 @@ The following outlines the steps in `INSTALL.sh` for clarification.
       -DPYTHON_INCLUDE_DIR="/usr/include/python3.6" \
       -DPYTHON_LIBRARY="/usr/lib/x86_64-linux-gnu/libpython3.6m.so" \
       -DPYTHON_EXECUTABLE="/usr/bin/python3.6" \
-      "${CMAKE_G_FLAGS[@]}" "$LLVM_DIR/llvm"
+      "${CMAKE_G_FLAGS[@]}" "$CLIFSRC_DIR"
     ```
-
-    NOTE: INSTALL.sh builds only for X86. If you want to build for another
-    architecture, modify it to specify your target architecture, or just remove
-    this restriction (see NOTE in INSTALL.sh).
 
 1.  Get back to your CLIF python checkout and install it using pip.
 
     ```bash
     cd "$CLIFSRC_DIR"
-    cp "$BUILD_DIR/tools/clif/protos/ast_pb2.py" clif/protos/
+    cp "$BUILD_DIR/clif/protos/ast_pb2.py" clif/protos/
+    cp "$BUILD_DIR/clif/python/utils/proto_util.cc" clif/python/utils/
+    cp "$BUILD_DIR/clif/python/utils/proto_util_clif.h" clif/python/utils/
+    cp "$BUILD_DIR/clif/python/utils/proto_util.init.cc" clif/python/utils/
     pip install .
     ```
 
 That version is guaranteed to work. Older versions likely do not work (they lack
 some APIs); later versions might work, at your own risk.
 
-INSTALL.sh will build and install CLIF for Python (and LLVM Clang as an internal
-tool) to your system by default in `$HOME/opt/clif` and `$HOME/opt/clif/clang`.
+INSTALL.sh will build and install clif-matcher to CMake install directory and
+CLIF for Python to the given Python (virtual) environment.
 
-To run Python CLIF use `$HOME/opt/clif/bin/pyclif`.
-
-NOTE: In CLIF, [optional.h](clif/python/optional.h),
-[optional.cc](clif/python/optional.cc) and [ptr_util.h](clif/python/ptr_util.h)
-are a temporary clone of [abseil-cpp]
-(https://github.com/abseil/abseil-cpp/tree/master/absl/types). Anyone including
-CLIF developers and OSS contributors are not supposed to modify these files.
+To run Python CLIF use `pyclif`.
 
 ## Using your newly built pyclif
 
 First, try some examples:
 
 ```bash
-cd ~/opt/clif/examples
+cd examples
 less README.md
 ```
 
