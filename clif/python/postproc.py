@@ -24,6 +24,26 @@ to get clean list<int> for output and ValueError on error.
 """
 
 
+def AsTuple(return_value):
+  """Converts any iterable into a plain Python tuple."""
+  return tuple(return_value)
+
+
+def AsList(return_value):
+  """Converts any iterable into a plain Python list."""
+  return list(return_value)
+
+
+def AsSortedTuple(return_value):
+  """Converts any iterable into a sorted Python tuple."""
+  return tuple(sorted(return_value))
+
+
+def AsSortedList(return_value):
+  """Converts any iterable into a sorted Python list."""
+  return list(sorted(return_value))
+
+
 def _RaiseOnFalse(caller_name, error_class, ok, *args):
   """Returns None / arg / (args,...) if ok, otherwise raises error_class."""
   if not isinstance(ok, bool):

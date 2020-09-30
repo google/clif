@@ -132,6 +132,8 @@ add_pyclif_library_for_test(overload overload.clif)
 
 add_pyclif_library_for_test(pass_none pass_none.clif)
 
+add_pyclif_library_for_test(return_set_as_list_test return_set_as_list_test.clif)
+
 add_pyclif_library_for_test(sequence_methods sequence_methods.clif)
 
 add_pyclif_library_for_test(shared_ptr_proto_member shared_ptr_proto_member.clif
