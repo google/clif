@@ -760,9 +760,6 @@ class Postprocessor(object):
                          '@classmethod' % f.name.native)
       if 'virtual' in decorators:
         raise ValueError("Classmethods can't be @virtual")
-      # b/165862208: Remove the guard after the new matcher is released.
-      if 'extend' in decorators:
-        raise ValueError('@extend with @classmethod is not supported')
       f.classmethod = True
       decorators.remove('classmethod')
     elif 'classmethod' in decorators:
