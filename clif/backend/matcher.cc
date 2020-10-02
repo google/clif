@@ -607,7 +607,6 @@ bool CheckOptionalLikeTypes(
       "::absl::variant<",
       "::std::optional<",
       "::std::variant<",
-      "::util::StatusOr<",
   });
   for (const auto& covered_type : covered_types) {
     if (from_clif_name.find(covered_type, 0) == 0) { //  NOLINT abseil-string-find-startswith
