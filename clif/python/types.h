@@ -217,6 +217,15 @@ bool Clif_PyObjAs(PyObject*, std::string*);
 
 PyObject* UnicodeFromBytes(PyObject*);
 
+// Reusing non-const T* conversion for const T*.
+template <typename T>
+bool Clif_PyObjAs(PyObject* py, const T** c) {
+  T* nonconst_ptr = nullptr;
+  bool ok = Clif_PyObjAs(py, &nonconst_ptr);
+  *c = nonconst_ptr;
+  return ok;
+}
+
 //
 // Containers
 //
