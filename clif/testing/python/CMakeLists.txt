@@ -132,7 +132,9 @@ add_pyclif_library_for_test(overload overload.clif)
 
 add_pyclif_library_for_test(pass_none pass_none.clif)
 
-add_pyclif_library_for_test(return_set_as_list_test return_set_as_list_test.clif)
+add_pyclif_library_for_test(return_set_as_list return_set_as_list.clif)
+
+add_pyclif_library_for_test(vector_const_elem_ptr vector_const_elem_ptr.clif)
 
 add_pyclif_library_for_test(sequence_methods sequence_methods.clif)
 
