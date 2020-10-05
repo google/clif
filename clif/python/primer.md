@@ -938,11 +938,12 @@ contract.]
 
 ### Sequences are Iterable
 
-When a CLIF wrapped class contains the special methods `__getitem__` under the
-sequence protocol, and also the method `__len__`, then instances of such a class
-are iterable in Python. That is, with the wrappings for `__getitem__` and
-`__len__` added as above for the class `ClassWithMethods`, one can now iterate
-over the elements of its instance, for example in a `for` loop, as follows:
+When a CLIF wrapped class contains the special methods `__getitem__` under
+the sequence protocol (i.e. using the `@sequential` decorator), and also the
+method `__len__`, then instances of such a class are iterable in Python. That
+is, with the wrappings for `__getitem__` and `__len__` added as above for
+the class `ClassWithMethods`, one can now iterate over the elements of its
+instance, for example in a `for` loop, as follows:
 
 ```python
 obj = ClassWithMethods(10)
