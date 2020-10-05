@@ -30,7 +30,7 @@ add_custom_target(runPyClifIntegrationTests
 #
 # $> ninja [pyclif_library_target_name]_test
 function(add_pyclif_library_for_test name)
-  cmake_parse_arguments(PYCLIF_TEST_LIBRARY "" "" "TEST" ${ARGN})
+  cmake_parse_arguments(PYCLIF_TEST_LIBRARY "" "" "TEST;PY_DEPS" ${ARGN})
   if (NOT DEFINED PYCLIF_TEST_LIBRARY_TEST)
     set(PYCLIF_TEST_LIBRARY_TEST "${name}_test.py")
   endif()
@@ -40,14 +40,17 @@ function(add_pyclif_library_for_test name)
   )
 
   clif_target_name(${name} lib_target_name)
-  add_dependencies(runPyClifIntegrationTests ${lib_target_name})
+  add_dependencies(runPyClifIntegrationTests
+    ${lib_target_name}
+    ${PYCLIF_TEST_LIBRARY_PY_DEPS}
+  )
 
   configure_file(${PYCLIF_TEST_LIBRARY_TEST} ${PYCLIF_TEST_LIBRARY_TEST} COPYONLY)
 
   add_custom_target("${lib_target_name}_test"
     COMMAND ${PYTHON_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_BINARY_DIR} -p "${PYCLIF_TEST_LIBRARY_TEST}"
     WORKING_DIRECTORY ${CLIF_BIN_DIR}
-    DEPENDS ${lib_target_name}
+    DEPENDS ${lib_target_name} ${PYCLIF_TEST_LIBRARY_PY_DEPS}
   )
 endfunction(add_pyclif_library_for_test name)
 
@@ -99,7 +102,9 @@ add_pyclif_library_for_test(enable_instance_dict enable_instance_dict.clif)
 
 add_pyclif_library_for_test(extend_from_clifaux extend_from_clifaux.clif)
 
-add_pyclif_library_for_test(extend_methods extend_methods.clif)
+add_pyclif_library_for_test(extend_methods extend_methods.clif
+  PY_DEPS clif_python_type_customization
+)
 
 add_pyclif_library_for_test(extend_properties extend_properties.clif)
 
@@ -132,7 +137,9 @@ add_pyclif_library_for_test(overload overload.clif)
 
 add_pyclif_library_for_test(pass_none pass_none.clif)
 
-add_pyclif_library_for_test(return_set_as_list return_set_as_list.clif)
+add_pyclif_library_for_test(return_set_as_list return_set_as_list.clif
+  PY_DEPS clif_python_postproc
+)
 
 add_pyclif_library_for_test(vector_const_elem_ptr vector_const_elem_ptr.clif)
 

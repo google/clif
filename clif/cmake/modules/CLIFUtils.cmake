@@ -315,3 +315,21 @@ function(add_pyclif_library_and_test name)
     DEPENDS ${lib_target_name}
   )
 endfunction(add_pyclif_library_and_test)
+
+
+# Function to set up rules to copy python file to build directory.
+#
+# Usage:
+#   add_py_library(
+#     NAME
+#     PY_FILE
+#   )
+function(add_py_library name py_file)
+  clif_target_name(${name} lib_target_name)
+
+  add_custom_target(${lib_target_name}
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_CURRENT_SOURCE_DIR}/${py_file}
+            ${CMAKE_CURRENT_BINARY_DIR}/${py_file}
+  )
+endfunction(add_py_library)

@@ -77,7 +77,8 @@ target_link_libraries(proto_util_cc PRIVATE
 )
 add_target_protobuf_link_libraries(proto_util_cc)
 
-configure_file(type_customization.py type_customization.py COPYONLY)
+add_py_library(type_customization type_customization.py)
+add_py_library(postproc postproc.py)
 
 add_subdirectory(utils)
 
