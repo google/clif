@@ -66,6 +66,19 @@ subdirectory.  Both Python 2 and 3 are supported.
  1. Make sure `pkg-config --libs python` works (e.g. install `python-dev` and
     `pkg-config`).
 
+ 1. We use [Clang (LLVM's C++ compiler)](http://llvm.org/) to parse C++ headers,
+    so make sure Clang and LLVM version 11 is available. On Ubuntu and
+    Debian, you can install the prebuilt version from https://apt.llvm.org.
+
+ 1. You must have [abseil-cpp](https://github.com/abseil/abseil-cpp) installed.
+
+ 1. We use [googletest](https://github.com/google/googletest) for unit testing
+    C++ libraries.
+
+For references, there is a [Dockerfile](https://github.com/google/clif/blob/main/Dockerfile)
+running an Ubuntu image with all the prerequisites already installed. See the
+instructions at the top of the file.
+
 ### Building
 
 To build and install CLIF to a virtualenv, run:

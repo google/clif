@@ -19,13 +19,13 @@
 #  docker build $CLIF_DIR --tag clif --build-arg=UBUNTU_VERSION=18.04 ...
 #
 #  // Configure build
-#  docker run --volume $CLIF_DIR:/clif --workdir /clif/build cmake ..
+#  docker run --volume $CLIF_DIR:/clif --workdir /clif/build clif cmake ..
 #
 #  // Build clif-matcher
-#  docker run --volume $CLIF_DIR:/clif --workdir /clif/build make clif-matcher
+#  docker run --volume $CLIF_DIR:/clif --workdir /clif/build clif make clif-matcher
 #
 #  // Run cc tests
-#  docker run --volume $CLIF_DIR:/clif --workdir /clif/build ctest
+#  docker run --volume $CLIF_DIR:/clif --workdir /clif/build clif ctest
 #
 # This docker image can be customized using the following build args:
 #
