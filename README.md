@@ -2,12 +2,20 @@
 
 ![CI](https://github.com/google/clif/workflows/CI/badge.svg?branch=main&event=push)
 
-CLIF provides a common foundation for creating C++ wrapper generators for
-various languages.
+PyCLIF defines a C++ API to be wrapped via a concise
+*What You See Is What You Get* interface file
+([example](
+https://github.com/google/clif/blob/main/examples/wrapmethod/python/wrapmethod.clif)),
+with a syntax derived from [pytypedecl](https://github.com/google/pytypedecl).
+
+About the name of this repo: CLIF was started as a common foundation for
+creating C++ wrapper generators for various languages. However, currently
+Python is the only target language, and there is no development activity
+for other target languages.
 
 ## Overview
 
-It consists of four parts:
+PyCLIF consists of four parts:
 
   1. Parser
   1. Matcher
