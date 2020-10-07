@@ -31,6 +31,7 @@ headers are included.
 #include <queue>
 #include <stack>
 #include <memory>
+#include <type_traits>
 #include <utility>
 #include <typeinfo>
 // Clang and gcc define __EXCEPTIONS when -fexceptions flag passed to them.
@@ -602,14 +603,27 @@ bool IterToCont(PyObject* py, Inserter add) {
   if (it == nullptr) return false;
   PyObject *el;
   while ((el = PyIter_Next(it)) != nullptr) {
-    typename std::remove_const<T>::type item;
-    bool ok = Clif_PyObjAs(el, &item);
-    Py_DECREF(el);
-    if (!ok) {
-      Py_DECREF(it);
-      return false;
+    using Item = std::remove_const_t<T>;
+    if constexpr (std::is_default_constructible_v<Item>) {
+      Item item;
+      bool ok = Clif_PyObjAs(el, &item);
+      Py_DECREF(el);
+      if (!ok) {
+        Py_DECREF(it);
+        return false;
+      }
+      add(std::move(item));
+    } else {
+      Item* item;
+      bool ok = Clif_PyObjAs(el, &item);
+      if (!ok) {
+        Py_DECREF(el);
+        Py_DECREF(it);
+        return false;
+      }
+      add(Item(*item));
+      Py_DECREF(el);
     }
-    add(std::move(item));
   }
   Py_DECREF(it);
   return !PyErr_Occurred();
