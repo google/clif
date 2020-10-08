@@ -26,9 +26,7 @@ from clif.python import postproc
 class PostprocTest(unittest.TestCase):
 
   def testAsTupleOrList(self):
-    self.assertTupleEqual(postproc.AsTuple([4, 8, 5]), (4, 8, 5))
     self.assertTupleEqual(postproc.AsSortedTuple('xzy'), ('x', 'y', 'z'))
-    self.assertListEqual(postproc.AsList((5.1, 2.6)), [5.1, 2.6])
     self.assertListEqual(postproc.AsSortedList((3, 9, 6)), [3, 6, 9])
 
   @parameterized.parameterized.expand((
