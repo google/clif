@@ -38,6 +38,8 @@ jobs:
         python:
         - 3.6
         - 3.7
+        - 3.8
+        - 3.9
 
     name: "Ubuntu ${{ matrix.ubuntu }} - Python ${{ matrix.python }}"
     runs-on: ubuntu-latest

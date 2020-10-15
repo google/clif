@@ -79,7 +79,9 @@ RUN apt-get update && apt-get install -y \
 # Ubuntu. See https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa
 RUN add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update && \
-    apt-get install -y "python$PYTHON_VERSION-dev"
+    apt-get install -y \
+    "python$PYTHON_VERSION-dev" \
+    "python$PYTHON_VERSION-distutils"
 
 # Compile and install absl-cpp from source
 RUN wget "https://github.com/abseil/abseil-cpp/archive/$ABSL_VERSION.tar.gz" && \
