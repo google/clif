@@ -17,6 +17,7 @@ import unittest
 from clif.testing.python import imported_inheritance
 
 
+@unittest.skip('b/170861151')
 class ImportedInheritanceTest(unittest.TestCase):
 
   def testInheritNestedInner(self):

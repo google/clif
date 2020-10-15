@@ -86,6 +86,10 @@ class ClassModuleAttrTest(unittest.TestCase):
        PyDerivedVirtualDerivedEmpty),
   ])
   def testBasicRefcountHealth(self, ext_type, py_type, num_objs=10000):
+    if (py_type is None and sys.version_info.major == 3 and
+        sys.version_info.minor >= 8):
+      self.skipTest('b/170861151')
+
     print()
     print('EXT_TYPE:', ext_type)
     print(' PY_TYPE:', py_type)

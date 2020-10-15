@@ -100,7 +100,15 @@ add_pyclif_library_for_test(diamond_inheritance diamond_inheritance.clif)
 
 add_pyclif_library_for_test(enable_instance_dict enable_instance_dict.clif)
 
+add_pyclif_library_for_test(extend_classmethods extend_classmethods.clif
+  CC_DEPS clif_testing_extend_classmethods
+)
+
+add_pyclif_library_for_test(extend_default_value extend_default_value.clif)
+
 add_pyclif_library_for_test(extend_from_clifaux extend_from_clifaux.clif)
+
+add_pyclif_library_for_test(extend_init extend_init.clif)
 
 add_pyclif_library_for_test(extend_methods extend_methods.clif
   PY_DEPS clif_python_type_customization
@@ -113,6 +121,10 @@ add_pyclif_library_for_test(extension_type_refcount extension_type_refcount.clif
 add_pyclif_library_for_test(_hidden hidden.clif
   TEST hidden_test.py)
 
+add_pyclif_library_for_test(imported_inheritance imported_inheritance.clif
+  CLIF_DEPS clif_testing_python_nested_inheritance
+)
+
 add_pyclif_library_for_test(imported_methods imported_methods.clif)
 
 add_pyclif_library_for_test(iterator iterator.clif)
@@ -122,6 +134,8 @@ add_pyclif_library_for_test(implicit_conversion implicit_conversion.clif)
 add_pyclif_library_for_test(nested_callbacks nested_callbacks.clif)
 
 add_pyclif_library_for_test(nested_fields nested_fields.clif)
+
+add_pyclif_library_for_test(nested_inheritance nested_inheritance.clif)
 
 add_pyclif_library_for_test(nested_types nested_types.clif)
 
@@ -137,11 +151,19 @@ add_pyclif_library_for_test(overload overload.clif)
 
 add_pyclif_library_for_test(pass_none pass_none.clif)
 
+add_py_library(pickle_compatibility_helper pickle_compatibility_helper.py)
+
+add_py_library(pickle_compatibility pickle_compatibility.py)
+
+add_pyclif_library_for_test(_pickle_compatibility pickle_compatibility.clif
+  PY_DEPS clif_testing_python_pickle_compatibility
+          clif_testing_python_pickle_compatibility_helper
+  TEST pickle_compatibility_test.py
+)
+
 add_pyclif_library_for_test(return_set_as_list return_set_as_list.clif
   PY_DEPS clif_python_postproc
 )
-
-add_pyclif_library_for_test(vector_const_elem_ptr vector_const_elem_ptr.clif)
 
 add_pyclif_library_for_test(sequence_methods sequence_methods.clif)
 
@@ -162,6 +184,8 @@ add_pyclif_library_for_test(std_variant std_variant.clif
 add_pyclif_library_for_test(template_alias template_alias.clif)
 
 add_pyclif_library_for_test(templates templates.clif)
+
+add_pyclif_library_for_test(vector_const_elem_ptr vector_const_elem_ptr.clif)
 
 add_pyclif_library_for_test(virtual_funcs virtual_funcs.clif)
 

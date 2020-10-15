@@ -48,6 +48,12 @@ add_clif_test_cc_library(std_variant
   std_variant.cc
 )
 
+# extend_classmethods cc_library
+add_clif_test_cc_library(extend_classmethods
+  extend_classmethods.h
+  extend_classmethods.cc
+)
+
 find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
 target_link_libraries(clif_testing_t9 ${PYTHON_LIBRARIES})
