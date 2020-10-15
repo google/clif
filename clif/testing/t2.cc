@@ -51,3 +51,12 @@ void take_nocopy_class(MovableButUncopyable*) {
 }
 
 constexpr char Abstract::KIND[];
+
+int pass_list_as_vector_of_no_default_constructor(
+    const std::vector<NoDefaultConstructor>& vec) {
+  int result = 13;
+  for (auto elem : vec) {
+    result += elem.A();
+  }
+  return result;
+}

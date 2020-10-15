@@ -93,3 +93,6 @@ from "clif/testing/t2.h":
     int_set_vector: list<`std::set` as set<int>>
 
   def make_ndefctor(x: int=default) -> NoDefaultConstructor
+
+  def pass_list_as_vector_of_no_default_constructor(
+      vec: list<NoDefaultConstructor>) -> int

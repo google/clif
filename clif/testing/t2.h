@@ -154,4 +154,8 @@ class OutputParameter {
 inline NoDefaultConstructor make_ndefctor(int x = 0) {
   return NoDefaultConstructor(x);
 }
+
+int pass_list_as_vector_of_no_default_constructor(
+    const std::vector<NoDefaultConstructor>& vec);
+
 #endif  // CLIF_TESTING_T2_H_

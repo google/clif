@@ -163,6 +163,13 @@ class T2Test(unittest.TestCase):
     movable_return = output_param.MovableButUncopyableOutputParameter2()
     self.assertEqual(movable_return.a, 1)
 
+  def testPassListAsVectorOfNoDefaultConstructor(self):
+    res0 = t2.pass_list_as_vector_of_no_default_constructor([])
+    self.assertEqual(res0, 13)
+    res3 = t2.pass_list_as_vector_of_no_default_constructor(
+        [t2.make_ndefctor(i) for i in [3, -5, 7]])
+    self.assertEqual(res3, 18)
+
 
 if __name__ == '__main__':
   unittest.main()
