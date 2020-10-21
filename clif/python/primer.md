@@ -11,7 +11,7 @@ the order they appear here. If you are already using CLIF, you can jump to any
 section of your choice but keep in mind that some of the CLIF features used in
 that section were probably introduced in earlier sections.
 
-NOTE: The examples used in this doc live in [clif/examples](../../examples)..
+NOTE: The examples used in this doc live in [clif/examples](../../examples).
 Each example has its own directory. Within that directory, the CLIF wrapping is
 in the subdirectory named `python`. The `python` directory also contains a test
 illustrating the usage of the corresponding CLIF wrapping and its features.
@@ -34,23 +34,23 @@ interface for Python. The `<HEADER>_clif_aux.h` file must be in the same
 directory as the `<HEADER>.clif` file. A minimal example, showing how to
 add in a simple function, can be found here:
 
-*   [clif/examples/clif_aux/python/lib_hello_clif_aux.h](http://clif/examples/clif_aux/python/lib_hello_clif_aux.h)
+*   [clif/examples/clif_aux/python/lib_hello_clif_aux.h](../../examples/clif_aux/python/lib_hello_clif_aux.h)
 
 Extending a C++ class with methods that only exist in Python is also possible
 but a little more involved:
 
-*   [clif/examples/extend_from_clifaux/python/](http://clif/examples/extend_from_clifaux/python/)
-*   [The unit tests](http://clif/testing/python/extend_from_clifaux.clif)
+*   [clif/examples/extend_from_clifaux/python/](../../examples/extend_from_clifaux/python/)
+*   [The unit tests](../testing/python/extend_from_clifaux.clif)
     are also useful as a reference.
 
 Extending a C++ class with constructors is special. All extended constructors
 should return a unique_ptr to the created instance:
 
-*   [Example for extending constructors](http://clif/testing/python/extend_init_clif_aux.h)
+*   [Example for extending constructors](../testing/python/extend_init_clif_aux.h)
 
 C++ classes can also be extended with properties:
 
-*   [clif/testing/python/extend_properties.clif](http://clif/testing/python/extend_properties.clif)
+*   [clif/testing/python/extend_properties.clif](../testing/python/extend_properties.clif)
 *   [third_party/car/embedded/common/python/can_protocol.clif](http://third_party/car/embedded/common/python/can_protocol.clif)
 
 The `_clif_aux.h` feature can also be useful to work around PyCLIF limitations
@@ -133,7 +133,7 @@ Current Limitation:
 
   * `@type_customization.extend` needs a pytype workaround as explained and
     tracked under b/161575039. See also [extend_from_python/python/example.py](
-    http://clif/examples/extend_from_python/python/example.py).
+    ../../examples/extend_from_python/python/example.py).
 
 ## Wrapping POD data types {#wrappod}
 
