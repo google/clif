@@ -92,13 +92,15 @@ jobs:
           docker run -v $GITHUB_WORKSPACE:/clif -w /clif/build localhost:5000/clif bash -c 'cmake /clif \
             -DPYTHON_INCLUDE_DIR=$(python${{ matrix.python }} -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())")  \
             -DPYTHON_LIBRARIES=$(python${{ matrix.python }} -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))") \
-            -DPYTHON_EXECUTABLE="/usr/bin/python${{ matrix.python }}"'
+            -DPYTHON_EXECUTABLE="/usr/bin/python${{ matrix.python }}" \
+            -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+            -DCMAKE_RULE_MESSAGES:BOOL=OFF'
 
     - name: Build
-      run: docker run -v $GITHUB_WORKSPACE:/clif -w /clif/build localhost:5000/clif make -j$(nproc)
+      run: docker run -v $GITHUB_WORKSPACE:/clif -w /clif/build localhost:5000/clif make -j$(nproc) --no-print-directory
 
     - name: Unit Tests
       run: docker run -v $GITHUB_WORKSPACE:/clif -w /clif/build localhost:5000/clif ctest
 
     - name: Integration Tests
-      run: docker run -v $GITHUB_WORKSPACE:/clif -w /clif/build localhost:5000/clif make runPyClifIntegrationTests -j$(nproc)
+      run: docker run -v $GITHUB_WORKSPACE:/clif -w /clif/build localhost:5000/clif make runPyClifIntegrationTests -j$(nproc) --no-print-directory

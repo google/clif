@@ -87,6 +87,9 @@ jobs:
           docker run -v $GITHUB_WORKSPACE:/clif -w /clif localhost:5000/clif bash -c '
             ./INSTALL.sh $(which python${{ matrix.python }}) && \
             cd examples && \
-            cmake . -DPYTHON_EXECUTABLE=$(which python${{ matrix.python }}) && \
-            make -j$(nproc) && \
+            cmake . \
+                -DPYTHON_EXECUTABLE=$(which python${{ matrix.python }}) \
+                -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+                -DCMAKE_RULE_MESSAGES:BOOL=OFF && \
+            make -j$(nproc) --no-print-directory && \
             python${{ matrix.python }} -m pip install .'
