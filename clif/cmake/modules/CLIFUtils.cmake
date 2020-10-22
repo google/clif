@@ -123,9 +123,11 @@ function(add_proto_library name proto_srcfile)
 endfunction(add_proto_library)
 
 # We need the Python libraries for building the CLIF runtime and the CLIF
-# generated wrappers.
-find_package(PythonLibs REQUIRED)
+# generated wrappers. PythonInterp needs to be loaded before PythonLibs.
+# Otherwise, CMake would fall back to using python library for default python
+# version instead of the one specified via -DPYTHON_EXECUTABLE.
 find_package(PythonInterp REQUIRED)
+find_package(PythonLibs REQUIRED)
 
 # Use this convenience function for creating test cc libraries as we want them
 # to be built with custom properties. If the current source directory is

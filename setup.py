@@ -74,7 +74,7 @@ setuptools.setup(
             ],
         ),
     ],
-    python_requires='>=3.6.0,<3.8.0',
+    python_requires='>=3.6.0',
     install_requires=[
         'setuptools>=24.2.0',
         'pyparsing==2.2.0',

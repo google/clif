@@ -13,6 +13,8 @@
 # limitations under the License.
 cmake_minimum_required(VERSION 3.10)
 
+set(CMAKE_CXX_STANDARD 17)
+
 # We need the Python libraries for generating PyCLIF wrappers.
 find_package(PythonInterp REQUIRED)
 find_package(PythonLibs REQUIRED)
@@ -109,7 +111,7 @@ function(add_pyclif_library name pyclif_file)
       --py3output
       -I${CLIF_EXAMPLES_BINARY_DIR}
       --modname=${module_name}
-      "-f-I${PYTHON_INCLUDE_DIRS} -I${CLIF_INSTALL_DIR}/.. -I${CLIF_EXAMPLES_SOURCE_DIR} -I${CLIF_EXAMPLES_BINARY_DIR} ${GOOGLE_PROTOBUF_CXX_FLAGS} -std=c++11 ${PYCLIF_LIBRARY_CXX_FLAGS}"
+      "-f-I${PYTHON_INCLUDE_DIRS} -I${CLIF_INSTALL_DIR}/.. -I${CLIF_EXAMPLES_SOURCE_DIR} -I${CLIF_EXAMPLES_BINARY_DIR} ${GOOGLE_PROTOBUF_CXX_FLAGS} -std=c++17 ${PYCLIF_LIBRARY_CXX_FLAGS}"
       ${CMAKE_CURRENT_SOURCE_DIR}/${pyclif_file}
     VERBATIM
     DEPENDS ${PYCLIF_LIBRARY_CC_DEPS} ${PYCLIF_LIBRARY_CLIF_DEPS} ${PYCLIF_LIBRARY_PROTO_DEPS}

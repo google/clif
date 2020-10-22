@@ -70,8 +70,7 @@ RUN apt-get update && apt-get install -y \
     libgtest-dev \
     libllvm11 \
     llvm-11-dev \
-    python3-setuptools \
-    python3-pip \
+    python3-dev \
     python3-pyparsing \
     zlib1g-dev
 
@@ -82,6 +81,11 @@ RUN add-apt-repository ppa:deadsnakes/ppa && \
     apt-get install -y \
     "python$PYTHON_VERSION-dev" \
     "python$PYTHON_VERSION-distutils"
+
+# Install latest version of pip since the version on ubuntu could be outdated
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+    "python$PYTHON_VERSION" get-pip.py && \
+    rm get-pip.py
 
 # Compile and install absl-cpp from source
 RUN wget "https://github.com/abseil/abseil-cpp/archive/$ABSL_VERSION.tar.gz" && \
