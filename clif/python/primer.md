@@ -11,7 +11,9 @@ the order they appear here. If you are already using CLIF, you can jump to any
 section of your choice but keep in mind that some of the CLIF features used in
 that section were probably introduced in earlier sections.
 
-NOTE: The examples used in this doc live in [clif/examples](../../examples)..
+NOTE: The examples used in this doc live in
+[clif/examples](
+../../examples).
 Each example has its own directory. Within that directory, the CLIF wrapping is
 in the subdirectory named `python`. The `python` directory also contains a test
 illustrating the usage of the corresponding CLIF wrapping and its features.
@@ -34,43 +36,37 @@ interface for Python. The `<HEADER>_clif_aux.h` file must be in the same
 directory as the `<HEADER>.clif` file. A minimal example, showing how to
 add in a simple function, can be found here:
 
-*   [clif/examples/clif_aux/python/lib_hello_clif_aux.h](http://clif/examples/clif_aux/python/lib_hello_clif_aux.h)
+*   [clif/examples/clif_aux/python/lib_hello_clif_aux.h](
+    ../../examples/clif_aux/python/lib_hello_clif_aux.h)
 
 Extending a C++ class with methods that only exist in Python is also possible
 but a little more involved:
 
-*   [clif/examples/extend_from_clifaux/python/](http://clif/examples/extend_from_clifaux/python/)
-*   [The unit tests](http://clif/testing/python/extend_from_clifaux.clif)
+*   [clif/examples/extend_from_clifaux/python/](
+    ../../examples/extend_from_clifaux/python/)
+*   The unit tests in
+    [clif/testing/python/extend_from_clifaux.clif](
+    ../testing/python/extend_from_clifaux.clif)
     are also useful as a reference.
 
 Extending a C++ class with constructors is special. All extended constructors
-should return a unique_ptr to the created instance:
+need to return a `unique_ptr` to the created instance:
 
-*   [Example for extending constructors](http://clif/testing/python/extend_init_clif_aux.h)
+*   [clif/testing/python/extend_init_clif_aux.h](
+    ../testing/python/extend_init_clif_aux.h)
 
 C++ classes can also be extended with properties:
 
-*   [clif/testing/python/extend_properties.clif](http://clif/testing/python/extend_properties.clif)
-*   [third_party/car/embedded/common/python/can_protocol.clif](http://third_party/car/embedded/common/python/can_protocol.clif)
+*   [clif/testing/python/extend_properties.clif](
+    ../testing/python/extend_properties.clif)
 
 The `_clif_aux.h` feature can also be useful to work around PyCLIF limitations
-or bugs. An interesting real-world (production) example that can be found here:
-
-  * [contentads/testing/drx/reporting/evenflow/python/sponge_uploader_clif_aux.h](http://contentads/testing/drx/reporting/evenflow/python/sponge_uploader_clif_aux.h)
-
-This `_clif_aux.h` encapsulates the entire C++ interface to be wrapped,
-to work around limitations of PyCLIF. Many more examples can easily be found
-with codesearch `f:_clif_aux.h$`.
+or bugs.
 
 Please use `_clif_aux.h` strictly for implementing adapter code.
 Implement anything more involved in regular `.h/cc` files. A good rule of
 thumb: if your code needs unit tests to conform to best practices, do not
 implement it in `_clif_aux.h`.
-
-Current Limitations:
-
-*   Classes can be extended from `_clif_aux.h` only with instance methods or
-    properties, NOT with classmethods, staticmethods, or data members.
 
 ## Python-side customizations in `<HEADER>.py` {#py_library_wrapper}
 
@@ -132,13 +128,15 @@ and even docstrings and other data members.
 Current Limitation:
 
   * `@type_customization.extend` needs a pytype workaround as explained and
-    tracked under b/161575039. See also [extend_from_python/python/example.py](
-    http://clif/examples/extend_from_python/python/example.py).
+    tracked under b/161575039. See also:
+    [clif/examples/extend_from_python/python/example.py](
+    ../../examples/extend_from_python/python/example.py)
 
 ## Wrapping POD data types {#wrappod}
 
 NOTE: The example, `wrappod`, used in this section lives in
-clif/examples/wrappod.
+[clif/examples/wrappod/](
+../../examples/wrappod/).
 
 We begin with learning how to wrap POD[^1] data types, namely, data types
 defined as simple `struct`s/`class`es containing only POD data fields in C++.
@@ -360,7 +358,8 @@ the _setter_ explicitly describes when to update the C++ field value.
 ## Wrapping Functions
 
 NOTE: The example, `wrapfunc`, used in this section lives in
-clif/examples/wrapfunc.
+[clif/examples/wrapfunc/](
+../../examples/wrapfunc/).
 
 In this section, we will learn how to provide Python wrappers for plain (as in
 non-member, non-template) C++ functions using CLIF. The functions we want to
@@ -538,7 +537,8 @@ def <FUNC_NAME>(<ARG_LIST>) -> (<RET1_NAME>: <RET1_TYPE>, <RET2_NAME>: <RET2_TYP
 ### Wrapping Functions Returning/Receiving Callbacks
 
 NOTE: The example, `callbacks`, used in this section lives in
-clif/examples/callbacks.
+[clif/examples/callbacks/](
+../../examples/callbacks/)
 
 With CLIF, one can wrap functions returning or receiving callbacks. When a
 function receiving a callback argument is wrapped, it enables one to pass
@@ -710,7 +710,8 @@ from `/my/header/file.h`:
 ## Wrapping Methods {#wrapmethod}
 
 NOTE: The example, `wrapmethod`, used in this section lives in
-clif/examples/wrapmethod.
+[clif/examples/wrapmethod/](
+../../examples/wrapmethod/).
 
 Wrapping methods is very similar to wrapping functions but with one difference:
 the method to be wrapped should take `self` as the first argument. Let us wrap
@@ -927,7 +928,9 @@ assert len(obj) == 9
 
 NOTE: `__setitem__` and `__delitem__` occupy the same slot, so defining only one
 of them prevents calling the other from a base class. Just repeat the "missing"
-definition in the derived class.
+definition in the derived class (as shown in
+[clif/testing/python/slots.clif](
+../testing/python/slots.clif)).
 
 CLIF protects the C++ side from invalid indices. That is, if Python code
 uses a bad index to access a sequence element (from an instance whose class
@@ -955,7 +958,8 @@ for i in obj:
 ### Exposing Getter/Setter Methods as Properties
 
 NOTE: The example used in this section lives in
-clif/examples/property.
+[clif/examples/property/](
+../../examples/property/).
 
 We have previously seen CLIF's [unproperty][unproperty] feature where in data
 members of a C++ class are exposed via setter/getter methods on the wrapped
@@ -1005,7 +1009,8 @@ exposed in the above fashion are also _returned_ by value.
 ## Inheritance
 
 NOTE: The example used in this section lives in
-clif/examples/inheritance.
+[clif/examples/inheritance/](
+../../examples/inheritance/).
 
 ### Wrapping Without Exposing Inheritance into Python
 
@@ -1072,7 +1077,8 @@ Python. This enables one to provide implementations for abstract C++ classes in
 Python and pass them over to C++ for further computation.
 
 Note: The example `operation` used in this section lives in
-clif/examples/inheritance.
+[clif/examples/inheritance/](
+../../examples/inheritance/).
 
 We will use a fairly simple example to illustrate this feature of overriding
 virtual methods. Consider the following abstract C++ class, and a function which
@@ -1125,7 +1131,8 @@ usual Python convention and returns a new reference.
 ## Wrapping C++ Templates
 
 NOTE: The example, `templates`, used in this section lives in
-clif/examples/templates.
+[clif/examples/templates/](
+../../examples/templates/).
 
 NOTE: CLIF only supports wrapping template instantiations. This does not mean
 that the C++ code should have explicit instantiations declared. Rather that,
@@ -1164,7 +1171,8 @@ above CLIF file which wraps the C++ template function `MyAdd` into two flavors
 ## Wrapping Protocol Buffers {#protos}
 
 NOTE: The example `wrap_protos` used in this section lives in
-clif/examples/wrap_protos.
+[clif/examples/wrap_protos/](
+../../examples/wrap_protos/).
 
 Wrapping protocol buffers with CLIF requires setting up certain build rules and
 targets following a certain pattern. There are no constructs to wrap them
