@@ -679,7 +679,7 @@ class Module(object):
                               self.init, self.dict):
       yield s
 
-  def GenerateBase(self, ast, api_header, more_headers):
+  def GenerateBase(self, ast, more_headers):
     """Extension module generation."""
     ast_manipulations.MoveExtendsBackIntoClassesInPlace(ast)
     self.init += ast.extra_init
@@ -717,7 +717,7 @@ class Module(object):
         yield s
     for s in self.GenTypesReady():  # extends self.init
       yield s
-    for s in self.GenInitFunction(api_header):  # consumes self.init
+    for s in self.GenInitFunction(ast.source):  # consumes self.init
       yield s
     yield ''
     yield '}  // namespace %s' % self.wrap_namespace

@@ -337,7 +337,7 @@ class Postprocessor(object):
         self._namespace(None, s, pb, hdr)
       elif s[0] == 'staticmethods':
         self._staticmethods(None, s, pb, hdr)
-      else:
+      elif s[0] != 'pass':
         decl = pb.decls.add()
         decl.cpp_file = hdr
         getattr(self, '_'+s[0])(self.line(s[1]), s, decl)

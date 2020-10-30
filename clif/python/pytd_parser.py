@@ -153,7 +153,8 @@ capsule_def = G(K('capsule') - cname)
 stmeth_stmt = G(K('staticmethods') - S('from') + ASTRING - BLOCK(funcdef))
 
 _decl = classdef | enumdef | constdef
-global_decl = funcdef | capsule_def | _decl | interface_stmt | stmeth_stmt
+global_decl = (
+    K('pass') | funcdef | capsule_def | _decl | interface_stmt | stmeth_stmt)
 nested_decl <<= vardef | methoddef | _decl | K('pass') | implementsdef
 
 import_stmt = G(S('from') + pp.WordEnd() + dotted_name - K('import') + NAME)

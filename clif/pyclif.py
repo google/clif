@@ -114,11 +114,10 @@ def GenerateFrom(ast):
       indent=FLAGS.indent)
   inc_headers.append(os.path.basename(FLAGS.header_out))
   # Order of generators is important.
-  if api_header:
-    with open(FLAGS.ccdeps_out, 'w') as cout:
-      gen.WriteTo(cout, m.GenerateBase(ast, api_header, inc_headers))
-    with open(FLAGS.ccinit_out, 'w') as iout:
-      gen.WriteTo(iout, m.GenerateInit(ast.source))
+  with open(FLAGS.ccdeps_out, 'w') as cout:
+    gen.WriteTo(cout, m.GenerateBase(ast, inc_headers))
+  with open(FLAGS.ccinit_out, 'w') as iout:
+    gen.WriteTo(iout, m.GenerateInit(ast.source))
   with open(FLAGS.header_out, 'w') as hout:
     gen.WriteTo(hout, m.GenerateHeader(ast.source, api_header, ast.macros))
 
@@ -127,13 +126,12 @@ def _GetHeaders(ast):
   """Scan AST for header files."""
   # It's not moved to astutils yet because of asserts.
   included = set(d.cpp_file for d in ast.decls if d.cpp_file)
-  if not included and ast.macros:
-    # Special case for pure "macro" header.
+  if not included:
     return None
   if len(included) != 1:
     raise argparse.ArgumentError(
         'input_filename',
-        'must has exactly one <<from "header":>> statement')
+        'must have exactly one <<from "header":>> statement')
   wrap_header = included.pop()
   return wrap_header
 
@@ -174,8 +172,6 @@ def main():
     print(Err(e))
     return 4
   if FLAGS.dump_dir: _DumpProto(dump_path, '.opb', ast)
-  if not ast.decls:
-    assert ast.macros, FLAGS.input_filename[0]+' matching error'
   # Check matcher output for errors.
   errors = False
   for d in ast.decls:
@@ -258,7 +254,7 @@ def _DumpProto(dump_path, ext, pb):
       f.write(google.protobuf.text_format.MessageToString(pb))
 
 
-def start():
+def start():  # pylint: disable=invalid-name
   global FLAGS
   FLAGS = _ParseCommandline(__doc__.splitlines()[0], sys.argv)
   sys.exit(main())
