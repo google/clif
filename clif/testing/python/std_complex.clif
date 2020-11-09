@@ -1,0 +1,21 @@
+from "clif/testing/std_complex.h":
+  namespace `clif_test`:
+    class `StdComplex<double>` as StdComplexDouble:
+      @classmethod
+      def Zero(cls) -> complex
+      @classmethod
+      def One(cls) -> complex
+      @classmethod
+      def i(cls) -> complex
+      @classmethod
+      def Multiply(cls, a: complex, b: complex) -> complex
+
+    class `StdComplex<float>` as StdComplexFloat:
+      @classmethod
+      def One(cls) -> complex
+      @classmethod
+      def Zero(cls) -> complex
+      @classmethod
+      def i(cls) -> complex
+      @classmethod
+      def Multiply(cls, a: complex, b: complex) -> complex

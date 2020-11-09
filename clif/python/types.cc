@@ -271,6 +271,29 @@ bool Clif_PyObjAs(PyObject* py, float* c) {
   return true;
 }
 
+// complex
+bool Clif_PyObjAs(PyObject* py, std::complex<double>* c) {
+  CHECK(c != nullptr);
+  double real = PyComplex_RealAsDouble(py);
+  if (real == -1.0 && PyErr_Occurred()) return false;
+  double imag = PyComplex_ImagAsDouble(py);
+  if (imag == -1.0 && PyErr_Occurred()) return false;
+
+  *c = std::complex<double>(real, imag);
+  return true;
+}
+
+bool Clif_PyObjAs(PyObject* py, std::complex<float>* c) {
+  CHECK(c != nullptr);
+  double real = PyComplex_RealAsDouble(py);
+  if (real == -1.0 && PyErr_Occurred()) return false;
+  double imag = PyComplex_ImagAsDouble(py);
+  if (imag == -1.0 && PyErr_Occurred()) return false;
+
+  *c = std::complex<float>(static_cast<float>(real), static_cast<float>(imag));
+  return true;
+}
+
 // bool
 bool Clif_PyObjAs(PyObject* py, bool* c) {
   CHECK(c != nullptr);

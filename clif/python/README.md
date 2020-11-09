@@ -752,6 +752,7 @@ int              | int
 string           | bytes _or_ str
 bool             | bool
 double           | float
+complex<>        | complex
 vector<>         | list<>
 pair<>           | tuple<>
 unordered_set<>  | set<>

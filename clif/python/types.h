@@ -28,6 +28,7 @@ headers are included.
 
 #include <algorithm>
 #include <array>
+#include <complex>
 #include <deque>
 #include <forward_list>
 #include <functional>
@@ -46,11 +47,11 @@ headers are included.
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 #include "absl/base/config.h"
+#include "absl/numeric/int128.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "absl/numeric/int128.h"
 
 // std::variant support is implemented in stltypes.h which our generated code
 // #include's directly.  But that file is not parsed for "CLIF" use statements.
@@ -152,6 +153,13 @@ inline PyObject* Clif_PyObjFrom(double c, const py::PostConv& pc) {
   return pc.Apply(PyFloat_FromDouble(c));
 }
 
+// CLIF use `std::complex<double>` as complex.
+// CLIF use `std::complex<float>` as complex.
+inline PyObject* Clif_PyObjFrom(std::complex<double> c,
+                                const py::PostConv& pc) {
+  return pc.Apply(PyComplex_FromDoubles(c.real(), c.imag()));
+}
+
 // CLIF use `bool` as bool
 #ifdef CLIF_PY_OBJ_FROM_BOOL_ALLOW_UNSAFE_IMPLICIT_CONVERSIONS
 inline PyObject* Clif_PyObjFrom(bool c, const py::PostConv& pc) {
@@ -208,6 +216,10 @@ bool Clif_PyObjAs(PyObject*, long*);                //NOLINT runtime/int // Py_s
 // float (double)
 bool Clif_PyObjAs(PyObject*, double*);
 bool Clif_PyObjAs(PyObject*, float*);
+
+// complex
+bool Clif_PyObjAs(PyObject*, std::complex<double>*);
+bool Clif_PyObjAs(PyObject*, std::complex<float>*);
 
 // bool
 bool Clif_PyObjAs(PyObject*, bool*);
