@@ -14,49 +14,64 @@
 
 """Tests for testing.t1."""
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import t1
+from clif.testing.python import t1_pybind11
 
 
-class T1Test(unittest.TestCase):
+@parameterized.parameters(t1, t1_pybind11)
+class T1Test(parameterized.TestCase):
 
-  def testIntId(self):
-    self.assertEqual(t1.IntId(1), 1)
-    self.assertEqual(t1.IntId(x=1), 1)
+  def testIntId(self, wrapper_lib):
+    self.assertEqual(wrapper_lib.IntId(1), 1)
+    self.assertEqual(wrapper_lib.IntId(x=1), 1)
     with self.assertRaises(TypeError):
-      t1.IntId(a=1)
+      wrapper_lib.IntId(a=1)
     with self.assertRaises(TypeError):
-      t1.IntId()
+      wrapper_lib.IntId()
     with self.assertRaises(TypeError):
-      t1.IntId(1, 2)
+      wrapper_lib.IntId(1, 2)
 
-  def testSum3(self):
-    self.assertEqual(t1.Sum3(1, 2), 3)
-    self.assertEqual(t1.Sum3(1, b=2), 3)
-    self.assertEqual(t1.Sum3(a=1, b=2), 3)
-    self.assertEqual(t1.Sum3(b=2, a=1), 3)
-    self.assertEqual(t1.Sum3(b=2, c=3, a=1), 6)
-    self.assertEqual(t1.Sum3(1, 2, 3), 6)
-    self.assertEqual(t1.Sum3(1, 2, c=3), 6)
+  def testSum3(self, wrapper_lib):
+    self.assertEqual(wrapper_lib.Sum3(1, 2), 3)
+    self.assertEqual(wrapper_lib.Sum3(1, b=2), 3)
+    self.assertEqual(wrapper_lib.Sum3(a=1, b=2), 3)
+    self.assertEqual(wrapper_lib.Sum3(b=2, a=1), 3)
+    self.assertEqual(wrapper_lib.Sum3(b=2, c=3, a=1), 6)
+    self.assertEqual(wrapper_lib.Sum3(1, 2, 3), 6)
+    self.assertEqual(wrapper_lib.Sum3(1, 2, c=3), 6)
     with self.assertRaises(TypeError):
-      t1.Sum3()
+      wrapper_lib.Sum3()
     with self.assertRaises(TypeError):
-      t1.Sum3(1, b=2, x=1)
+      wrapper_lib.Sum3(1, b=2, x=1)
     with self.assertRaises(TypeError):
-      t1.Sum3(1, 2, 3, 4)
-    self.assertEqual(t1.Sum3(1, c=3), 4)
+      wrapper_lib.Sum3(1, 2, 3, 4)
+    self.assertEqual(wrapper_lib.Sum3(1, c=3), 4)
 
-  def testString(self):
-    self.assertEqual(t1.StdString(), 'std')
+  def testString(self, wrapper_lib):
+    self.assertEqual(wrapper_lib.StdString(), 'std')
 
-  def testBytes(self):
-    self.assertEqual(t1.StdBytes(), b'std')
+  def testBytes(self, wrapper_lib):
+    # TODO: Add supports for string/bytes/unicode conversion.
+    if wrapper_lib is not t1:
+      self.skipTest(
+          'Currently CLIF pybind11 code generator does not support type '
+          'conversion.')
+    self.assertEqual(wrapper_lib.StdBytes(), b'std')
 
-  def testFunctionDocstring(self):
-    self.assertIn('function has a docstring.\n\n', t1.Sum3.__doc__)
-    self.assertIn('spans multiple lines', t1.Sum3.__doc__)
-    self.assertEqual(t1.Sum3.__doc__, t1.Sum3.__doc__.strip())
+  def testFunctionDocstring(self, wrapper_lib):
+    self.assertIn('function has a docstring.\n\n', wrapper_lib.Sum3.__doc__)
+    self.assertIn('spans multiple lines', wrapper_lib.Sum3.__doc__)
+
+  def testFunctionDocstringNoTrailingWhitespaces(self, wrapper_lib):
+    if wrapper_lib is not t1:
+      self.skipTest(
+          'pybind11 automatically adds a trailing whitespace to function '
+          'docstrings.')
+    self.assertEqual(wrapper_lib.Sum3.__doc__, wrapper_lib.Sum3.__doc__.strip())
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()
