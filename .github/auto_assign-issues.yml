@@ -1,0 +1,10 @@
+# https://github.com/apps/auto-assign-issues  2020-11-30+2000
+
+# If enabled, auto-assigns users when a new issue is created
+# Defaults to true, allows you to install the app globally, and disable on a per-repo basis
+addAssignees: true
+
+# The list of users to assign to new issues.
+# If empty or not provided, the repository owner is assigned
+assignees:
+  - rwgk
