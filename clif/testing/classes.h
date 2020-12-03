@@ -24,7 +24,7 @@ namespace classes {
 class K {
  public:
   explicit K(int i): i_(i) {}
-  static const int C = 1;
+  static const int C;
   int i1() const { return i_+1; }
   int get2() const { return i_*i_; }
   int get() const { return i_; }
@@ -33,6 +33,8 @@ class K {
  private:
   int i_;
 };
+
+const int K::C = 1;
 
 class Derived : public K {
  public:
