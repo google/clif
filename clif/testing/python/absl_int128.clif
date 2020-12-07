@@ -1,0 +1,10 @@
+from "clif/testing/absl_int128.h":
+  namespace `clif_test_absl_int128`:
+    def Zero() -> int
+    def One() -> int
+    def NegativeOne() -> int
+    def SetHighLsb() -> int
+    def SetNegativeHighLsb() -> int
+    def Min() -> int
+    def Max() -> int
+    def AddInt128(a: int, b: int) -> int

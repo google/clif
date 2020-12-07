@@ -132,6 +132,15 @@ inline PyObject* Clif_PyObjFrom(unsigned long long c,
   return pc.Apply(PyLong_FromUnsignedLongLong(c));
 }
 
+// CLIF use `absl::int128` as int128
+inline PyObject* Clif_PyObjFrom(absl::int128 c,
+                                const py::PostConv& pc) {  // NOLINT runtime/int
+  auto hi = PyNumber_Lshift(PyLong_FromLongLong(absl::Int128High64(c)),
+                            PyInt_FromLong(64));
+  auto lo = PyLong_FromUnsignedLongLong(absl::Int128Low64(c));
+  return pc.Apply(PyNumber_Add(hi, lo));
+}
+
 // CLIF use `absl::uint128` as uint128
 inline PyObject* Clif_PyObjFrom(absl::uint128 c,
                                 const py::PostConv& pc) {  // NOLINT runtime/int
@@ -207,6 +216,7 @@ bool Clif_PyObjAs(PyObject*, unsigned long*);       //NOLINT runtime/int
 #ifdef HAVE_LONG_LONG
 bool Clif_PyObjAs(PyObject*, unsigned long long*);  //NOLINT runtime/int
 bool Clif_PyObjAs(PyObject*, long long*);           //NOLINT runtime/int
+bool Clif_PyObjAs(PyObject*, absl::int128*);        // NOLINT runtime/int
 bool Clif_PyObjAs(PyObject*, absl::uint128*);       //NOLINT runtime/int
 #endif
 bool Clif_PyObjAs(PyObject*, short*);               //NOLINT runtime/int

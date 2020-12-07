@@ -227,6 +227,25 @@ bool Clif_PyObjAs(PyObject* py, unsigned long long* c) {  //NOLINT: runtime/int
   return !PyErr_Occurred();
 }
 
+// int128
+bool Clif_PyObjAs(PyObject* py, absl::int128* c) {  // NOLINT: runtime/int
+  CHECK(c != nullptr);
+  if (PyLong_Check(py)) {
+    auto lo = PyLong_AsUnsignedLongLong(
+        PyNumber_And(py, PyLong_FromUnsignedLongLong(0xFFFFFFFFFFFFFFFF)));
+    auto hi = PyLong_AsLongLong(PyNumber_Rshift(py, PyInt_FromLong(64)));
+    *c = absl::MakeInt128(hi, lo);
+#if PY_MAJOR_VERSION < 3
+  } else if (PyInt_Check(py)) {
+    *c = absl::int128(PyInt_AS_LONG(py));
+#endif
+  } else {
+    PyErr_SetString(PyExc_TypeError, "expecting int");
+    return false;
+  }
+  return !PyErr_Occurred();
+}
+
 // uint128
 bool Clif_PyObjAs(PyObject* py, absl::uint128* c) {  // NOLINT: runtime/int
   CHECK(c != nullptr);
