@@ -48,6 +48,9 @@ class ModuleGenerator(object):
       if decl.decltype == ast_pb2.Decl.Type.FUNC:
         for s in function.generate_from(decl.func):
           yield s
+      if decl.decltype == ast_pb2.Decl.Type.CONST:
+        for s in self._generate_const_variables(decl.const):
+          yield s
       yield ''
     yield '}'
 
@@ -56,12 +59,37 @@ class ModuleGenerator(object):
     includes = set()
     for decl in self._ast.decls:
       includes.add(decl.cpp_file)
+      if decl.decltype == ast_pb2.Decl.Type.CONST:
+        self._generate_const_variables_headers(decl.const, includes)
     for include in includes:
       yield f'#include "{include}"'
     yield '#include "third_party/pybind11/include/pybind11/pybind11.h"'
     yield ''
     yield 'namespace py = pybind11;'
     yield ''
+
+  def _generate_const_variables_headers(self, const_decl: ast_pb2.ConstDecl,
+                                        includes: set):
+    if const_decl.type.lang_type == 'complex':
+      includes.add('third_party/pybind11/include/pybind11/complex.h')
+    if (const_decl.type.lang_type.startswith('list<') or
+        const_decl.type.lang_type.startswith('dict<') or
+        const_decl.type.lang_type.startswith('set<')):
+      includes.add('third_party/pybind11/include/pybind11/stl.h')
+
+  def _generate_const_variables(self, const_decl: ast_pb2.ConstDecl):
+    """Generates variables."""
+    lang_type = const_decl.type.lang_type
+
+    if (lang_type in {'int', 'float', 'double', 'bool', 'str'} or
+        lang_type.startswith('tuple<')):
+      const_def = I + (f'm.attr("{const_decl.name.native}") = '
+                       f'{const_decl.name.cpp_name};')
+    else:
+      const_def = I + (f'm.attr("{const_decl.name.native}") = '
+                       f'py::cast({const_decl.name.cpp_name});')
+
+    yield const_def
 
 
 def write_to(channel, lines):
