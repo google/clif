@@ -22,10 +22,17 @@ from absl.testing import absltest
 from absl.testing import parameterized
 
 from clif.testing.python import variables
-from clif.testing.python import variables_pybind11
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import variables_pybind11
+except ImportError:
+  variables_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-@parameterized.parameters(variables, variables_pybind11)
+@parameterized.parameters(
+    *[m for m in (variables, variables_pybind11) if m is not None])
 class VariablesTest(absltest.TestCase):
 
   def test_const_int(self, wrapper_lib):

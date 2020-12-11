@@ -18,10 +18,17 @@ from absl.testing import absltest
 from absl.testing import parameterized
 
 from clif.testing.python import t1
-from clif.testing.python import t1_pybind11
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import t1_pybind11
+except ImportError:
+  t1_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-@parameterized.parameters(t1, t1_pybind11)
+@parameterized.parameters(
+    *[m for m in (t1, t1_pybind11) if m is not None])
 class T1Test(parameterized.TestCase):
 
   def testIntId(self, wrapper_lib):
