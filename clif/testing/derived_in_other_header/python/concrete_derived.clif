@@ -13,13 +13,10 @@
 # limitations under the License.
 
 from "clif/testing/derived_in_other_header/python/concrete_base_clif.h" import *
+from clif.testing.derived_in_other_header.python.concrete_base import ConcreteBaseEmpty
 
 from "clif/testing/derived_in_other_header/concrete_derived.h":
   namespace `clif_testing::derived_in_other_header`:
-    # Generates NotImplementedError: SORRY: Currently PyCLIF does not support
-    # inheriting from a base class declared in another header
-    # AT BUILD TIME (therefore no matching test.py).
-    # Uncomment to trigger build error:
-    # class ConcreteDerivedEmpty(ConcreteBaseEmpty):
-    class ConcreteDerivedEmpty:
+    class ConcreteDerivedEmpty(ConcreteBaseEmpty):  # Needs Python-style from.
       def Get(self) -> int
+      def BaseGet(self, base: ConcreteBaseEmpty) -> int  # Needs from "concrete_base_clif.h".

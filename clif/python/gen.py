@@ -210,9 +210,9 @@ def _TypesInitInDependencyOrder(types_init, raise_if_reordering=False):
       # generator is not worth more effort detecting the issue in a more direct
       # way. This is still far better than crashing with a KeyError, or failing
       # at compile time.
-      raise NotImplementedError(
-          'SORRY: Currently PyCLIF does not support inheriting from a'
-          ' base class declared in another header:'
+      raise NameError(
+          'A .clif file is missing a Python-style `from ... import` for a'
+          ' base class declared in another header (go/pyclif#pyimport):'
           ' wrapped_derived=%s, wrapped_base=%s' % (cppname, wrapped_base))
     ideps.append(
         None if wrapped_base is None else

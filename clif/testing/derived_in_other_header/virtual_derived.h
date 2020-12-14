@@ -23,7 +23,8 @@ namespace derived_in_other_header {
 
 class VirtualDerivedEmpty : public VirtualBaseEmpty {
  public:
-  int Get() const /*override*/ { return 29852452; }
+  int Get() const override { return 29852452; }
+  int BaseGet(const VirtualBaseEmpty& base) { return Get() + base.Get(); }
 };
 
 }  // namespace derived_in_other_header

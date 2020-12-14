@@ -21,9 +21,8 @@ namespace derived_in_other_header {
 
 class VirtualBaseEmpty {
  public:
-  // virtual ~VirtualBaseEmpty() {}
-  // virtual int Get() const = 0;
-  int Get() const { return 0; }
+  virtual ~VirtualBaseEmpty() {}
+  virtual int Get() const = 0;
 };
 
 }  // namespace derived_in_other_header

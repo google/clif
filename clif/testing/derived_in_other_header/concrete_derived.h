@@ -24,6 +24,7 @@ namespace derived_in_other_header {
 class ConcreteDerivedEmpty : public ConcreteBaseEmpty {
  public:
   int Get() const { return 31607978; }
+  int BaseGet(const ConcreteBaseEmpty& base) { return Get() + base.Get(); }
 };
 
 }  // namespace derived_in_other_header
