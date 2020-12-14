@@ -31,8 +31,10 @@ except ImportError:
 # pylint: enable=g-import-not-at-top
 
 
-@parameterized.parameters(
-    *[m for m in (variables, variables_pybind11) if m is not None])
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (variables, variables_pybind11))
+    if np[1] is not None
+])
 class VariablesTest(absltest.TestCase):
 
   def test_const_int(self, wrapper_lib):

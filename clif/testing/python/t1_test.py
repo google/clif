@@ -27,8 +27,10 @@ except ImportError:
 # pylint: enable=g-import-not-at-top
 
 
-@parameterized.parameters(
-    *[m for m in (t1, t1_pybind11) if m is not None])
+@parameterized.named_parameters([
+    np for np in zip(('_c_api', '_pybind11'), (t1, t1_pybind11))
+    if np[1] is not None
+])
 class T1Test(parameterized.TestCase):
 
   def testIntId(self, wrapper_lib):
