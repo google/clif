@@ -1,0 +1,30 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from "clif/testing/derived_in_other_header/python/concrete_base_clif.h" import *
+from "clif/testing/derived_in_other_header/python/virtual_base_clif.h" import *
+
+from "clif/testing/derived_in_other_header/shared_unique_interop.h":
+  namespace `clif_testing::derived_in_other_header`:
+    def make_unique_concrete_derived_empty_up_cast() -> ConcreteBaseEmpty
+    def make_shared_concrete_derived_empty_up_cast(
+        use_custom_deleter: bool = default) -> ConcreteBaseEmpty
+    def pass_unique_concrete_base_empty(cbe: ConcreteBaseEmpty) -> int
+    def pass_shared_concrete_base_empty(cbe: ConcreteBaseEmpty) -> int
+
+    def make_unique_virtual_derived_empty_up_cast() -> VirtualBaseEmpty
+    def make_shared_virtual_derived_empty_up_cast(
+        use_custom_deleter: bool = default) -> VirtualBaseEmpty
+    def pass_unique_virtual_base_empty(vbe: VirtualBaseEmpty) -> int
+    def pass_shared_virtual_base_empty(vbe: VirtualBaseEmpty) -> int

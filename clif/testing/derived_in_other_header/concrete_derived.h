@@ -16,6 +16,8 @@
 #ifndef CLIF_TESTING_DERIVED_IN_OTHER_HEADER_CONCRETE_DERIVED_H_
 #define CLIF_TESTING_DERIVED_IN_OTHER_HEADER_CONCRETE_DERIVED_H_
 
+#include <iostream>
+
 #include "clif/testing/derived_in_other_header/concrete_base.h"
 
 namespace clif_testing {
@@ -23,6 +25,13 @@ namespace derived_in_other_header {
 
 class ConcreteDerivedEmpty : public ConcreteBaseEmpty {
  public:
+  // Printing from constructor & destructor for simple external validation.
+  ConcreteDerivedEmpty() {
+    std::cout << std::endl << "ConcreteDerivedEmpty+" << std::endl;
+  }
+  ~ConcreteDerivedEmpty() {
+    std::cout << std::endl << "ConcreteDerivedEmpty-" << std::endl;
+  }
   int Get() const { return 31607978; }
   int BaseGet(const ConcreteBaseEmpty& base) { return Get() + base.Get(); }
 };

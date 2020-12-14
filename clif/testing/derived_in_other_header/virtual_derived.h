@@ -16,6 +16,8 @@
 #ifndef CLIF_TESTING_DERIVED_IN_OTHER_HEADER_VIRTUAL_DERIVED_H_
 #define CLIF_TESTING_DERIVED_IN_OTHER_HEADER_VIRTUAL_DERIVED_H_
 
+#include <iostream>
+
 #include "clif/testing/derived_in_other_header/virtual_base.h"
 
 namespace clif_testing {
@@ -23,6 +25,13 @@ namespace derived_in_other_header {
 
 class VirtualDerivedEmpty : public VirtualBaseEmpty {
  public:
+  // Printing from constructor & destructor for simple external validation.
+  VirtualDerivedEmpty() {
+    std::cout << std::endl << "VirtualDerivedEmpty+" << std::endl;
+  }
+  ~VirtualDerivedEmpty() {
+    std::cout << std::endl << "VirtualDerivedEmpty-" << std::endl;
+  }
   int Get() const override { return 29852452; }
   int BaseGet(const VirtualBaseEmpty& base) { return Get() + base.Get(); }
 };
