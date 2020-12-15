@@ -82,21 +82,6 @@ bool Clif_PyObjAs(PyObject* py, short* c) {  //NOLINT: runtime/int
   return true;
 }
 
-bool Clif_PyObjAs(PyObject* py, signed char* c) {
-  CHECK(c != nullptr);
-  long i;  // NOLINT: runtime/int
-  if (!Clif_PyObjAs(py, &i)) {
-    return false;
-  }
-  if (SCHAR_MIN > i || i > SCHAR_MAX) {
-    PyErr_Format(
-        PyExc_ValueError, "value %ld is out of range for signed char", i);
-    return false;
-  }
-  *c = i;
-  return true;
-}
-
 // uint8
 bool Clif_PyObjAs(PyObject* py, unsigned char* c) {
   CHECK(c != nullptr);
@@ -105,8 +90,7 @@ bool Clif_PyObjAs(PyObject* py, unsigned char* c) {
     return false;
   }
   if (i > UCHAR_MAX) {
-    PyErr_Format(
-        PyExc_ValueError, "value %ld is too large for unsigned char", i);
+    PyErr_SetString(PyExc_ValueError, "value too large for char");
     return false;
   }
   *c = i;

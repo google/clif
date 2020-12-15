@@ -209,7 +209,6 @@ inline bool Clif_PyObjAs(PyObject* py, PyObject** c) {
 }
 
 // int (long)
-bool Clif_PyObjAs(PyObject*, signed char*);
 bool Clif_PyObjAs(PyObject*, unsigned char*);
 bool Clif_PyObjAs(PyObject*, unsigned short*);      //NOLINT runtime/int
 bool Clif_PyObjAs(PyObject*, unsigned int*);
