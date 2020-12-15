@@ -170,6 +170,8 @@ add_pyclif_library_for_test(sequence_methods sequence_methods.clif)
 add_pyclif_library_for_test(shared_ptr_proto_member shared_ptr_proto_member.clif
   PROTO_DEPS clifAstProtoWrapperShared)
 
+add_pyclif_library_for_test(simple_type_conversions simple_type_conversions.clif)
+
 add_pyclif_library_for_test(slots slots.clif)
 
 add_pyclif_library_for_test(smart_ptrs smart_ptrs.clif)
