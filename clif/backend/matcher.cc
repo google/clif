@@ -455,7 +455,7 @@ bool ClifMatcher::ImportedFromCorrectFile(const NamedDecl& named_decl,
   std::string decl_expected_in = clif_cpp_file;
 
   // Testing for kClifAux
-  std::size_t dot_pos = clif_cpp_file.rfind(".");
+  std::size_t dot_pos = clif_cpp_file.rfind('.');
   if (dot_pos != std::string::npos &&
       dot_pos > kClifAuxLen  // Intentionally NOT >= (implies len(name) > 0)
       && llvm::StringRef(clif_cpp_file.c_str() + (dot_pos - kClifAuxLen))
