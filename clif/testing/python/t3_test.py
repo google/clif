@@ -29,7 +29,7 @@ class T3Test(unittest.TestCase):
     self.assertEqual(t3._New.BOTTOM, t3._New(1))
     self.assertEqual(t3._New.TOP, t3._New(1000))
     self.assertEqual(t3.K.OldE.ONE, 1)
-    self.assertEqual(t3.K.NewE.ONE.value, 11)
+    self.assertEqual(t3.K.NewE.ONE, t3.K.NewE(11))
     self.assertRaises(TypeError, t3.K().M, (5))
     # This is necessary for proper pickling.
     self.assertEqual(t3._New.__module__, t3.__name__)
