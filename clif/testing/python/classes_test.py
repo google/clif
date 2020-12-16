@@ -14,19 +14,28 @@
 
 """Tests for clif.testing.python.classes."""
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import classes
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import classes_pybind11
+except ImportError:
+  classes_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class PyK(classes.Klass):
-  pass
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (classes, classes_pybind11))
+    if np[1] is not None
+])
+class ClassesTest(absltest.TestCase):
 
-
-class ClassesTest(unittest.TestCase):
-
-  def testKlass(self):
-    self.assertEqual(classes.Klass.C2(), 3)
-    k = classes.Klass(3)
+  def testKlass(self, wrapper_lib):
+    self.assertEqual(wrapper_lib.Klass.C2(), 3)
+    k = wrapper_lib.Klass(3)
     self.assertEqual(k.i, 3)
     self.assertEqual(k.i2, 9)
     self.assertEqual(k.Int1(), 4)
@@ -36,24 +45,27 @@ class ClassesTest(unittest.TestCase):
     with self.assertRaises((AttributeError, TypeError)):
       k.i2 = 0
 
-  def testPythonDerived(self):
+  def testPythonDerived(self, wrapper_lib):
+    class PyK(wrapper_lib.Klass):
+      pass
     k = PyK(4)
     self.assertEqual(k.i, 4)
     self.assertEqual(k.Int1(), 5)
 
-  def testDerived(self):
-    k = classes.Derived()
+  def testDerived(self, wrapper_lib):
+    #    k = wrapper_lib.Derived()
+    k = wrapper_lib.Derived.Init(0, 0)
     self.assertEqual(k.i, 0)
     self.assertEqual(k.j, 0)
     self.assertNotIn(2, k)
     with self.assertRaises(TypeError):
-      classes.Derived(1)
+      wrapper_lib.Derived(1)
 
-  def testDerivedInit(self):
-    k = classes.Derived.Init(1, 2)
+  def testDerivedInit(self, wrapper_lib):
+    k = wrapper_lib.Derived.Init(1, 2)
     self.assertEqual(k.i, 1)
     self.assertEqual(k.j, 2)
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

@@ -17,6 +17,7 @@
 from typing import Text
 
 from clif.protos import ast_pb2
+from clif.pybind11 import classes
 from clif.pybind11 import function
 from clif.pybind11 import utils
 
@@ -48,8 +49,11 @@ class ModuleGenerator(object):
       if decl.decltype == ast_pb2.Decl.Type.FUNC:
         for s in function.generate_from(decl.func):
           yield s
-      if decl.decltype == ast_pb2.Decl.Type.CONST:
+      elif decl.decltype == ast_pb2.Decl.Type.CONST:
         for s in self._generate_const_variables(decl.const):
+          yield s
+      elif decl.decltype == ast_pb2.Decl.Type.CLASS:
+        for s in classes.generate_from(decl.class_):
           yield s
       yield ''
     yield '}'
