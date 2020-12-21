@@ -14,25 +14,40 @@
 
 """Tests for clif.testing.python.t3."""
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import t3
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import t3_pybind11
+except ImportError:
+  t3_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class T3Test(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (t3, t3_pybind11))
+    if np[1] is not None
+])
+class T3Test(absltest.TestCase):
 
-  def testEnum(self):
-    self.assertEqual(t3._Old.TOP1, 1)
-    self.assertEqual(t3._Old.TOPn, -1)
-    self.assertNotEqual(t3._New.TOP, 1)
-    self.assertEqual(t3._New.TOP.name, 'TOP')
-    self.assertTrue(t3._New.BOTTOM)
-    self.assertEqual(t3._New.BOTTOM, t3._New(1))
-    self.assertEqual(t3._New.TOP, t3._New(1000))
-    self.assertEqual(t3.K.OldE.ONE, 1)
-    self.assertEqual(t3.K.NewE.ONE, t3.K.NewE(11))
-    self.assertRaises(TypeError, t3.K().M, (5))
+  def testEnum(self, wrapper_lib):
+    w = wrapper_lib
+    self.assertEqual(w._Old.TOP1, 1)
+    self.assertEqual(w._Old.TOPn, -1)
+    self.assertNotEqual(w._New.TOP, 1)
+    self.assertEqual(w._New.TOP.name, 'TOP')
+    self.assertTrue(w._New.BOTTOM)
+    self.assertEqual(w._New.BOTTOM, w._New(1))
+    self.assertEqual(w._New.TOP, w._New(1000))
+    self.assertEqual(w.K.OldE.ONE, 1)
+    self.assertEqual(w.K.NewE.ONE, w.K.NewE(11))
+    self.assertRaises(TypeError, w.K().M, (5))
     # This is necessary for proper pickling.
-    self.assertEqual(t3._New.__module__, t3.__name__)
+    self.assertEqual(w._New.__module__, w.__name__)
+
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

@@ -18,6 +18,7 @@ from typing import Text
 
 from clif.protos import ast_pb2
 from clif.pybind11 import classes
+from clif.pybind11 import enums
 from clif.pybind11 import function
 from clif.pybind11 import utils
 
@@ -54,6 +55,9 @@ class ModuleGenerator(object):
           yield s
       elif decl.decltype == ast_pb2.Decl.Type.CLASS:
         for s in classes.generate_from(decl.class_):
+          yield s
+      elif decl.decltype == ast_pb2.Decl.Type.ENUM:
+        for s in enums.generate_from(decl.enum, 'm'):
           yield s
       yield ''
     yield '}'
