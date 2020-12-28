@@ -60,6 +60,7 @@ message ClassDecl {
   repeated Decl members = 3;
   optional bool final = 4;        // No derived classes allowed.
   optional bool enable_instance_dict = 16;  // Add __dict__ to instance.
+  optional bool supress_upcasts = 17;  // Set to true if CLIF does not generate upcast for the class.
   optional bool shared = 5  [deprecated = true];
   optional string docstring = 15;
   optional bool cpp_has_def_ctor = 6 [default = true];  // C++ class has a default constructor.
@@ -76,7 +77,7 @@ message ClassDecl {
     optional string filename = 3;
   };
   repeated Base cpp_bases = 11;   // Additional info for C++ base classes.
-  // Next available: 17
+  // Next available: 18
 };
 
 message EnumDecl {

@@ -185,6 +185,8 @@ add_pyclif_library_for_test(std_containers std_containers.clif)
 add_pyclif_library_for_test(std_variant std_variant.clif
   CC_DEPS clif_testing_std_variant)
 
+add_pyclif_library_for_test(supress_upcasts supress_upcasts.clif)
+
 add_pyclif_library_for_test(template_alias template_alias.clif)
 
 add_pyclif_library_for_test(templates templates.clif)

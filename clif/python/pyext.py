@@ -539,13 +539,14 @@ class Module(object):
         for s in gen.GetSetDef(self.properties, c.enable_instance_dict):
           yield s
         tp_slots['tp_getset'] = gen.GetSetDef.name
-      for b in c.bases:
-        if b.cpp_name and not b.native:
-          p = b.cpp_name
-          w = 'as_' + types.Mangle(p)  # pyname == cname == w
-          for s in gen.CastAsCapsule(_GetCppObj(), p, w):
-            yield s
-          self.methods.append((w, w, NOARGS, 'Upcast to %s*' % p))
+      if not c.supress_upcasts:
+        for b in c.bases:
+          if b.cpp_name and not b.native:
+            p = b.cpp_name
+            w = 'as_' + types.Mangle(p)  # pyname == cname == w
+            for s in gen.CastAsCapsule(_GetCppObj(), p, w):
+              yield s
+            self.methods.append((w, w, NOARGS, 'Upcast to %s*' % p))
       _AppendReduceExIfNeeded(self.methods)
       if self.methods:
         for s in slots.GenSlots(self.methods, tp_slots, py3=self.py3output,
