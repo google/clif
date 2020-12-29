@@ -39,6 +39,13 @@ class ClassesTest(unittest.TestCase):
     with self.assertRaises((AttributeError, TypeError)):
       k.i2 = 0
 
+  def testDerivedClassDocstring(self):
+    # Nothing special about this being a derived class; that is just the
+    # one our test .clif file has a docstring on.
+    self.assertIn('class also has a docstring.\n\n', classes.Derived.__doc__)
+    self.assertIn('spans multiple lines', classes.Derived.__doc__)
+    self.assertIn(classes.Derived.__doc__, classes.Derived.__doc__.strip())
+
   def testPythonDerived(self):
     k = PyK(4)
     self.assertEqual(k.i, 4)

@@ -45,6 +45,14 @@ class ClassesTest(absltest.TestCase):
     with self.assertRaises((AttributeError, TypeError)):
       k.i2 = 0
 
+  # TODO: Make this test case work with pybind11.
+  def testDerivedClassDocstring(self, unused_wrapper_lib):
+    # Nothing special about this being a derived class; that is just the
+    # one our test .clif file has a docstring on.
+    self.assertIn('class also has a docstring.\n\n', classes.Derived.__doc__)
+    self.assertIn('spans multiple lines', classes.Derived.__doc__)
+    self.assertIn(classes.Derived.__doc__, classes.Derived.__doc__.strip())
+
   def testPythonDerived(self, wrapper_lib):
     class PyK(wrapper_lib.Klass):
       pass

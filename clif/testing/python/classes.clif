@@ -24,6 +24,14 @@ from "clif/testing/classes.h":
       i2: int = property(`get2`)
 
     class Derived(Klass):
+      """This class also has a docstring.
+
+      It spans multiple lines.  Plus trailing whitespace.
+
+      None of that should be a problem for the code generator that shoves
+      this text into the tp_doc char* slot C string in the generated code.
+
+      """
       j: int
       @add__init__
       def Init(self, i: int, j: int)

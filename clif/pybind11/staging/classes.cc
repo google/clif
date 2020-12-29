@@ -29,7 +29,7 @@ PYBIND11_MODULE(classes, m) {
     .def_property_readonly("i2", &clif_testing::classes::K::get2);
 
   py::class_<clif_testing::classes::Derived, clif_testing::classes::K>(
-    m, "Derived")
+    m, "Derived", "This class also has a docstring.\n\n      It spans multiple lines.  Plus trailing whitespace.\n\n      None of that should be a problem for the code generator that shoves\n      this text into the tp_doc char* slot C string in the generated code.")  // NOLINT
     // We cannot just simply generate `.def(py::init<>())`, because the Derived
     // class has a constructor with default value for the first parameter.
     .def(py::init<>([]() {

@@ -29,13 +29,6 @@ class OldStyleClass:
 
 class T2Test(unittest.TestCase):
 
-  def testDerivedClassDocstring(self):
-    # Nothing special about this being a derived class; that is just the
-    # one our test .clif file has a docstring on.
-    self.assertIn('class also has a docstring.\n\n', t2.Derived.__doc__)
-    self.assertIn('spans multiple lines', t2.Derived.__doc__)
-    self.assertIn(t2.Derived.__doc__, t2.Derived.__doc__.strip())
-
   # This test works as expected when the "user error" in .clif is fixed.
   # def testExplicitConstructor(self):
   #   self.assertEqual(t2.NoDefaultConstructor(1).a, 1)
