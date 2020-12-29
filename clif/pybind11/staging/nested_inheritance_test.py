@@ -27,8 +27,6 @@ class NestedInheritanceTest(unittest.TestCase):
     n = nested_inheritance.InheritInner()
     n.a = 100
     self.assertEqual(n.a, 100)
-    n.set_a(3)
-    self.assertEqual(n.a, 3)
 
 
 if __name__ == '__main__':

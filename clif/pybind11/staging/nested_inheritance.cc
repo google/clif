@@ -21,15 +21,11 @@ namespace py = pybind11;
 PYBIND11_MODULE(nested_inheritance, m) {
   py::class_<::clif_testing::Nested> nested(m, "Nested");
   nested.def(py::init<>());
-  nested.def("get_a", &::clif_testing::Nested::get_a);
-  nested.def("set_a", &::clif_testing::Nested::set_a);
   nested.def_property("a", &::clif_testing::Nested::get_a,
                       &::clif_testing::Nested::set_a);
 
   py::class_<::clif_testing::Nested::Inner> nested_inner(nested, "Inner");
   nested_inner.def(py::init<>());
-  nested_inner.def("get_a", &::clif_testing::Nested::Inner::get_a);
-  nested_inner.def("set_a", &::clif_testing::Nested::Inner::set_a);
   nested_inner.def_property("a", &::clif_testing::Nested::Inner::get_a,
                             &::clif_testing::Nested::Inner::set_a);
 

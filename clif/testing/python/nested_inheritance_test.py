@@ -17,12 +17,13 @@ import unittest
 from clif.testing.python import nested_inheritance
 
 
-@unittest.skip('b/170861151')
 class NestedInheritanceTest(unittest.TestCase):
 
   def testInheritInner(self):
     n = nested_inheritance.InheritInner()
     n.a = 100
     self.assertEqual(n.a, 100)
-    n.set_a(3)
-    self.assertEqual(n.a, 3)
+
+
+if __name__ == '__main__':
+  unittest.main()
