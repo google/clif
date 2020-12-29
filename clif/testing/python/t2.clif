@@ -39,21 +39,11 @@ from "clif/testing/t2.h":
     def Init(self, i: int, j: int)
     def `has` as __contains__(self, k: int) -> bool
 
-  class Abstract:
-    const KIND: bytes
-    def Future(self) -> int
-
-  def `Inconstructible::F` as InconstructibleF() -> int
-
   class NoDefaultConstructor:
     # def __init__(self, a: int) - disabled to demonstrate a user error
     a: int = property(`A`)
 
   class NoCopy:
-    def __init__(self, a: int=default)
-    a: int = property(`A`)
-
-  class NoMove:
     def __init__(self, a: int=default)
     a: int = property(`A`)
 

@@ -29,66 +29,12 @@ class OldStyleClass:
 
 class T2Test(unittest.TestCase):
 
-  def testKlass(self):
-    self.assertEqual(t2.Klass.C2(), 3)
-    k = t2.Klass(3)
-    self.assertEqual(k.i, 3)
-    self.assertEqual(k.i2, 9)
-    self.assertEqual(k.Int1(), 4)
-    self.assertIs(False, t2.k_check(k))
-    with self.assertRaises(TypeError):
-      t2.k_check(0)
-    k.i = 0
-    self.assertIs(True, t2.k_check(k))
-    # AttributeError on CPython; TypeError on PyPy.
-    with self.assertRaises((AttributeError, TypeError)):
-      k.i2 = 0
-    t2.k_modify(k, 5)
-    self.assertEqual(k.i, 5)
-
-  def testPythonDerived(self):
-    k = PyK(4)
-    self.assertEqual(k.i, 4)
-    self.assertEqual(k.Int1(), 5)
-
-  def testDerived(self):
-    k = t2.Derived()
-    self.assertEqual(k.i, 0)
-    self.assertEqual(k.j, 0)
-    self.assertIs(True, t2.k_check(k))
-    self.assertNotIn(2, k)
-    with self.assertRaises(TypeError):
-      t2.Derived(1)
-
   def testDerivedClassDocstring(self):
     # Nothing special about this being a derived class; that is just the
     # one our test .clif file has a docstring on.
     self.assertIn('class also has a docstring.\n\n', t2.Derived.__doc__)
     self.assertIn('spans multiple lines', t2.Derived.__doc__)
     self.assertIn(t2.Derived.__doc__, t2.Derived.__doc__.strip())
-
-  def testDerivedInit(self):
-    k = t2.Derived.Init(1, 2)
-    self.assertEqual(k.i, 1)
-    self.assertEqual(k.j, 2)
-    self.assertIs(False, t2.k_check(k))
-
-  def testAbstract(self):
-    self.assertTrue(t2.Abstract.Future)
-    self.assertRaises(ValueError, t2.Abstract)
-    self.assertEqual(t2.Abstract.KIND, 'pure virtual',
-                     str(type(t2.Abstract.KIND)))
-
-  def testInconstructibleStaticMethod(self):
-    self.assertEqual(t2.InconstructibleF(), 0)
-
-  def testNoDefaultConstructor(self):
-    with self.assertRaises(ValueError):
-      # true error, no def ctor
-      _ = t2.NoDefaultConstructor().a
-    with self.assertRaises(ValueError):
-      # true error, non-def ctor not wrapped
-      _ = t2.NoDefaultConstructor(1).a
 
   # This test works as expected when the "user error" in .clif is fixed.
   # def testExplicitConstructor(self):
@@ -141,14 +87,6 @@ class T2Test(unittest.TestCase):
   def test_class_name(self):
     with self.assertRaisesRegexp(TypeError, r'\bOldStyleClass\b'):
       t2.k_check(OldStyleClass())
-
-  def testNoCopy(self):
-    no_copy = t2.NoCopy(1)
-    self.assertEqual(no_copy.a, 1)
-
-  def testNoMove(self):
-    no_move = t2.NoMove(1)
-    self.assertEqual(no_move.a, 1)
 
   def testReturnNoDefaultConstructor(self):
     self.assertIsInstance(t2.make_ndefctor(1), t2.NoDefaultConstructor)

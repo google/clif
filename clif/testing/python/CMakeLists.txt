@@ -88,6 +88,8 @@ add_pyclif_library_for_test(call_method call_method.clif)
 
 add_pyclif_library_for_test(circular circular.clif)
 
+add_pyclif_library_for_test(classes classes.clif)
+
 add_pyclif_library_for_test(class_module_attr class_module_attr.clif)
 
 add_pyclif_library_for_test(const_char_ptr const_char_ptr.clif)
@@ -175,6 +177,8 @@ add_pyclif_library_for_test(simple_type_conversions simple_type_conversions.clif
 add_pyclif_library_for_test(slots slots.clif)
 
 add_pyclif_library_for_test(smart_ptrs smart_ptrs.clif)
+
+add_pyclif_library_for_test(special_classes special_classes.clif)
 
 add_pyclif_library_for_test(static_methods static_methods.clif)
 
