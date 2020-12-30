@@ -54,7 +54,7 @@ class ModuleGenerator(object):
         for s in self._generate_const_variables(decl.const):
           yield s
       elif decl.decltype == ast_pb2.Decl.Type.CLASS:
-        for s in classes.generate_from(decl.class_):
+        for s in classes.generate_from(decl.class_, 'm'):
           yield s
       elif decl.decltype == ast_pb2.Decl.Type.ENUM:
         for s in enums.generate_from(decl.enum, 'm'):

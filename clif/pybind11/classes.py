@@ -20,11 +20,12 @@ from clif.pybind11 import utils
 I = utils.I
 
 
-def generate_from(class_decl: ast_pb2.ClassDecl):
+def generate_from(class_decl: ast_pb2.ClassDecl, superclass_name: str):
   """Generates a complete py::class_<>.
 
   Args:
     class_decl: Class declaration in proto format.
+    superclass_name: String name of the superclass.
 
   Yields:
     pybind11 class bindings code.
@@ -35,7 +36,8 @@ def generate_from(class_decl: ast_pb2.ClassDecl):
   for base in class_decl.bases:
     if base.HasField('cpp_name'):
       definition += f', {base.cpp_name}'
-  definition += f'> {class_name}(m, "{class_decl.name.native}");'
+  definition += (f'> {class_name}({superclass_name}, '
+                 f'"{class_decl.name.native}");')
   yield definition
 
   for s in _generate_constructors(class_decl, class_name):
@@ -54,20 +56,37 @@ def generate_from(class_decl: ast_pb2.ClassDecl):
     elif member.decltype == ast_pb2.Decl.Type.ENUM:
       for s in _generate_enums(member, class_name):
         yield I + s
+    elif member.decltype == ast_pb2.Decl.Type.CLASS:
+      yield '\n'
+      for s in generate_from(member.class_, class_name):
+        yield s
+      yield '\n'
 
 
 def _generate_constructors(class_decl: ast_pb2.ClassDecl, class_name: str):
   """Generates constructor methods."""
+
+  if class_decl.cpp_abstract:
+    return
+
   constructor_defined = False
   for member in class_decl.members:
     if member.decltype == ast_pb2.Decl.Type.FUNC and member.func.name.native == '__init__':
       init_fn = f'{class_name}.def(py::init<'
       params = member.func.params
+      default_values = []
       for i, param in enumerate(params):
         init_fn += f'{param.type.lang_type}'
         if i != len(params) - 1:
           init_fn += ', '
-      init_fn += '>());'
+        if param.default_value:
+          default_values.append(
+              f'py::arg("{param.name.cpp_name}") = {param.default_value}')
+      init_fn += '>()'
+      if not default_values:
+        init_fn += ');'
+      else:
+        init_fn += f', {", ".join(default_values)});'
       constructor_defined = True
       yield init_fn
 
@@ -87,7 +106,7 @@ def _generate_constructors(class_decl: ast_pb2.ClassDecl, class_name: str):
       constructor_defined = True
       yield fn
 
-  if not constructor_defined:
+  if not constructor_defined and class_decl.cpp_has_def_ctor:
     yield f'{class_name}.def(py::init<>());'
 
 

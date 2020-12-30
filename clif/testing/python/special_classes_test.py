@@ -14,38 +14,55 @@
 
 """Tests for clif.testing.python.special_classes."""
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
 
 from clif.testing.python import special_classes
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import special_classes_pybind11
+except ImportError:
+  special_classes_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class SpecialClassesTest(unittest.TestCase):
+def expected_exception(wrapper_lib):
+  return TypeError if wrapper_lib is special_classes_pybind11 else ValueError
 
-  def testAbstract(self):
-    self.assertTrue(special_classes.Abstract.Future)
-    self.assertRaises(ValueError, special_classes.Abstract)
-    self.assertEqual(special_classes.Abstract.KIND, 'pure virtual',
-                     str(type(special_classes.Abstract.KIND)))
 
-  def testInconstructibleStaticMethod(self):
-    self.assertEqual(special_classes.InconstructibleF(), 0)
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (special_classes,
+                                             special_classes_pybind11))
+    if np[1] is not None
+])
+class SpecialClassesTest(absltest.TestCase):
 
-  def testNoDefaultConstructor(self):
-    with self.assertRaises(ValueError):
+  def testAbstract(self, wrapper_lib):
+    self.assertTrue(wrapper_lib.Abstract.Future)
+    self.assertRaises(expected_exception(wrapper_lib), wrapper_lib.Abstract)
+    self.assertEqual(wrapper_lib.Abstract.KIND, 'pure virtual',
+                     str(type(wrapper_lib.Abstract.KIND)))
+
+  def testInconstructibleStaticMethod(self, wrapper_lib):
+    self.assertEqual(wrapper_lib.InconstructibleF(), 0)
+
+  def testNoDefaultConstructor(self, wrapper_lib):
+    with self.assertRaises(expected_exception(wrapper_lib)):
       # true error, no def ctor
-      _ = special_classes.NoDefaultConstructor().a
-    with self.assertRaises(ValueError):
+      _ = wrapper_lib.NoDefaultConstructor().a
+    with self.assertRaises(expected_exception(wrapper_lib)):
       # true error, non-def ctor not wrapped
-      _ = special_classes.NoDefaultConstructor(1).a
+      _ = wrapper_lib.NoDefaultConstructor(1).a
 
-  def testNoCopy(self):
-    no_copy = special_classes.NoCopy(1)
+  def testNoCopy(self, wrapper_lib):
+    no_copy = wrapper_lib.NoCopy(1)
     self.assertEqual(no_copy.a, 1)
 
-  def testNoMove(self):
-    no_move = special_classes.NoMove(1)
+  def testNoMove(self, wrapper_lib):
+    no_move = wrapper_lib.NoMove(1)
     self.assertEqual(no_move.a, 1)
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()
