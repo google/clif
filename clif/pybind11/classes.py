@@ -37,7 +37,10 @@ def generate_from(class_decl: ast_pb2.ClassDecl, superclass_name: str):
     if base.HasField('cpp_name'):
       definition += f', {base.cpp_name}'
   definition += (f'> {class_name}({superclass_name}, '
-                 f'"{class_decl.name.native}");')
+                 f'"{class_decl.name.native}"')
+  if class_decl.HasField('docstring'):
+    definition += f', {_as_cpp_string_literal(class_decl.docstring)}'
+  definition += ');'
   yield definition
 
   for s in _generate_constructors(class_decl, class_name):
@@ -147,3 +150,7 @@ def _generate_enums(member: ast_pb2.Decl, class_name: str):
   """Generates enums."""
   for s in enums.generate_from(member.enum, class_name):
     yield s
+
+
+def _as_cpp_string_literal(s: str):
+  return f'"{repr(s)}"'
