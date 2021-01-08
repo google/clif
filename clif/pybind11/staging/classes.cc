@@ -23,7 +23,9 @@ PYBIND11_MODULE(classes, m) {
     .def(py::init<int>())
     .def_readonly_static("C", &clif_testing::classes::K::C)
     .def_static("C2", &clif_testing::classes::K::getCplus2)
-    .def("Int1", &clif_testing::classes::K::i1)
+    .def("Int1",
+         (int (clif_testing::classes::K::*)() const)
+          &clif_testing::classes::K::i1)
     .def_property("i", &clif_testing::classes::K::get,
                   &clif_testing::classes::K::set)
     .def_property_readonly("i2", &clif_testing::classes::K::get2);
@@ -39,5 +41,7 @@ PYBIND11_MODULE(classes, m) {
       return clif_testing::classes::Derived(i, j);
     })
     .def_readwrite("j", &clif_testing::classes::Derived::j)
-    .def("__contains__", &clif_testing::classes::Derived::has);
+    .def("__contains__",
+         (bool (clif_testing::classes::Derived::*)(int))
+          &clif_testing::classes::Derived::has, py::arg("k"));
 }

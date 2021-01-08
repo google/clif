@@ -36,7 +36,7 @@ PYBIND11_MODULE(virtual_funcs_basics, m) {
   py::class_<B, PyB>(m, "B")
     .def(py::init<>())
     .def_readwrite("c", &B::c)
-    .def("set_c", &B::set_c)
+    .def("set_c", (void (B::*)(int))&B::set_c, py::arg("i"))
     .def_property("pos_c", &B::get_c, &B::set_c);
 
   m.def("Bset", &Bset);

@@ -42,7 +42,9 @@ PYBIND11_MODULE(enums, m) {
   py::class_<::some::K::O>(enum_class, "O")
     .def_readwrite("n", &::some::K::O::n)
     .def_readwrite("f", &::some::K::O::f);
-  enum_class.def("M", &::some::K::M);
+  enum_class.def("M",
+                 (void (::some::K::*)(::some::K::_e))&::some::K::M,
+                 py::arg("i"));
   enum_class.def_readwrite("i", &::some::K::i_);
   m.def("K2", &some::K::K2);
 }

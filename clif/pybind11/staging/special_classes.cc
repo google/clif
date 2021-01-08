@@ -22,10 +22,13 @@ PYBIND11_MODULE(special_classes, m) {
   py::class_<::clif_testing::special_classes::Abstract> abstract(m, "Abstract");
   abstract.def_readonly_static(
       "KIND", &::clif_testing::special_classes::Abstract::KIND);
-  abstract.def("Future", &::clif_testing::special_classes::Abstract::Future);
+  abstract.def("Future",
+               (int (::clif_testing::special_classes::Abstract::*)())
+                &::clif_testing::special_classes::Abstract::Future);
 
   m.def("InconstructibleF",
-        ::clif_testing::special_classes::Inconstructible::F);
+        (int (*)())
+         ::clif_testing::special_classes::Inconstructible::F);
 
   py::class_<::clif_testing::special_classes::NoDefaultConstructor>
       nodefaultconstructor(m, "NoDefaultConstructor");
