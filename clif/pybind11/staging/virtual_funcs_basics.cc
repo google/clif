@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "clif/testing/virtual_funcs_basics.h"
-
 #include "third_party/pybind11/include/pybind11/pybind11.h"
 #include "third_party/pybind11/include/pybind11/stl.h"
+
+#include "clif/testing/virtual_funcs_basics.h"
+
+#include <vector>  // NOLINT
 
 namespace py = pybind11;
 
@@ -32,6 +34,58 @@ class PyB : public B {
   }
 };
 
+class PyK : public K {
+ public:
+  using K::K;
+  void inc(int delta) override {
+    // Currently we are not able to differentiate "PYBIND11_OVERRIDE_PURE" and
+    // "PYBIND11_OVERRIDE" from CLIF ast.
+    PYBIND11_OVERRIDE_PURE(
+        void,      /* Return type */
+        K,         /* Parent class */
+        inc,       /* Name of function in C++ (must match Python name) */
+        delta      /* Argument(s) */
+    );
+  }
+};
+
+class PyQ : public Q {
+ public:
+  using Q::Q;
+  bool PossiblyPush(int data) override {
+    PYBIND11_OVERRIDE_PURE(
+        bool,          /* Return type */
+        Q,             /* Parent class */
+        PossiblyPush,  /* Name of function in C++ (must match Python name) */
+        data           /* Argument(s) */
+    );
+  }
+};
+
+class PyAbstractClassNonDefConst : public AbstractClassNonDefConst {
+ public:
+  using AbstractClassNonDefConst::AbstractClassNonDefConst;
+  int DoSomething() const override {
+    PYBIND11_OVERRIDE_PURE(
+        int,  /* Return type */
+        AbstractClassNonDefConst,  /* Parent class */
+        DoSomething,  /* Name of function in C++ (must match Python name) */
+    );
+  }
+};
+
+class PyClassNonDefConst : public ClassNonDefConst {
+ public:
+  using ClassNonDefConst::ClassNonDefConst;
+  int DoSomething() const override {
+    PYBIND11_OVERRIDE(
+        int,  /* Return type */
+        ClassNonDefConst,  /* Parent class */
+        DoSomething,  /* Name of function in C++ (must match Python name) */
+    );
+  }
+};
+
 PYBIND11_MODULE(virtual_funcs_basics, m) {
   py::class_<B, PyB>(m, "B")
     .def(py::init<>())
@@ -43,4 +97,45 @@ PYBIND11_MODULE(virtual_funcs_basics, m) {
 
   py::class_<D, B>(m, "D")
     .def(py::init<>());
+
+  py::class_<K, PyK>(m, "K")
+    .def(py::init<>())
+    .def_readwrite("i", &K::i)
+    .def("inc", (void (K::*)(int))&K::inc, py::arg("delta"));
+
+  m.def("seq", (std::vector<int> (*)(K*, int, int))&Kseq, py::arg("k"),
+        py::arg("step"), py::arg("stop"));
+
+  py::class_<Q, PyQ>(m, "Q")
+    .def(py::init<>())
+    .def("PossiblyPush", (bool (Q::*)(int))&Q::PossiblyPush, py::arg("data"));
+
+  m.def("add_seq", (int (*)(Q*, int, int))&add_seq, py::arg("q"),
+        py::arg("step"), py::arg("stop"));
+
+  py::class_<AbstractClassNonDefConst, PyAbstractClassNonDefConst>(
+      m, "AbstractClassNonDefConst")
+    .def(py::init<int, int>())
+    .def_readwrite("a", &AbstractClassNonDefConst::my_a)
+    .def_readwrite("b", &AbstractClassNonDefConst::my_b)
+    .def("DoSomething",
+         (int (AbstractClassNonDefConst::*)() const)
+         &AbstractClassNonDefConst::DoSomething);
+
+  m.def("DoSomething1",
+        (int (*)(const AbstractClassNonDefConst&)) &DoSomething,
+        py::arg("a"));
+
+  py::class_<ClassNonDefConst, PyClassNonDefConst>(
+      m, "ClassNonDefConst")
+    .def(py::init<int, int>())
+    .def_readwrite("a", &ClassNonDefConst::my_a)
+    .def_readwrite("b", &ClassNonDefConst::my_b)
+    .def("DoSomething",
+         (int (ClassNonDefConst::*)() const)
+          &ClassNonDefConst::DoSomething);
+
+  m.def("DoSomething2",
+        (int (*)(const ClassNonDefConst&)) &DoSomething,
+        py::arg("a"));
 }

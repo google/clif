@@ -24,3 +24,42 @@ from "clif/testing/virtual_funcs_basics.h":
 
   class D(B):
     pass
+
+  class K:
+    i: int
+    @virtual
+    def inc(self, delta: int)
+
+  def `Kseq` as seq(k: K, step: int, stop: int) -> list<int>
+
+  class Q:
+    @virtual
+    def PossiblyPush(self, data: int) -> bool
+
+  def add_seq(q: Q, step: int, stop: int) -> int
+
+  class AbstractClassNonDefConst:
+    `my_a` as a: int
+    `my_b` as b: int
+
+    def __init__(self, a: int, b: int)
+
+    @virtual
+    def DoSomething(self) -> int
+
+  # TODO: Uncomment the function declaration after pybind11 code
+  # generator supports overloaded functions.
+  # def `DoSomething` as DoSomething1(a: AbstractClassNonDefConst) -> int
+
+  class ClassNonDefConst:
+    `my_a` as a: int
+    `my_b` as b: int
+
+    def __init__(self, a: int, b: int)
+
+    @virtual
+    def DoSomething(self) -> int
+
+  # TODO: Uncomment the function declaration after pybind11 code
+  # generator supports overloaded functions.
+  # def `DoSomething` as DoSomething2(a: ClassNonDefConst) -> int
