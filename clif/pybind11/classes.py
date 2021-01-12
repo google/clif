@@ -20,12 +20,14 @@ from clif.pybind11 import utils
 I = utils.I
 
 
-def generate_from(class_decl: ast_pb2.ClassDecl, superclass_name: str):
+def generate_from(class_decl: ast_pb2.ClassDecl, superclass_name: str,
+                  python_override_class_name: str):
   """Generates a complete py::class_<>.
 
   Args:
     class_decl: Class declaration in proto format.
     superclass_name: String name of the superclass.
+    python_override_class_name: Virtual function class name.
 
   Yields:
     pybind11 class bindings code.
@@ -36,6 +38,8 @@ def generate_from(class_decl: ast_pb2.ClassDecl, superclass_name: str):
   for base in class_decl.bases:
     if base.HasField('cpp_name'):
       definition += f', {base.cpp_name}'
+  if python_override_class_name:
+    definition += f', {python_override_class_name}'
   definition += (f'> {class_name}({superclass_name}, '
                  f'"{class_decl.name.native}"')
   if class_decl.HasField('docstring'):
@@ -61,7 +65,8 @@ def generate_from(class_decl: ast_pb2.ClassDecl, superclass_name: str):
         yield I + s
     elif member.decltype == ast_pb2.Decl.Type.CLASS:
       yield '\n'
-      for s in generate_from(member.class_, class_name):
+      for s in generate_from(member.class_, class_name,
+                             python_override_class_name):
         yield s
       yield '\n'
 

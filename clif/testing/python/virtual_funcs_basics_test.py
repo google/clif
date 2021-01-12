@@ -14,8 +14,17 @@
 
 """Tests for clif.testing.python.virtual_funcs_basics."""
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import virtual_funcs_basics
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import virtual_funcs_basics_pybind11
+except ImportError:
+  virtual_funcs_basics_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
 class B(virtual_funcs_basics.B):
@@ -28,20 +37,39 @@ class B(virtual_funcs_basics.B):
     self.c = v
 
 
-class VirtualFuncsTest(unittest.TestCase):
+class B_pybind11(virtual_funcs_basics_pybind11.B):  # pylint: disable=invalid-name
 
-  def testBasicCall(self):
-    b = B()
+  def __init__(self):
+    virtual_funcs_basics_pybind11.B.__init__(self)
+    self.c = -1
+
+  def set_c(self, v):
+    self.c = v
+
+
+def get_derived_b(wrapper_lib):
+  return B_pybind11 if wrapper_lib is virtual_funcs_basics_pybind11 else B
+
+
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (virtual_funcs_basics,
+                                             virtual_funcs_basics_pybind11))
+    if np[1] is not None
+])
+class VirtualFuncsTest(absltest.TestCase):
+
+  def testBasicCall(self, wrapper_lib):
+    b = get_derived_b(wrapper_lib)()
     b.set_c(2)
     self.assertEqual(b.c, 2)
-    virtual_funcs_basics.Bset(b, 4)
+    wrapper_lib.Bset(b, 4)
     self.assertEqual(b.c, 4)
 
-  def testVirtualProperty(self):
-    c = virtual_funcs_basics.D()
+  def testVirtualProperty(self, wrapper_lib):
+    c = wrapper_lib.D()
     c.pos_c = -1
     self.assertEqual(c.pos_c, 1)
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()
