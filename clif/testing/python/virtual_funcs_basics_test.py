@@ -57,6 +57,16 @@ class K(virtual_funcs_basics.K):
     self.i += n
 
 
+class K_pybind11(virtual_funcs_basics_pybind11.K):  # pylint: disable=invalid-name
+
+  def inc(self, n):
+    self.i += n
+
+
+def get_derived_k(wrapper_lib):
+  return K_pybind11 if wrapper_lib is virtual_funcs_basics_pybind11 else K
+
+
 class L(virtual_funcs_basics.Q):
 
   def __init__(self, max_len):
@@ -72,6 +82,27 @@ class L(virtual_funcs_basics.Q):
       self._q.append(data)
       return True
     return False
+
+
+class L_pybind11(virtual_funcs_basics_pybind11.Q):  # pylint: disable=invalid-name
+
+  def __init__(self, max_len):
+    virtual_funcs_basics_pybind11.Q.__init__(self)
+    self._q = []
+    self._max = max_len
+
+  def data(self):
+    return list(self._q)
+
+  def PossiblyPush(self, data):
+    if len(self._q) < self._max:
+      self._q.append(data)
+      return True
+    return False
+
+
+def get_derived_l(wrapper_lib):
+  return L_pybind11 if wrapper_lib is virtual_funcs_basics_pybind11 else L
 
 
 class AbstractClassNonDefConstImpl(
@@ -100,8 +131,8 @@ class ClassNonDefConstImpl(virtual_funcs_basics.ClassNonDefConst):
 ])
 class VirtualFuncsTest(absltest.TestCase):
 
-  def testInitConcreteClassWithVirtualMethods(self, unused_wrapper_lib):
-    b = virtual_funcs_basics.B()
+  def testInitConcreteClassWithVirtualMethods(self, wrapper_lib):
+    b = get_derived_b(wrapper_lib)()
     b.set_c(2)
     self.assertEqual(b.c, 2)
 
@@ -120,20 +151,21 @@ class VirtualFuncsTest(absltest.TestCase):
   @absltest.skip(
       'pybind11 code generator does not support overloaded functions.'
   )
-  def testVirtual(self, unused_wrapper_lib):
-    self.assertEqual(virtual_funcs_basics.seq(K(), 2, 6), [0, 2, 4, 6])
+  def testVirtual(self, wrapper_lib):
+    k = get_derived_k(wrapper_lib)()
+    self.assertEqual(virtual_funcs_basics.seq(k, 2, 6), [0, 2, 4, 6])
 
     abc_non_def_impl = AbstractClassNonDefConstImpl(4, 5)
     self.assertEqual(abc_non_def_impl.DoSomething(), 20)
-    self.assertEqual(virtual_funcs_basics.DoSomething1(abc_non_def_impl), 20)
+    self.assertEqual(wrapper_lib.DoSomething1(abc_non_def_impl), 20)
 
     non_def_impl = ClassNonDefConstImpl(4, 5)
     self.assertEqual(non_def_impl.DoSomething(), 20)
-    self.assertEqual(virtual_funcs_basics.DoSomething2(non_def_impl), 20)
+    self.assertEqual(wrapper_lib.DoSomething2(non_def_impl), 20)
 
-  def testVirtual2(self, unused_wrapper_lib):
-    q = L(3)
-    self.assertEqual(virtual_funcs_basics.add_seq(q, 2, 6), 3)
+  def testVirtual2(self, wrapper_lib):
+    q = get_derived_l(wrapper_lib)(3)
+    self.assertEqual(wrapper_lib.add_seq(q, 2, 6), 3)
     self.assertEqual(q.data(), [0, 2, 4])
 
   def testVirtualProperty(self, wrapper_lib):

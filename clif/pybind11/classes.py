@@ -15,6 +15,7 @@
 
 from clif.protos import ast_pb2
 from clif.pybind11 import enums
+from clif.pybind11 import function
 from clif.pybind11 import utils
 
 I = utils.I
@@ -55,8 +56,8 @@ def generate_from(class_decl: ast_pb2.ClassDecl, superclass_name: str,
       for s in _generate_const_members(member, class_name):
         yield I + s
     elif member.decltype == ast_pb2.Decl.Type.FUNC:
-      for s in _generate_methods(member, class_name):
-        yield I + s
+      for s in _generate_methods(class_decl, member, class_name):
+        yield s
     elif member.decltype == ast_pb2.Decl.Type.VAR:
       for s in _generate_variables(class_decl, member, class_name):
         yield I + s
@@ -73,9 +74,6 @@ def generate_from(class_decl: ast_pb2.ClassDecl, superclass_name: str,
 
 def _generate_constructors(class_decl: ast_pb2.ClassDecl, class_name: str):
   """Generates constructor methods."""
-
-  if class_decl.cpp_abstract:
-    return
 
   constructor_defined = False
   for member in class_decl.members:
@@ -124,14 +122,24 @@ def _generate_const_members(member: ast_pb2.Decl, class_name: str):
          f'&{member.const.name.cpp_name});')
 
 
-def _generate_methods(member: ast_pb2.Decl, class_name: str):
-  """Generates methods."""
+def _generate_methods(class_decl: ast_pb2.ClassDecl, member: ast_pb2.Decl,
+                      class_name: str):
+  """Generates methods.
+
+  Args:
+    class_decl: CLIF ast class declaration.
+    member: CLIF ast member function declaration.
+    class_name: String representation of the encompassing class name.
+
+  Yields:
+    pybind11 method declaration.
+  """
   if member.func.classmethod:
     yield (f'{class_name}.def_static("{member.func.name.native}", '
            f'&{member.func.name.cpp_name});')
   elif not member.func.constructor:
-    yield (f'{class_name}.def("{member.func.name.native}", '
-           f'&{member.func.name.cpp_name});')
+    for s in function.generate_from(class_name, member.func, class_decl):
+      yield s
 
 
 def _generate_variables(class_decl: ast_pb2.ClassDecl, member: ast_pb2.Decl,
