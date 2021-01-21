@@ -23,11 +23,11 @@ from "clif/testing/number_methods.h":
 
       def __init__(self, v: float)
 
-      def `operator+` as __add__(self, other: Number) -> Number
-      def `operator-` as __sub__(self, other: Number) -> Number
-      def `operator*` as __mul__(self, other: Number) -> Number
-      def `operator/` as __div__(self, other: Number) -> Number
-      def `operator%` as __mod__(self, other: Number) -> Number
+      def __add__(self, other: Number) -> Number
+      def __sub__(self, other: Number) -> Number
+      def __mul__(self, other: Number) -> Number
+      def __div__(self, other: Number) -> Number
+      def __mod__(self, other: Number) -> Number
       def `clif_testing::power` as __pow__(self, exponent: Number, modulus: Number) -> Number
       # https://bugs.python.org/issue36379
       # def `inplace_power` as __ipow__(self, exponent: Number, modulus: Number) -> self
@@ -35,32 +35,32 @@ from "clif/testing/number_methods.h":
 
       def `negative` as __neg__(self) -> Number
       def `positive` as __pos__(self) -> Number
-      def `absolute` as __abs__(self) -> Number
-      def `operator~` as __invert__(self) -> Number
-      def `operator<<` as __lshift__(self, n: int) -> Number
-      def `operator>>` as __rshift__(self, n: int) -> Number
-      def `operator&` as __and__(self, other: Number) -> Number
-      def `operator^` as __xor__(self, other: Number) -> Number
-      def `operator|` as __or__(self, other: Number) -> Number
+      def `abs` as __abs__(self) -> Number
+      def __invert__(self) -> Number
+      def __lshift__(self, n: int) -> Number
+      def __rshift__(self, n: int) -> Number
+      def __and__(self, other: Number) -> Number
+      def __xor__(self, other: Number) -> Number
+      def __or__(self, other: Number) -> Number
 
-      def `to_int` as __int__(self) -> int
-      def `to_float` as __float__(self) -> float
-      def `to_bool` as __bool__(self) -> bool
+      def __int__(self) -> int
+      def __float__(self) -> float
+      def __bool__(self) -> bool
 
-      def `operator+=` as __iadd__(self, other: Number) -> self
-      def `operator-=` as __isub__(self, other: Number) -> self
-      def `operator*=` as __imul__(self, other: Number) -> self
-      def `operator/=` as __idiv__(self, other: Number) -> self
-      def `operator%=` as __imod__(self, other: Number) -> self
-      def `operator<<=` as __ilshift__(self, n: int) -> self
-      def `operator>>=` as __irshift__(self, n: int) -> self
-      def `operator&=` as __iand__(self, other: Number) -> self
-      def `operator^=` as __ixor__(self, other: Number) -> self
-      def `operator|=` as __ior__(self, other: Number) -> self
+      def __iadd__(self, other: Number) -> self
+      def __isub__(self, other: Number) -> self
+      def __imul__(self, other: Number) -> self
+      def __idiv__(self, other: Number) -> self
+      def __imod__(self, other: Number) -> self
+      def __ilshift__(self, n: int) -> self
+      def __irshift__(self, n: int) -> self
+      def __iand__(self, other: Number) -> self
+      def __ixor__(self, other: Number) -> self
+      def __ior__(self, other: Number) -> self
 
       def `clif_testing::floor_division` as __floordiv__(self, other: Number) -> Number
-      def `operator/` as __truediv__(self, other: Number) -> Number
+      def __truediv__(self, other: Number) -> Number
       def `inplace_floor_division` as __ifloordiv__(self, other: Number) -> self
-      def `operator/=` as __itruediv__(self, b:Number) -> self
+      def __itruediv__(self, b:Number) -> self
 
-      def `to_int` as __index__(self) -> int
+      def `operator int` as __index__(self) -> int

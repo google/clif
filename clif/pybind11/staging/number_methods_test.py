@@ -12,8 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Tests for clif.pybind11.staging.number_methods.
+
+This file is a subset of clif/testing/python/number_methods_test.py.
+"""
+
 import unittest
-from clif.testing.python import number_methods
+from clif.pybind11.staging import number_methods
 
 
 class NumberMethodsTest(unittest.TestCase):
@@ -42,44 +47,6 @@ class NumberMethodsTest(unittest.TestCase):
     n3 = n1 % n2
     self.assertEqual(n3.value, 1.0)
 
-  def testPower(self):
-    n1 = number_methods.Number(7.0)
-    n2 = number_methods.Number(3.0)
-    n3 = n1 ** n2
-    self.assertEqual(n3.value, 343.0)
-
-  def testPowerWithModulo(self):
-    n1 = number_methods.Number(7.0)
-    n2 = number_methods.Number(3.0)
-    n3 = number_methods.Number(10.0)
-    n4 = pow(n1, n2, n3)
-    self.assertEqual(n4.value, 3.0)
-
-  def testDivmod(self):
-    n1 = number_methods.Number(7.0)
-    n2 = number_methods.Number(3.0)
-    n3, n4 = divmod(n1, n2)
-    self.assertEqual(n3.value, 2.0)
-    self.assertEqual(n4.value, 1.0)
-
-  def testNegative(self):
-    n1 = number_methods.Number(8.0)
-    n2 = number_methods.Number(-8.0)
-    self.assertEqual((-n1).value, -8.0)
-    self.assertEqual((-n2).value, 8.0)
-
-  def testPositive(self):
-    n1 = number_methods.Number(8.0)
-    n2 = number_methods.Number(-8.0)
-    self.assertEqual((+n1).value, 8.0)
-    self.assertEqual((+n2).value, -8.0)
-
-  def testAbsolute(self):
-    n1 = number_methods.Number(8.0)
-    n2 = number_methods.Number(-8.0)
-    self.assertEqual(abs(n1).value, 8.0)
-    self.assertEqual(abs(n2).value, 8.0)
-
   def testInvert(self):
     n = number_methods.Number(5.0)  # 5(0b0101)
     self.assertEqual((~n).value, -6)  # -6(0b1010)
@@ -106,12 +73,6 @@ class NumberMethodsTest(unittest.TestCase):
     n1 = number_methods.Number(5.0)  # 5(0b0101)
     n2 = number_methods.Number(6.0)  # 6(0b0110)
     self.assertEqual((n1 | n2).value, 7)  # 2(0b0111)
-
-  def testBool(self):
-    n1 = number_methods.Number(6.0)
-    n2 = number_methods.Number(0.0)
-    self.assertTrue(bool(n1))
-    self.assertFalse(bool(n2))
 
   def testInt(self):
     n1 = number_methods.Number(6.0)
@@ -145,23 +106,11 @@ class NumberMethodsTest(unittest.TestCase):
     n1 %= n2
     self.assertEqual(n1.value, 1.0)
 
-  def testFloorDivide(self):
-    n1 = number_methods.Number(10.0)
-    n2 = number_methods.Number(3.0)
-    n3 = n1 // n2
-    self.assertEqual(n3.value, 3.0)
-
   def testTrueDivide(self):
     n1 = number_methods.Number(6.0)
     n2 = number_methods.Number(3.0)
     n3 = n1 / n2
     self.assertEqual(n3.value, 2.0)
-
-  def testInplaceFloorDivide(self):
-    n1 = number_methods.Number(10.0)
-    n2 = number_methods.Number(3.0)
-    n1 //= n2
-    self.assertEqual(n1.value, 3.0)
 
   def testInplaceTrueDivede(self):
     n1 = number_methods.Number(6.0)
@@ -196,10 +145,6 @@ class NumberMethodsTest(unittest.TestCase):
     n2 = number_methods.Number(6.0)  # 6(0b0110)
     n1 |= n2
     self.assertEqual(n1.value, 7)  # 2(0b0111)
-
-  def testIndex(self):
-    n1 = number_methods.Number(6)
-    self.assertEqual(n1.__index__(), 6)
 
 
 if __name__ == '__main__':

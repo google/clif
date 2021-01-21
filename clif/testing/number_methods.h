@@ -86,8 +86,8 @@ class Number {
     return number;
   }
 
-  Number absolute() const {
-    Number number(abs(value));
+  Number abs() const {
+    Number number(std::abs(value));
     return number;
   }
 
@@ -136,9 +136,9 @@ class Number {
     return *this;
   }
 
-  bool to_bool() const { return static_cast<bool>(value); }
-  int to_int() const { return static_cast<int>(value); }
-  float to_float() const { return value; }
+  operator bool() const { return static_cast<bool>(value); }
+  operator int() const { return static_cast<int>(value); }
+  operator float() const { return value; }
 
   float value;
 };
