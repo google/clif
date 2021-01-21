@@ -47,9 +47,7 @@ from "clif/testing/virtual_funcs_basics.h":
     @virtual
     def DoSomething(self) -> int
 
-  # TODO: Uncomment the function declaration after pybind11 code
-  # generator supports overloaded functions.
-  # def `DoSomething` as DoSomething1(a: AbstractClassNonDefConst) -> int
+  def `DoSomething` as DoSomething1(a: AbstractClassNonDefConst) -> int
 
   class ClassNonDefConst:
     `my_a` as a: int
@@ -60,6 +58,4 @@ from "clif/testing/virtual_funcs_basics.h":
     @virtual
     def DoSomething(self) -> int
 
-  # TODO: Uncomment the function declaration after pybind11 code
-  # generator supports overloaded functions.
-  # def `DoSomething` as DoSomething2(a: ClassNonDefConst) -> int
+  def `DoSomething` as DoSomething2(a: ClassNonDefConst) -> int

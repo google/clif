@@ -112,6 +112,19 @@ class AbstractClassNonDefConstImpl(
     return self.a * self.b
 
 
+class AbstractClassNonDefConstImpl_pybind11(  # pylint: disable=invalid-name
+    virtual_funcs_basics_pybind11.AbstractClassNonDefConst):
+
+  def DoSomething(self):
+    return self.a * self.b
+
+
+def get_derived_abc_non_def_impl(wrapper_lib):
+  if wrapper_lib is virtual_funcs_basics_pybind11:
+    return AbstractClassNonDefConstImpl_pybind11
+  return AbstractClassNonDefConstImpl
+
+
 class ClassNonDefConstImpl(virtual_funcs_basics.ClassNonDefConst):
 
   def __init__(self, a, b):
@@ -122,6 +135,23 @@ class ClassNonDefConstImpl(virtual_funcs_basics.ClassNonDefConst):
 
   def DoSomething(self):
     return -1 if self.invalidated else self.a * self.b
+
+
+class ClassNonDefConstImpl_pybind11(  # pylint: disable=invalid-name
+    virtual_funcs_basics_pybind11.ClassNonDefConst):
+
+  def __init__(self, a, b):
+    super(ClassNonDefConstImpl_pybind11, self).__init__(a, b)
+    self.c = [1, 2, 3]  # Must have a non-trivial container to enable gc.
+    # Remove self.invalidated after gaining (limited) access to invalidated ptr.
+    self.invalidated = False
+
+  def DoSomething(self):
+    return -1 if self.invalidated else self.a * self.b
+
+
+def get_derived_non_def_impl(wrapper_lib):
+  return ClassNonDefConstImpl_pybind11 if wrapper_lib is virtual_funcs_basics_pybind11 else ClassNonDefConstImpl
 
 
 @parameterized.named_parameters([
@@ -146,20 +176,15 @@ class VirtualFuncsTest(absltest.TestCase):
     wrapper_lib.Bset(b, 4)
     self.assertEqual(b.c, 4)
 
-  # TODO: Enable this test case after pybind11 code generator supports
-  # overloaded functions.
-  @absltest.skip(
-      'pybind11 code generator does not support overloaded functions.'
-  )
   def testVirtual(self, wrapper_lib):
     k = get_derived_k(wrapper_lib)()
-    self.assertEqual(virtual_funcs_basics.seq(k, 2, 6), [0, 2, 4, 6])
+    self.assertEqual(wrapper_lib.seq(k, 2, 6), [0, 2, 4, 6])
 
-    abc_non_def_impl = AbstractClassNonDefConstImpl(4, 5)
+    abc_non_def_impl = get_derived_abc_non_def_impl(wrapper_lib)(4, 5)
     self.assertEqual(abc_non_def_impl.DoSomething(), 20)
     self.assertEqual(wrapper_lib.DoSomething1(abc_non_def_impl), 20)
 
-    non_def_impl = ClassNonDefConstImpl(4, 5)
+    non_def_impl = get_derived_non_def_impl(wrapper_lib)(4, 5)
     self.assertEqual(non_def_impl.DoSomething(), 20)
     self.assertEqual(wrapper_lib.DoSomething2(non_def_impl), 20)
 
