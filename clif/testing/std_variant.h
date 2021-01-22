@@ -34,6 +34,12 @@ std::variant<T...> Identity(const ::std::variant<T...>& v) {
   return v;
 }
 
+template <typename... T>
+std::optional<std::variant<T...>> Identity(
+    std::optional<std::variant<T...>> v) {
+  return v;
+}
+
 struct WithDirectConv {
   int value;
 };

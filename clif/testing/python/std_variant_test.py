@@ -26,6 +26,7 @@ class VariantClifTest(absltest.TestCase):
 
     self.assertIsInstance(std_variant.identity_int_float(0), int)
     self.assertIsInstance(std_variant.identity_float_int(0), float)
+    self.assertIsInstance(std_variant.identity_opt_int_float(0), int)
 
     # Argument 0.0 is not ambiguous.
     self.assertEqual(std_variant.index_int_float(0.0), 1)
@@ -33,6 +34,9 @@ class VariantClifTest(absltest.TestCase):
 
     self.assertIsInstance(std_variant.identity_int_float(0.0), float)
     self.assertIsInstance(std_variant.identity_float_int(0.0), float)
+    self.assertIsInstance(std_variant.identity_opt_int_float(0.0), float)
+
+    self.assertIsNone(std_variant.identity_opt_int_float(None))
 
   def test_custom_conversions(self):
     # Conversion values are +1 to ensure that custom conversions are used rather

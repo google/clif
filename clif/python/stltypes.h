@@ -46,6 +46,205 @@ headers are included.
 #include "absl/types/variant.h"
 #include "clif/python/types.h"
 
+#ifdef ABSL_HAVE_STD_VARIANT
+// CLIF use `::std::variant` as OneOf
+//
+// For example,
+//
+//  C++:
+//    int Sum(const std::variant<std::vector<int>, int>&);
+//
+//  Python:
+//    assert Sum(1) == 1
+//    assert Sum((1, 2, 3)) == 6
+//
+// If the Python object can be converted into more than one alternative, then
+// the first successful conversion is used.
+//
+// Python -> C++ conversion procedure outline:
+//
+// ```
+// for typename U in variant:
+//   Sequentially check if the following conversions exist.
+//     1. PyObject -> U,
+//     2. PyObject -> optional<U> and U is copy/move constructible,
+//     3. PyObject -> unique_ptr<U> and U is copy/move constructible.
+//   If no conversion exists, then compile error.
+//   Use the first conversion found in the list above.
+//     If conversion was successful (returned true), then return true, and stop.
+//     Otherwise, continue to the next typename U.
+// If PyObject could not be converted to any type U, then return false.
+// ```
+namespace clif_std_py_variant {
+// Dummy argument types to resolve conversion priorities.
+template <int N>
+struct Priority : public Priority<N + 1> {
+  static_assert(N < 5, "Programming error");
+};
+
+template <>
+struct Priority<5> {};  // Terminates the recursion.
+
+// Returns whether ADL finds a conversion into T.  This function is purposely
+// placed outside the ::clif namespace, to ensure that ::clif::Clif_PyObjAs()
+// is not used.
+template <typename T, typename R = decltype(Clif_PyObjAs(
+                          std::declval<PyObject*>(), std::declval<T*>()))>
+constexpr bool HasNonClifConversion(int) {
+  static_assert(std::is_same<R, bool>::value, "");
+  return true;
+}
+
+// Overloaded version returning the default value, false.
+template <typename T>
+constexpr bool HasNonClifConversion(...) {
+  return false;
+}
+
+// Returns whether a conversion is found by ADL or in ::clif namespace.
+template <typename T, typename R = decltype(::clif::Clif_PyObjAs(
+                          std::declval<PyObject*>(), std::declval<T*>()))>
+constexpr bool HasConversion(int) {
+  static_assert(std::is_same<R, bool>::value, "");
+  return true;
+}
+
+template <typename T>
+constexpr bool HasConversion(...) {
+  return HasNonClifConversion<T>(0);
+}
+
+// Convert() attempts to convert PyObject into I-th alternative type T.
+// There are several overload versions with different Priority arguments.
+
+template <std::size_t I, typename T, typename... U>
+typename std::enable_if<
+    HasConversion<T>(0) && std::is_default_constructible<T>::value, bool>::type
+Convert(PyObject* obj, ::std::variant<U...>* v, Priority<0>) {
+  using ::clif::Clif_PyObjAs;
+  return Clif_PyObjAs(obj, &v->template emplace<I>());
+}
+
+// In case direct conversion to T is not available, the next attempts are
+// conversions via std::optional or std::unique_ptr. For example, if T is not
+// default constructible, library may provide conversions to std::optional<T> or
+// std::unique_ptr<T>.
+//
+// Unlike when searching for a direct conversion to T, ::clif namespace is
+// excluded from search, because generic conversions are provided in that
+// namespace, which depend on the direct conversions to T. Those generic
+// conversions are not what we look for here because this code path takes place
+// only when there is no direct conversion to T available.
+#ifdef ABSL_HAVE_STD_OPTIONAL
+template <std::size_t I, typename T, typename... U>
+typename std::enable_if<HasNonClifConversion<::std::optional<T>>(0) &&
+                            (std::is_copy_constructible<T>::value ||
+                             std::is_move_constructible<T>::value),
+                        bool>::type
+Convert(PyObject* py, ::std::variant<U...>* v, Priority<1>) {
+  ::std::optional<T> value;
+  if (Clif_PyObjAs(py, &value)) {
+    v->template emplace<I>(std::move(*value));
+    return true;
+  }
+  return false;
+}
+#endif  // ABSL_HAVE_STD_OPTIONAL
+
+template <std::size_t I, typename T, typename... U>
+typename std::enable_if<HasNonClifConversion<std::unique_ptr<T>>(0) &&
+                            (std::is_copy_constructible<T>::value ||
+                             std::is_move_constructible<T>::value),
+                        bool>::type
+Convert(PyObject* py, ::std::variant<U...>* v, Priority<2>) {
+  std::unique_ptr<T> value;
+  if (Clif_PyObjAs(py, &value)) {
+    v->template emplace<I>(std::move(*value));
+    return true;
+  }
+  return false;
+}
+
+// If needed, add shared_ptr<T> and/or T* support here.
+
+// When no conversion is available, Convert() makes the return type
+// std::false_type. This way, PyObjAsVariantAt() can static_assert() and display
+// helpful static error message rather than obscure compiler error messages
+// about no matching function signature.
+// Do not make this function return bool (false), because run-time conversion
+// failures and compile-time missing conversions are different errors.
+template <std::size_t I, typename T, typename... U>
+constexpr std::false_type Convert(PyObject* obj, ::std::variant<U...>* v, ...);
+
+template <std::size_t I, typename... U>
+bool PyObjAsVariantAt(PyObject* py, ::std::variant<U...>* v) {
+  using T = typename std::tuple_element<I, std::tuple<U...>>::type;
+  auto success = Convert<I, T>(py, v, Priority<0>());
+  static_assert(std::is_same<decltype(success), bool>::value,
+                "No known CLIF conversion");
+  return success;
+}
+
+template <std::size_t I, typename... U>
+typename std::enable_if<I == sizeof...(U), bool>::type PyObjAsVariantTryAll(
+    PyObject* py, ::std::variant<U...>* v) {
+  PyErr_SetString(PyExc_TypeError,
+                  "Failed to convert to any of std::variant alternatives");
+  return false;
+}
+
+template <std::size_t I, typename... U>
+typename std::enable_if<(I < sizeof...(U)), bool>::type PyObjAsVariantTryAll(
+    PyObject* py, ::std::variant<U...>* v) {
+  {
+    bool success = PyObjAsVariantAt<I>(py, v);
+    DCHECK(success || PyErr_Occurred() != nullptr);
+    if (success) {
+      return true;
+    }
+    // Conversion failure to I-th type is not a real failure.
+    PyErr_Clear();
+  }
+  // Try to convert to the next type.
+  return PyObjAsVariantTryAll<I + 1>(py, v);
+}
+
+// When exception is disabled, this should be unreachable.
+template <std::size_t I, typename... U>
+typename std::enable_if<I == sizeof...(U), PyObject*>::type PyObjFromHelper(
+    const ::std::variant<U...>& v, const ::clif::py::PostConv&) {
+  DCHECK(v.valueless_by_exception());
+  PyErr_SetString(PyExc_ValueError, "std::variant is valueless");
+  return nullptr;
+}
+
+template <std::size_t I, typename... U>
+typename std::enable_if<(I < sizeof...(U)), PyObject*>::type PyObjFromHelper(
+    const ::std::variant<U...>& v, const ::clif::py::PostConv& conv) {
+  if (v.index() == I) {
+    using ::clif::Clif_PyObjFrom;
+    return Clif_PyObjFrom(::std::get<I>(v), conv.Get(I));
+  }
+  DCHECK_GT(v.index(), I);
+  return PyObjFromHelper<I + 1>(v, conv);
+}
+}  // namespace clif_std_py_variant
+
+namespace clif {
+template <typename... U>
+PyObject* Clif_PyObjFrom(const ::std::variant<U...>& v,
+                         const ::clif::py::PostConv& conv) {
+  return ::clif_std_py_variant::PyObjFromHelper<0>(v, conv);
+}
+
+template <typename... U>
+bool Clif_PyObjAs(PyObject* obj, ::std::variant<U...>* v) {
+  DCHECK(v != nullptr);
+  return ::clif_std_py_variant::PyObjAsVariantTryAll<0>(obj, v);
+}
+}  // namespace clif
+#endif  // ABSL_HAVE_STD_VARIANT
+
 namespace clif {
 
 // Ensure that the current thread is ready to call the Python C API.
@@ -710,204 +909,5 @@ bool Clif_PyObjAs(PyObject* py, std::map<T, U, Args...>* c) {
   });
 }
 }  // namespace clif
-
-#ifdef ABSL_HAVE_STD_VARIANT
-// CLIF use `::std::variant` as OneOf
-//
-// For example,
-//
-//  C++:
-//    int Sum(const std::variant<std::vector<int>, int>&);
-//
-//  Python:
-//    assert Sum(1) == 1
-//    assert Sum((1, 2, 3)) == 6
-//
-// If the Python object can be converted into more than one alternative, then
-// the first successful conversion is used.
-//
-// Python -> C++ conversion procedure outline:
-//
-// ```
-// for typename U in variant:
-//   Sequentially check if the following conversions exist.
-//     1. PyObject -> U,
-//     2. PyObject -> optional<U> and U is copy/move constructible,
-//     3. PyObject -> unique_ptr<U> and U is copy/move constructible.
-//   If no conversion exists, then compile error.
-//   Use the first conversion found in the list above.
-//     If conversion was successful (returned true), then return true, and stop.
-//     Otherwise, continue to the next typename U.
-// If PyObject could not be converted to any type U, then return false.
-// ```
-namespace clif_std_py_variant {
-// Dummy argument types to resolve conversion priorities.
-template <int N>
-struct Priority : public Priority<N + 1> {
-  static_assert(N < 5, "Programming error");
-};
-
-template <>
-struct Priority<5> {};  // Terminates the recursion.
-
-// Returns whether ADL finds a conversion into T.  This function is purposely
-// placed outside the ::clif namespace, to ensure that ::clif::Clif_PyObjAs()
-// is not used.
-template <typename T, typename R = decltype(Clif_PyObjAs(
-                          std::declval<PyObject*>(), std::declval<T*>()))>
-constexpr bool HasNonClifConversion(int) {
-  static_assert(std::is_same<R, bool>::value, "");
-  return true;
-}
-
-// Overloaded version returning the default value, false.
-template <typename T>
-constexpr bool HasNonClifConversion(...) {
-  return false;
-}
-
-// Returns whether a conversion is found by ADL or in ::clif namespace.
-template <typename T, typename R = decltype(::clif::Clif_PyObjAs(
-                          std::declval<PyObject*>(), std::declval<T*>()))>
-constexpr bool HasConversion(int) {
-  static_assert(std::is_same<R, bool>::value, "");
-  return true;
-}
-
-template <typename T>
-constexpr bool HasConversion(...) {
-  return HasNonClifConversion<T>(0);
-}
-
-// Convert() attempts to convert PyObject into I-th alternative type T.
-// There are several overload versions with different Priority arguments.
-
-template <std::size_t I, typename T, typename... U>
-typename std::enable_if<
-    HasConversion<T>(0) && std::is_default_constructible<T>::value, bool>::type
-Convert(PyObject* obj, ::std::variant<U...>* v, Priority<0>) {
-  using ::clif::Clif_PyObjAs;
-  return Clif_PyObjAs(obj, &v->template emplace<I>());
-}
-
-// In case direct conversion to T is not available, the next attempts are
-// conversions via std::optional or std::unique_ptr. For example, if T is not
-// default constructible, library may provide conversions to std::optional<T> or
-// std::unique_ptr<T>.
-//
-// Unlike when searching for a direct conversion to T, ::clif namespace is
-// excluded from search, because generic conversions are provided in that
-// namespace, which depend on the direct conversions to T. Those generic
-// conversions are not what we look for here because this code path takes place
-// only when there is no direct conversion to T available.
-#ifdef ABSL_HAVE_STD_OPTIONAL
-template <std::size_t I, typename T, typename... U>
-typename std::enable_if<HasNonClifConversion<::std::optional<T>>(0) &&
-                            (std::is_copy_constructible<T>::value ||
-                             std::is_move_constructible<T>::value),
-                        bool>::type
-Convert(PyObject* py, ::std::variant<U...>* v, Priority<1>) {
-  ::std::optional<T> value;
-  if (Clif_PyObjAs(py, &value)) {
-    v->template emplace<I>(std::move(*value));
-    return true;
-  }
-  return false;
-}
-#endif  // ABSL_HAVE_STD_OPTIONAL
-
-template <std::size_t I, typename T, typename... U>
-typename std::enable_if<HasNonClifConversion<std::unique_ptr<T>>(0) &&
-                            (std::is_copy_constructible<T>::value ||
-                             std::is_move_constructible<T>::value),
-                        bool>::type
-Convert(PyObject* py, ::std::variant<U...>* v, Priority<2>) {
-  std::unique_ptr<T> value;
-  if (Clif_PyObjAs(py, &value)) {
-    v->template emplace<I>(std::move(*value));
-    return true;
-  }
-  return false;
-}
-
-// If needed, add shared_ptr<T> and/or T* support here.
-
-// When no conversion is available, Convert() makes the return type
-// std::false_type. This way, PyObjAsVariantAt() can static_assert() and display
-// helpful static error message rather than obscure compiler error messages
-// about no matching function signature.
-// Do not make this function return bool (false), because run-time conversion
-// failures and compile-time missing conversions are different errors.
-template <std::size_t I, typename T, typename... U>
-constexpr std::false_type Convert(PyObject* obj, ::std::variant<U...>* v, ...);
-
-template <std::size_t I, typename... U>
-bool PyObjAsVariantAt(PyObject* py, ::std::variant<U...>* v) {
-  using T = typename std::tuple_element<I, std::tuple<U...>>::type;
-  auto success = Convert<I, T>(py, v, Priority<0>());
-  static_assert(std::is_same<decltype(success), bool>::value,
-                "No known CLIF conversion");
-  return success;
-}
-
-template <std::size_t I, typename... U>
-typename std::enable_if<I == sizeof...(U), bool>::type PyObjAsVariantTryAll(
-    PyObject* py, ::std::variant<U...>* v) {
-  PyErr_SetString(PyExc_TypeError,
-                  "Failed to convert to any of std::variant alternatives");
-  return false;
-}
-
-template <std::size_t I, typename... U>
-typename std::enable_if<(I < sizeof...(U)), bool>::type PyObjAsVariantTryAll(
-    PyObject* py, ::std::variant<U...>* v) {
-  {
-    bool success = PyObjAsVariantAt<I>(py, v);
-    DCHECK(success || PyErr_Occurred() != nullptr);
-    if (success) {
-      return true;
-    }
-    // Conversion failure to I-th type is not a real failure.
-    PyErr_Clear();
-  }
-  // Try to convert to the next type.
-  return PyObjAsVariantTryAll<I + 1>(py, v);
-}
-
-// When exception is disabled, this should be unreachable.
-template <std::size_t I, typename... U>
-typename std::enable_if<I == sizeof...(U), PyObject*>::type PyObjFromHelper(
-    const ::std::variant<U...>& v, const ::clif::py::PostConv&) {
-  DCHECK(v.valueless_by_exception());
-  PyErr_SetString(PyExc_ValueError, "std::variant is valueless");
-  return nullptr;
-}
-
-template <std::size_t I, typename... U>
-typename std::enable_if<(I < sizeof...(U)), PyObject*>::type PyObjFromHelper(
-    const ::std::variant<U...>& v, const ::clif::py::PostConv& conv) {
-  if (v.index() == I) {
-    using ::clif::Clif_PyObjFrom;
-    return Clif_PyObjFrom(::std::get<I>(v), conv.Get(I));
-  }
-  DCHECK_GT(v.index(), I);
-  return PyObjFromHelper<I + 1>(v, conv);
-}
-}  // namespace clif_std_py_variant
-
-namespace clif {
-template <typename... U>
-PyObject* Clif_PyObjFrom(const ::std::variant<U...>& v,
-                         const ::clif::py::PostConv& conv) {
-  return ::clif_std_py_variant::PyObjFromHelper<0>(v, conv);
-}
-
-template <typename... U>
-bool Clif_PyObjAs(PyObject* obj, ::std::variant<U...>* v) {
-  DCHECK(v != nullptr);
-  return ::clif_std_py_variant::PyObjAsVariantTryAll<0>(obj, v);
-}
-}  // namespace clif
-#endif  // ABSL_HAVE_STD_VARIANT
 
 #endif  // CLIF_PYTHON_STLTYPES_H_
