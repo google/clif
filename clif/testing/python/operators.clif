@@ -20,6 +20,9 @@ from "clif/testing/operators.h":
       def __eq__(self, other: Abc) -> bool
       def __ne__(self, other: Abc) -> bool
       def __lt__(self, other: Abc) -> bool
+      def __le__(self, other: Abc) -> bool
+      def __gt__(self, other: Abc) -> bool
+      def __ge__(self, other: Abc) -> bool
       def __int__(self) -> int
       def __float__(self) -> float
       def __iadd__(self, other: int) -> self

@@ -47,18 +47,27 @@ struct Abc {
   uint8_t s, l;
 };
 
-int operator*(const Abc& a) { return 1; }
+inline int operator*(const Abc& a) { return 1; }
 
-bool operator==(Abc const& lhs, Abc const& rhs) {
+inline bool operator==(Abc const& lhs, Abc const& rhs) {
   return lhs.l == rhs.l && lhs.s == rhs.s;
 }
-bool operator!=(Abc const& lhs, Abc const& rhs) {
-  return lhs.l != rhs.l || lhs.s != rhs.s;
+inline bool operator!=(Abc const& lhs, Abc const& rhs) {
+  return !(lhs == rhs);
 }
-bool operator<(Abc const& lhs, Abc const& rhs) {
+inline bool operator<(Abc const& lhs, Abc const& rhs) {
   return lhs.l < rhs.l || lhs.s < rhs.s;
 }
-char Abc::operator[](int i) { return (i >= 0 && i < l) ? s+i : 0; }
+inline bool operator>(Abc const& lhs, Abc const& rhs) {
+  return rhs < lhs;
+}
+inline bool operator<=(Abc const& lhs, Abc const& rhs) {
+  return !(rhs < lhs);
+}
+inline bool operator>=(Abc const& lhs, Abc const& rhs) {
+  return !(lhs < rhs);
+}
+inline char Abc::operator[](int i) { return (i >= 0 && i < l) ? s+i : 0; }
 
 // Check if |c| belongs to |abc| container.
 // It should be a non-member function to test that it can be wrapped in class.
@@ -69,11 +78,11 @@ inline bool Abc_has(Abc const& abc, uint8_t c) {
 
 
 struct Num {
-  int operator+(int) { return 2; }
+  int operator+(int) const { return 2; }
 };
-int operator%(const Num& a, int) { return 1; }
-int operator%(int, const Num& a) { return 2; }
-int operator-(int, const Num& a) { return 3; }
+inline int operator%(const Num& a, int) { return 1; }
+inline int operator%(int, const Num& a) { return 2; }
+inline int operator-(int, const Num& a) { return 3; }
 
 }  // namespace clif_ops_test
 
