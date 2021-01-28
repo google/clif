@@ -51,6 +51,7 @@ class ModuleGenerator(object):
     yield f'PYBIND11_MODULE({self._module_name}, m) {{'
     yield I+('m.doc() = "CLIF generated pybind11-based module for '
              f'{ast.source}";')
+
     for decl in ast.decls:
       if decl.decltype == ast_pb2.Decl.Type.FUNC:
         yield from function.generate_from('m', decl.func, None)
@@ -77,6 +78,7 @@ class ModuleGenerator(object):
     yield '#include "third_party/pybind11/include/pybind11/pybind11.h"'
     yield '// potential future optimization: generate this line only as needed.'
     yield '#include "third_party/pybind11/include/pybind11/stl.h"'
+    yield '#include <pybind11/operators.h>'
     yield ''
     yield 'namespace py = pybind11;'
     yield ''

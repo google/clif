@@ -16,3 +16,15 @@
 
 # Use two spaces indentation for generated code.
 I = '  '
+
+
+def find_operator(s, prefix='::operator'):
+  """Use to find the operator in a cpp_name string."""
+  index = s.find(prefix)
+  if index < 0:
+    return -1
+  index += len(prefix)
+  c = s[index:index + 1]
+  if not c or c == '_' or c.isalnum():
+    return -1
+  return index

@@ -17,6 +17,7 @@
 from typing import Sequence, Text, Optional
 
 from clif.protos import ast_pb2
+from clif.pybind11 import operators
 from clif.pybind11 import utils
 
 
@@ -36,6 +37,13 @@ def generate_from(module_name: str, func_decl: ast_pb2.FuncDecl,
   Yields:
     pybind11 function bindings code.
   """
+
+  operator_index = utils.find_operator(func_decl.name.cpp_name)
+  if operator_index >= 0:
+    for s in operators.generate_operator(module_name, func_decl,
+                                         operator_index):
+      yield I + s
+    return
 
   func_def = I + f'{module_name}.def("{func_decl.name.native}", '
   func_def += _generate_cpp_function_cast(func_decl, class_decl)
@@ -75,6 +83,8 @@ def _generate_cpp_function_cast(func_decl: ast_pb2.FuncDecl,
       # There can be only one returns declaration per function.
       if v.HasField('cpp_exact_type'):
         return_type = v.cpp_exact_type
+  if not return_type:
+    return_type = 'void'
 
   class_sig = ''
   if class_decl:

@@ -28,10 +28,12 @@ from "clif/testing/number_methods.h":
       def __mul__(self, other: Number) -> Number
       def __div__(self, other: Number) -> Number
       def __mod__(self, other: Number) -> Number
-      def `clif_testing::power` as __pow__(self, exponent: Number, modulus: Number) -> Number
+
+      # TODO: Power and advanced division functions will come in a future CL.
+      # def `clif_testing::power` as __pow__(self, exponent: Number, modulus: Number) -> Number
       # https://bugs.python.org/issue36379
       # def `inplace_power` as __ipow__(self, exponent: Number, modulus: Number) -> self
-      def `clif_testing::divmod` as __divmod__(self, other: Number) -> tuple<Number, Number>
+      # def `clif_testing::divmod` as __divmod__(self, other: Number) -> tuple<Number, Number>
 
       def `negative` as __neg__(self) -> Number
       def `positive` as __pos__(self) -> Number
@@ -58,9 +60,10 @@ from "clif/testing/number_methods.h":
       def __ixor__(self, other: Number) -> self
       def __ior__(self, other: Number) -> self
 
-      def `clif_testing::floor_division` as __floordiv__(self, other: Number) -> Number
-      def __truediv__(self, other: Number) -> Number
-      def `inplace_floor_division` as __ifloordiv__(self, other: Number) -> self
-      def __itruediv__(self, b:Number) -> self
+      # TODO: Power and advanced division functions will come in a future CL.
+#      def `clif_testing::floor_division` as __floordiv__(self, other: Number) -> Number
+#      def __truediv__(self, other: Number) -> Number
+#      def `inplace_floor_division` as __ifloordiv__(self, other: Number) -> self
+#      def __itruediv__(self, b:Number) -> self
 
-      def `operator int` as __index__(self) -> int
+#      def `operator int` as __index__(self) -> int
