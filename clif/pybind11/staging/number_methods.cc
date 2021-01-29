@@ -25,10 +25,38 @@ PYBIND11_MODULE(number_methods, m) {
     .def(py::init<int>())
     .def(py::init<float>())
     .def_readwrite("value", &clif_testing::Number::value)
+    .def("__pow__",
+        (clif_testing::Number (clif_testing::Number::*)(
+         const clif_testing::Number*, const clif_testing::Number*))
+         &clif_testing::Number::power,
+         py::arg("exponent"), py::arg("modulus") = nullptr)  // __pow__
+    .def("__ipow__",
+        (clif_testing::Number (clif_testing::Number::*)(
+         const clif_testing::Number*, const clif_testing::Number*))
+         &clif_testing::Number::inplace_power,
+         py::arg("exponent"), py::arg("modulus") = nullptr)  // __ipow__
+    .def("__divmod__",
+        (std::pair<clif_testing::Number, clif_testing::Number>
+         (clif_testing::Number::*)(const clif_testing::Number&))
+         &clif_testing::Number::divmod,
+         py::arg("other"))  // __divmod__
+    .def("__floordiv__",
+        (clif_testing::Number (clif_testing::Number::*)(
+         const clif_testing::Number&))
+         &clif_testing::Number::floor_division,
+         py::arg("other"))  // __floordiv__
+    .def("__ifloordiv__",
+        (clif_testing::Number (clif_testing::Number::*)(
+         const clif_testing::Number&))
+         &clif_testing::Number::inplace_floor_division,
+         py::arg("other"))  // __ifloordiv__
+    .def("__index__",
+        (int (clif_testing::Number::*)())
+         &clif_testing::Number::operator int)  // __index__
     .def(py::self + py::self)  // add
     .def(py::self - py::self)  // sub
     .def(py::self * py::self)  // mul
-    .def(py::self / py::self)  // div
+    .def(py::self / py::self)  // div, truediv
     .def(py::self % py::self)  // mod
     .def(~py::self)  // invert
     .def(py::self << int())  // lshift
@@ -39,7 +67,7 @@ PYBIND11_MODULE(number_methods, m) {
     .def(py::self += py::self)  // iadd
     .def(py::self -= py::self)  // isub
     .def(py::self *= py::self)  // imul
-    .def(py::self /= py::self)  // idiv
+    .def(py::self /= py::self)  // idiv, itruediv
     .def(py::self %= py::self)  // imod
     .def(py::self <<= py::self)  // ilshift
     .def(py::self >>= py::self)  // irshift

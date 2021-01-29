@@ -23,6 +23,42 @@ from clif.pybind11.staging import number_methods
 
 class NumberMethodsTest(unittest.TestCase):
 
+  def testPower(self):
+    n1 = number_methods.Number(7.0)
+    n2 = number_methods.Number(3.0)
+    n3 = n1 ** n2
+    self.assertEqual(n3.value, 343.0)
+
+  def testPowerWithModulo(self):
+    n1 = number_methods.Number(7.0)
+    n2 = number_methods.Number(3.0)
+    n3 = number_methods.Number(10.0)
+    n4 = pow(n1, n2, n3)
+    self.assertEqual(n4.value, 3.0)
+
+  def testFloorDivide(self):
+    n1 = number_methods.Number(10.0)
+    n2 = number_methods.Number(3.0)
+    n3 = n1 // n2
+    self.assertEqual(n3.value, 3.0)
+
+  def testInplaceFloorDivide(self):
+    n1 = number_methods.Number(10.0)
+    n2 = number_methods.Number(3.0)
+    n1 //= n2
+    self.assertEqual(n1.value, 3.0)
+
+  def testIndex(self):
+    n1 = number_methods.Number(6)
+    self.assertEqual(n1.__index__(), 6)
+
+  def testDivmod(self):
+    n1 = number_methods.Number(7.0)
+    n2 = number_methods.Number(3.0)
+    n3, n4 = divmod(n1, n2)
+    self.assertEqual(n3.value, 2.0)
+    self.assertEqual(n4.value, 1.0)
+
   def testAdd(self):
     n1 = number_methods.Number(1.0)
     n2 = number_methods.Number(2.0)

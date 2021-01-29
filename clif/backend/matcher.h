@@ -40,7 +40,7 @@
 #include "clif/backend/ast.h"
 #include "clif/backend/code_builder.h"
 #include "clif/protos/ast.pb.h"
-#include "gtest/gtest.h"  // Defines FRIEND_TEST.
+#include "gtest/gtest_prod.h"  // Defines FRIEND_TEST.
 
 namespace clif {
 

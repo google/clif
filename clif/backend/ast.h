@@ -30,7 +30,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "gtest/gtest.h"  // Defines FRIEND_TEST.
+#include "gtest/gtest_prod.h"  // Defines FRIEND_TEST.
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/CXXInheritance.h"
 #include "clang/AST/Decl.h"

@@ -126,6 +126,12 @@ class Number {
     return *this;
   }
 
+  Number floor_division(const Number& other) {
+    Number number;
+    number.value = floor(value / other.value);
+    return number;
+  }
+
   Number& inplace_power(const Number* const exponent,
                         const Number* const modulus = nullptr) {
     if (modulus) {
@@ -134,6 +140,24 @@ class Number {
       value = pow(value, exponent->value);
     }
     return *this;
+  }
+
+  Number power(
+      const Number* const exponent,
+      const Number* const modulus = nullptr) {
+    if (modulus) {
+      return Number(remainder(pow(value, exponent->value),
+                    modulus->value));
+    } else {
+      return Number(pow(value, exponent->value));
+    }
+  }
+
+  std::pair<Number, Number> divmod(const Number& other) {
+    Number n1, n2;
+    n1.value = floor(value / other.value);
+    n2.value = remainder(value, other.value);
+    return std::make_pair(n1, n2);
   }
 
   operator bool() const { return static_cast<bool>(value); }
@@ -170,30 +194,6 @@ inline Number operator/(const Number& a, const Number& b) {
 inline Number operator%(const Number& a, const Number& b) {
   Number number;
   number.value = remainder(a.value, b.value);
-  return number;
-}
-
-inline Number power(
-    const Number* const base, const Number* const exponent,
-    const Number* const modulus = nullptr) {
-  if (modulus) {
-    return Number(remainder(pow(base->value, exponent->value),
-                  modulus->value));
-  } else {
-    return Number(pow(base->value, exponent->value));
-  }
-}
-
-inline std::pair<Number, Number> divmod(const Number& a, const Number& b) {
-  Number n1, n2;
-  n1.value = floor(a.value / b.value);
-  n2.value = remainder(a.value, b.value);
-  return std::make_pair(n1, n2);
-}
-
-inline Number floor_division(const Number& a, const Number& b) {
-  Number number;
-  number.value = floor(a.value / b.value);
   return number;
 }
 
