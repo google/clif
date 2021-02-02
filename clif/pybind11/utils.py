@@ -28,3 +28,7 @@ def find_operator(s, prefix='::operator'):
   if not c or c == '_' or c.isalnum():
     return -1
   return index
+
+
+def is_dunder_name(s):
+  return s.startswith('__') and s.endswith('__')
