@@ -25,7 +25,11 @@ from "clif/testing/number_methods.h":
 
       def __add__(self, other: Number) -> Number
       def __sub__(self, other: Number) -> Number
-      def __mul__(self, other: Number) -> Number
+      # Not exercising def __mul__(self, other: Number) -> Number to keep this
+      # test simple. There is no special handling of __mul__ in the parser or
+      # code generator.
+      def `my_mul` as __mul__(self, other: Number) -> Number
+      def `::clif_testing::operator*` as my_mul(self, other: Number) -> Number
       def __div__(self, other: Number) -> Number
       def __mod__(self, other: Number) -> Number
 

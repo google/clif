@@ -48,6 +48,13 @@ class NumberMethodsTest(absltest.TestCase):
     n1 = wrapper_lib.Number(2.0)
     n2 = wrapper_lib.Number(3.0)
     n3 = n1 * n2
+    self.assertEqual(n3.value, 6.0 * 10)
+
+  # TODO: Enable this test for pybind11 generator.
+  def testCustomizedMultiply(self, unused_wrapper_lib):
+    n1 = number_methods.Number(2.0)
+    n2 = number_methods.Number(3.0)
+    n3 = n1.my_mul(n2)
     self.assertEqual(n3.value, 6.0)
 
   def testMod(self, wrapper_lib):

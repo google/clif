@@ -55,7 +55,14 @@ PYBIND11_MODULE(number_methods, m) {
          &clif_testing::Number::operator int)  // __index__
     .def(py::self + py::self)  // add
     .def(py::self - py::self)  // sub
-    .def(py::self * py::self)  // mul
+    .def("my_mul",
+        (clif_testing::Number (*)(
+         const clif_testing::Number&, const clif_testing::Number&))
+         &clif_testing::operator*)  // my_mul
+    .def("__mul__",
+        (clif_testing::Number (clif_testing::Number::*)(
+         const clif_testing::Number&))
+         &clif_testing::Number::my_mul)  // __mul__
     .def(py::self / py::self)  // div, truediv
     .def(py::self % py::self)  // mod
     .def(~py::self)  // invert

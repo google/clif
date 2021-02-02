@@ -75,6 +75,12 @@ class NumberMethodsTest(unittest.TestCase):
     n1 = number_methods.Number(2.0)
     n2 = number_methods.Number(3.0)
     n3 = n1 * n2
+    self.assertEqual(n3.value, 6.0 * 10)
+
+  def testCustomizedMultiply(self):
+    n1 = number_methods.Number(2.0)
+    n2 = number_methods.Number(3.0)
+    n3 = n1.my_mul(n2)
     self.assertEqual(n3.value, 6.0)
 
   def testMod(self):

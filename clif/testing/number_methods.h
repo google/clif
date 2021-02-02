@@ -160,6 +160,13 @@ class Number {
     return std::make_pair(n1, n2);
   }
 
+  Number my_mul(const Number& other) {
+    Number number;
+    // To differentiate this method with operator* overloading.
+    number.value = value * other.value * 10;
+    return number;
+  }
+
   operator bool() const { return static_cast<bool>(value); }
   operator int() const { return static_cast<int>(value); }
   operator float() const { return value; }
