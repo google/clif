@@ -39,11 +39,11 @@ def generate_from(module_name: str, func_decl: ast_pb2.FuncDecl,
   """
 
   operator_index = utils.find_operator(func_decl.name.cpp_name)
-  if operator_index >= 0:
+  if operator_index >= 0 and func_decl.cpp_opfunction:
     for s in operators.generate_operator(module_name, func_decl,
                                          operator_index):
       yield I + s
-    return
+      return
 
   func_def = I + f'{module_name}.def("{func_decl.name.native}", '
   func_def += _generate_cpp_function_cast(func_decl, class_decl)
@@ -87,8 +87,10 @@ def _generate_cpp_function_cast(func_decl: ast_pb2.FuncDecl,
     return_type = 'void'
 
   class_sig = ''
-  if class_decl:
+  if class_decl and not func_decl.cpp_opfunction:
     class_sig = f'{class_decl.name.cpp_name}::'
+    if func_decl.postproc == '->self' and func_decl.ignore_return_value:
+      return_type = class_decl.name.cpp_name
 
   cpp_const = ''
   if func_decl.cpp_const_method:
@@ -101,6 +103,8 @@ def _generate_params_list(params: Sequence[ast_pb2.ParamDecl]) -> Text:
   params_list = ''
   for i, param in enumerate(params):
     cpp_name = param.name.cpp_name
+    if cpp_name == 'this':
+      continue
     if param.default_value:
       params_list += f'py::arg("{cpp_name}") = {param.default_value}'
     else:
