@@ -33,11 +33,8 @@ from "clif/testing/number_methods.h":
       def __div__(self, other: Number) -> Number
       def __mod__(self, other: Number) -> Number
 
-
-      # TODO: Power and advanced division functions will come in a future CL.
-      # def `power` as __pow__(self, exponent: Number, modulus: Number = default) -> Number
-      # https://bugs.python.org/issue36379
-      # def `inplace_power` as __ipow__(self, exponent: Number, modulus: Number) -> self
+      def `power` as __pow__(self, exponent: Number, modulus: Number = default) -> Number
+      def `inplace_power` as __ipow__(self, exponent: Number, modulus: Number) -> self
 
       def `divmod` as __divmod__(self, other: Number) -> tuple<Number, Number>
 

@@ -62,14 +62,12 @@ class NumberMethodsTest(absltest.TestCase):
     n3 = n1 % n2
     self.assertEqual(n3.value, 1.0)
 
-  @absltest.skip('Skipping power tests for now.')
   def testPower(self, wrapper_lib):
     n1 = wrapper_lib.Number(7.0)
     n2 = wrapper_lib.Number(3.0)
     n3 = n1 ** n2
     self.assertEqual(n3.value, 343.0)
 
-  @absltest.skip('Skipping power tests for now.')
   def testPowerWithModulo(self, wrapper_lib):
     n1 = wrapper_lib.Number(7.0)
     n2 = wrapper_lib.Number(3.0)
