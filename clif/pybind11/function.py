@@ -39,14 +39,14 @@ def generate_from(module_name: str, func_decl: ast_pb2.FuncDecl,
   """
 
   operator_index = utils.find_operator(func_decl.name.cpp_name)
-  if operator_index >= 0 and func_decl.cpp_opfunction and utils.is_dunder_name(
-      func_decl.name.native):
+  if operator_index >= 0 and utils.is_special_operation(func_decl.name.native):
     for s in operators.generate_operator(module_name, func_decl,
                                          operator_index):
       yield I + s
       return
 
-  func_def = I + f'{module_name}.def("{func_decl.name.native}", '
+  func_name = utils.format_func_name(func_decl.name.native)
+  func_def = I + f'{module_name}.def("{func_name}", '
   func_def += _generate_cpp_function_cast(func_decl, class_decl)
   func_def += f'&{func_decl.name.cpp_name}'
   if func_decl.params:

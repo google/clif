@@ -14,8 +14,15 @@
 
 """Utility functions for pybind11 code generator."""
 
+from clif.python import pytd2proto
+
 # Use two spaces indentation for generated code.
 I = '  '
+
+default_supported_op_types = {'int', 'float', 'double', 'long', 'bool'}
+
+# Dict of python methods that map to C++ operators.
+_SPECIAL = pytd2proto._SPECIAL  # pylint: disable=protected-access
 
 
 def find_operator(s, prefix='::operator'):
@@ -30,5 +37,20 @@ def find_operator(s, prefix='::operator'):
   return index
 
 
-def is_dunder_name(s):
-  return s.startswith('__') and s.endswith('__')
+def convert_operator_param(param_str: str):
+  if param_str in default_supported_op_types:
+    return f'{param_str}()'
+  else:
+    return 'py::self'
+
+
+def format_func_name(name: str):
+  if name.endswith('__#'):
+    return name[:-1]
+  return name
+
+
+def is_special_operation(s) -> bool:
+  if s.endswith('__#'):
+    s = s[:-1]
+  return s in _SPECIAL

@@ -41,10 +41,12 @@ def generate_operator(module_name: str, func_decl: ast_pb2.FuncDecl,
       yield from _generate_unary_operator(module_name, operator)
     elif operator in {'<<', '>>'}:
       yield from _generate_shift_operator(module_name, operator)
-    elif operator in {'int', 'float', 'double', 'long', 'bool'}:
+    elif operator in utils.default_supported_op_types:
       yield from _generate_op_cast(module_name, operator, func_decl)
-    else:
-      yield f'{module_name}.def(py::self {operator} py::self);'
+    elif func_decl.postproc == '->self' and func_decl.ignore_return_value:
+      yield from _generate_inplace_operator(module_name, func_decl, operator)
+    elif func_decl.cpp_opfunction:
+      yield from _generate_default_operator(module_name, func_decl, operator)
 
 
 def _generate_unary_operator(module_name: str, operator: str):
@@ -62,3 +64,20 @@ def _generate_op_cast(module_name: str, operator: str,
 def _generate_shift_operator(module_name: str, operator: str):
   # TODO: Change hardcoded 'int' to be dynamic.
   yield f'{module_name}.def(py::self {operator} int());'
+
+
+def _generate_default_operator(module_name: str, func_decl: ast_pb2.FuncDecl,
+                               operator: str):
+  params = []
+  for param in func_decl.params:
+    params.append(param.cpp_exact_type)
+
+  yield (f'{module_name}.def({utils.convert_operator_param(params[0])} '
+         f'{operator} {utils.convert_operator_param(params[1])});')
+
+
+def _generate_inplace_operator(module_name: str, func_decl: ast_pb2.FuncDecl,
+                               operator: str):
+  assert len(func_decl.params) == 1
+  param = utils.convert_operator_param(func_decl.params[0].cpp_exact_type)
+  yield f'{module_name}.def(py::self {operator} {param});'

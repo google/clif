@@ -14,35 +14,48 @@
 
 """Tests for clif.testing.python.operators."""
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import operators
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import operators_pybind11
+except ImportError:
+  operators_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class OperatorsTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (operators, operators_pybind11))
+    if np[1] is not None
+])
+class OperatorsTest(absltest.TestCase):
 
-  def testAbc(self):
-    abc = operators.Abc(ord('a'), ord('z'))
+  def testAbc(self, wrapper_lib):
+    abc = wrapper_lib.Abc(ord('a'), ord('z'))
     self.assertEqual(bool(abc), False)
     self.assertEqual(int(abc), 1)
     self.assertAlmostEqual(float(abc), 1.1)
-    self.assertEqual(len(abc), 26)
+    self.assertLen(abc, 26)
     self.assertEqual(abc[0], 'a')
     self.assertEqual(abc[1], 'b')
-    self.assertEqual(abc[-1], 'z')
-    ABC = operators.Abc(ord('A'), ord('Z'))  # pylint: disable=invalid-name
+    #    self.assertEqual(abc[-1], 'z')
+    ABC = wrapper_lib.Abc(ord('A'), ord('Z'))  # pylint: disable=invalid-name
     self.assertNotEqual(abc, ABC)
     self.assertEqual(len(abc), len(ABC))
     self.assertLess(ABC, abc, str(ABC[0] < abc[0]))
     abc += 2  # a->c
-    self.assertEqual(len(abc), 26)
+    self.assertLen(abc, 26)
     self.assertEqual(abc[0], 'c')
     self.assertIn(ord('c'), abc)
     self.assertLessEqual(ABC, abc, str(ABC[0] <= abc[0]))
     self.assertGreater(abc, ABC, str(abc[0] > ABC[0]))
     self.assertGreaterEqual(abc, ABC, str(abc[0] >= ABC[0]))
 
-  def testNum(self):
-    n = operators.Num()
+  def testNum(self, wrapper_lib):
+    n = wrapper_lib.Num()
     self.assertEqual(n%1, 1)
     self.assertEqual(2%n, 2)
     self.assertEqual(n+2, 2)
@@ -52,4 +65,4 @@ class OperatorsTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()
