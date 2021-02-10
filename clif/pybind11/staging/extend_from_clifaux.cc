@@ -21,13 +21,13 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(extend_from_clifaux, m) {
   // The second template argument switches the default holder type from
-  // std::unique_ptr to std::unique_ptr. This is needed because we are using
+  // std::unique_ptr to std::shared_ptr. This is needed because we are using
   // std::shared_ptr<clif_testing::extend_from_clifaux::WhatHappened> as
   // function arguments. Pybind11 cannot convert std::unique_ptr to
   // std::shared_ptr.
   // See https://pybind11.readthedocs.io/en/stable/advanced/smart_ptrs.html#std-shared-ptr
   // and https://github.com/pybind/pybind11/blob/master/tests/test_smart_ptr.py#L305
-  // For more information.
+  // for more information.
   py::class_<clif_testing::extend_from_clifaux::WhatHappened,
              std::shared_ptr<clif_testing::extend_from_clifaux::WhatHappened>>
       (m, "WhatHappened")
