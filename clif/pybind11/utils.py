@@ -54,3 +54,11 @@ def is_special_operation(s) -> bool:
   if s.endswith('__#'):
     s = s[:-1]
   return s in _SPECIAL
+
+
+def is_nested_template(s: str) -> bool:
+  # This function works around CLIF matcher bug b/118736768:
+  # cpp_exact_type is incorrect for nested templates.
+  # This is a crude stop-gap way of unblocking development
+  # work for now.
+  return '>>' in s

@@ -73,7 +73,11 @@ def _generate_cpp_function_cast(func_decl: ast_pb2.FuncDecl,
   params_list_types = []
   for param in func_decl.params:
     if param.HasField('cpp_exact_type'):
-      params_list_types.append(param.cpp_exact_type)
+      if utils.is_nested_template(param.cpp_exact_type):
+        params_list_types.append(param.type.cpp_type)
+      else:
+        params_list_types.append(param.cpp_exact_type)
+
   params_str_types = ', '.join(params_list_types)
 
   return_type = ''

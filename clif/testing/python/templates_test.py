@@ -14,23 +14,37 @@
 
 """Tests for clif.testing.python.templates."""
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import templates
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import templates_pybind11
+except ImportError:
+  templates_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class TemplatesTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (templates, templates_pybind11))
+    if np[1] is not None
+])
+class TemplatesTest(absltest.TestCase):
 
-  def testTemplates(self):
-    a = templates.A()
-    templates.TemplateParamFunc(a)
+  @absltest.skip('NEEDS_SMART_HOLDER')
+  def testTemplates(self, wrapper_lib):
+    a = wrapper_lib.A()
+    wrapper_lib.TemplateParamFunc(a)
 
-  def testTemplateClassInstantiation(self):
+  def testTemplateClassInstantiation(self, wrapper_lib):
     # The instantiation of the class should not blow up.
-    templates.TemplateClassInt()
+    wrapper_lib.TemplateClassInt()
 
-  def testTypedefInTemplateClass(self):
-    b = templates.VectorHolder()
+  def testTypedefInTemplateClass(self, wrapper_lib):
+    b = wrapper_lib.VectorHolder()
     self.assertEqual(b.MethodUsingTemplateType(b), 1)
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()
