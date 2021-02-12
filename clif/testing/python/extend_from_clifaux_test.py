@@ -18,15 +18,28 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
 
 from clif.testing.python import extend_from_clifaux
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import extend_from_clifaux_pybind11
+except ImportError:
+  extend_from_clifaux_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class ExtendFromClifAuxTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (extend_from_clifaux,
+                                             extend_from_clifaux_pybind11))
+    if np[1] is not None
+])
+class ExtendFromClifAuxTest(absltest.TestCase):
 
-  def testVoidSelf(self):
-    wh = extend_from_clifaux.WhatHappened()
+  def testVoidSelf(self, wrapper_lib):
+    wh = wrapper_lib.WhatHappened()
     self.assertEqual(wh.Last(), 'Nothing yet.')
     self.assertIsNone(wh.void_raw_ptr())
     self.assertEqual(wh.Last(), '* -> void')
@@ -40,8 +53,8 @@ class ExtendFromClifAuxTest(unittest.TestCase):
     self.assertIsNone(wh.void_ref())
     self.assertEqual(wh.Last(), '& -> void')
 
-  def testIntSelf(self):
-    wh = extend_from_clifaux.WhatHappened()
+  def testIntSelf(self, wrapper_lib):
+    wh = wrapper_lib.WhatHappened()
     self.assertEqual(wh.int_raw_ptr(), 1)
     self.assertEqual(wh.Last(), '* -> int')
     self.assertEqual(wh.int_shared_ptr(), 2)
@@ -54,8 +67,8 @@ class ExtendFromClifAuxTest(unittest.TestCase):
     self.assertEqual(wh.int_ref(), 5)
     self.assertEqual(wh.Last(), '& -> int')
 
-  def testVoidSelfInt(self):
-    wh = extend_from_clifaux.WhatHappened()
+  def testVoidSelfInt(self, wrapper_lib):
+    wh = wrapper_lib.WhatHappened()
     self.assertIsNone(wh.void_raw_ptr_int(1))
     self.assertEqual(wh.Last(), '*, 1 -> void')
     self.assertIsNone(wh.void_shared_ptr_int(2))
@@ -68,8 +81,8 @@ class ExtendFromClifAuxTest(unittest.TestCase):
     self.assertIsNone(wh.void_ref_int(5))
     self.assertEqual(wh.Last(), '&, 5 -> void')
 
-  def testIntSelfInt(self):
-    wh = extend_from_clifaux.WhatHappened()
+  def testIntSelfInt(self, wrapper_lib):
+    wh = wrapper_lib.WhatHappened()
     self.assertEqual(wh.int_raw_ptr_int(-1), 1)
     self.assertEqual(wh.Last(), '*, -1 -> int')
     self.assertEqual(wh.int_shared_ptr_int(-2), 2)
@@ -82,8 +95,8 @@ class ExtendFromClifAuxTest(unittest.TestCase):
     self.assertEqual(wh.int_ref_int(-5), 5)
     self.assertEqual(wh.Last(), '&, -5 -> int')
 
-  def testIntSelfIntInt(self):
-    wh = extend_from_clifaux.WhatHappened()
+  def testIntSelfIntInt(self, wrapper_lib):
+    wh = wrapper_lib.WhatHappened()
     self.assertEqual(wh.int_raw_ptr_int_int(10, -1), 1)
     self.assertEqual(wh.Last(), '*, 9 -> int')
     self.assertEqual(wh.int_shared_ptr_int_int(20, -2), 2)
@@ -96,8 +109,8 @@ class ExtendFromClifAuxTest(unittest.TestCase):
     self.assertEqual(wh.int_ref_int_int(50, -5), 5)
     self.assertEqual(wh.Last(), '&, 45 -> int')
 
-  def testCustomCppName(self):
-    wh = extend_from_clifaux.WhatHappened()
+  def testCustomCppName(self, wrapper_lib):
+    wh = wrapper_lib.WhatHappened()
     self.assertEqual(wh.chosen_method_name(60, -6), 6)
     self.assertEqual(wh.Last(), 'custom_function_name(*, 54) -> int')
     self.assertEqual(wh.ns_down_method(70, -7), 7)
@@ -105,8 +118,8 @@ class ExtendFromClifAuxTest(unittest.TestCase):
     self.assertEqual(wh.ns_up_method(80, -8), 8)
     self.assertEqual(wh.Last(), 'ns_up_function(*, 72) -> int')
 
-  def testRenamedForPython(self):
-    rfp = extend_from_clifaux.RenamedForPython()
+  def testRenamedForPython(self, wrapper_lib):
+    rfp = wrapper_lib.RenamedForPython()
     self.assertEqual(rfp.int_raw_ptr_int_int(100, -1), 11)
     self.assertEqual(rfp.Last(), 'ToBeRenamed*, 99 -> int')
     self.assertEqual(rfp.chosen_method_name(110, -2), 12)
@@ -118,4 +131,4 @@ class ExtendFromClifAuxTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

@@ -50,7 +50,8 @@ def generate_from(module_name: str, func_decl: ast_pb2.FuncDecl,
   func_def += _generate_cpp_function_cast(func_decl, class_decl)
   func_def += f'&{func_decl.name.cpp_name}'
   if func_decl.params:
-    func_def += f', {_generate_params_list(func_decl.params)}'
+    func_def += _generate_params_list(func_decl.params,
+                                      func_decl.is_extend_method)
   if func_decl.docstring:
     func_def += f', {_generate_docstring(func_decl.docstring)}'
   func_def += ');'
@@ -92,7 +93,8 @@ def _generate_cpp_function_cast(func_decl: ast_pb2.FuncDecl,
     return_type = 'void'
 
   class_sig = ''
-  if class_decl and not func_decl.cpp_opfunction:
+  if class_decl and not (func_decl.cpp_opfunction or
+                         func_decl.is_extend_method):
     class_sig = f'{class_decl.name.cpp_name}::'
     if func_decl.postproc == '->self' and func_decl.ignore_return_value:
       return_type = class_decl.name.cpp_name
@@ -100,23 +102,26 @@ def _generate_cpp_function_cast(func_decl: ast_pb2.FuncDecl,
   cpp_const = ''
   if func_decl.cpp_const_method:
     cpp_const = ' const'
-  return f'({return_type} ({class_sig}*)({params_str_types}){cpp_const})'
+  return (f'\n{I + I}({return_type} ({class_sig}*)'
+          f'\n{I + I}({params_str_types}){cpp_const})'
+          f'\n{I + I}')
 
 
-def _generate_params_list(params: Sequence[ast_pb2.ParamDecl]) -> Text:
+def _generate_params_list(params: Sequence[ast_pb2.ParamDecl],
+                          is_extend_method: bool) -> Text:
   """Generates bindings code for function parameters."""
-  params_list = ''
+  params_list = []
   for i, param in enumerate(params):
     cpp_name = param.name.cpp_name
-    if cpp_name == 'this':
+    if cpp_name == 'this' or (i == 0 and is_extend_method):
       continue
     if param.default_value:
-      params_list += f'py::arg("{cpp_name}") = {param.default_value}'
+      params_list.append(f'py::arg("{cpp_name}") = {param.default_value}')
     else:
-      params_list += f'py::arg("{cpp_name}")'
-    if i != len(params) - 1:
-      params_list += ', '
-  return params_list
+      params_list.append(f'py::arg("{cpp_name}")')
+  if params_list:
+    return ', ' + ', '.join(params_list)
+  return ''
 
 
 def _generate_docstring(docstring: Text):
