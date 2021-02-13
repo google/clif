@@ -46,7 +46,7 @@ namespace slot {
 Py_ssize_t item_index(PyObject* self, Py_ssize_t idx);
 Py_ssize_t as_size(PyObject* res);
 int as_bool(PyObject* res);
-long as_hash(PyObject* res);    //NOLINT: runtime/int
+Py_ssize_t as_hash(PyObject* res);
 int as_cmp(PyObject* res);
 int ignore(PyObject* res);
 

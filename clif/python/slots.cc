@@ -63,20 +63,21 @@ int as_bool(PyObject* res) {
   return -1;
 }
 
+#if PY_MAJOR_VERSION < 3
+#define PyLong_AsSsize_t PyLong_AsLong
+#endif
+
 #if PY_MAJOR_VERSION >= 3
 #define PyInt_AsLong PyLong_AsLong
 #endif
 
-long as_hash(PyObject* res) {    //NOLINT: runtime/int
-  long i = PyLong_Check(res) ? PyLong_Type.tp_hash(res) : PyInt_AsLong(res);  //NOLINT: runtime/int
-  Py_DECREF(res);
-  if (i == -1) {
-    if (PyErr_Occurred()) {
-      PyErr_SetString(PyExc_ValueError, "__hash__ must return int");
-    } else {
-      return -2;
-    }
+Py_ssize_t as_hash(PyObject* res) {
+  Py_ssize_t i = PyLong_AsSsize_t(res);
+  if (i == -1 && PyErr_Occurred()) {
+    PyErr_Clear();
+    i = PyLong_Type.tp_hash(res);
   }
+  Py_DECREF(res);
   return i;
 }
 
