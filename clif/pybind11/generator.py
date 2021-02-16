@@ -21,7 +21,6 @@ from clif.pybind11 import classes
 from clif.pybind11 import enums
 from clif.pybind11 import function
 from clif.pybind11 import utils
-from clif.python import ast_manipulations
 
 I = utils.I
 
@@ -31,7 +30,6 @@ class ModuleGenerator(object):
 
   def __init__(self, ast: ast_pb2.AST, module_name: Text):
     self._ast = ast
-    ast_manipulations.MoveExtendsBackIntoClassesInPlace(ast)
     self._module_name = module_name
 
   def generate_from(self, ast: ast_pb2.AST):
