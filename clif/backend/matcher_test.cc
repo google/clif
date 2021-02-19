@@ -3673,8 +3673,8 @@ TEST_F(ClifMatcherTest, TestNoClifAuxAnotherFile) {
   protos::Decl decl;
   TestNoMatch(test_proto, &decl, "", "another_file.h");
   llvm::StringRef msg = { decl.not_found() };
-  EXPECT_TRUE(msg.contains("Clif expects it in the file /"));
-  EXPECT_TRUE(msg.contains("/test.h but found it at /"));
+  EXPECT_TRUE(msg.contains("Clif expects it in the file "));
+  EXPECT_TRUE(msg.contains("/test.h but found it at "));
   EXPECT_TRUE(msg.contains("/another_file.h:"));
 }
 
@@ -3687,9 +3687,9 @@ TEST_F(ClifMatcherTest, TestClifAuxAnotherFile) {
   TestNoMatch(test_proto, &decl, "", "another_file.h");
   llvm::StringRef msg = { decl.not_found() };
   EXPECT_TRUE(msg.contains("Clif expects it in one of the files {"));
-  EXPECT_TRUE(msg.contains("/test_subdir/test_clif_aux.h, /"));
-  EXPECT_TRUE(msg.contains("/test_subdir/test.h, /"));
-  EXPECT_TRUE(msg.contains("/test.h} but found it at /"));
+  EXPECT_TRUE(msg.contains("/test_subdir/test_clif_aux.h, "));
+  EXPECT_TRUE(msg.contains("/test_subdir/test.h, "));
+  EXPECT_TRUE(msg.contains("/test.h} but found it at "));
   EXPECT_TRUE(msg.contains("/another_file.h:"));
 }
 
