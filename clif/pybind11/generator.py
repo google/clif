@@ -14,7 +14,7 @@
 
 """Generates pybind11 bindings code."""
 
-from typing import Dict, Text, Set
+from typing import Dict, Generator, Text, Set
 
 from clif.protos import ast_pb2
 from clif.pybind11 import classes
@@ -31,6 +31,11 @@ class ModuleGenerator(object):
   def __init__(self, ast: ast_pb2.AST, module_name: Text):
     self._ast = ast
     self._module_name = module_name
+
+  def generate_header(self,
+                      unused_ast: ast_pb2.AST) -> Generator[Text, None, None]:
+    # TODO: Generates header file content here.
+    yield ''
 
   def generate_from(self, ast: ast_pb2.AST):
     """Generates pybind11 bindings code from CLIF ast.
