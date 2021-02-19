@@ -161,7 +161,10 @@ class ModuleGenerator(object):
     yield I + I + (f'{return_type} '
                    f'{member.func.name.native}({params_str_with_types}) '
                    f'{cpp_const}override {{')
-    yield I + I + I + 'PYBIND11_OVERRIDE_PURE('
+    pybind11_override = (
+        'PYBIND11_OVERRIDE_PURE' if member.func.is_pure_virtual else
+        'PYBIND11_OVERRIDE')
+    yield I + I + I + f'{pybind11_override}('
     yield I + I + I + I + f'{return_type},'
     yield I + I + I + I + f'{class_decl.name.native},'
     yield I + I + I + I + f'{member.func.name.native},'
