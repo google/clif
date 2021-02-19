@@ -72,11 +72,24 @@ int as_bool(PyObject* res) {
 #endif
 
 Py_ssize_t as_hash(PyObject* res) {
-  Py_ssize_t i = PyLong_AsSsize_t(res);
-  if (i == -1 && PyErr_Occurred()) {
-    PyErr_Clear();
-    i = PyLong_Type.tp_hash(res);
+  Py_ssize_t i = -1;
+  if (PyLong_Check(res)) {
+    i = PyLong_AsSsize_t(res);
+#if PY_MAJOR_VERSION < 3
+  } else if (PyInt_Check(res)) {
+    i = PyInt_AsLong(res);
+#endif
+  } else {
+    PyErr_SetString(PyExc_TypeError, "__hash__ must return int");
+    goto cleanup;
   }
+  if (i == -1 && PyErr_Occurred()) {
+    if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+      PyErr_Clear();
+      i = PyObject_Hash(res);
+    }
+  }
+cleanup:
   Py_DECREF(res);
   return i;
 }

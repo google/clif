@@ -26,7 +26,7 @@ class SlotsTest(unittest.TestCase):
 
   def testObjectMethods(self):
     a = slots.I5()
-    self.assertNotEqual(hash(a), 0)
+    self.assertEqual(hash(a), 0)
 
   def testRO(self):
     a = slots.I5()
@@ -47,6 +47,23 @@ class SlotsTest(unittest.TestCase):
     self.assertEqual(list(a), [0, 1, 0, 0, 0])
     del a[1]
     self.assertEqual(list(a), [0]*5)
+
+  def testHashSmallInt(self):
+    a = slots.I5()
+    a[2] = 3
+    a[4] = 5
+    self.assertEqual(hash(a), 8)
+
+  def testHashSsizetOverflow(self):
+    a = slots.I5()
+    a[0] = 999
+    self.assertNotEqual(hash(a), 999)
+
+  def testUnHashable(self):
+    a = slots.Z5()
+    with self.assertRaises(TypeError) as ctx:
+      hash(a)
+    self.assertEqual(str(ctx.exception), '__hash__ must return int')
 
 
 if __name__ == '__main__':

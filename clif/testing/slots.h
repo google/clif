@@ -17,6 +17,8 @@
 #define CLIF_TESTING_SLOTS_H_
 
 #import <array>
+#import <numeric>
+#import <vector>
 
 namespace clif_test_slots {
 
@@ -27,6 +29,12 @@ class Array {
   std::size_t Size() const { return N; }
   T const& Get(int index) { return v_[index]; }
   void Put(int index, T const& value) { v_[index] = value; }
+  std::size_t Hash() const {
+    if (v_[0] == 999) { // Magic value to trigger special case.
+      return std::numeric_limits<std::size_t>::max();
+    }
+    return std::accumulate(v_.begin(), v_.end(), T(0));
+  }
  protected:
   std::array<T, N> v_;
 };
@@ -37,6 +45,9 @@ using IntArray = Array<int, N>;
 struct IntArray5 : IntArray<5> {
   void SetAll(int all_equal) { v_.fill(all_equal); }
   void Empty(int index) { v_[index] = 0; }
+  std::vector<int> UnHashable() const {
+    return std::vector<int>(v_.begin(), v_.end());
+  }
 };
 }  // namespace clif_test_slots
 

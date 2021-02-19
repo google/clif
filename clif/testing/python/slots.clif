@@ -21,6 +21,7 @@ from "clif/testing/slots.h":
       def `Get` as __getitem__(self, index: int) -> int
       @sequential
       def `Put` as __setitem__(self, index: int, value: int)
+      def `Hash` as __hash__(self) -> int
 
     class `IntArray5` as Z5(I5):
       def `SetAll` as fill(self, v: int)
@@ -29,3 +30,4 @@ from "clif/testing/slots.h":
       def `Put` as __setitem__(self, index: int, value: int)
       @sequential
       def `Empty` as __delitem__(self, index: int)
+      def `UnHashable` as __hash__(self) -> list<int>
