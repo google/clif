@@ -35,14 +35,12 @@ def generate_from(class_decl: ast_pb2.ClassDecl, superclass_name: str,
   """
 
   class_name = f'{class_decl.name.native}_class'
-  definition = I + f'py::class_<{class_decl.name.cpp_name}'
+  definition = I + f'py::classh<{class_decl.name.cpp_name}'
   for base in class_decl.bases:
     if base.HasField('cpp_name'):
       definition += f', {base.cpp_name}'
   if python_override_class_name:
     definition += f', {python_override_class_name}'
-  # Unconditionally set the default holder type to std::shared_ptr.
-  definition += f', std::shared_ptr<{class_decl.name.cpp_name}>'
   definition += (f'> {class_name}({superclass_name}, '
                  f'"{class_decl.name.native}"')
   if class_decl.HasField('docstring'):
