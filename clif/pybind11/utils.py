@@ -14,6 +14,7 @@
 
 """Utility functions for pybind11 code generator."""
 
+import dataclasses
 from clif.python import pytd2proto
 
 # Use two spaces indentation for generated code.
@@ -62,3 +63,12 @@ def is_nested_template(s: str) -> bool:
   # This is a crude stop-gap way of unblocking development
   # work for now.
   return '>>' in s
+
+
+# Dataclass used to group together and pass around parameter lists.
+@dataclasses.dataclass
+class ParamsStrings:
+  cpp_names: str
+  lang_types: str
+  names_with_types: str
+  default_args: str

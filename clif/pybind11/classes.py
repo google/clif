@@ -77,37 +77,32 @@ def _generate_constructors(class_decl: ast_pb2.ClassDecl, class_name: str):
 
   constructor_defined = False
   for member in class_decl.members:
-    if member.decltype == ast_pb2.Decl.Type.FUNC and member.func.name.native == '__init__':
-      init_fn = f'{class_name}.def(py::init<'
-      params = member.func.params
-      default_values = []
-      for i, param in enumerate(params):
-        init_fn += f'{param.type.lang_type}'
-        if i != len(params) - 1:
-          init_fn += ', '
-        if param.default_value:
-          default_values.append(
-              f'py::arg("{param.name.cpp_name}") = {param.default_value}')
-      init_fn += '>()'
-      if not default_values:
-        init_fn += ');'
-      else:
-        init_fn += f', {", ".join(default_values)});'
+    if member.decltype != ast_pb2.Decl.Type.FUNC:
+      continue
+
+    func_ps = function.get_params_strings(member.func)
+    add_default_args = lambda x: f', {x});' if x else ');'
+
+    if member.func.name.native == '__init__' and member.func.is_extend_method:
+      init_fn = f'{class_name}.def(py::init([]({func_ps.names_with_types}) {{\n'
+      init_fn += (f'{I + I} return '
+                  f'{member.func.name.cpp_name}({func_ps.cpp_names});\n')
+      init_fn += I + '})'
+      init_fn += add_default_args(func_ps.default_args)
       constructor_defined = True
       yield init_fn
 
-    elif member.decltype == ast_pb2.Decl.Type.FUNC and member.func.constructor:
+    elif member.func.name.native == '__init__':
+      init_fn = f'{class_name}.def(py::init<{func_ps.lang_types}>()'
+      init_fn += add_default_args(func_ps.default_args)
+      constructor_defined = True
+      yield init_fn
+
+    elif member.func.constructor:
       fn = f'{class_name}.def_static("{member.func.name.native}", []('
-      params = member.func.params
-      for i, param in enumerate(params):
-        fn += f'{param.type.lang_type} {param.name.cpp_name}'
-        if i != len(params) - 1:
-          fn += ', '
+      fn += func_ps.names_with_types
       fn += f') {{ return {class_decl.name.cpp_name}('
-      for i, param in enumerate(params):
-        fn += f'{param.name.cpp_name}'
-        if i != len(params) - 1:
-          fn += ', '
+      fn += func_ps.cpp_names
       fn += '); });'
       constructor_defined = True
       yield fn
