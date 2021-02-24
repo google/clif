@@ -38,6 +38,12 @@ def generate_from(module_name: str, func_decl: ast_pb2.FuncDecl,
     pybind11 function bindings code.
   """
 
+  if func_decl.classmethod:
+    for line in _generate_static_method(module_name, func_decl.name.native,
+                                        func_decl.name.cpp_name):
+      yield I + line
+    return
+
   operator_index = utils.find_operator(func_decl.name.cpp_name)
   if operator_index >= 0 and utils.is_special_operation(func_decl.name.native):
     for s in operators.generate_operator(module_name, func_decl,
@@ -158,3 +164,9 @@ def get_params_strings(func: ast_pb2.FuncDecl):
       ', '.join(default_values)
   )
   return result
+
+
+def _generate_static_method(class_name: str, func_name_native: str,
+                            func_name_cpp_name: str):
+  yield (f'{class_name}.def_static("{func_name_native}", '
+         f'&{func_name_cpp_name});')

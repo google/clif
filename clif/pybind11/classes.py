@@ -129,10 +129,7 @@ def _generate_methods(class_decl: ast_pb2.ClassDecl, member: ast_pb2.Decl,
   Yields:
     pybind11 method declaration.
   """
-  if member.func.classmethod:
-    yield (f'{class_name}.def_static("{member.func.name.native}", '
-           f'&{member.func.name.cpp_name});')
-  elif not member.func.constructor:
+  if not member.func.constructor:
     for s in function.generate_from(class_name, member.func, class_decl):
       yield s
 
