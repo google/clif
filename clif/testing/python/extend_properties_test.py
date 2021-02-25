@@ -18,26 +18,39 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
 
 from clif.testing.python import extend_properties
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import extend_properties_pybind11
+except ImportError:
+  extend_properties_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class ExtendPropertiesTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (extend_properties,
+                                             extend_properties_pybind11))
+    if np[1] is not None
+])
+class ExtendPropertiesTest(absltest.TestCase):
 
-  def test_property_with_simple_getter(self):
+  def test_property_with_simple_getter(self, wrapper_lib):
     expected_value = 543
-    ph = extend_properties.PropertyHolder(expected_value)
+    ph = wrapper_lib.PropertyHolder(expected_value)
     self.assertEqual(ph.value, expected_value)
 
-  def test_property_with_customized_getter(self):
+  def test_property_with_customized_getter(self, wrapper_lib):
     expected_value = 5432
-    ph = extend_properties.PropertyHolder(expected_value)
+    ph = wrapper_lib.PropertyHolder(expected_value)
     self.assertEqual(ph.value_times_ten, expected_value * 10)
 
-  def test_property_with_getter_and_setter(self):
+  def test_property_with_getter_and_setter(self, wrapper_lib):
     expected_value = 54321
-    ph = extend_properties.PropertyHolder(expected_value)
+    ph = wrapper_lib.PropertyHolder(expected_value)
     self.assertEqual(ph.value_gs, expected_value)
     new_value = 12345
     ph.value_gs = new_value
@@ -45,4 +58,4 @@ class ExtendPropertiesTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()
