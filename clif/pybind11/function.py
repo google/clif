@@ -158,11 +158,10 @@ def get_params_strings(func: ast_pb2.FuncDecl):
       default_values.append(f'py::arg("{param.name.cpp_name}")')
 
   result = utils.ParamsStrings(
-      ', '.join(cpp_names),
-      ', '.join(lang_types),
-      ', '.join(params_str_with_types_list),
-      ', '.join(default_values)
-  )
+      cpp_names=', '.join(cpp_names),
+      lang_types=', '.join(lang_types),
+      names_with_types=', '.join(params_str_with_types_list),
+      default_args=', '.join(default_values))
   return result
 
 
