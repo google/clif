@@ -33,7 +33,6 @@ except ImportError:
 ])
 class TemplatesTest(absltest.TestCase):
 
-  @absltest.skip('NEEDS_SMART_HOLDER')
   def testTemplates(self, wrapper_lib):
     a = wrapper_lib.A()
     wrapper_lib.TemplateParamFunc(a)
