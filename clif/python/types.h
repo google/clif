@@ -180,8 +180,8 @@ inline PyObject* Clif_PyObjFrom(T c, const py::PostConv& pc) {
   return pc.Apply(PyBool_FromLong(c));
 }
 
-// CLIF use `std::string` as bytes
 PyObject* Clif_PyObjFrom(const std::string&, const py::PostConv&);
+// CLIF use `::std::string` as bytes
 
 typedef const char* char_ptr;  // A distinct type for constexpr CONST string.
 inline PyObject* Clif_PyObjFrom(const char_ptr c, const py::PostConv& unused) {
