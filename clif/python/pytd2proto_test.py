@@ -81,6 +81,7 @@ class ToprotoTest(unittest.TestCase):
   def setUp(self):
     super(ToprotoTest, self).setUp()
     pytd_parser.reset_indentation()
+    self.maxDiff = 100000  # pylint: disable=invalid-name
 
   def testParsingNonzeroRaisesNameError(self):
     with self.assertRaises(NameError):
@@ -300,7 +301,7 @@ class ToprotoTest(unittest.TestCase):
                   returns {
                     type {
                       lang_type: "str"
-                      cpp_type: "std::string"
+                      cpp_type: "::std::string"
                     }
                   }
                 }
@@ -312,7 +313,7 @@ class ToprotoTest(unittest.TestCase):
                 cpp_type: "std::vector"
                 params {
                   lang_type: "str"
-                  cpp_type: "std::string"
+                  cpp_type: "::std::string"
                 }
               }
             }
@@ -352,7 +353,7 @@ class ToprotoTest(unittest.TestCase):
                     }
                     type {
                       lang_type: "str"
-                      cpp_type: "std::string"
+                      cpp_type: "::std::string"
                     }
                   }
                 }
@@ -417,7 +418,7 @@ class ToprotoTest(unittest.TestCase):
               }
               type {
                 lang_type: "str"
-                cpp_type: "std::string"
+                cpp_type: "::std::string"
               }
               default_value: "default"
             }
@@ -1430,7 +1431,7 @@ class ToprotoTest(unittest.TestCase):
                     cpp_type: "std::unordered_map"
                     params {
                       lang_type: "str"
-                      cpp_type: "std::string"
+                      cpp_type: "::std::string"
                     }
                     params {
                       lang_type: "list<int>"
@@ -1449,7 +1450,7 @@ class ToprotoTest(unittest.TestCase):
                   }
                   type {
                     lang_type: "str"
-                    cpp_type: "std::string"
+                    cpp_type: "::std::string"
                   }
                 }
                 returns {
@@ -1459,7 +1460,7 @@ class ToprotoTest(unittest.TestCase):
                   }
                   type {
                     lang_type: "str"
-                    cpp_type: "std::string"
+                    cpp_type: "::std::string"
                   }
                 }
                 py_keep_gil: true
@@ -1970,7 +1971,7 @@ class ToprotoTest(unittest.TestCase):
                   }
                   type {
                     lang_type: "str"
-                    cpp_type: "std::string"
+                    cpp_type: "::std::string"
                   }
                 }
                 returns {
@@ -1996,7 +1997,7 @@ class ToprotoTest(unittest.TestCase):
                   }
                   type {
                     lang_type: "str"
-                    cpp_type: "std::string"
+                    cpp_type: "::std::string"
                   }
                 }
                 params {
@@ -2067,7 +2068,7 @@ class ToprotoTest(unittest.TestCase):
                   cpp_type: "std::unordered_map"
                   params {
                     lang_type: "bytes"
-                    cpp_type: "std::string"
+                    cpp_type: "::std::string"
                   }
                 }
               }
@@ -2087,13 +2088,13 @@ class ToprotoTest(unittest.TestCase):
                   }
                   type {
                     lang_type: "str"
-                    cpp_type: "std::string"
+                    cpp_type: "::std::string"
                   }
                 }
                 returns {
                   type {
                     lang_type: "bytes"
-                    cpp_type: "std::string"
+                    cpp_type: "::std::string"
                   }
                 }
               }
@@ -2113,7 +2114,7 @@ class ToprotoTest(unittest.TestCase):
                   }
                   type {
                     lang_type: "str"
-                    cpp_type: "std::string"
+                    cpp_type: "::std::string"
                   }
                 }
                 params {
@@ -2123,7 +2124,7 @@ class ToprotoTest(unittest.TestCase):
                   }
                   type {
                     lang_type: "bytes"
-                    cpp_type: "std::string"
+                    cpp_type: "::std::string"
                   }
                 }
               }
