@@ -49,7 +49,7 @@ class AddPybind11(smart_ptrs_pybind11.Operation):
     return self.a + self.b
 
 
-def add_parameterized(wrapper_lib):
+def AddParameterized(wrapper_lib):
   return AddPybind11 if wrapper_lib is smart_ptrs_pybind11 else Add
 
 
@@ -101,14 +101,14 @@ class SmartPtrsTest(absltest.TestCase):
     # smart_ptrs.PerformUP. However, smart_ptrs.PerformSP works. This might be
     # because pybind11 does not support unique_ptr as function parameters
     # previously.
-    # add = add_parameterized(wrapper_lib)(120, 3)
+    # add = AddParameterized(wrapper_lib)(120, 3)
     # self.assertEqual(wrapper_lib.PerformUP(add), 123)
 
     # # Previous call to Perform invalidated |add|
     # with self.assertRaises((ValueError, RuntimeError)):
     #   wrapper_lib.PerformUP(add)
 
-    add = add_parameterized(wrapper_lib)(1230, 4)
+    add = AddParameterized(wrapper_lib)(1230, 4)
     self.assertEqual(wrapper_lib.PerformSP(add), 1234)
     # Calls to PerformSP should not invalidate |add|.
     self.assertEqual(wrapper_lib.PerformSP(add), 1234)
@@ -129,6 +129,12 @@ class SmartPtrsTest(absltest.TestCase):
     self.assertEqual(x1.y, 123)
     with self.assertRaises((ValueError, RuntimeError)):
       _ = x.y
+
+  def testInfiniteLoopAddVirtualOverride(self, wrapper_lib):
+    add = AddParameterized(wrapper_lib)
+    while True:
+      add(1, 2).Run()
+      return  # Comment out for manual leak checking (use `top` command).
 
 
 if __name__ == '__main__':
