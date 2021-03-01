@@ -32,16 +32,18 @@ from "clif/testing/smart_ptrs.h":
     def PerformUP(op: Operation) -> int
     def PerformSP(op: Operation) -> int
 
-    class C1:
-      def Get(self) -> int
+    # Temporarily commenting out this section because pybind11 does not
+    # support calling protected or private destructors.
+    # class C1:
+    #   def Get(self) -> int
 
-    class D1(C1):
-      def __init__(self, i: int)
+    # class D1(C1):
+    #   def __init__(self, i: int)
 
-    class WithPrivateDtor:
-      @classmethod
-      def New(cls) -> WithPrivateDtor
-      def Get(self) -> int
+    # class WithPrivateDtor:
+    #   @classmethod
+    #   def New(cls) -> WithPrivateDtor
+    #   def Get(self) -> int
 
     class X:
       y: int

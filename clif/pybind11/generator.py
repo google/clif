@@ -138,9 +138,9 @@ class ModuleGenerator(object):
                                  member: ast_pb2.Decl):
     """Generates virtual functions."""
     yield (f'class {python_override_class_name} : public '
-           f'{class_decl.name.native} {{')
+           f'{class_decl.name.cpp_name} {{')
     yield I + 'public:'
-    yield I + I + f'using {class_decl.name.native}{class_decl.name.cpp_name};'
+    yield I + I + f'using {class_decl.name.cpp_name}::{class_decl.name.native};'
 
     return_type = ''
     if member.func.cpp_void_return:
@@ -166,9 +166,12 @@ class ModuleGenerator(object):
     yield I + I + (f'{return_type} '
                    f'{member.func.name.native}({params_str_with_types}) '
                    f'{cpp_const}override {{')
-    pybind11_override = (
-        'PYBIND11_OVERRIDE_PURE' if member.func.is_pure_virtual else
-        'PYBIND11_OVERRIDE')
+
+    if class_decl.cpp_abstract or member.func.is_pure_virtual:
+      pybind11_override = 'PYBIND11_OVERRIDE_PURE'
+    else:
+      pybind11_override = 'PYBIND11_OVERRIDE'
+
     yield I + I + I + f'{pybind11_override}('
     yield I + I + I + I + f'{return_type},'
     yield I + I + I + I + f'{class_decl.name.native},'
