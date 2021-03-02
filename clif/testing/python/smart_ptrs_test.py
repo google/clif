@@ -38,7 +38,8 @@ class Add(smart_ptrs.Operation):
     return self.a + self.b
 
 
-class AddPybind11(smart_ptrs_pybind11.Operation):
+class AddPybind11(object if smart_ptrs_pybind11 is None else
+                  smart_ptrs_pybind11.Operation):
 
   def __init__(self, a, b):
     smart_ptrs_pybind11.Operation.__init__(self)
