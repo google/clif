@@ -43,16 +43,16 @@ class SmartPtrsTest(unittest.TestCase):
     # it.
     b = smart_ptrs.Func(a)
     self.assertEqual(b.Get().a, 123)
-    with self.assertRaises((ValueError, RuntimeError)):
+    with self.assertRaises(ValueError):
       _ = a.a
-    with self.assertRaises((ValueError, RuntimeError)):
+    with self.assertRaises(ValueError):
       smart_ptrs.Func(a)
 
     a = smart_ptrs.A()
     a.a = 54321
     b.SetSP(a)
     # |a| is shared between C++ and Python. So, cannot give it to Func.
-    with self.assertRaises((ValueError, RuntimeError)):
+    with self.assertRaises(RuntimeError):
       smart_ptrs.Func(a)
 
     # Check |a| is intact.
@@ -63,19 +63,16 @@ class SmartPtrsTest(unittest.TestCase):
     # We should be able to call Func again
     b = smart_ptrs.Func(a)
     self.assertEqual(b.Get().a, 54321)
-    with self.assertRaises((ValueError, RuntimeError)):
+    with self.assertRaises(ValueError):
       _ = a.a
-    with self.assertRaises((ValueError, RuntimeError)):
+    with self.assertRaises(ValueError):
       smart_ptrs.Func(a)
 
+    add = Add(120, 3)
     # TODO: Temporarily disable the test because pybind11 throws
     # `RuntimeError: Tried to call pure virtual function` when calling
-    # smart_ptrs.PerformUP. However, smart_ptrs.PerformSP works. This might be
-    # because pybind11 does not support unique_ptr as function parameters
-    # previously.
-    # add = Add(120, 3)
+    # smart_ptrs.PerformUP.
     # self.assertEqual(smart_ptrs.PerformUP(add), 123)
-
     # # Previous call to Perform invalidated |add|
     # with self.assertRaises((ValueError, RuntimeError)):
     #   smart_ptrs.PerformUP(add)
@@ -85,14 +82,8 @@ class SmartPtrsTest(unittest.TestCase):
     # Calls to PerformSP should not invalidate |add|.
     self.assertEqual(smart_ptrs.PerformSP(add), 1234)
 
-    # TODO: Temporarily disable the test because currently pybind11
-    # does not support calling protected destructor.
-    # self.assertEqual(smart_ptrs.D1(123).Get(), 123)
+    self.assertEqual(smart_ptrs.D1(123).Get(), 123)
 
-  # TODO: Disable the test. See skip reason.
-  @unittest.skip(
-      'Temporarily disable the test because currently pybind11 does not support'
-      'calling private destructor.')
   def testPrivateDtor(self):
     # Can deal with objects with private/protected destructor std::shared_ptr.
     d = smart_ptrs.WithPrivateDtor.New()
@@ -103,7 +94,7 @@ class SmartPtrsTest(unittest.TestCase):
     x.y = 123
     x1 = smart_ptrs.F3(x)
     self.assertEqual(x1.y, 123)
-    with self.assertRaises((ValueError, RuntimeError)):
+    with self.assertRaises(ValueError):
       _ = x.y
 
 

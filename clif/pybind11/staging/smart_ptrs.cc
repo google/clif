@@ -75,23 +75,20 @@ PYBIND11_MODULE(smart_ptrs, m) {
         (int (*)(std::shared_ptr<::smart_ptrs::Operation>))
         &::smart_ptrs::PerformSP, py::arg("op"));
 
-  // TODO: Temporarily comment out the bindings code here because
-  // currently pybind11 does not support calling protected or private
-  // destructors.
-  //   py::classh<::smart_ptrs::C1>(m, "C1")
-  //     .def("Get",
-  //          (int (::smart_ptrs::C1::*)())&::smart_ptrs::C1::Get);
+  py::classh<::smart_ptrs::C1>(m, "C1")
+    .def("Get",
+         (int (::smart_ptrs::C1::*)())&::smart_ptrs::C1::Get);
 
-  //   py::classh<::smart_ptrs::D1, ::smart_ptrs::C1>(m, "D1")
-  //     .def(py::init<int>(), py::arg("i"));
+  py::classh<::smart_ptrs::D1, ::smart_ptrs::C1>(m, "D1")
+    .def(py::init<int>(), py::arg("i"));
 
-  //   py::classh<::smart_ptrs::WithPrivateDtor>(m, "WithPrivateDtor")
-  //     .def_static("New",
-  //          (std::shared_ptr<::smart_ptrs::WithPrivateDtor> (*)())
-  //          &::smart_ptrs::WithPrivateDtor::New)
-  //     .def("Get",
-  //          (int (::smart_ptrs::WithPrivateDtor::*)())
-  //          &::smart_ptrs::WithPrivateDtor::Get);
+  py::classh<::smart_ptrs::WithPrivateDtor>(m, "WithPrivateDtor")
+    .def_static("New",
+         (std::shared_ptr<::smart_ptrs::WithPrivateDtor> (*)())
+         &::smart_ptrs::WithPrivateDtor::New)
+    .def("Get",
+         (int (::smart_ptrs::WithPrivateDtor::*)())
+         &::smart_ptrs::WithPrivateDtor::Get);
 
   py::classh<::smart_ptrs::X>(m, "X")
     .def(py::init<>())

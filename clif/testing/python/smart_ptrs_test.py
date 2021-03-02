@@ -71,9 +71,9 @@ class SmartPtrsTest(absltest.TestCase):
     # it.
     b = wrapper_lib.Func(a)
     self.assertEqual(b.Get().a, 123)
-    with self.assertRaises((ValueError, RuntimeError)):
+    with self.assertRaises(ValueError):
       _ = a.a
-    with self.assertRaises((ValueError, RuntimeError)):
+    with self.assertRaises(ValueError):
       wrapper_lib.Func(a)
 
     a = wrapper_lib.A()
@@ -91,32 +91,28 @@ class SmartPtrsTest(absltest.TestCase):
     # We should be able to call Func again
     b = wrapper_lib.Func(a)
     self.assertEqual(b.Get().a, 54321)
-    with self.assertRaises((ValueError, RuntimeError)):
+    with self.assertRaises(ValueError):
       _ = a.a
-    with self.assertRaises((ValueError, RuntimeError)):
+    with self.assertRaises(ValueError):
       wrapper_lib.Func(a)
 
-    # TODO: Temporarily disable the test because pybind11 throws
-    # `RuntimeError: Tried to call pure virtual function` when calling
-    # smart_ptrs.PerformUP. However, smart_ptrs.PerformSP works. This might be
-    # because pybind11 does not support unique_ptr as function parameters
-    # previously.
-    # add = AddParameterized(wrapper_lib)(120, 3)
-    # self.assertEqual(wrapper_lib.PerformUP(add), 123)
-
-    # # Previous call to Perform invalidated |add|
-    # with self.assertRaises((ValueError, RuntimeError)):
-    #   wrapper_lib.PerformUP(add)
+    add = AddParameterized(wrapper_lib)(120, 3)
+    if wrapper_lib is smart_ptrs:
+      # TODO: Temporarily disabling test for pybind11, which
+      # throws `RuntimeError: Tried to call pure virtual function` when calling
+      # smart_ptrs.PerformUP.
+      self.assertEqual(wrapper_lib.PerformUP(add), 123)
+      # Previous call to Perform invalidated |add|
+      with self.assertRaises(ValueError):
+        wrapper_lib.PerformUP(add)
 
     add = AddParameterized(wrapper_lib)(1230, 4)
     self.assertEqual(wrapper_lib.PerformSP(add), 1234)
     # Calls to PerformSP should not invalidate |add|.
     self.assertEqual(wrapper_lib.PerformSP(add), 1234)
 
-    # self.assertEqual(wrapper_lib.D1(123).Get(), 123)
+    self.assertEqual(wrapper_lib.D1(123).Get(), 123)
 
-  @absltest.skip(
-      'Pybind11 does not support calling protected or private destructors.')
   def testPrivateDtor(self, wrapper_lib):
     # Can deal with objects with private/protected destructor std::shared_ptr.
     d = wrapper_lib.WithPrivateDtor.New()
@@ -127,7 +123,7 @@ class SmartPtrsTest(absltest.TestCase):
     x.y = 123
     x1 = wrapper_lib.F3(x)
     self.assertEqual(x1.y, 123)
-    with self.assertRaises((ValueError, RuntimeError)):
+    with self.assertRaises(ValueError):
       _ = x.y
 
   def testInfiniteLoopAddVirtualOverride(self, wrapper_lib):
