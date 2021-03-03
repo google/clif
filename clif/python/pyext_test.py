@@ -20,7 +20,7 @@ import unittest
 from clif.python import pyext
 from clif.python import pytd2proto
 from clif.python import pytd_parser
-from clif.python import types
+from clif.python import clif_types as types
 
 # The unit tests are run from a build directory outside of the source directory.
 # Hence, it is OK to create a file in the build directory only for testing.

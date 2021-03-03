@@ -59,3 +59,47 @@ def clif_deps():
                 "https://github.com/google/googletest/archive/release-1.10.0.tar.gz",
             ],
         )
+
+    if not native.existing_rule("com_github_gflags_gflags"):
+        http_archive(
+            name = "com_github_gflags_gflags",
+            sha256 = "34af2f15cf7367513b352bdcd2493ab14ce43692d2dcd9dfc499492966c64dcf",
+            strip_prefix = "gflags-2.2.2",
+            urls = ["https://github.com/gflags/gflags/archive/v2.2.2.tar.gz"],
+        )
+
+    if not native.existing_rule("com_github_google_glog"):
+        http_archive(
+            name = "com_github_google_glog",
+            sha256 = "62efeb57ff70db9ea2129a16d0f908941e355d09d6d83c9f7b18557c0a7ab59e",
+            strip_prefix = "glog-d516278b1cd33cd148e8989aec488b6049a4ca0b",
+            urls = ["https://github.com/google/glog/archive/d516278b1cd33cd148e8989aec488b6049a4ca0b.zip"],
+        )
+
+    if not native.existing_rule("io_abseil_py"):
+        http_archive(
+            name = "io_abseil_py",
+            sha256 = "ac357a83c27464f5a612fda94704d0cc4fd4be1f2c0667c1819c4037e875f7aa",
+            strip_prefix = "abseil-py-pypi-v0.11.0",
+            urls = [
+                "https://mirror.bazel.build/github.com/abseil/abseil-py/archive/pypi-v0.11.0.zip",
+                "https://github.com/abseil/abseil-py/archive/pypi-v0.11.0.zip",
+            ],
+        )
+
+    if not native.existing_rule("six_archive"):
+        http_archive(
+            name = "six_archive",
+            build_file = "@com_google_protobuf//:third_party/six.BUILD",
+            sha256 = "d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73",
+            urls = ["https://pypi.python.org/packages/source/s/six/six-1.12.0.tar.gz"],
+        )
+
+    # rules_python 0.1.0 is needed for pip_install. Older versions of
+    # rules_python might not have pip_install functionalities.
+    if not native.existing_rule("rules_python"):
+        http_archive(
+            name = "rules_python",
+            sha256 = "b6d46438523a3ec0f3cead544190ee13223a52f6a6765a29eae7b7cc24cc83a0",
+            url = "https://github.com/bazelbuild/rules_python/releases/download/0.1.0/rules_python-0.1.0.tar.gz",
+        )

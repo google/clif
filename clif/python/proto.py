@@ -25,7 +25,7 @@ import argparse
 import itertools
 import sys
 from clif.python import gen
-from clif.python import types
+from clif.python import clif_types as types
 from clif.python.utils import proto_util
 VALID_EXT = ['.proto']
 

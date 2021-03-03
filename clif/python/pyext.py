@@ -83,7 +83,7 @@ from clif.python import astutils
 from clif.python import gen
 from clif.python import postconv
 from clif.python import slots
-from clif.python import types
+from clif.python import clif_types as types
 
 I = '  '  # Updated to match the desired value by the Module() constructor.
 VARARGS = 'METH_VARARGS | METH_KEYWORDS'

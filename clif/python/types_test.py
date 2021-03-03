@@ -17,7 +17,7 @@
 import textwrap
 from absl.testing import absltest
 from clif.python import pyext
-from clif.python import types
+from clif.python import clif_types as types
 
 
 class TypesTest(absltest.TestCase):
