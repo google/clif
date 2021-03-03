@@ -52,7 +52,7 @@ class SmartPtrsTest(unittest.TestCase):
     a.a = 54321
     b.SetSP(a)
     # |a| is shared between C++ and Python. So, cannot give it to Func.
-    with self.assertRaises(RuntimeError):
+    with self.assertRaises(ValueError):
       smart_ptrs.Func(a)
 
     # Check |a| is intact.
@@ -74,7 +74,7 @@ class SmartPtrsTest(unittest.TestCase):
     # smart_ptrs.PerformUP.
     # self.assertEqual(smart_ptrs.PerformUP(add), 123)
     # # Previous call to Perform invalidated |add|
-    # with self.assertRaises((ValueError, RuntimeError)):
+    # with self.assertRaises(ValueError):
     #   smart_ptrs.PerformUP(add)
 
     add = Add(1230, 4)

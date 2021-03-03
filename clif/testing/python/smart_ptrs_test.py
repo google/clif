@@ -81,7 +81,7 @@ class SmartPtrsTest(absltest.TestCase):
     a.a = 54321
     b.SetSP(a)
     # |a| is shared between C++ and Python. So, cannot give it to Func.
-    with self.assertRaises((ValueError, RuntimeError)):
+    with self.assertRaises(ValueError):
       wrapper_lib.Func(a)
 
     # Check |a| is intact.
