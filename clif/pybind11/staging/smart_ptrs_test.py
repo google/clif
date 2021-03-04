@@ -69,13 +69,14 @@ class SmartPtrsTest(unittest.TestCase):
       smart_ptrs.Func(a)
 
     add = Add(120, 3)
-    # TODO: Temporarily disable the test because pybind11 throws
-    # `RuntimeError: Tried to call pure virtual function` when calling
-    # smart_ptrs.PerformUP.
-    # self.assertEqual(smart_ptrs.PerformUP(add), 123)
-    # # Previous call to Perform invalidated |add|
-    # with self.assertRaises(ValueError):
-    #   smart_ptrs.PerformUP(add)
+    # pybind11 (with smart_holder) deliberatly does not support this
+    # inherently unsafe transfer of ownership.
+    with self.assertRaises(ValueError) as ctx:
+      smart_ptrs.PerformUP(add)
+    self.assertEqual(
+        str(ctx.exception),
+        'Ownership of instance with virtual overrides in Python cannot be'
+        ' transferred to C++.')
 
     add = Add(1230, 4)
     self.assertEqual(smart_ptrs.PerformSP(add), 1234)

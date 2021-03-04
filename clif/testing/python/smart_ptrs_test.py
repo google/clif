@@ -99,15 +99,29 @@ class SmartPtrsTest(absltest.TestCase):
 
     add = AddParameterized(wrapper_lib)(120, 3)
     if wrapper_lib is smart_ptrs:
-      # TODO: Temporarily disabling test for pybind11, which
-      # throws `RuntimeError: Tried to call pure virtual function` when calling
-      # smart_ptrs.PerformUP.
+      # This test (and the test for `PerformSP` below) can work safely only
+      # because PyCLIF leaks the reference count for `add` (use
+      # testInfiniteLoopAddVirtualOverride below to reproduce the leak), which
+      # keeps the Python instance alive beyond the time of transferring
+      # ownership from Python to C++.
       self.assertEqual(wrapper_lib.PerformUP(add), 123)
       # Previous call to Perform invalidated |add|
       with self.assertRaises(ValueError):
         wrapper_lib.PerformUP(add)
+    else:
+      # pybind11 (with smart_holder) deliberatly does not support this
+      # inherently unsafe transfer of ownership. (Knowingly leaking the
+      # reference count is not an option.)
+      with self.assertRaises(ValueError) as ctx:
+        wrapper_lib.PerformUP(add)
+      self.assertEqual(
+          str(ctx.exception),
+          'Ownership of instance with virtual overrides in Python cannot be'
+          ' transferred to C++.')
 
     add = AddParameterized(wrapper_lib)(1230, 4)
+    # This works with the C-API code generator only because the reference count
+    # for `add` is leaked. It works cleanly in pybind11 after PR #2886.
     self.assertEqual(wrapper_lib.PerformSP(add), 1234)
     # Calls to PerformSP should not invalidate |add|.
     self.assertEqual(wrapper_lib.PerformSP(add), 1234)
