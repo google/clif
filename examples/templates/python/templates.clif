@@ -14,11 +14,11 @@
 
 from "templates/templates.h":
   namespace `clif_example::templates`:
-    class `MyClass<int, string>` as MyClassIntStr:
+    class `MyClass<int, std::string>` as MyClassIntStr:
       a: int = property(`GetA`, `SetA`)
       b: str = property(`GetB`, `SetB`)
 
-    class `MyClass<string, string>` as MyClassStrStr:
+    class `MyClass<std::string, std::string>` as MyClassStrStr:
       a: str = property(`GetA`, `SetA`)
       b: str = property(`GetB`, `SetB`)
 
