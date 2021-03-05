@@ -15,12 +15,13 @@
 #ifndef CONCRETE_DERIVED_H
 #define CONCRETE_DERIVED_H
 
-#include "clif/testing/derived_in_other_header/concrete_base.h"
-#include "clif/testing/derived_in_other_header/concrete_derived.h"
 #include "third_party/pybind11/include/pybind11/smart_holder.h"
 
-PYBIND11_SMART_HOLDER_TYPE_CASTERS(
-    clif_testing::derived_in_other_header::ConcreteBaseEmpty);
+#include "clif/pybind11/staging/concrete_derived.h"
+
+#include "clif/testing/derived_in_other_header/concrete_base.h"
+#include "clif/testing/derived_in_other_header/concrete_derived.h"
+
 PYBIND11_SMART_HOLDER_TYPE_CASTERS(
     clif_testing::derived_in_other_header::ConcreteDerivedEmpty);
 

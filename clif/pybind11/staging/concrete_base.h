@@ -15,8 +15,9 @@
 #ifndef CONCRETE_BASE_H
 #define CONCRETE_BASE_H
 
-#include "clif/testing/derived_in_other_header/concrete_base.h"
 #include "third_party/pybind11/include/pybind11/smart_holder.h"
+
+#include "clif/testing/derived_in_other_header/concrete_base.h"
 
 PYBIND11_SMART_HOLDER_TYPE_CASTERS(
     clif_testing::derived_in_other_header::ConcreteBaseEmpty);
