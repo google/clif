@@ -20,12 +20,16 @@ class Module(object):
 
   @classmethod
   def from_source(cls, source: Text, extra_flags: Optional[List[Text]] = None):
-    flags = ['-x', 'c++', '-std=c++17']
+    """Create a Module object from C++ source file."""
+    flags = ['-x', 'c++', '-std=c++17', '-I.']
     if extra_flags:
       flags += extra_flags
     tu = TranslationUnit.from_source(
         'clif_referenced_headers.h', flags,
         unsaved_files=[('clif_referenced_headers.h', source)])
+    if tu.diagnostics:
+      err_msg = '\n'.join(str(e) for e in tu.diagnostics)
+      raise ValueError(f'Errors in source file: {err_msg}')
     return cls(tu)
 
   def query_func(self, fully_qualified_name: Text) -> Optional[ast_pb2.Decl]:

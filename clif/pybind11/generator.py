@@ -167,7 +167,7 @@ class ModuleGenerator(object):
                    f'{member.func.name.native}({params_str_with_types}) '
                    f'{cpp_const}override {{')
 
-    if class_decl.cpp_abstract or member.func.is_pure_virtual:
+    if member.func.is_pure_virtual:
       pybind11_override = 'PYBIND11_OVERRIDE_PURE'
     else:
       pybind11_override = 'PYBIND11_OVERRIDE'
