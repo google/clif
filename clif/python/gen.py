@@ -877,14 +877,14 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
 
 def _GenExceptionTry():
   yield I+'PyObject* err_type = nullptr;'
-  yield I+'string err_msg{"C++ exception"};'
+  yield I+'std::string err_msg{"C++ exception"};'
   yield I+'try {'
 
 
 def _GenExceptionCatch():
   yield I+'} catch(const std::exception& e) {'
   yield I+I+'err_type = PyExc_RuntimeError;'
-  yield I+I+'err_msg += string(": ") + e.what();'
+  yield I+I+'err_msg += std::string(": ") + e.what();'
   yield I+'} catch (...) {'
   yield I+I+'err_type = PyExc_RuntimeError;'
   yield I+'}'

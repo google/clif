@@ -143,12 +143,12 @@ class FuncTest(unittest.TestCase):
         Py_UNBLOCK_THREADS
         int32 ret0;
         PyObject* err_type = nullptr;
-        string err_msg{"C++ exception"};
+        std::string err_msg{"C++ exception"};
         try {
           ret0 = f();
         } catch(const std::exception& e) {
           err_type = PyExc_RuntimeError;
-          err_msg += string(": ") + e.what();
+          err_msg += std::string(": ") + e.what();
         } catch (...) {
           err_type = PyExc_RuntimeError;
         }
@@ -482,7 +482,7 @@ class FuncTest(unittest.TestCase):
         }
         type {
           lang_type: "str"
-          cpp_type: "string"
+          cpp_type: "std::string"
         }
       }
     """, """
@@ -496,7 +496,7 @@ class FuncTest(unittest.TestCase):
         if (!PyArg_ParseTupleAndKeywords(args, kw, "O:f", names, &a[0])) return nullptr;
         int32 arg1;
         if (!Clif_PyObjAs(a[0], &arg1)) return ArgError("f", names[0], "int32", a[0]);
-        string ret1{};
+        std::string ret1{};
         // Call actual C++ method.
         bool ret0 = f(std::move(arg1), &ret1);
         // Convert return values to Python.
