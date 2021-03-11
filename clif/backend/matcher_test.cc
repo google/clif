@@ -3693,4 +3693,48 @@ TEST_F(ClifMatcherTest, TestClifAuxAnotherFile) {
   EXPECT_TRUE(msg.contains("/another_file.h:"));
 }
 
+TEST_F(ClifMatcherTest, TestPureVirtualFunction) {
+  protos::Decl decl;
+  std::string decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'ClassPureVirtual' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'SomeFunction'"
+      "       }"
+      "     }"
+      "   }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'NotPureVirtual'"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  TestMatch(decl_proto, &decl);
+  EXPECT_TRUE(decl.class_().members(0).func().is_pure_virtual());
+  EXPECT_FALSE(decl.class_().members(1).func().is_pure_virtual());
+  decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'ClassOverridesPureVirtual' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'SomeFunction'"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  TestMatch(decl_proto, &decl);
+  EXPECT_FALSE(decl.class_().members(0).func().is_pure_virtual());
+  decl_proto =
+      "decltype: FUNC func { "
+      "  name { cpp_name: 'SomeFunctionNotPureVirtual' } "
+      "} ",
+  TestMatch(decl_proto, &decl);
+  EXPECT_FALSE(decl.func().is_pure_virtual());
+}
+
 }  // namespace clif

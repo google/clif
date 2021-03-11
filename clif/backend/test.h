@@ -300,8 +300,15 @@ UncopyableUnmovableClass FuncUncopyableUnmovableClassReturnType();
 class ClassPureVirtual {
  public:
   virtual void SomeFunction() = 0;
+  virtual void NotPureVirtual();
 };
 
+class ClassOverridesPureVirtual: public ClassPureVirtual {
+ public:
+  void SomeFunction() override;
+};
+
+void SomeFunctionNotPureVirtual();
 void FuncAbstractParam(const ClassPureVirtual* x);
 void FuncAbstractParam(const AbstractClass& x);
 void FuncForwardDeclared(const Globally::Qualified::ForwardDecl* x);
