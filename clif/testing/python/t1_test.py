@@ -14,8 +14,10 @@
 
 """Tests for testing.t1."""
 
+
 from absl.testing import absltest
 from absl.testing import parameterized
+import six
 
 from clif.testing.python import t1
 # TODO: Restore simple import after OSS setup includes pybind11.
@@ -63,12 +65,16 @@ class T1Test(parameterized.TestCase):
     self.assertEqual(wrapper_lib.StdString(), 'std')
 
   def testBytes(self, wrapper_lib):
-    # TODO: Add supports for string/bytes/unicode conversion.
-    if wrapper_lib is not t1:
-      self.skipTest(
-          'Currently CLIF pybind11 code generator does not support type '
-          'conversion.')
     self.assertEqual(wrapper_lib.StdBytes(), b'std')
+
+    # Pybind11 emulates python3 str/bytes behavior even when using python2.
+    if six.PY2 and wrapper_lib is t1:
+      self.assertEqual(wrapper_lib.UnicodeString(), u'\u0394'.encode('utf-8'))
+    else:
+      self.assertEqual(wrapper_lib.UnicodeString(), u'\u0394')
+
+    self.assertEqual(wrapper_lib.UnicodeBytes(False), u'\u03B8'.encode('utf-8'))
+    self.assertEqual(wrapper_lib.UnicodeBytes(True), b'\x80')
 
   def testFunctionDocstring(self, wrapper_lib):
     self.assertIn('function has a docstring.\n\n', wrapper_lib.Sum3.__doc__)

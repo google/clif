@@ -38,6 +38,11 @@ def generate_from(module_name: str, func_decl: ast_pb2.FuncDecl,
     pybind11 function bindings code.
   """
 
+  cpp_lambda_return_type = _has_bytes_return(func_decl)
+  if cpp_lambda_return_type:
+    yield from _generate_cpp_lambda(func_decl, cpp_lambda_return_type)
+    return
+
   if func_decl.classmethod:
     for line in _generate_static_method(module_name, func_decl.name.native,
                                         func_decl.name.cpp_name):
@@ -169,3 +174,25 @@ def _generate_static_method(class_name: str, func_name_native: str,
                             func_name_cpp_name: str):
   yield (f'{class_name}.def_static("{func_name_native}", '
          f'&{func_name_cpp_name});')
+
+
+def _has_bytes_return(func_decl: ast_pb2.FuncDecl):
+  for r in func_decl.returns:
+    if r.HasField('type'):
+      if r.type.lang_type == 'bytes':
+        return 'py::bytes'
+  return None
+
+
+def _generate_cpp_lambda(func_decl: ast_pb2.FuncDecl, return_type: str):
+  """Generates C++ lambda functions if needed."""
+
+  params_strings = get_params_strings(func_decl)
+
+  yield I + f'm.def("{func_decl.name.native}",'
+  yield I + I + f'[]({params_strings.names_with_types}) -> {return_type} {{'
+  yield I + I + I + ('return '
+                     f'{func_decl.name.cpp_name}({params_strings.cpp_names});')
+  yield I + I + '}'
+  yield I + ');'
+  return

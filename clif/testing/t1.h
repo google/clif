@@ -25,6 +25,15 @@ inline int int_id(int x) { return x; }
 inline int int_plus3(int a, int b = 0, int c = 0) { return a+b+c; }
 
 inline std::string StdString() { return std::string("std"); }
+inline std::string UnicodeString() { return std::string("\u0394"); }
+inline std::string UnicodeBytes(bool generate_malformed) {
+  // generate_malformed ensures there is no accidental decode/encode
+  // in the conversion from the C++ object to Python object.
+  if (generate_malformed) {
+    return std::string("\x80");
+  }
+  return std::string("\u03B8");
+}
 
 }  // namespace some
 

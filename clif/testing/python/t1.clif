@@ -24,3 +24,5 @@ from "clif/testing/t1.h":
     """
   def StdString() -> str
   def `StdString` as StdBytes() -> bytes
+  def UnicodeString() -> str
+  def UnicodeBytes(generate_malformed: bool) -> bytes
