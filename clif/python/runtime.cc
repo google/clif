@@ -57,6 +57,13 @@ PyObject* PyObjRef::self() const {
   return py;
 }
 
+PyObjRef::~PyObjRef() {
+  PyGILState_STATE threadstate = PyGILState_Ensure();
+  Py_CLEAR(pyowner_);
+  Py_CLEAR(self_);
+  PyGILState_Release(threadstate);
+}
+
 SafePyObject::~SafePyObject() {
   if (py_) {
     PyGILState_STATE threadstate = PyGILState_Ensure();

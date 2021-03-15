@@ -138,7 +138,7 @@ class PyObjRef {
  public:
 #ifndef NDEBUG
   // Create a poison pill to check that Init() called for all instances.
-  PyObjRef() : self_(PoisonPill()), pyowner_(nullptr) {}
+  PyObjRef() : self_(PoisonPill()) {}
 #else
   PyObjRef() = default;
 #endif
@@ -149,6 +149,9 @@ class PyObjRef {
   PyObjRef& operator=(const PyObjRef& other) = default;
   PyObjRef(PyObjRef&& other) = default;
   PyObjRef& operator=(PyObjRef&& other) = default;
+
+  // Needed to clear the held Python references.
+  virtual ~PyObjRef();
 
   // Keep a (weak) reference to 'self'.
   void Init(PyObject* self);
@@ -165,9 +168,9 @@ class PyObjRef {
 
   // A weak reference to 'self' for C++ callers into Python-holded instance.
   // Initialized by Init(py) call after the ctor (postcall).
-  PyObject* self_;
+  PyObject* self_ = nullptr;
   // Transfer python ownership here when 'self' released to an unique_ptr.
-  PyObject* pyowner_;
+  PyObject* pyowner_ = nullptr;
 };
 
 extern "C" PyObject* pyclif_instance_dict_get(PyObject* self, void*);

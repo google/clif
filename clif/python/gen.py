@@ -371,7 +371,9 @@ def VirtualOverriderClass(name, pyname, cname, cfqname, isabstract, idfunc,
                           pcfunc, vfuncs):
   """Generate a derived redirector class."""
   yield ''
-  yield 'struct %s : PyObjRef, %s {' % (name, cname)
+  # Unfortunately the multiple-inheritance order here matters, probably caused
+  # by one or more improper `reinterpret_cast`s.
+  yield 'struct %s : %s, PyObjRef {' % (name, cname)
   yield I+'using %s;' % cfqname
   for f in vfuncs:
     for s in _VirtualFunctionCall(

@@ -141,10 +141,47 @@ class SmartPtrsTest(absltest.TestCase):
     with self.assertRaises(ValueError):
       _ = x.y
 
-  def testInfiniteLoopAddVirtualOverride(self, wrapper_lib):
+  def testInfiniteLoopAddRun(self, wrapper_lib):
+    # No leak (manually verified under cl/362141489).
     add = AddParameterized(wrapper_lib)
     while True:
       add(1, 2).Run()
+      return  # Comment out for manual leak checking (use `top` command).
+
+  def testInfiniteLoopPerformSP(self, wrapper_lib):
+    # No leak (manually verified under cl/362141489).
+    add = AddParameterized(wrapper_lib)
+    while True:
+      self.assertEqual(wrapper_lib.PerformSP(add(19, 29)), 48)
+      return  # Comment out for manual leak checking (use `top` command).
+
+  def testInfiniteLoopPerformUP(self, wrapper_lib):
+    # No leak (manually verified under cl/362141489).
+    if wrapper_lib is not smart_ptrs:
+      return  # pybind11 raises a ValueError (exercised above).
+    add = AddParameterized(wrapper_lib)
+    while True:
+      self.assertEqual(wrapper_lib.PerformUP(add(17, 23)), 40)
+      return  # Comment out for manual leak checking (use `top` command).
+
+  def testInfiniteLoopRunStashedSPOperation(self, wrapper_lib):
+    # No leak (manually verified under cl/362141489).
+    add = AddParameterized(wrapper_lib)
+    while True:
+      s = wrapper_lib.OperationStashSP()
+      s.Stash(add(13, 29))
+      self.assertEqual(s.RunStashed(), 42)
+      return  # Comment out for manual leak checking (use `top` command).
+
+  def testInfiniteLoopRunStashedUPOperation(self, wrapper_lib):
+    # No leak (manually verified under cl/362141489).
+    if wrapper_lib is not smart_ptrs:
+      return  # pybind11 raises a ValueError (exercised above).
+    add = AddParameterized(wrapper_lib)
+    while True:
+      s = wrapper_lib.OperationStashUP()
+      s.Stash(add(31, 59))
+      self.assertEqual(s.RunStashed(), 90)
       return  # Comment out for manual leak checking (use `top` command).
 
 

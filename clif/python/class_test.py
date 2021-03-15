@@ -1855,7 +1855,7 @@ class ClassTest(unittest.TestCase):
     """, r"""
       namespace pyStruct {
 
-      struct Overrider : PyObjRef, StructCpp {
+      struct Overrider : StructCpp, PyObjRef {
         using StructCpp::StructCpp;
 
         void f() override {

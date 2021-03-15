@@ -32,6 +32,17 @@ from "clif/testing/smart_ptrs.h":
     def PerformUP(op: Operation) -> int
     def PerformSP(op: Operation) -> int
 
+    interface OperationStash<Dummy>:  # Dummy just to keep the parser happy.
+      def __init__(self)
+      def Stash(self, op: Operation)
+      def RunStashed(self) -> int
+
+    class `OperationStash<std::unique_ptr>` as OperationStashUP:
+      implements OperationStash<int>  # int here is just a Dummy.
+
+    class `OperationStash<std::shared_ptr>` as OperationStashSP:
+      implements OperationStash<int>  # int here is just a Dummy.
+
     class C1:
       def Get(self) -> int
 

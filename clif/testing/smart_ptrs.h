@@ -72,6 +72,15 @@ inline int PerformSP(std::shared_ptr<Operation> op) {
   return op->Run();
 }
 
+template <template <class...> class SmartPtrTmpl>
+class OperationStash {
+ public:
+  void Stash(SmartPtrTmpl<Operation> op) { stashed_op = std::move(op); }
+  int RunStashed() const { return stashed_op->Run(); }
+ private:
+  SmartPtrTmpl<Operation> stashed_op;
+};
+
 // Class with protected destructor.
 class C1 {
  public:

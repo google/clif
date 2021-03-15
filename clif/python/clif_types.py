@@ -174,13 +174,15 @@ class ClassType(TypeDef):
           if not self.virtual:
             yield I+'if (!%s.Detach()) {' % shared
           else:
-            yield I+'auto& shared = %s;' % shared
+            yield I+'auto* py_obj_ref = dynamic_cast<::clif::PyObjRef*>(cpp);'
+            yield I+('auto& shared = %s;'
+                     '  // Potentially IMPROPER reinterpret_cast.' % shared)
             # Catch before we renounce ownership. After that the cpp pointer
             # is no good.
-            yield I+'shared->HoldPyObj(py);'
+            yield I+'if (py_obj_ref != nullptr) py_obj_ref->HoldPyObj(py);'
             yield I+'if (!shared.Detach()) {'
             # If renouncing cpp ownership failed, renounce py ownership.
-            yield I+I+'shared->DropPyObj();'
+            yield I+I+'if (py_obj_ref != nullptr) py_obj_ref->DropPyObj();'
           yield I+I+('PyErr_SetString(PyExc_ValueError, '
                      '"Cannot convert %s instance to std::unique_ptr.");' %
                      self.pyname)
