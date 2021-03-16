@@ -5,34 +5,48 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import unittest
-import parameterized
+
+from absl.testing import absltest
+from absl.testing import parameterized
 
 from clif.testing.python import std_complex
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import std_complex_pybind11
+except ImportError:
+  std_complex_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class StdComplexTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (std_complex, std_complex_pybind11))
+    if np[1] is not None
+])
+class StdComplexTest(absltest.TestCase):
 
-  @parameterized.parameterized.expand([(std_complex.StdComplexFloat,),
-                                       (std_complex.StdComplexDouble,)])
-  def testZero(self, ctype):
-    self.assertAlmostEqual(ctype.Zero(), complex(0))
+  def testZero(self, wrapper_lib):
+    self.assertAlmostEqual(wrapper_lib.StdComplexFloat.Zero(), complex(0))
+    self.assertAlmostEqual(wrapper_lib.StdComplexDouble.Zero(), complex(0))
 
-  @parameterized.parameterized.expand([(std_complex.StdComplexFloat,),
-                                       (std_complex.StdComplexDouble,)])
-  def testOne(self, ctype):
-    self.assertAlmostEqual(ctype.One(), complex(1))
+  def testOne(self, wrapper_lib):
+    self.assertAlmostEqual(wrapper_lib.StdComplexFloat.One(), complex(1))
+    self.assertAlmostEqual(wrapper_lib.StdComplexDouble.One(), complex(1))
 
-  @parameterized.parameterized.expand([(std_complex.StdComplexFloat,),
-                                       (std_complex.StdComplexDouble,)])
-  def testI(self, ctype):
-    self.assertAlmostEqual(ctype.i(), 1j)
+  def testI(self, wrapper_lib):
+    self.assertAlmostEqual(wrapper_lib.StdComplexFloat.i(), 1j)
+    self.assertAlmostEqual(wrapper_lib.StdComplexDouble.i(), 1j)
 
-  @parameterized.parameterized.expand([(std_complex.StdComplexFloat,),
-                                       (std_complex.StdComplexDouble,)])
-  def testMultiply(self, ctype):
-    self.assertAlmostEqual(ctype.Multiply(ctype.i(), ctype.i()), -ctype.One())
+  def testMultiply(self, wrapper_lib):
+    self.assertAlmostEqual(
+        wrapper_lib.StdComplexFloat.Multiply(wrapper_lib.StdComplexFloat.i(),
+                                             wrapper_lib.StdComplexFloat.i()),
+        -wrapper_lib.StdComplexFloat.One())
+    self.assertAlmostEqual(
+        wrapper_lib.StdComplexDouble.Multiply(wrapper_lib.StdComplexDouble.i(),
+                                              wrapper_lib.StdComplexDouble.i()),
+        -wrapper_lib.StdComplexDouble.One())
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

@@ -93,6 +93,7 @@ class ModuleGenerator(object):
     yield '// potential future optimization: generate this line only as needed.'
     yield '#include "third_party/pybind11/include/pybind11/stl.h"'
     yield '#include <pybind11/operators.h>'
+    yield '#include <pybind11/complex.h>'
     yield ''
     yield 'namespace py = pybind11;'
     yield ''

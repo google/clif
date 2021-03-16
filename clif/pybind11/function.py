@@ -40,7 +40,8 @@ def generate_from(module_name: str, func_decl: ast_pb2.FuncDecl,
 
   cpp_lambda_return_type = _has_bytes_return(func_decl)
   if cpp_lambda_return_type:
-    yield from _generate_cpp_lambda(func_decl, cpp_lambda_return_type)
+    yield from _generate_cpp_lambda(func_decl, cpp_lambda_return_type,
+                                    module_name)
     return
 
   if func_decl.classmethod:
@@ -184,12 +185,17 @@ def _has_bytes_return(func_decl: ast_pb2.FuncDecl):
   return None
 
 
-def _generate_cpp_lambda(func_decl: ast_pb2.FuncDecl, return_type: str):
+def _generate_cpp_lambda(func_decl: ast_pb2.FuncDecl, return_type: str,
+                         class_name: str):
   """Generates C++ lambda functions if needed."""
 
   params_strings = get_params_strings(func_decl)
 
-  yield I + f'm.def("{func_decl.name.native}",'
+  static = ''
+  if func_decl.classmethod:
+    static = '_static'
+
+  yield I + f'{class_name}.def{static}("{func_decl.name.native}",'
   yield I + I + f'[]({params_strings.names_with_types}) -> {return_type} {{'
   yield I + I + I + ('return '
                      f'{func_decl.name.cpp_name}({params_strings.cpp_names});')
