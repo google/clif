@@ -363,6 +363,8 @@ class ClifMatcher {
   void SetUnqualifiedCppType(const clang::QualType& clang_type,
                              Type* clif_type);
 
+  std::string GetMangledName(const clang::NamedDecl* clang_decl);
+
   // Helper for MatchAndSetType which handles the complicated
   // clif-callable children of Type.
   ClifErrorCode MatchAndSetCallable(clang::QualType callable_type,

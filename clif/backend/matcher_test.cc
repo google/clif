@@ -3737,4 +3737,43 @@ TEST_F(ClifMatcherTest, TestPureVirtualFunction) {
   EXPECT_FALSE(decl.func().is_pure_virtual());
 }
 
+TEST_F(ClifMatcherTest, TestFunctionMangleName) {
+  protos::Decl decl;
+  std::string decl_proto =
+      "decltype: CLASS class_ { "
+      " name { cpp_name: 'DerivedClass' } "
+      "   members {"
+      "     decltype: FUNC func {"
+      "       constructor: true "
+      "       name {"
+      "         cpp_name: 'DerivedClass'"
+      "       }"
+      "     }"
+      "  }"
+      "  members {"
+      "    decltype: FUNC func { "
+      "      name {"
+      "        cpp_name: 'MemberB'"
+      "      }"
+      "    params { type { lang_type: 'int' cpp_type: 'int' } } "
+      "    returns { type { lang_type: 'int' cpp_type: 'int' } } }"
+      "} }";
+  TestMatch(decl_proto, &decl);
+  auto ctor = decl.class_().members(0).func();
+  EXPECT_TRUE(llvm::StringRef(ctor.mangled_name()).contains("DerivedClass"));
+  auto member_func = decl.class_().members(1).func();
+  EXPECT_TRUE(llvm::StringRef(member_func.mangled_name()).contains("MemberB"));
+  EXPECT_TRUE(
+      llvm::StringRef(member_func.mangled_name()).contains("DerivedClass"));
+  decl_proto =
+      "decltype: FUNC func { "
+      "  name { cpp_name: 'SomeFunctionNotPureVirtual' } "
+      "} ",
+  TestMatch(decl_proto, &decl);
+  auto free_func = decl.func();
+  EXPECT_TRUE(
+      llvm::StringRef(free_func.mangled_name()).contains(
+          "SomeFunctionNotPureVirtual"));
+}
+
 }  // namespace clif

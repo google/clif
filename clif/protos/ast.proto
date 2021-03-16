@@ -129,7 +129,8 @@ message FuncDecl {
   optional bool is_extend_method = 20;  // Set to true if ClassName__extend__method_name.
   optional bool is_pure_virtual = 21;  // Set to true if C++ func is a pure virtual function.
   optional bool is_overloaded = 22;  // Set to true if C++ func is overloaded.
-  // Next available: 23
+  optional string mangled_name = 23;
+  // Next available: 24
 };
 
 // ForwardDecl describe a C++ name declaration match (only make sense for

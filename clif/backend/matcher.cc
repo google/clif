@@ -19,10 +19,12 @@
 
 #include <algorithm>
 #include <deque>
+#include <memory>
 
 #include "absl/container/btree_map.h"
 #include "clif/backend/strutil.h"
 #include "clang/AST/Expr.h"
+#include "clang/AST/Mangle.h"
 #include "clang/AST/QualTypeNames.h"
 #include "clang/Sema/Initialization.h"
 #include "clang/Sema/Sema.h"
@@ -2672,6 +2674,11 @@ const FunctionDecl* ClifMatcher::MatchAndSetFuncFromCandidates(
       func_decl->set_is_pure_virtual(method_decl->isPure());
     }
 
+    if (auto named_decl = llvm::dyn_cast<clang::NamedDecl>(clang_decl)) {
+      std::string mangle_name = GetMangledName(named_decl);
+      func_decl->set_mangled_name(mangle_name);
+    }
+
     for (int i = 0; i < func_decl->params_size(); ++i) {
       if (!func_decl->params(i).has_default_value()) {
         continue;
@@ -2762,6 +2769,30 @@ const FunctionDecl* ClifMatcher::MatchAndSetFuncFromCandidates(
     mismatch_error.Report(CurrentDecl());
   }
   return nullptr;
+}
+
+std::string ClifMatcher::GetMangledName(const clang::NamedDecl* clang_decl) {
+  std::unique_ptr<clang::MangleContext> mangler(
+      clang_decl->getASTContext().createMangleContext());
+  if (!mangler->shouldMangleDeclName(clang_decl)) {
+    return "";
+  }
+  std::string buffer;
+  llvm::raw_string_ostream buf_stream(buffer);
+  if (clang::isa<clang::CXXConstructorDecl>(clang_decl)) {
+    auto ctorDecl = llvm::dyn_cast<clang::CXXConstructorDecl>(clang_decl);
+    clang::GlobalDecl gd = clang::GlobalDecl(ctorDecl,
+                                             clang::Ctor_Complete);
+    mangler->mangleName(gd, buf_stream);
+  } else if (clang::isa<clang::CXXDestructorDecl>(clang_decl)) {
+    auto dtorDecl = llvm::dyn_cast<clang::CXXDestructorDecl>(clang_decl);
+    clang::GlobalDecl gd = clang::GlobalDecl(dtorDecl,
+                                             clang::Dtor_Complete);
+    mangler->mangleName(gd, buf_stream);
+  } else {
+    mangler->mangleName(clang_decl, buf_stream);
+  }
+  return buf_stream.str();
 }
 
 // Both Clif and Clang typically treat the "this" pointer in a class
