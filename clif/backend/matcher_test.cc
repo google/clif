@@ -3768,12 +3768,54 @@ TEST_F(ClifMatcherTest, TestFunctionMangleName) {
   decl_proto =
       "decltype: FUNC func { "
       "  name { cpp_name: 'SomeFunctionNotPureVirtual' } "
-      "} ",
+      "} ";
   TestMatch(decl_proto, &decl);
   auto free_func = decl.func();
   EXPECT_TRUE(
       llvm::StringRef(free_func.mangled_name()).contains(
           "SomeFunctionNotPureVirtual"));
+}
+
+TEST_F(ClifMatcherTest, TestOverloadedFunctions) {
+  protos::Decl decl;
+  // Free functions.
+  std::string decl_proto =
+      "decltype: FUNC func { "
+      "  name { cpp_name: 'PolymorphicFunc' } "
+      "  params { type { lang_type: 'int' cpp_type: 'int' } } "
+      "} ";
+  TestMatch(decl_proto, &decl);
+  EXPECT_TRUE(decl.func().is_overloaded());
+  decl_proto =
+      "decltype: FUNC func { "
+      "  name { cpp_name: 'SomeFunctionNotPureVirtual' } "
+      "} ";
+  TestMatch(decl_proto, &decl);
+  EXPECT_FALSE(decl.func().is_overloaded());
+  // Overloaded operators.
+  decl_proto =
+      "decltype: CLASS class_ { "
+      "  name { cpp_name: 'OperatorClass' } "
+      "  members { "
+      "    decltype: FUNC func { "
+      "      name { cpp_name: 'operator==' }  "
+      "      returns { type { lang_type: 'int' cpp_type: 'bool' } } "
+      "      params { type { lang_type: 'OperatorClass'"
+      "               cpp_type: 'OperatorClass' } "
+      "             } "
+      "      } "
+      "    } "
+      "  } ";
+  TestMatch(decl_proto, &decl);
+  EXPECT_TRUE(decl.class_().members(0).func().is_overloaded());
+  decl_proto =
+      "decltype: FUNC func { "
+      "  name { cpp_name: 'operator==' }"
+      "  params { type { lang_type: 'int' cpp_type: 'grandmother' } } "
+      "  params { type { lang_type: 'int' cpp_type: 'grandfather' } } "
+      "  returns { type { lang_type: 'int' cpp_type: 'bool' } } }";
+  TestMatch(decl_proto, &decl);
+  EXPECT_FALSE(decl.func().is_overloaded());
 }
 
 }  // namespace clif

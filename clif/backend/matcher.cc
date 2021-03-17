@@ -2338,6 +2338,7 @@ bool ClifMatcher::MatchAndSetFunc(FuncDecl* func_decl) {
     error.Report(CurrentDecl());
     return false;
   }
+  func_decl->set_is_overloaded(clang_decls.Size() > 1);
   return MatchAndSetFuncFromCandidates(clang_decls, func_decl) != nullptr;
 }
 
@@ -2351,6 +2352,7 @@ bool ClifMatcher::MatchAndSetOperatorOrConversionInContext(
       if (llvm::dyn_cast_or_null<clang::CXXMethodDecl>(func_decl) == nullptr) {
         operator_decl->set_cpp_opfunction(true);
       }
+      operator_decl->set_is_overloaded(overloads.Size() > 1);
       return true;
     }
   }
@@ -2436,6 +2438,7 @@ bool ClifMatcher::MatchAndSetConstructor(
     error.Report(CurrentDecl());
     return false;
   }
+  func_decl->set_is_overloaded(constructors.Size() > 1);
   return MatchAndSetFuncFromCandidates(constructors, func_decl) != nullptr;
 }
 
