@@ -43,8 +43,8 @@ static std::unique_ptr<clang::ASTUnit> BuildClangASTFromCode(
   const std::vector<std::string>& clang_command = command_line;
   // |clang_command| includes argv[0], but buildASTFromCodeWithArgs expects
   // argv[0] to have been removed.
-  std::vector<std::string> adjusted_clang_command(
-      clang_command.begin() + 1, clang_command.end());
+  std::vector<std::string> adjusted_clang_command(clang_command.begin() + 1,
+                                                  clang_command.end());
   // Disable all warnings. We can't call AdjustClangArgsForSyntaxOnly,
   // which removes some options we need, such as -MM. The user will
   // see any warnings for the wrapped C++ code when it is built to
@@ -60,13 +60,13 @@ static std::unique_ptr<clang::ASTUnit> BuildClangASTFromCode(
 
 namespace clif {
 
-using clang::ast_matchers::MatchFinder;
 using clang::ClassTemplateDecl;
 using clang::CXXRecordDecl;
 using clang::DeclarationName;
 using clang::DeclarationNameInfo;
 using clang::DeclContext;
 using clang::DeclContextLookupResult;
+using clang::ast_matchers::MatchFinder;
 // Both clang and clif have an "EnumDecl", so a using statement makes
 // for ambiguity.
 // using clang::EnumDecl;
@@ -75,10 +75,11 @@ using clang::IdentifierInfo;
 using clang::NamedDecl;
 using clang::OverloadedOperatorKind;
 using clang::QualType;
-using clang::SourceLocation;
 using clang::Sema;
+using clang::SourceLocation;
 
-template<class T> bool IsForwardDeclarationOf(NamedDecl* decl) {
+template <class T>
+bool IsForwardDeclarationOf(NamedDecl* decl) {
   auto t_decl = llvm::dyn_cast<T>(decl);
   return (t_decl && t_decl->getDefinition() != t_decl);
 }
@@ -98,7 +99,7 @@ void DeclClassification::Add(TranslationUnitAST* ast_, clang::NamedDecl* decl) {
   // Ignore forward declarations.
   if (IsForwardDeclaration(decl)) {
     LLVM_DEBUG(llvm::dbgs() << decl->getQualifiedNameAsString()
-          << " not classified (forward declaration)");
+                            << " not classified (forward declaration)");
     return;
   }
   // Only classify function decls if they are:
@@ -116,9 +117,9 @@ void DeclClassification::Add(TranslationUnitAST* ast_, clang::NamedDecl* decl) {
       llvm::dyn_cast<clang::FunctionDecl>(decl->getCanonicalDecl());
   if (canonical && decl != canonical &&
       ast_->GetSourceFile(*decl) == ast_->GetSourceFile(*canonical)) {
-    LLVM_DEBUG(llvm::dbgs() << decl->getQualifiedNameAsString()
-            << " at " << ast_->GetClangDeclLocForError(*decl)
-          << " not classified (second declaration)");
+    LLVM_DEBUG(llvm::dbgs() << decl->getQualifiedNameAsString() << " at "
+                            << ast_->GetClangDeclLocForError(*decl)
+                            << " not classified (second declaration)");
     return;
   }
 
@@ -126,13 +127,13 @@ void DeclClassification::Add(TranslationUnitAST* ast_, clang::NamedDecl* decl) {
   if (decl->getParentFunctionOrMethod() != nullptr ||
       clang::isa<clang::ParmVarDecl>(decl) ||
       clang::isa<clang::TemplateTypeParmDecl>(decl)) {
-    LLVM_DEBUG(llvm::dbgs() <<  decl->getQualifiedNameAsString()
-          << " not classified (unreferenceable by Clif)");
+    LLVM_DEBUG(llvm::dbgs() << decl->getQualifiedNameAsString()
+                            << " not classified (unreferenceable by Clif)");
     return;
   }
   if (clang::isa<clang::UsingDecl>(decl)) {
-    LLVM_DEBUG(llvm::dbgs() <<  decl->getQualifiedNameAsString()
-          << " not classified (using decl)");
+    LLVM_DEBUG(llvm::dbgs() << decl->getQualifiedNameAsString()
+                            << " not classified (using decl)");
     return;
   }
 
@@ -143,20 +144,19 @@ void DeclClassification::Add(TranslationUnitAST* ast_, clang::NamedDecl* decl) {
   auto* record_decl = llvm::dyn_cast<clang::CXXRecordDecl>(decl);
   if (record_decl != nullptr &&
       record_decl->getDescribedClassTemplate() != nullptr) {
-    LLVM_DEBUG(llvm::dbgs() <<  decl->getQualifiedNameAsString()
-          << " not classified (using decl)");
+    LLVM_DEBUG(llvm::dbgs() << decl->getQualifiedNameAsString()
+                            << " not classified (using decl)");
     return;
   }
   // We don't classify class members because clif has different
   // rules for disambiguating them that we handle other places.  We
   // don't classify decls in anonymous namespaces because they
   // aren't usable in clif.
-  if (!decl->isUnconditionallyVisible() ||
-      decl->isCXXClassMember() ||
-      decl->isCXXInstanceMember() ||
-      decl->isInAnonymousNamespace()) {
-    LLVM_DEBUG(llvm::dbgs() <<  decl->getQualifiedNameAsString()
-          << " not classified (class or anonymous namespace member)");
+  if (!decl->isUnconditionallyVisible() || decl->isCXXClassMember() ||
+      decl->isCXXInstanceMember() || decl->isInAnonymousNamespace()) {
+    LLVM_DEBUG(llvm::dbgs()
+               << decl->getQualifiedNameAsString()
+               << " not classified (class or anonymous namespace member)");
     return;
   }
   // No need to classify things without names--these are anonymous
@@ -168,8 +168,8 @@ void DeclClassification::Add(TranslationUnitAST* ast_, clang::NamedDecl* decl) {
     return;
   }
   LLVM_DEBUG(llvm::dbgs() << decl->getQualifiedNameAsString() << " "
-        << ast_->GetClangDeclLocForError(*decl)
-        << " classified under " << decl->getNameAsString());
+                          << ast_->GetClangDeclLocForError(*decl)
+                          << " classified under " << decl->getNameAsString());
   map_.insert(std::make_pair(decl->getNameAsString(), decl));
   if (decl->getQualifiedNameAsString() != decl->getNameAsString()) {
     map_.insert(std::make_pair(decl->getQualifiedNameAsString(), decl));
@@ -184,6 +184,7 @@ class TranslationUnitAST::ClassifyDeclsVisitor
     ast_->top_level_decls_.Add(ast_, decl);
     return true;
   }
+
  private:
   TranslationUnitAST* ast_;
 };
@@ -198,9 +199,7 @@ class TranslationUnitAST::ClassifyDeclsVisitor
 // example above).
 static const size_t kConversionFunctionCount = 2;
 static const char* kConversionFunctionNames[kConversionFunctionCount] = {
-    "clif::PyObjAs",
-    "Clif_PyObjAs"
-};
+    "clif::PyObjAs", "Clif_PyObjAs"};
 
 class TranslationUnitAST::ConversionFunctionFinder
     : public MatchFinder::MatchCallback {
@@ -228,8 +227,8 @@ class TranslationUnitAST::ConversionFunctionFinder
       if (pointee_type->isPointerType()) {
         pointee_type = pointee_type->getPointeeType();
         ast_->ptr_conversions_.insert(pointee_type.getCanonicalType());
-        LLVM_DEBUG(llvm::dbgs() <<  "Ptr conversion found for type "
-              << pointee_type.getAsString());
+        LLVM_DEBUG(llvm::dbgs() << "Ptr conversion found for type "
+                                << pointee_type.getAsString());
       } else {
         // Pointer to unique_ptr: "std::unique_ptr<SomeType>*"
         if (ast_->GetStdTemplateDecl(kUniquePtrName) ==
@@ -237,8 +236,8 @@ class TranslationUnitAST::ConversionFunctionFinder
           QualType template_param_type =
               ast_->GetTemplateArgType(pointee_type).getCanonicalType();
           ast_->unique_ptr_conversions_.insert(template_param_type);
-          LLVM_DEBUG(llvm::dbgs() <<  "Unique_ptr conversion found for type "
-                << template_param_type.getAsString());
+          LLVM_DEBUG(llvm::dbgs() << "Unique_ptr conversion found for type "
+                                  << template_param_type.getAsString());
         }
       }
     }
@@ -247,11 +246,12 @@ class TranslationUnitAST::ConversionFunctionFinder
   void FindConversionFunctions() {
     clang::ast_matchers::MatchFinder finder;
     for (size_t i = 0; i < kConversionFunctionCount; ++i) {
-      finder.addMatcher(clang::ast_matchers::functionDecl(
-          clang::ast_matchers::hasName(kConversionFunctionNames[i]),
-          clang::ast_matchers::parameterCountIs(2)).bind(
-              llvm::StringRef(kConversionFunctionNames[i])),
-                        this);
+      finder.addMatcher(
+          clang::ast_matchers::functionDecl(
+              clang::ast_matchers::hasName(kConversionFunctionNames[i]),
+              clang::ast_matchers::parameterCountIs(2))
+              .bind(llvm::StringRef(kConversionFunctionNames[i])),
+          this);
     }
     finder.matchAST(ast_->GetASTContext());
   }
@@ -290,9 +290,8 @@ clang::ClassTemplateDecl* TranslationUnitAST::GetStdTemplateDecl(
 }
 
 clang::ClassTemplateDecl* TranslationUnitAST::GetQualTypeTemplateDecl(
-    const QualType& qual_type,
-    const clang::TemplateArgument** args) {
-  clang::ClassTemplateDecl *templ = nullptr;
+    const QualType& qual_type, const clang::TemplateArgument** args) {
+  clang::ClassTemplateDecl* templ = nullptr;
   auto* record = qual_type->getAs<clang::RecordType>();
   if (record != nullptr) {
     auto* special = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(
@@ -323,23 +322,21 @@ QualType TranslationUnitAST::GetTemplateArgType(const QualType& type) {
   const clang::TemplateArgument* args;
   GetQualTypeTemplateDecl(type, &args);
   assert(clang::isa<clang::TemplateTypeParmDecl>(
-      GetQualTypeTemplateDecl(
-          type, &args)->getTemplateParameters()->getParam(0)) &&
+             GetQualTypeTemplateDecl(type, &args)
+                 ->getTemplateParameters()
+                 ->getParam(0)) &&
          "Non templateargument to template.");
   return args[0].getAsType();
 }
 
 QualType TranslationUnitAST::BuildTemplateType(
-    clang::ClassTemplateDecl *template_decl,
-    QualType arg_qual_type) {
+    clang::ClassTemplateDecl* template_decl, QualType arg_qual_type) {
   clang::TemplateName template_name(template_decl);
   clang::TemplateArgumentListInfo args;
   clang::TemplateArgument template_arg(arg_qual_type);
-  args.addArgument(
-      GetSema().getTrivialTemplateArgumentLoc(
-          template_arg, arg_qual_type, SourceLocation()));
-  return GetSema().CheckTemplateIdType(template_name,
-                                       SourceLocation(), args);
+  args.addArgument(GetSema().getTrivialTemplateArgumentLoc(
+      template_arg, arg_qual_type, SourceLocation()));
+  return GetSema().CheckTemplateIdType(template_name, SourceLocation(), args);
 }
 
 bool TranslationUnitAST::Init(const std::string& code,
@@ -349,13 +346,12 @@ bool TranslationUnitAST::Init(const std::string& code,
   std::string original_arg_0 = args[0];
   if (FLAGS_install_location != "") {
     modified_args[0] = FLAGS_install_location;
-    LLVM_DEBUG(llvm::dbgs() << "Using " << modified_args[0]
-          << " for install_location");
+    LLVM_DEBUG(llvm::dbgs()
+               << "Using " << modified_args[0] << " for install_location");
   }
-  ast_ = ::BuildClangASTFromCode(
-      modified_args, input_file_name, code, original_arg_0);
-  if (ast_ == nullptr ||
-      ast_->getDiagnostics().hasErrorOccurred() ||
+  ast_ = ::BuildClangASTFromCode(modified_args, input_file_name, code,
+                                 original_arg_0);
+  if (ast_ == nullptr || ast_->getDiagnostics().hasErrorOccurred() ||
       ast_->getDiagnostics().hasFatalErrorOccurred() ||
       ast_->getDiagnostics().hasUncompilableErrorOccurred()) {
     return false;
@@ -381,15 +377,12 @@ bool TranslationUnitAST::IsClifCopyable(
     clang::CXXRecordDecl* class_decl) const {
   const int kNoQualifiers = 0;
   Sema& sema = ast_->getSema();
-  bool copy_constructor =
-      ConstructorIsAccessible(
-          sema.LookupCopyingConstructor(class_decl, kNoQualifiers));
+  bool copy_constructor = ConstructorIsAccessible(
+      sema.LookupCopyingConstructor(class_decl, kNoQualifiers));
   bool copy_assignment =
-      MethodIsAccessible(
-          sema.LookupCopyingAssignment(class_decl,
-                                       kNoQualifiers,
-                                       false,  // non-rvalue
-                                       kNoQualifiers));
+      MethodIsAccessible(sema.LookupCopyingAssignment(class_decl, kNoQualifiers,
+                                                      false,  // non-rvalue
+                                                      kNoQualifiers));
   return copy_constructor && copy_assignment;
 }
 
@@ -399,22 +392,18 @@ bool TranslationUnitAST::IsClifCopyable(
 bool TranslationUnitAST::IsClifMovable(clang::CXXRecordDecl* class_decl) const {
   const int kNoQualifiers = 0;
   Sema& sema = ast_->getSema();
-  bool move_constructor =
-      ConstructorIsAccessible(
-          sema.LookupMovingConstructor(class_decl, kNoQualifiers));
+  bool move_constructor = ConstructorIsAccessible(
+      sema.LookupMovingConstructor(class_decl, kNoQualifiers));
   bool move_assignment =
-      MethodIsAccessible(
-          sema.LookupMovingAssignment(class_decl,
-                                      kNoQualifiers,
-                                      false,  // non-rvalue
-                                      kNoQualifiers));
+      MethodIsAccessible(sema.LookupMovingAssignment(class_decl, kNoQualifiers,
+                                                     false,  // non-rvalue
+                                                     kNoQualifiers));
   return move_constructor && move_assignment;
 }
 
 bool TranslationUnitAST::MethodIsAccessible(
     const clang::CXXMethodDecl* method) const {
-  return (method &&
-          !method->isDeleted() &&
+  return (method && !method->isDeleted() &&
           method->getAccess() == clang::AccessSpecifier::AS_public);
 }
 
@@ -426,8 +415,7 @@ bool TranslationUnitAST::ConstructorIsAccessible(
   auto entity = clang::InitializedEntity::InitializeResult(
       SourceLocation(),
       ast_->getASTContext().getQualifiedType(
-          ctor->getParent()->getTypeForDecl(),
-          clang::Qualifiers()),
+          ctor->getParent()->getTypeForDecl(), clang::Qualifiers()),
       false);  // NRVO is irrelevant.
   Sema& sema = ast_->getSema();
   auto access = sema.CheckConstructorAccess(
@@ -435,8 +423,7 @@ bool TranslationUnitAST::ConstructorIsAccessible(
       clang::DeclAccessPair::make(ctor, ctor->getAccess()), entity,
       clang::PartialDiagnostic(0,  // Don't print anything on error.
                                ast_->getASTContext().getDiagAllocator()));
-  return (!ctor->isDeleted() &&
-          access == Sema::AccessResult::AR_accessible);
+  return (!ctor->isDeleted() && access == Sema::AccessResult::AR_accessible);
 }
 
 bool TranslationUnitAST::DestructorIsAccessible(
@@ -447,12 +434,10 @@ bool TranslationUnitAST::DestructorIsAccessible(
   }
   Sema& sema = ast_->getSema();
   auto access = sema.CheckDestructorAccess(
-      SourceLocation(),
-      dtor,
+      SourceLocation(), dtor,
       clang::PartialDiagnostic(0,  // Don't print anything on error.
                                ast_->getASTContext().getDiagAllocator()));
-  return (dtor->isDeleted() ||
-          access == Sema::AccessResult::AR_accessible);
+  return (dtor->isDeleted() || access == Sema::AccessResult::AR_accessible);
 }
 
 void TranslationUnitAST::HandleBuiltinTypes() {
@@ -460,8 +445,8 @@ void TranslationUnitAST::HandleBuiltinTypes() {
     if (type->getTypeClass() == clang::Type::Builtin) {
       const clang::BuiltinType* builtin =
           static_cast<clang::BuiltinType*>(type);
-      const char* name = builtin->getNameAsCString(
-          ast_->getASTContext().getPrintingPolicy());
+      const char* name =
+          builtin->getNameAsCString(ast_->getASTContext().getPrintingPolicy());
       builtin_types_[name] = type;
     }
   }
@@ -470,16 +455,16 @@ void TranslationUnitAST::HandleBuiltinTypes() {
 QualType TranslationUnitAST::FindBuiltinType(
     const std::string& type_name) const {
   auto atype = builtin_types_.find(type_name);
-  return (atype == builtin_types_.end() ?
-          QualType() : QualType(atype->second, 0));
+  return (atype == builtin_types_.end() ? QualType()
+                                        : QualType(atype->second, 0));
 }
 
 ClifLookupResult TranslationUnitAST::LookupOperatorOrConversionFunction(
     clang::DeclContext* context, const std::string& name) {
   const std::string operator_keyword = "operator";
   auto& ast = GetASTContext();
-  const std::string& token = name.substr(operator_keyword.length(),
-                                         name.length());
+  const std::string& token =
+      name.substr(operator_keyword.length(), name.length());
   // check if it's an overloaded operator or implicit type conversion function.
   bool is_conversion = true;
   // Sema::LookupOverloadedOperatorName is only valid during
@@ -522,16 +507,15 @@ ClifLookupResult TranslationUnitAST::LookupClassMember(
     const std::string& name) {
   assert(!contexts_.empty());
   CXXRecordDecl* class_decl = contexts_.top();
-  LLVM_DEBUG(llvm::dbgs() <<  "Looking up class member " << name
-        << " in context " << class_decl->getQualifiedNameAsString());
+  LLVM_DEBUG(llvm::dbgs() << "Looking up class member " << name
+                          << " in context "
+                          << class_decl->getQualifiedNameAsString());
 
   auto& ast = GetASTContext();
-  DeclarationNameInfo decl_name =
-      DeclarationNameInfo(ast.DeclarationNames.getIdentifier(
-          &ast.Idents.get(name.c_str())),
+  DeclarationNameInfo decl_name = DeclarationNameInfo(
+      ast.DeclarationNames.getIdentifier(&ast.Idents.get(name.c_str())),
       SourceLocation());
-  clang::LookupResult result(GetSema(),
-                             decl_name,
+  clang::LookupResult result(GetSema(), decl_name,
                              Sema::LookupNameKind::LookupMemberName);
   result.suppressDiagnostics();
   GetSema().LookupQualifiedName(result, class_decl, false);
@@ -541,18 +525,19 @@ ClifLookupResult TranslationUnitAST::LookupClassMember(
 clang::DeclContext* TranslationUnitAST::GetDeclContextFromDecl(
     clang::Decl* decl) {
   // Remove any typedefs and other sugar.
-  if (auto typedef_decl =
-      llvm::dyn_cast<clang::TypedefNameDecl>(decl)) {
-    decl = typedef_decl->getUnderlyingType().getSingleStepDesugaredType(
-        GetASTContext())->getAsCXXRecordDecl();
+  if (auto typedef_decl = llvm::dyn_cast<clang::TypedefNameDecl>(decl)) {
+    decl = typedef_decl->getUnderlyingType()
+               .getSingleStepDesugaredType(GetASTContext())
+               ->getAsCXXRecordDecl();
   }
   // Dig into any template specialization.
   if (auto special_decl =
-      llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(decl)) {
+          llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(
+              decl)) {
     decl = special_decl->getSpecializedTemplate();
   }
   if (auto templ_decl =
-      llvm::dyn_cast_or_null<clang::ClassTemplateDecl>(decl)) {
+          llvm::dyn_cast_or_null<clang::ClassTemplateDecl>(decl)) {
     return templ_decl->getTemplatedDecl();
   } else {
     return llvm::dyn_cast_or_null<DeclContext>(decl);
@@ -560,8 +545,7 @@ clang::DeclContext* TranslationUnitAST::GetDeclContextFromDecl(
 }
 
 ClifLookupResult TranslationUnitAST::LookupScopedSymbolInContext(
-    clang::Decl* decl,
-    const std::string& qualified_name) {
+    clang::Decl* decl, const std::string& qualified_name) {
   NamespaceVector namespace_components(qualified_name);
   DeclContextLookupResult lookup_result;
   DeclContext* decl_context = GetDeclContextFromDecl(decl);
@@ -570,8 +554,7 @@ ClifLookupResult TranslationUnitAST::LookupScopedSymbolInContext(
       return LookupOperatorOrConversionFunction(decl_context,
                                                 name_component.str());
     }
-    IdentifierInfo& name_ident =
-        GetASTContext().Idents.get(name_component);
+    IdentifierInfo& name_ident = GetASTContext().Idents.get(name_component);
     DeclarationName decl_name =
         GetASTContext().DeclarationNames.getIdentifier(&name_ident);
     lookup_result = decl_context->lookup(decl_name);
@@ -579,7 +562,7 @@ ClifLookupResult TranslationUnitAST::LookupScopedSymbolInContext(
     if (lookup_result.empty() || lookup_result.front()->isInvalidDecl()) {
       return ClifLookupResult(lookup_result);
     }
-    decl_context = GetDeclContextFromDecl(lookup_result[0]);
+    decl_context = GetDeclContextFromDecl(lookup_result.front());
     assert((name_component == namespace_components.back() ||
             decl_context != nullptr) &&
            "Valid decl without a DeclContext in a fully-qualified name.");
