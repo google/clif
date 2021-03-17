@@ -19,33 +19,34 @@ except ImportError:
 # pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (std_complex, std_complex_pybind11))
-    if np[1] is not None
-])
+def MakeNamedParameters():
+  np = []
+  for code_gen, wrapper_lib in (('c_api', std_complex),
+                                ('pybind11', std_complex_pybind11)):
+    if wrapper_lib is not None:
+      for precision, complex_typename in (('float', 'StdComplexFloat'),
+                                          ('double', 'StdComplexDouble')):
+        np.append(('_'.join((precision, code_gen)),
+                   getattr(wrapper_lib, complex_typename)))
+  return np
+
+
+@parameterized.named_parameters(MakeNamedParameters())
 class StdComplexTest(absltest.TestCase):
 
-  def testZero(self, wrapper_lib):
-    self.assertAlmostEqual(wrapper_lib.StdComplexFloat.Zero(), complex(0))
-    self.assertAlmostEqual(wrapper_lib.StdComplexDouble.Zero(), complex(0))
+  def testZero(self, complex_type):
+    self.assertAlmostEqual(complex_type.Zero(), complex(0))
 
-  def testOne(self, wrapper_lib):
-    self.assertAlmostEqual(wrapper_lib.StdComplexFloat.One(), complex(1))
-    self.assertAlmostEqual(wrapper_lib.StdComplexDouble.One(), complex(1))
+  def testOne(self, complex_type):
+    self.assertAlmostEqual(complex_type.One(), complex(1))
 
-  def testI(self, wrapper_lib):
-    self.assertAlmostEqual(wrapper_lib.StdComplexFloat.i(), 1j)
-    self.assertAlmostEqual(wrapper_lib.StdComplexDouble.i(), 1j)
+  def testI(self, complex_type):
+    self.assertAlmostEqual(complex_type.i(), 1j)
 
-  def testMultiply(self, wrapper_lib):
+  def testMultiply(self, complex_type):
     self.assertAlmostEqual(
-        wrapper_lib.StdComplexFloat.Multiply(wrapper_lib.StdComplexFloat.i(),
-                                             wrapper_lib.StdComplexFloat.i()),
-        -wrapper_lib.StdComplexFloat.One())
-    self.assertAlmostEqual(
-        wrapper_lib.StdComplexDouble.Multiply(wrapper_lib.StdComplexDouble.i(),
-                                              wrapper_lib.StdComplexDouble.i()),
-        -wrapper_lib.StdComplexDouble.One())
+        complex_type.Multiply(complex_type.i(), complex_type.i()),
+        -complex_type.One())
 
 
 if __name__ == '__main__':
