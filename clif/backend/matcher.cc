@@ -1063,6 +1063,7 @@ bool ClifMatcher::MatchAndSetClass(ClassDecl* class_decl) {
       GetQualTypeClifName(
           clif_type->second.qual_type.getSingleStepDesugaredType(
               ast_->GetASTContext())));
+  class_decl->set_is_cpp_polymorphic(record_decl->isPolymorphic());
   return num_unmatched == 0;
 }
 

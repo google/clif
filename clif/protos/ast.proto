@@ -77,7 +77,8 @@ message ClassDecl {
     optional string filename = 3;
   };
   repeated Base cpp_bases = 11;   // Additional info for C++ base classes.
-  // Next available: 18
+  optional bool is_cpp_polymorphic = 18;  // C++ class contains or inherits a virtual function.
+  // Next available: 19
 };
 
 message EnumDecl {

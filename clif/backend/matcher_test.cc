@@ -3818,4 +3818,54 @@ TEST_F(ClifMatcherTest, TestOverloadedFunctions) {
   EXPECT_FALSE(decl.func().is_overloaded());
 }
 
+TEST_F(ClifMatcherTest, TestPolymorphicClass) {
+  protos::Decl decl;
+  std::string decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'ClassPureVirtual' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'SomeFunction'"
+      "       }"
+      "     }"
+      "   }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'NotPureVirtual'"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  TestMatch(decl_proto, &decl);
+  EXPECT_TRUE(decl.class_().is_cpp_polymorphic());
+  decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'ClassOverridesPureVirtual' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'SomeFunction'"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  TestMatch(decl_proto, &decl);
+  EXPECT_TRUE(decl.class_().is_cpp_polymorphic());
+  decl_proto =
+      "decltype: CLASS class_ {"
+      " name { cpp_name: 'ClassWithDefaultCtor' }"
+      "   members {"
+      "     decltype: FUNC func {"
+      "       name {"
+      "         cpp_name: 'MethodConstVsNonConst'"
+      "       }"
+      "     }"
+      "   }"
+      " }";
+  TestMatch(decl_proto, &decl);
+  EXPECT_FALSE(decl.class_().is_cpp_polymorphic());
+}
+
 }  // namespace clif
