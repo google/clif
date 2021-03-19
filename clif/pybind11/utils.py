@@ -65,6 +65,10 @@ def is_nested_template(s: str) -> bool:
   return '>>' in s
 
 
+def is_usable_cpp_exact_type(s: str) -> bool:
+  return not is_nested_template(s) or '&' in s
+
+
 # Dataclass used to group together and pass around parameter lists.
 @dataclasses.dataclass
 class ParamsStrings:

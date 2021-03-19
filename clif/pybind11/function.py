@@ -38,6 +38,11 @@ def generate_from(module_name: str, func_decl: ast_pb2.FuncDecl,
     pybind11 function bindings code.
   """
 
+  if len(func_decl.returns) >= 2 or (len(func_decl.returns) >= 1 and
+                                     func_decl.cpp_void_return):
+    yield from _generate_return_args_lambda(func_decl, module_name)
+    return
+
   cpp_lambda_return_type = _has_bytes_return(func_decl)
   if cpp_lambda_return_type:
     yield from _generate_cpp_lambda(func_decl, cpp_lambda_return_type,
@@ -86,7 +91,7 @@ def _generate_cpp_function_cast(func_decl: ast_pb2.FuncDecl,
   params_list_types = []
   for param in func_decl.params:
     if param.HasField('cpp_exact_type'):
-      if utils.is_nested_template(param.cpp_exact_type):
+      if not utils.is_usable_cpp_exact_type(param.cpp_exact_type):
         params_list_types.append(param.type.cpp_type)
       else:
         params_list_types.append(param.cpp_exact_type)
@@ -156,7 +161,7 @@ def get_params_strings(func: ast_pb2.FuncDecl):
     lang_types.append(param.type.lang_type)
     cpp_names.append(param.name.cpp_name)
     params_str_with_types_list.append(
-        f'{param.type.lang_type} {param.name.cpp_name}')
+        f'{param.type.cpp_type} {param.name.cpp_name}')
     if param.default_value:
       default_values.append(
           f'py::arg("{param.name.cpp_name}") = {param.default_value}')
@@ -202,3 +207,39 @@ def _generate_cpp_lambda(func_decl: ast_pb2.FuncDecl, return_type: str,
   yield I + I + '}'
   yield I + ');'
   return
+
+
+def _generate_return_args_lambda(func_decl: ast_pb2.FuncDecl, module_name: str):
+  """Generates C++ lambda functions with return parameters."""
+  params_strings = get_params_strings(func_decl)
+  yield (f'{module_name}.def("{func_decl.name.native}",'
+         f'[]({params_strings.names_with_types}) {{')
+
+  main_return = ''
+  main_return_cpp_name = ''
+  other_returns_cpp_names = []
+  for i, r in enumerate(func_decl.returns):
+    if i == 0:
+      main_return_cpp_name = r.name.cpp_name
+      main_return = f'{r.type.cpp_type} {r.name.cpp_name}'
+      continue
+    other_returns_cpp_names.append(r.name.cpp_name)
+    yield I + f'{r.type.cpp_type} {r.name.cpp_name};'
+  other_returns = ', '.join(other_returns_cpp_names)
+  other_returns_params_list = [f'&{r}' for r in other_returns_cpp_names]
+
+  if not func_decl.cpp_void_return:
+    yield I + (f'{main_return} = {func_decl.name.cpp_name}'
+               f'({params_strings.cpp_names}, &y);')
+    yield I + f'return std::make_tuple({main_return_cpp_name}, {other_returns});'
+  else:
+    yield I + f'{main_return};'
+    if not other_returns_cpp_names:
+      yield I + (f'{func_decl.name.cpp_name}({params_strings.cpp_names},'
+                 f'&{main_return_cpp_name});')
+      yield I + f'return {main_return_cpp_name};'
+    else:
+      yield I + (f'{func_decl.name.cpp_name}({params_strings.cpp_names},'
+                 f'&{main_return_cpp_name}, {other_returns_params_list});')
+      yield I + f'return std::make_tuple({main_return_cpp_name}, {other_returns});'
+  yield '});'
