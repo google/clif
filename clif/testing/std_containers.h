@@ -38,9 +38,9 @@ inline std::vector<bool> Even(const std::vector<int>& v) {
   return e;
 }
 
-inline std::vector<bool>* Odd(const std::vector<int>& v) {
-  std::vector<bool>* e = new std::vector<bool>(v.size());
-  for (int i=0; i < v.size(); ++i) { if (v[i] & 1) { (*e)[i] = true; }}
+inline std::vector<bool> Odd(const std::vector<int>& v) {
+  std::vector<bool> e(v.size());
+  for (int i=0; i < v.size(); ++i) { if (v[i] & 1) { e[i] = true; }}
   return e;
 }
 
