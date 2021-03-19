@@ -116,8 +116,9 @@ class SmartPtrsTest(absltest.TestCase):
         wrapper_lib.PerformUP(add)
       self.assertEqual(
           str(ctx.exception),
-          'Ownership of instance with virtual overrides in Python cannot be'
-          ' transferred to C++.')
+          'Alias class (also known as trampoline) does not inherit from'
+          ' py::virtual_overrider_self_life_support, therefore the'
+          ' ownership of this instance cannot safely be transferred to C++.')
 
     add = AddParameterized(wrapper_lib)(1230, 4)
     # This works with the C-API code generator only because the reference count

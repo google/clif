@@ -75,8 +75,9 @@ class SmartPtrsTest(unittest.TestCase):
       smart_ptrs.PerformUP(add)
     self.assertEqual(
         str(ctx.exception),
-        'Ownership of instance with virtual overrides in Python cannot be'
-        ' transferred to C++.')
+        'Alias class (also known as trampoline) does not inherit from'
+        ' py::virtual_overrider_self_life_support, therefore the'
+        ' ownership of this instance cannot safely be transferred to C++.')
 
     add = Add(1230, 4)
     self.assertEqual(smart_ptrs.PerformSP(add), 1234)
