@@ -99,7 +99,7 @@ class ModuleGenerator(object):
     yield ''
 
   def _generate_const_variables_headers(self, const_decl: ast_pb2.ConstDecl,
-                                        includes: set):
+                                        includes: Set[str]):
     if const_decl.type.lang_type == 'complex':
       includes.add('third_party/pybind11/include/pybind11/complex.h')
     if (const_decl.type.lang_type.startswith('list<') or
@@ -122,26 +122,34 @@ class ModuleGenerator(object):
     yield const_def
 
   def _generate_python_override_class_names(
-      self, python_override_class_names: Dict[Text, Text], decl: ast_pb2.Decl):
+      self, python_override_class_names: Dict[Text, Text], decl: ast_pb2.Decl,
+      overrider_class_name_suffix: str = '_virtual_overrider',
+      self_life_support: str = 'py::virtual_overrider_self_life_support'):
     """Generates Python overrides classes dictionary for virtual functions."""
     if decl.decltype == ast_pb2.Decl.Type.CLASS:
+      virtual_members = []
       for member in decl.class_.members:
         if member.decltype == ast_pb2.Decl.Type.FUNC and member.func.virtual:
-          assert decl.class_.name.cpp_name not in python_override_class_names
-          python_override_class_name = f'{decl.class_.name.native}_vf'
-          python_override_class_names[
-              decl.class_.name.cpp_name] = python_override_class_name
-          yield from self._generate_virtual_function(python_override_class_name,
-                                                     decl.class_, member)
+          virtual_members.append(member)
+      if not virtual_members:
+        return
+      python_override_class_name = (
+          f'{decl.class_.name.native}_{overrider_class_name_suffix}')
+      assert decl.class_.name.cpp_name not in python_override_class_names
+      python_override_class_names[
+          decl.class_.name.cpp_name] = python_override_class_name
+      yield (f'struct {python_override_class_name} : '
+             f'{decl.class_.name.cpp_name}, {self_life_support} {{')
+      yield I + I + (
+          f'using {decl.class_.name.cpp_name}::{decl.class_.name.native};')
+      for member in virtual_members:
+        yield from self._generate_virtual_function(decl.class_, member)
+      if python_override_class_name:
+        yield '};'
 
-  def _generate_virtual_function(self, python_override_class_name: str,
-                                 class_decl: ast_pb2.ClassDecl,
+  def _generate_virtual_function(self, class_decl: ast_pb2.ClassDecl,
                                  member: ast_pb2.Decl):
-    """Generates virtual functions."""
-    yield (f'class {python_override_class_name} : public '
-           f'{class_decl.name.cpp_name} {{')
-    yield I + 'public:'
-    yield I + I + f'using {class_decl.name.cpp_name}::{class_decl.name.native};'
+    """Generates virtual function overrides calling Python methods."""
 
     return_type = ''
     if member.func.cpp_void_return:
@@ -180,7 +188,6 @@ class ModuleGenerator(object):
     yield I + I + I + I + f'{params_str}'
     yield I + I + I + ');'
     yield I + I + '}'
-    yield '};'
 
   def _collect_class_cpp_names(self, decl: ast_pb2.Decl,
                                unique_classes: Set[Text]):
