@@ -14,8 +14,17 @@
 
 """Tests for clif.testing.python.t2."""
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import t2
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import t2_pybind11
+except ImportError:
+  t2_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
 class PyK(t2.Klass):
@@ -27,32 +36,37 @@ class OldStyleClass:
   pass
 
 
-class T2Test(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (t2, t2_pybind11))
+    if np[1] is not None
+])
+class T2Test(absltest.TestCase):
 
   # This test works as expected when the "user error" in .clif is fixed.
-  # def testExplicitConstructor(self):
+  # def testExplicitConstructor(self, wrapper_lib):
   #   self.assertEqual(t2.NoDefaultConstructor(1).a, 1)
 
-  def testContextManager(self):
-    self.assertEqual(t2.CtxMgr().state, t2.CtxMgr.State.UNDEFINED)
-    with t2.CtxMgr() as c:
+  def testContextManager(self, wrapper_lib):
+    self.assertEqual(wrapper_lib.CtxMgr().state,
+                     wrapper_lib.CtxMgr.State.UNDEFINED)
+    with wrapper_lib.CtxMgr() as c:
       self.assertIsNotNone(c)
       self.assertEqual(c.state, c.State.LOCKED)
     self.assertEqual(c.state, c.State.UNLOCKED)
     with self.assertRaises(ValueError):
-      with t2.CtxMgr():
+      with wrapper_lib.CtxMgr():
         raise ValueError()
 
-  def testVectorUniq(self):
-    self.assertEqual(t2.vector_inside_unique_ptr(), [])
-    vs = t2.all_nocopy_holds()
-    self.assertEqual(len(vs), 3)
+  def testVectorUniq(self, wrapper_lib):
+    self.assertEqual(wrapper_lib.vector_inside_unique_ptr(), [])
+    vs = wrapper_lib.all_nocopy_holds()
+    self.assertLen(vs, 3)
     for actual, expected in zip(vs, [1, 2, 3]):
-      self.assertIsInstance(actual, t2.NoCopy)
+      self.assertIsInstance(actual, wrapper_lib.NoCopy)
       self.assertEqual(actual.a, expected)
 
-  def testVarGetSet(self):
-    n = t2.Nested()
+  def testVarGetSet(self, wrapper_lib):
+    n = wrapper_lib.Nested()
     i = n.get_i()
     i.a = 3
     n.set_i(i)
@@ -61,46 +75,49 @@ class T2Test(unittest.TestCase):
     n.get_i().a += 1
     self.assertEqual(n.get_i().a, 3)
 
-  def test_setting_nested_container_attribute_persists(self):
-    nca = t2.NestedContainerAttributes()
+  def test_setting_nested_container_attribute_persists(self, wrapper_lib):
+    nca = wrapper_lib.NestedContainerAttributes()
     nca.int_set_vector = [{1}, {2}, {3}]
     self.assertEqual(nca.int_set_vector, [{1}, {2}, {3}])
 
-  def test_setting_nested_container_attribute_overwrites(self):
-    nca = t2.NestedContainerAttributes()
+  def test_setting_nested_container_attribute_overwrites(self, wrapper_lib):
+    nca = wrapper_lib.NestedContainerAttributes()
     nca.int_set_vector = [{1}, {2}, {3}]
     nca.int_set_vector = [{4}]
     self.assertEqual(nca.int_set_vector, [{4}])
 
-  def test_mutating_nested_container_attribute_does_not_persist(self):
-    nca = t2.NestedContainerAttributes()
+  def test_mutating_nested_container_attribute_does_not_persist(
+      self, wrapper_lib):
+    nca = wrapper_lib.NestedContainerAttributes()
     nca.int_set_vector.append({1})
     self.assertEqual(nca.int_set_vector, [])
 
-  def test_class_name(self):
+  def test_class_name(self, wrapper_lib):
     with self.assertRaisesRegexp(TypeError, r'\bOldStyleClass\b'):
-      t2.k_check(OldStyleClass())
+      wrapper_lib.k_check(OldStyleClass())
 
-  def testReturnNoDefaultConstructor(self):
-    self.assertIsInstance(t2.make_ndefctor(1), t2.NoDefaultConstructor)
+  def testReturnNoDefaultConstructor(self, wrapper_lib):
+    self.assertIsInstance(
+        wrapper_lib.make_ndefctor(1), wrapper_lib.NoDefaultConstructor)
 
-  def testMovableButUncopyableClass(self):
-    self.assertEqual(t2.func_return_movable_but_uncopyable_type().a, 100)
+  def testMovableButUncopyableClass(self, wrapper_lib):
+    self.assertEqual(wrapper_lib.func_return_movable_but_uncopyable_type().a,
+                     100)
 
-  def testMovableButUncopyableOutputParameter(self):
-    output_param = t2.OutputParameter()
+  def testMovableButUncopyableOutputParameter(self, wrapper_lib):
+    output_param = wrapper_lib.OutputParameter()
     movable_return = output_param.MovableButUncopyableOutputParameter1()
     self.assertEqual(movable_return.a, 100)
     movable_return = output_param.MovableButUncopyableOutputParameter2()
     self.assertEqual(movable_return.a, 1)
 
-  def testPassListAsVectorOfNoDefaultConstructor(self):
-    res0 = t2.pass_list_as_vector_of_no_default_constructor([])
+  def testPassListAsVectorOfNoDefaultConstructor(self, wrapper_lib):
+    res0 = wrapper_lib.pass_list_as_vector_of_no_default_constructor([])
     self.assertEqual(res0, 13)
-    res3 = t2.pass_list_as_vector_of_no_default_constructor(
-        [t2.make_ndefctor(i) for i in [3, -5, 7]])
+    res3 = wrapper_lib.pass_list_as_vector_of_no_default_constructor(
+        [wrapper_lib.make_ndefctor(i) for i in [3, -5, 7]])
     self.assertEqual(res3, 18)
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

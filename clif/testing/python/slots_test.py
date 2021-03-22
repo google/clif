@@ -18,19 +18,32 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import slots
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import slots_pybind11
+except ImportError:
+  slots_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class SlotsTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (slots, slots_pybind11))
+    if np[1] is not None
+])
+class SlotsTest(absltest.TestCase):
 
-  def testObjectMethods(self):
-    a = slots.I5()
+  def testObjectMethods(self, wrapper_lib):
+    a = wrapper_lib.I5()
     self.assertEqual(hash(a), 0)
 
-  def testRO(self):
-    a = slots.I5()
-    self.assertEqual(len(a), 5)
+  def testRO(self, wrapper_lib):
+    a = wrapper_lib.I5()
+    self.assertLen(a, 5)
     self.assertEqual(list(a), [0]*5)
     a[1] = 1
     self.assertEqual(a[1], 1)
@@ -38,9 +51,9 @@ class SlotsTest(unittest.TestCase):
     with self.assertRaises(NotImplementedError):
       del a[1]
 
-  def testRW(self):
-    a = slots.Z5()
-    self.assertEqual(len(a), 5)
+  def testRW(self, wrapper_lib):
+    a = wrapper_lib.Z5()
+    self.assertLen(a, 5)
     self.assertEqual(list(a), [0]*5)
     a[1] = 1
     self.assertEqual(a[1], 1)
@@ -48,23 +61,23 @@ class SlotsTest(unittest.TestCase):
     del a[1]
     self.assertEqual(list(a), [0]*5)
 
-  def testHashSmallInt(self):
-    a = slots.I5()
+  def testHashSmallInt(self, wrapper_lib):
+    a = wrapper_lib.I5()
     a[2] = 3
     a[4] = 5
     self.assertEqual(hash(a), 8)
 
-  def testHashSsizetOverflow(self):
-    a = slots.I5()
+  def testHashSsizetOverflow(self, wrapper_lib):
+    a = wrapper_lib.I5()
     a[0] = 999
     self.assertNotEqual(hash(a), 999)
 
-  def testUnHashable(self):
-    a = slots.Z5()
+  def testUnHashable(self, wrapper_lib):
+    a = wrapper_lib.Z5()
     with self.assertRaises(TypeError) as ctx:
       hash(a)
     self.assertEqual(str(ctx.exception), '__hash__ must return int')
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

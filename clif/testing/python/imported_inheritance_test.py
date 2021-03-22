@@ -13,22 +13,36 @@
 # limitations under the License.
 """Tests for clif.testing.python.nested_inheritance_external."""
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import imported_inheritance
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import imported_inheritance_pybind11
+except ImportError:
+  imported_inheritance_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class ImportedInheritanceTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (imported_inheritance,
+                                             imported_inheritance_pybind11))
+    if np[1] is not None
+])
+class ImportedInheritanceTest(absltest.TestCase):
 
-  def testInheritNestedInner(self):
-    n = imported_inheritance.InheritImportedNestedInner()
+  def testInheritNestedInner(self, wrapper_lib):
+    n = wrapper_lib.InheritImportedNestedInner()
     n.a = 100
     self.assertEqual(n.a, 100)
 
-  def testInheritNested(self):
-    n = imported_inheritance.InheritImportedNested()
+  def testInheritNested(self, wrapper_lib):
+    n = wrapper_lib.InheritImportedNested()
     n.a = 100
     self.assertEqual(n.a, 100)
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

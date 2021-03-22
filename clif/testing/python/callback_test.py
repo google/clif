@@ -14,8 +14,17 @@
 
 """Tests for clif.testing.python.callback."""
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import callback
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import callback_pybind11
+except ImportError:
+  callback_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
 def Callback(input_data):
@@ -34,51 +43,58 @@ def InvalidCallback2(a, b, c):  # pylint: disable=unused-argument
   return 0
 
 
-class CallbackTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (callback, callback_pybind11))
+    if np[1] is not None
+])
+class CallbackTest(absltest.TestCase):
 
   def CallbackMethod(self, data):
     return 1, data
 
-  def CallbackInvalid(self):
+  def CallbackInvalid(self, wrapper_lib):
+    self.assertIsNotNone(wrapper_lib)
     return 2
 
-  def testNewStyleConstRef(self):
+  def testNewStyleConstRef(self, wrapper_lib):
     self.assertEqual(
-        callback.NewStyleCallbackConstRef([1, 2], Callback), [1, 2])
+        wrapper_lib.NewStyleCallbackConstRef([1, 2], Callback), [1, 2])
     with self.assertRaises(TypeError):
-      callback.NewStyleCallbackConstRef(12, InvalidCallback1)
+      wrapper_lib.NewStyleCallbackConstRef(12, InvalidCallback1)
     with self.assertRaises(TypeError):
-      callback.NewStyleCallbackConstRef(13, InvalidCallback2)
+      wrapper_lib.NewStyleCallbackConstRef(13, InvalidCallback2)
 
-  def testNewStyleNonConstRef(self):
+  def testNewStyleNonConstRef(self, wrapper_lib):
     self.assertEqual(
-        callback.NewStyleCallbackNonConstRef([1, 2], Callback), [1, 2])
+        wrapper_lib.NewStyleCallbackNonConstRef([1, 2], Callback), [1, 2])
     with self.assertRaises(TypeError):
-      callback.NewStyleCallbackNonConstRef(12, InvalidCallback1)
+      wrapper_lib.NewStyleCallbackNonConstRef(12, InvalidCallback1)
     with self.assertRaises(TypeError):
-      callback.NewStyleCallbackNonConstRef(13, InvalidCallback2)
+      wrapper_lib.NewStyleCallbackNonConstRef(13, InvalidCallback2)
 
-  def testNewStyleConstRefWithSelfCallback(self):
+  def testNewStyleConstRefWithSelfCallback(self, wrapper_lib):
     self.assertEqual(
-        callback.NewStyleCallbackConstRef([2, 3], self.CallbackMethod), [2, 3])
+        wrapper_lib.NewStyleCallbackConstRef([2, 3], self.CallbackMethod),
+        [2, 3])
     with self.assertRaises(TypeError):
-      callback.NewStyleCallbackConstRef(23, self.CallbackInvalid)
+      wrapper_lib.NewStyleCallbackConstRef(23, self.CallbackInvalid)
 
-  def testSelfCallback(self):
+  def testSelfCallback(self, wrapper_lib):
     # assert not raises:
-    callback.SelfCallback(Callback)
+    wrapper_lib.SelfCallback(Callback)
 
-  def testStrCallback(self):
+  def testStrCallback(self, wrapper_lib):
     # 'foo' is str in Py2 and Py3
     def cb(s):
       self.assertIsInstance(s, str)
       self.assertEqual(s, 'foo')
-    callback.StringCallback(cb)
 
-  def testCallableOutput(self):
-    returned_callback = callback.FunctionWithCallableReturn(Callback2)
+    wrapper_lib.StringCallback(cb)
+
+  def testCallableOutput(self, wrapper_lib):
+    returned_callback = wrapper_lib.FunctionWithCallableReturn(Callback2)
     self.assertEqual(returned_callback(5), 5)
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

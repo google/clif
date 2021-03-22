@@ -16,18 +16,30 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
 
 from clif.testing.python import top_level_pass
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import top_level_pass_pybind11
+except ImportError:
+  top_level_pass_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class TopLevelPassTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (top_level_pass,
+                                             top_level_pass_pybind11))
+    if np[1] is not None
+])
+class TopLevelPassTest(absltest.TestCase):
 
-  def testEmptyModule(self):
+  def testEmptyModule(self, wrapper_lib):
     self.assertRegexpMatches(  # pylint: disable=deprecated-method
-        top_level_pass.__doc__,
-        "CLIF-generated module for .*top_level_pass.clif")
+        wrapper_lib.__doc__, 'CLIF-generated module for .*top_level_pass.clif')
 
 
-if __name__ == "__main__":
-  unittest.main()
+if __name__ == '__main__':
+  absltest.main()

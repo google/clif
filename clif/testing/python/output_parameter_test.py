@@ -14,18 +14,32 @@
 
 """Tests for clif.testing.python.output_parameter."""
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import output_parameter
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import output_parameter_pybind11
+except ImportError:
+  output_parameter_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class OutputParamPointerTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (output_parameter,
+                                             output_parameter_pybind11))
+    if np[1] is not None
+])
+class OutputParamPointerTest(absltest.TestCase):
 
-  def testOutputParam(self):
-    my_class = output_parameter.MyClass()
+  def testOutputParam(self, wrapper_lib):
+    my_class = wrapper_lib.MyClass()
     # Calling the following functions should not blow up.
     my_class.func_typedef_output()
     my_class.func_double_typedef_output()
     my_class.func_typedef_output2()
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

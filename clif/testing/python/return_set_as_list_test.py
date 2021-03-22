@@ -18,21 +18,34 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
 
 from clif.testing.python import return_set_as_list
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import return_set_as_list_pybind11
+except ImportError:
+  return_set_as_list_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class ReturnSetAsListTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (return_set_as_list,
+                                             return_set_as_list_pybind11))
+    if np[1] is not None
+])
+class ReturnSetAsListTest(absltest.TestCase):
 
-  def testGetSetString(self):
-    ret = return_set_as_list.get_set_string(0)
+  def testGetSetString(self, wrapper_lib):
+    ret = wrapper_lib.get_set_string(0)
     self.assertListEqual(ret, [])
-    ret = return_set_as_list.get_set_string(1)
+    ret = wrapper_lib.get_set_string(1)
     self.assertListEqual(ret, ['5'])
-    ret = return_set_as_list.get_set_string(3)
+    ret = wrapper_lib.get_set_string(3)
     self.assertListEqual(ret, ['11', '5', '8'])  # Sorted lexically.
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

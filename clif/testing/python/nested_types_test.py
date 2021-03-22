@@ -14,52 +14,64 @@
 
 """Tests for clif.testing.python.nested_types."""
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
 
 from clif.testing.python import nested_types
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import nested_types_pybind11
+except ImportError:
+  nested_types_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class NestedTypesTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np
+    for np in zip(('c_api', 'pybind11'), (nested_types, nested_types_pybind11))
+    if np[1] is not None
+])
+class NestedTypesTest(absltest.TestCase):
 
-  def testModuleAttr(self):
-    expected_module_name = nested_types.__name__
-    for ty in (
-        nested_types.Outer1,
-        nested_types.Outer1.Inner,
-        nested_types.Outer2,
-        nested_types.Outer2.Inner,
-        nested_types.Outer3,
-        nested_types.Outer3.Inner,
-        nested_types.Outer4,
-        nested_types.Outer4.Inner,
-        nested_types.Outer,
-        nested_types.Outer.Inner):
+  def testModuleAttr(self, wrapper_lib):
+    expected_module_name = wrapper_lib.__name__
+    for ty in (wrapper_lib.Outer1,
+               wrapper_lib.Outer1.Inner,
+               wrapper_lib.Outer2,
+               wrapper_lib.Outer2.Inner,
+               wrapper_lib.Outer3,
+               wrapper_lib.Outer3.Inner,
+               wrapper_lib.Outer4,
+               wrapper_lib.Outer4.Inner,
+               wrapper_lib.Outer,
+               wrapper_lib.Outer.Inner,):
       self.assertEqual(ty.__module__, expected_module_name)
 
-  def testNestedTypes(self):
-    inner1 = nested_types.Outer1.Inner()
+  def testNestedTypes(self, wrapper_lib):
+    inner1 = wrapper_lib.Outer1.Inner()
     inner1.a = 100
     self.assertEqual(inner1.a, 100)
 
-    inner2 = nested_types.Outer2.Inner()
+    inner2 = wrapper_lib.Outer2.Inner()
     inner2.b = 100
     self.assertEqual(inner2.b, 100)
 
-    k1 = nested_types.Outer3.Inner.k1
+    k1 = wrapper_lib.Outer3.Inner.k1
     self.assertEqual(k1.value, 123)
-    k2 = nested_types.Outer3.Inner.k2
+    k2 = wrapper_lib.Outer3.Inner.k2
     self.assertEqual(k2.value, 234)
 
-    k1 = nested_types.Outer4.Inner.k1
+    k1 = wrapper_lib.Outer4.Inner.k1
     self.assertEqual(k1.value, 321)
-    k2 = nested_types.Outer4.Inner.k2
+    k2 = wrapper_lib.Outer4.Inner.k2
     self.assertEqual(k2.value, 432)
 
-    k1 = nested_types.Outer.Inner.k1
+    k1 = wrapper_lib.Outer.Inner.k1
     self.assertEqual(k1.value, 234)
-    k2 = nested_types.Outer.Inner.k2
+    k2 = wrapper_lib.Outer.Inner.k2
     self.assertEqual(k2.value, 567)
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

@@ -14,16 +14,28 @@
 
 """Tests for clif.testing.python.t6."""
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import t6
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import t6_pybind11
+except ImportError:
+  t6_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class T6Test(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (t6, t6_pybind11))
+    if np[1] is not None
+])
+class T6Test(absltest.TestCase):
 
-  def testListInt(self):
-    self.assertEqual(t6.Repeat([1, 2], 3),
-                     [1, 2, 1, 2, 1, 2])
+  def testListInt(self, wrapper_lib):
+    self.assertEqual(wrapper_lib.Repeat([1, 2], 3), [1, 2, 1, 2, 1, 2])
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

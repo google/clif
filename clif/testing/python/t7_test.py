@@ -14,34 +14,47 @@
 
 """Tests for clif.testing.python.t7."""
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import t7
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import t7_pybind11
+except ImportError:
+  t7_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class T7Test(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (t7, t7_pybind11))
+    if np[1] is not None
+])
+class T7Test(absltest.TestCase):
 
-  def testFuncInput(self):
+  def testFuncInput(self, wrapper_lib):
     if str is bytes:  # PY2
-      t7.SetCallback(lambda n: str(n+2))
+      wrapper_lib.SetCallback(lambda n: str(n + 2))
     else:
-      # t7.SetCallback(lambda n: b'%d' % (n+2))  # 3.5+
+      # wrapper_lib.SetCallback(lambda n: b'%d' % (n+2))  # 3.5+
       # until then use that ugly workaround:
-      t7.SetCallback(lambda n: str(n+2).encode('ascii'))
-    self.assertEqual(t7.settled(), b'3')
+      wrapper_lib.SetCallback(lambda n: str(n + 2).encode('ascii'))
+    self.assertEqual(wrapper_lib.settled(), b'3')
     # Following tests raises TypeError during callback and can't be caught here.
     # ifdef FATAL_CALLBACK_EXCEPTION on py_clif_cc rule, log.FATAL aborts.
-    # self.assertRaises(TypeError, t7.SetCallback, (1))
-    # self.assertRaises(TypeError, t7.SetCallback, lambda: 1)
-    # self.assertRaises(TypeError, t7.SetCallback, lambda: '1')
-    # self.assertRaises(TypeError, t7.SetCallback, lambda a, b: '1')
+    # self.assertRaises(TypeError, wrapper_lib.SetCallback, (1))
+    # self.assertRaises(TypeError, wrapper_lib.SetCallback, lambda: 1)
+    # self.assertRaises(TypeError, wrapper_lib.SetCallback, lambda: '1')
+    # self.assertRaises(TypeError, wrapper_lib.SetCallback, lambda a, b: '1')
 
-  def testFuncOutput(self):
-    f = t7.GetF()
+  def testFuncOutput(self, wrapper_lib):
+    f = wrapper_lib.GetF()
     self.assertEqual(f(), 1)
-    f = t7.GetF1()
+    f = wrapper_lib.GetF1()
     self.assertEqual(f(True), 1)
     self.assertEqual(f(False), 0)
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

@@ -12,49 +12,62 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import call_method
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import call_method_pybind11
+except ImportError:
+  call_method_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class CallOverrideTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (call_method, call_method_pybind11))
+    if np[1] is not None
+])
+class CallOverrideTest(absltest.TestCase):
 
-  def testNoArg(self):
-    add_constant = call_method.AddConstant(100.0)
+  def testNoArg(self, wrapper_lib):
+    add_constant = wrapper_lib.AddConstant(100.0)
     self.assertEqual(add_constant(), 101.0)
 
-  def testOneArg(self):
-    add_one_number = call_method.AddOneNumber(100.0)
+  def testOneArg(self, wrapper_lib):
+    add_one_number = wrapper_lib.AddOneNumber(100.0)
     self.assertEqual(add_one_number(5.0), 105.0)
 
-  def testMultipleArgs(self):
-    add_two_numbers = call_method.AddTwoNumbers(100.0)
+  def testMultipleArgs(self, wrapper_lib):
+    add_two_numbers = wrapper_lib.AddTwoNumbers(100.0)
     self.assertEqual(add_two_numbers(5.0, 6.0), 111.0)
 
-  def testNoArgNoReturnValue(self):
-    add_constant_inplace = call_method.AddConstantInplace(100.0)
+  def testNoArgNoReturnValue(self, wrapper_lib):
+    add_constant_inplace = wrapper_lib.AddConstantInplace(100.0)
     add_constant_inplace()
     self.assertEqual(add_constant_inplace.base, 101.0)
 
-  def testOneArgNoReturnValue(self):
-    add_one_number_inplace = call_method.AddOneNumberInplace(100.0)
+  def testOneArgNoReturnValue(self, wrapper_lib):
+    add_one_number_inplace = wrapper_lib.AddOneNumberInplace(100.0)
     add_one_number_inplace(5.0)
     self.assertEqual(add_one_number_inplace.base, 105.0)
 
-  def testMultipleArgsNoReturnValue(self):
-    add_two_numbers_inplace = call_method.AddTwoNumbersInplace(100.0)
+  def testMultipleArgsNoReturnValue(self, wrapper_lib):
+    add_two_numbers_inplace = wrapper_lib.AddTwoNumbersInplace(100.0)
     add_two_numbers_inplace(5.0, 6.0)
     self.assertEqual(add_two_numbers_inplace.base, 111.0)
 
-  def testPassingArgsToNoArg(self):
-    add_constant = call_method.AddConstant(100.0)
+  def testPassingArgsToNoArg(self, wrapper_lib):
+    add_constant = wrapper_lib.AddConstant(100.0)
     with self.assertRaises(TypeError) as ctx:
       add_constant(123, 456)
     self.assertEqual(
         str(ctx.exception),
         '__call__() takes no arguments (2 given)')
 
-  def testPassingKwargsToNoArg(self):
-    add_constant = call_method.AddConstant(100.0)
+  def testPassingKwargsToNoArg(self, wrapper_lib):
+    add_constant = wrapper_lib.AddConstant(100.0)
     with self.assertRaises(TypeError) as ctx:
       add_constant(a=123)
     self.assertEqual(
@@ -62,4 +75,4 @@ class CallOverrideTest(unittest.TestCase):
         '__call__() takes no keyword arguments')
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

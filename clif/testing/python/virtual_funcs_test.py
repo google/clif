@@ -14,9 +14,19 @@
 
 """Tests for clif.testing.python.virtual_funcs."""
 
-import unittest
 import weakref
+
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import virtual_funcs
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import virtual_funcs_pybind11
+except ImportError:
+  virtual_funcs_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
 class B(virtual_funcs.B):
@@ -70,57 +80,63 @@ class ClassNonDefConstImpl(virtual_funcs.ClassNonDefConst):
     return -1 if self.invalidated else self.a * self.b
 
 
-class VirtualTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (virtual_funcs,
+                                             virtual_funcs_pybind11))
+    if np[1] is not None
+])
+class VirtualTest(absltest.TestCase):
 
-  def testInitAbstract(self):
-    self.assertRaises(ValueError, virtual_funcs.K)
-    self.assertRaises(ValueError, virtual_funcs.AbstractClassNonDefConst)
+  def testInitAbstract(self, wrapper_lib):
+    self.assertRaises(ValueError, wrapper_lib.K)
+    self.assertRaises(ValueError, wrapper_lib.AbstractClassNonDefConst)
 
-  def testInitConcreteClassWithVirtualMethods(self):
-    b = virtual_funcs.B()
+  def testInitConcreteClassWithVirtualMethods(self, wrapper_lib):
+    b = wrapper_lib.B()
     b.set_c(2)
     self.assertEqual(b.c, 2)
 
-    c = virtual_funcs.ClassNonDefConst(1, 2)
+    c = wrapper_lib.ClassNonDefConst(1, 2)
     self.assertEqual(c.DoSomething(), 3)
 
-  def testBasicCall(self):
+  def testBasicCall(self, wrapper_lib):
     b = B()
     b.set_c(2)
     self.assertEqual(b.c, 2)
-    virtual_funcs.Bset(b, 4)
+    wrapper_lib.Bset(b, 4)
     self.assertEqual(b.c, 4)
 
-  def testVirtual(self):
-    self.assertEqual(virtual_funcs.seq(K(), 2, 6), [0, 2, 4, 6])
+  def testVirtual(self, wrapper_lib):
+    self.assertEqual(wrapper_lib.seq(K(), 2, 6), [0, 2, 4, 6])
 
     abc_non_def_impl = AbstractClassNonDefConstImpl(4, 5)
     self.assertEqual(abc_non_def_impl.DoSomething(), 20)
-    self.assertEqual(virtual_funcs.DoSomething1(abc_non_def_impl), 20)
+    self.assertEqual(wrapper_lib.DoSomething1(abc_non_def_impl), 20)
 
     non_def_impl = ClassNonDefConstImpl(4, 5)
     self.assertEqual(non_def_impl.DoSomething(), 20)
-    self.assertEqual(virtual_funcs.DoSomething2(non_def_impl), 20)
+    self.assertEqual(wrapper_lib.DoSomething2(non_def_impl), 20)
 
-  def testVirtual2(self):
+  def testVirtual2(self, wrapper_lib):
     q = L(3)
-    self.assertEqual(virtual_funcs.add_seq(q, 2, 6), 3)
+    self.assertEqual(wrapper_lib.add_seq(q, 2, 6), 3)
     self.assertEqual(q.data(), [0, 2, 4])
 
-  def testTemporaryInstance(self):
-    man = virtual_funcs.Manager(virtual_funcs.ClassNonDefConst(100, 23))
+  def testTemporaryInstance(self, wrapper_lib):
+    man = wrapper_lib.Manager(wrapper_lib.ClassNonDefConst(100, 23))
     self.assertEqual(man.DoIt(), 123)
-    man = virtual_funcs.Manager(ClassNonDefConstImpl(100, 123))
+    man = wrapper_lib.Manager(ClassNonDefConstImpl(100, 123))
     self.assertEqual(man.DoIt(), 12300)
 
-  def testVirtualProperty(self):
-    c = virtual_funcs.D()
+  def testVirtualProperty(self, wrapper_lib):
+    c = wrapper_lib.D()
     c.pos_c = -1
     self.assertEqual(c.pos_c, 1)
 
-  def testNotLeakComplexPythonInstance(self):
+  def testNotLeakComplexPythonInstance(self, wrapper_lib):
     # Test for b/64524765. Ensure that after the Python object deleted, it's
     # not leaked. Reference to it saved during C++ virtual call.
+    self.assertIsNotNone(wrapper_lib)
     non_def_impl = ClassNonDefConstImpl(4, 5)
     wr = weakref.ref(non_def_impl)
     self.assertEqual(non_def_impl.DoSomething(), 20)
@@ -128,9 +144,9 @@ class VirtualTest(unittest.TestCase):
     # test non_def_impl deleted ...
     self.assertIsNone(wr())
 
-  def testReturnsObject(self):
+  def testReturnsObject(self, wrapper_lib):
 
-    class TestReturnsObjectImpl(virtual_funcs.TestReturnsObject):
+    class TestReturnsObjectImpl(wrapper_lib.TestReturnsObject):
 
       def CreateObject(self):
         return object()
@@ -139,32 +155,37 @@ class VirtualTest(unittest.TestCase):
     self.assertEqual(instance.GetRefcntOfResult(), 1)
 
 
-class SmartPtrsTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (virtual_funcs,
+                                             virtual_funcs_pybind11))
+    if np[1] is not None
+])
+class SmartPtrsTest(absltest.TestCase):
 
-  def testNotShared(self):
+  def testNotShared(self, wrapper_lib):
     a = ClassNonDefConstImpl(12, 30)
     # |a| is not shared with C++. So, the call to DoUniq should invalidate it.
     a.invalidated = True
-    self.assertEqual(virtual_funcs.DoUniq(a), -1)
+    self.assertEqual(wrapper_lib.DoUniq(a), -1)
     with self.assertRaises(ValueError):
       _ = a.a
     with self.assertRaises(ValueError):
-      virtual_funcs.DoUniq(a)
+      wrapper_lib.DoUniq(a)
 
-  def testShared(self):
+  def testShared(self, wrapper_lib):
     a = ClassNonDefConstImpl(1, 23)
-    b = virtual_funcs.Manager(a)
+    b = wrapper_lib.Manager(a)
     # |a| is shared between C++ and Python. So, cannot give it to Func.
     self.assertEqual(b.DoIt(), 23)
     with self.assertRaises(ValueError):
-      virtual_funcs.DoUniq(a)
+      wrapper_lib.DoUniq(a)
     # Check |a| is intact.
     self.assertEqual(a.a, 1)
 
-  def testSharedKeepsPyObj(self):
+  def testSharedKeepsPyObj(self, wrapper_lib):
     a = ClassNonDefConstImpl(2, 23)
     r = weakref.ref(a)
-    b = virtual_funcs.Manager(a)
+    b = wrapper_lib.Manager(a)
     del a
     # Check |a| is intact.
     self.assertEqual(b.DoIt(), 46)
@@ -173,18 +194,18 @@ class SmartPtrsTest(unittest.TestCase):
     # test |a| deleted ...
     self.assertIsNone(r())
 
-  def testSharedFreeAfterUse(self):
+  def testSharedFreeAfterUse(self, wrapper_lib):
     a = ClassNonDefConstImpl(2, 3)
-    b = virtual_funcs.Manager(a)
+    b = wrapper_lib.Manager(a)
     self.assertEqual(b.DoIt(), 6)
     # Remove the reference in |b|
     del b
     # We should be able to call Func again
     a.invalidated = True
-    self.assertEqual(virtual_funcs.DoUniq(a), -1)
+    self.assertEqual(wrapper_lib.DoUniq(a), -1)
     with self.assertRaises(ValueError):
       _ = a.a
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

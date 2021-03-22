@@ -14,17 +14,30 @@
 
 """Tests for clif.testing.python.t12."""
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import t12
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import t12_pybind11
+except ImportError:
+  t12_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class T12Test(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (t12, t12_pybind11))
+    if np[1] is not None
+])
+class T12Test(absltest.TestCase):
 
-  def testException(self):
-    self.assertEqual(t12.f1(1), 2)
+  def testException(self, wrapper_lib):
+    self.assertEqual(wrapper_lib.f1(1), 2)
     with self.assertRaises(RuntimeError):
-      t12.f2()
+      wrapper_lib.f2()
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

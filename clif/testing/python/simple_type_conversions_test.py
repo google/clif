@@ -13,25 +13,39 @@
 # limitations under the License.
 
 from absl.testing import absltest
-from clif.testing.python import simple_type_conversions as mut
+from absl.testing import parameterized
+
+from clif.testing.python import simple_type_conversions
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import simple_type_conversions_pybind11
+except ImportError:
+  simple_type_conversions_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (simple_type_conversions,
+                                             simple_type_conversions_pybind11))
+    if np[1] is not None
+])
 class SimpleTypeConversions(absltest.TestCase):
 
-  def testSignedCharManipulation(self):
-    self.assertEqual(mut.SignedCharManipulation(2), 29)
+  def testSignedCharManipulation(self, wrapper_lib):
+    self.assertEqual(wrapper_lib.SignedCharManipulation(2), 29)
     for inp in [-129, 128]:
       with self.assertRaises(ValueError) as ctx:
-        mut.SignedCharManipulation(inp)
+        wrapper_lib.SignedCharManipulation(inp)
       self.assertEqual(
           str(ctx.exception),
           'SignedCharManipulation() argument inp is not valid:'
           ' value %d is out of range for signed char' % inp)
 
-  def testUnsignedCharManipulation(self):
-    self.assertEqual(mut.UnsignedCharManipulation(3), 39)
+  def testUnsignedCharManipulation(self, wrapper_lib):
+    self.assertEqual(wrapper_lib.UnsignedCharManipulation(3), 39)
     with self.assertRaises(ValueError) as ctx:
-      mut.UnsignedCharManipulation(256)
+      wrapper_lib.UnsignedCharManipulation(256)
     self.assertEqual(
         str(ctx.exception),
         'UnsignedCharManipulation() argument inp is not valid:'

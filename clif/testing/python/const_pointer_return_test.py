@@ -18,16 +18,30 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import const_pointer_return
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import const_pointer_return_pybind11
+except ImportError:
+  const_pointer_return_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class ConstPointerReturnTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (const_pointer_return,
+                                             const_pointer_return_pybind11))
+    if np[1] is not None
+])
+class ConstPointerReturnTest(absltest.TestCase):
 
-  def testConstPointerReturn(self):
-    myclass = const_pointer_return.MyClass(100, 1000)
+  def testConstPointerReturn(self, wrapper_lib):
+    myclass = wrapper_lib.MyClass(100, 1000)
     # Test "const T *" as a return type, where T is a copyable class.
-    self.assertEqual(const_pointer_return.Pod, type(myclass.get_pod_ptr()))
+    self.assertEqual(wrapper_lib.Pod, type(myclass.get_pod_ptr()))
     self.assertEqual(myclass.get_pod_ptr().get_x(), 100)
     # Test "const T *" as a return type, where T is a built-in type.
     self.assertEqual(int, type(myclass.get_int_ptr()))
@@ -38,10 +52,10 @@ class ConstPointerReturnTest(unittest.TestCase):
     # and have Python own the copy.
     self.assertEqual(myclass.get_pod_ptr().get_x(), 100)
 
-  def testNonConstPointerCopyableReturn(self):
-    myclass = const_pointer_return.MyClass2(100)
+  def testNonConstPointerCopyableReturn(self, wrapper_lib):
+    myclass = wrapper_lib.MyClass2(100)
     # Test "T *" as a return type, where T is a copyable class.
-    self.assertEqual(const_pointer_return.Pod, type(myclass.get_pod_ptr()))
+    self.assertEqual(wrapper_lib.Pod, type(myclass.get_pod_ptr()))
     self.assertEqual(myclass.get_pod_ptr().get_x(), 200)
     myclass.get_pod_ptr().set_x(10000)
     # Modification to the return value, whose C++ types is "Pod *",
@@ -49,14 +63,14 @@ class ConstPointerReturnTest(unittest.TestCase):
     # the Python side.
     self.assertEqual(myclass.get_pod_ptr().get_x(), 10000)
 
-  def testNonConstPointerUncopyableReturn(self):
-    myclass = const_pointer_return.MyClass2(100)
+  def testNonConstPointerUncopyableReturn(self, wrapper_lib):
+    myclass = wrapper_lib.MyClass2(100)
     # Test "T *" as a return type, where T is an uncopyable and unmovable class.
-    self.assertEqual(const_pointer_return.NoCopy, type(myclass.get_no_copy()))
+    self.assertEqual(wrapper_lib.NoCopy, type(myclass.get_no_copy()))
     self.assertEqual(myclass.get_no_copy().get_x(), 100)
     myclass.get_no_copy().set_x(10000)
     self.assertEqual(myclass.get_no_copy().get_x(), 10000)
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

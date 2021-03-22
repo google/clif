@@ -18,23 +18,37 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import template_alias
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import template_alias_pybind11
+except ImportError:
+  template_alias_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class TemplateAliasTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (template_alias,
+                                             template_alias_pybind11))
+    if np[1] is not None
+])
+class TemplateAliasTest(absltest.TestCase):
 
-  def testTemplateAlias(self):
+  def testTemplateAlias(self, wrapper_lib):
     # Calling the following functions should not blow up.
-    template_alias.func_default_vector_input([])
-    output = template_alias.func_default_vector_output()
-    self.assertEqual(len(output), 1)
+    wrapper_lib.func_default_vector_input([])
+    output = wrapper_lib.func_default_vector_output()
+    self.assertLen(output, 1)
     self.assertEqual(output[0], 123)
-    return_list = template_alias.func_default_vector_return()
-    self.assertEqual(len(return_list), 1)
+    return_list = wrapper_lib.func_default_vector_return()
+    self.assertLen(return_list, 1)
     self.assertEqual(return_list[0], 100)
-    template_alias.func_clif_vector([1])
+    wrapper_lib.func_clif_vector([1])
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

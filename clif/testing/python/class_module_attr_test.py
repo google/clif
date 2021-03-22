@@ -12,26 +12,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
+
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import class_module_attr
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import class_module_attr_pybind11
+except ImportError:
+  class_module_attr_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 EXPECTED_CLASS_MODULE_ATTR = (
     'clif.testing.python.class_module_attr')
 
 
-class ClassModuleAttrTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (class_module_attr,
+                                             class_module_attr_pybind11))
+    if np[1] is not None
+])
+class ClassModuleAttrTest(absltest.TestCase):
 
-  def testAllTypeOfClasses(self):
-    self.assertEqual(
-        class_module_attr.ConcreteEmpty.__module__,
-        EXPECTED_CLASS_MODULE_ATTR)
-    self.assertEqual(
-        class_module_attr.VirtualBaseEmpty.__module__,
-        EXPECTED_CLASS_MODULE_ATTR)
-    self.assertEqual(
-        class_module_attr.VirtualDerivedEmpty.__module__,
-        EXPECTED_CLASS_MODULE_ATTR)
+  def testAllTypeOfClasses(self, wrapper_lib):
+    self.assertEqual(wrapper_lib.ConcreteEmpty.__module__,
+                     EXPECTED_CLASS_MODULE_ATTR)
+    self.assertEqual(wrapper_lib.VirtualBaseEmpty.__module__,
+                     EXPECTED_CLASS_MODULE_ATTR)
+    self.assertEqual(wrapper_lib.VirtualDerivedEmpty.__module__,
+                     EXPECTED_CLASS_MODULE_ATTR)
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

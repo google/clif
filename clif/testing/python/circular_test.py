@@ -18,17 +18,30 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import circular
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import circular_pybind11
+except ImportError:
+  circular_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class CircularTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (circular, circular_pybind11))
+    if np[1] is not None
+])
+class CircularTest(absltest.TestCase):
 
-  def testEverythingBuilt(self):
+  def testEverythingBuilt(self, wrapper_lib):
     # Nothing to test: if we can import circular, then that means
     # we were able to compile the clif file to cpp code.
     pass
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

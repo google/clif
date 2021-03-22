@@ -14,14 +14,28 @@
 
 """Tests for clif.testing.python.nested_fields."""
 
-import unittest
+from absl.testing import absltest
+from absl.testing import parameterized
+
 from clif.testing.python import nested_fields
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import nested_fields_pybind11
+except ImportError:
+  nested_fields_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 
-class NestedFieldsTest(unittest.TestCase):
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (nested_fields,
+                                             nested_fields_pybind11))
+    if np[1] is not None
+])
+class NestedFieldsTest(absltest.TestCase):
 
-  def testNestedStructFields(self):
-    a = nested_fields.AA()
+  def testNestedStructFields(self, wrapper_lib):
+    a = wrapper_lib.AA()
     a.b.c.i = 123
     # The above change was "in-place".
     self.assertEqual(a.b.c.i, 123)
@@ -41,42 +55,42 @@ class NestedFieldsTest(unittest.TestCase):
     # |c| is still alive and valid
     self.assertEqual(c.i, 321)
 
-    a = nested_fields.AA()
+    a = wrapper_lib.AA()
     a.b.c.i = 123
     c = a.b.c
     with self.assertRaises(ValueError):
       # Cannot give up |a| as |c| still is alive
-      nested_fields.ConsumeAA(a)
+      wrapper_lib.ConsumeAA(a)
     del c
     # Since |c| is now gone, we can give up |a|
-    nested_fields.ConsumeAA(a)
+    wrapper_lib.ConsumeAA(a)
 
-    a = nested_fields.AA()
+    a = wrapper_lib.AA()
     a.b.c.i = 123
     c = a.b.c
     with self.assertRaises(ValueError):
       # Cannot give up |c|
-      nested_fields.ConsumeCC(c)
+      wrapper_lib.ConsumeCC(c)
     del a
     with self.assertRaises(ValueError):
       # Cannot give up |c| even after |a| is gone; |c| holds a part of |a| and
       # is unsafe to give up!
-      nested_fields.ConsumeCC(c)
+      wrapper_lib.ConsumeCC(c)
 
-  def testNestedProperties(self):
+  def testNestedProperties(self, wrapper_lib):
     # Properties and unproperties call functions which return the field values.
     # We copy the returned values and do not modify in-place (infact,
     # "in-place" does not have any meaning for such cases.)
-    c = nested_fields.CC()
+    c = wrapper_lib.CC()
     c.i = 123
-    a = nested_fields.AA()
+    a = wrapper_lib.AA()
     a.SetC(c)
     c = a.GetC()
     c.i = 321
     # Modifying the above |c| did not modify the field in |a|.
     self.assertEqual(a.GetC().i, 123)
 
-    d = nested_fields.DD()
+    d = wrapper_lib.DD()
     d.i = 123
     b = a.b
     b.d = d
@@ -84,11 +98,11 @@ class NestedFieldsTest(unittest.TestCase):
     # Modifying |d| above did not modify the field in |b|.
     self.assertEqual(b.d.i, 123)
 
-  def testNestedPointers(self):
+  def testNestedPointers(self, wrapper_lib):
     # Wrapped borrowed pointer vars do not modify in-place.
-    d = nested_fields.DD()
+    d = wrapper_lib.DD()
     d.i = 123
-    a = nested_fields.AA()
+    a = wrapper_lib.AA()
     a.dp = d
     self.assertEqual(a.dp.i, 123)
     a.dp.i = 321
@@ -108,7 +122,7 @@ class NestedFieldsTest(unittest.TestCase):
 
     # Wrapped unique_ptr vars takes ownership (original var no longer valid)
     # and do not modify in-place.
-    d = nested_fields.DD()
+    d = wrapper_lib.DD()
     d.i = 321
     a.du = d
     with self.assertRaises(ValueError):
@@ -117,12 +131,12 @@ class NestedFieldsTest(unittest.TestCase):
     a.du.i = 123
     self.assertEqual(a.du.i, 321)
 
-  def testNestedContainers(self):
-    a = nested_fields.AA()
+  def testNestedContainers(self, wrapper_lib):
+    a = wrapper_lib.AA()
     a.v.append(123)
     # Above modification of field |v| in |a| did not happen in place.
-    self.assertEqual(len(a.v), 0)
+    self.assertEmpty(a.v)
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()
