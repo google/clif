@@ -80,6 +80,8 @@ add_pyclif_library_for_test(t10 t10.clif
 
 add_pyclif_library_for_test(t12 t12.clif)
 
+add_pyclif_library_for_test(absl_int128 absl_int128.clif)
+
 add_pyclif_library_for_test(absl_uint128 absl_uint128.clif)
 
 add_pyclif_library_for_test(callback callback.clif)
@@ -197,8 +199,14 @@ add_pyclif_library_for_test(templates templates.clif)
 
 add_pyclif_library_for_test(top_level_pass top_level_pass.clif)
 
+add_pyclif_library_for_test(variables variables.clif)
+
 add_pyclif_library_for_test(vector_const_elem_ptr vector_const_elem_ptr.clif)
+
+add_pyclif_library_for_test(virtual_derived_before_base virtual_derived_before_base.clif)
 
 add_pyclif_library_for_test(virtual_funcs virtual_funcs.clif)
 
-add_pyclif_library_for_test(virtual_derived_before_base virtual_derived_before_base.clif)
+add_pyclif_library_for_test(virtual_funcs_basics virtual_funcs_basics.clif)
+
+add_pyclif_library_for_test(virtual_py_cpp_mix virtual_py_cpp_mix.clif)
