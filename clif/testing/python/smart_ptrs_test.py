@@ -26,6 +26,8 @@ except ImportError:
   smart_ptrs_pybind11 = None
 # pylint: enable=g-import-not-at-top
 
+HAVE_PB11 = smart_ptrs_pybind11 is not None
+
 
 class Add(smart_ptrs.Operation):
 
@@ -38,8 +40,7 @@ class Add(smart_ptrs.Operation):
     return self.a + self.b
 
 
-class AddPybind11(object if smart_ptrs_pybind11 is None else
-                  smart_ptrs_pybind11.Operation):
+class AddPybind11(smart_ptrs_pybind11.Operation if HAVE_PB11 else object):
 
   def __init__(self, a, b):
     smart_ptrs_pybind11.Operation.__init__(self)

@@ -24,6 +24,8 @@ except ImportError:
   virtual_py_cpp_mix_pybind11 = None
 # pylint: enable=g-import-not-at-top
 
+HAVE_PB11 = virtual_py_cpp_mix_pybind11 is not None
+
 
 class PyDerived(virtual_py_cpp_mix.Base):
 
@@ -34,7 +36,8 @@ class PyDerived(virtual_py_cpp_mix.Base):
     return 323
 
 
-class PyDerivedPybind11(virtual_py_cpp_mix_pybind11.Base):
+class PyDerivedPybind11(virtual_py_cpp_mix_pybind11.Base if HAVE_PB11 else
+                        object):
 
   def __init__(self):
     virtual_py_cpp_mix_pybind11.Base.__init__(self)

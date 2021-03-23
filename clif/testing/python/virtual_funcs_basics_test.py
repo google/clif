@@ -26,6 +26,8 @@ except ImportError:
   virtual_funcs_basics_pybind11 = None
 # pylint: enable=g-import-not-at-top
 
+HAVE_PB11 = virtual_funcs_basics_pybind11 is not None
+
 
 class B(virtual_funcs_basics.B):
 
@@ -37,7 +39,7 @@ class B(virtual_funcs_basics.B):
     self.c = v
 
 
-class B_pybind11(virtual_funcs_basics_pybind11.B):  # pylint: disable=invalid-name
+class BPybind11(virtual_funcs_basics_pybind11.B if HAVE_PB11 else object):
 
   def __init__(self):
     virtual_funcs_basics_pybind11.B.__init__(self)
@@ -48,7 +50,7 @@ class B_pybind11(virtual_funcs_basics_pybind11.B):  # pylint: disable=invalid-na
 
 
 def get_derived_b(wrapper_lib):
-  return B_pybind11 if wrapper_lib is virtual_funcs_basics_pybind11 else B
+  return BPybind11 if wrapper_lib is virtual_funcs_basics_pybind11 else B
 
 
 class K(virtual_funcs_basics.K):
@@ -57,14 +59,14 @@ class K(virtual_funcs_basics.K):
     self.i += n
 
 
-class K_pybind11(virtual_funcs_basics_pybind11.K):  # pylint: disable=invalid-name
+class KPybind11(virtual_funcs_basics_pybind11.K if HAVE_PB11 else object):
 
   def inc(self, n):
     self.i += n
 
 
 def get_derived_k(wrapper_lib):
-  return K_pybind11 if wrapper_lib is virtual_funcs_basics_pybind11 else K
+  return KPybind11 if wrapper_lib is virtual_funcs_basics_pybind11 else K
 
 
 class L(virtual_funcs_basics.Q):
@@ -84,7 +86,7 @@ class L(virtual_funcs_basics.Q):
     return False
 
 
-class L_pybind11(virtual_funcs_basics_pybind11.Q):  # pylint: disable=invalid-name
+class LPybind11(virtual_funcs_basics_pybind11.Q if HAVE_PB11 else object):
 
   def __init__(self, max_len):
     virtual_funcs_basics_pybind11.Q.__init__(self)
@@ -102,7 +104,7 @@ class L_pybind11(virtual_funcs_basics_pybind11.Q):  # pylint: disable=invalid-na
 
 
 def get_derived_l(wrapper_lib):
-  return L_pybind11 if wrapper_lib is virtual_funcs_basics_pybind11 else L
+  return LPybind11 if wrapper_lib is virtual_funcs_basics_pybind11 else L
 
 
 class AbstractClassNonDefConstImpl(
@@ -112,8 +114,9 @@ class AbstractClassNonDefConstImpl(
     return self.a * self.b
 
 
-class AbstractClassNonDefConstImpl_pybind11(  # pylint: disable=invalid-name
-    virtual_funcs_basics_pybind11.AbstractClassNonDefConst):
+class AbstractClassNonDefConstImplPybind11(
+    virtual_funcs_basics_pybind11.AbstractClassNonDefConst if HAVE_PB11 else
+    object):
 
   def DoSomething(self):
     return self.a * self.b
@@ -121,7 +124,7 @@ class AbstractClassNonDefConstImpl_pybind11(  # pylint: disable=invalid-name
 
 def get_derived_abc_non_def_impl(wrapper_lib):
   if wrapper_lib is virtual_funcs_basics_pybind11:
-    return AbstractClassNonDefConstImpl_pybind11
+    return AbstractClassNonDefConstImplPybind11
   return AbstractClassNonDefConstImpl
 
 
@@ -137,11 +140,11 @@ class ClassNonDefConstImpl(virtual_funcs_basics.ClassNonDefConst):
     return -1 if self.invalidated else self.a * self.b
 
 
-class ClassNonDefConstImpl_pybind11(  # pylint: disable=invalid-name
-    virtual_funcs_basics_pybind11.ClassNonDefConst):
+class ClassNonDefConstImplPybind11(
+    virtual_funcs_basics_pybind11.ClassNonDefConst if HAVE_PB11 else object):
 
   def __init__(self, a, b):
-    super(ClassNonDefConstImpl_pybind11, self).__init__(a, b)
+    super(ClassNonDefConstImplPybind11, self).__init__(a, b)
     self.c = [1, 2, 3]  # Must have a non-trivial container to enable gc.
     # Remove self.invalidated after gaining (limited) access to invalidated ptr.
     self.invalidated = False
@@ -151,7 +154,9 @@ class ClassNonDefConstImpl_pybind11(  # pylint: disable=invalid-name
 
 
 def get_derived_non_def_impl(wrapper_lib):
-  return ClassNonDefConstImpl_pybind11 if wrapper_lib is virtual_funcs_basics_pybind11 else ClassNonDefConstImpl
+  if wrapper_lib is virtual_funcs_basics_pybind11:
+    return ClassNonDefConstImplPybind11
+  return ClassNonDefConstImpl
 
 
 @parameterized.named_parameters([
