@@ -62,7 +62,7 @@ class ModuleGenerator(object):
       yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({c})'
     yield '\n'
     yield f'PYBIND11_MODULE({self._module_name}, m) {{'
-    yield I+('m.doc() = "CLIF generated pybind11-based module for '
+    yield I+('m.doc() = "CLIF-generated pybind11-based module for '
              f'{ast.source}";')
 
     for decl in ast.decls:

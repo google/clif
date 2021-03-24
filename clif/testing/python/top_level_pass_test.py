@@ -38,7 +38,8 @@ class TopLevelPassTest(absltest.TestCase):
 
   def testEmptyModule(self, wrapper_lib):
     self.assertRegexpMatches(  # pylint: disable=deprecated-method
-        wrapper_lib.__doc__, 'CLIF-generated module for .*top_level_pass.clif')
+        wrapper_lib.__doc__,
+        'CLIF-generated .*module for .*top_level_pass.clif')
 
 
 if __name__ == '__main__':
