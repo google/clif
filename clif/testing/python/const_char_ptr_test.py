@@ -14,6 +14,7 @@
 
 from absl.testing import absltest
 from absl.testing import parameterized
+import six
 
 from clif.testing.python import const_char_ptr
 # TODO: Restore simple import after OSS setup includes pybind11.
@@ -34,14 +35,18 @@ class ConstCharPtrTest(absltest.TestCase):
 
   def testReturnConstCharPtrAsStr(self, wrapper_lib):
     res = wrapper_lib.ReturnConstCharPtrAsStr()
-    self.assertIsInstance(res, str)
+    self.assertIsInstance(res, six.string_types)
     self.assertEqual(res, 'string literal')
 
   def testReturnConstCharPtrAsBytes(self, wrapper_lib):
     res = wrapper_lib.ReturnConstCharPtrAsBytes()
-    # BUG: Return value should be bytes but is str (Python 3).
-    self.assertIsInstance(res, str)  # Should be bytes.
-    self.assertEqual(res, 'string literal')  # Should be b'string literal'.
+    if wrapper_lib is const_char_ptr:
+      # BUG: Return value should be bytes but is str (Python 3).
+      self.assertIsInstance(res, str)  # Should be bytes.
+      self.assertEqual(res, 'string literal')  # Should be b'string literal'.
+    else:
+      self.assertIsInstance(res, bytes)
+      self.assertEqual(res, b'string literal')
 
 
 if __name__ == '__main__':
