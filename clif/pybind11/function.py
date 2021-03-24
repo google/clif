@@ -39,7 +39,8 @@ def generate_from(module_name: str, func_decl: ast_pb2.FuncDecl,
   """
 
   if len(func_decl.returns) >= 2 or (len(func_decl.returns) >= 1 and
-                                     func_decl.cpp_void_return):
+                                     func_decl.cpp_void_return and
+                                     func_decl.params):
     yield from _generate_return_args_lambda(func_decl, module_name)
     return
 
