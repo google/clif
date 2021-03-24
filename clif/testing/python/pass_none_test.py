@@ -43,10 +43,11 @@ class ExtendMethodsTest(absltest.TestCase):
     self.assertEqual(res, 87)
     with self.assertRaises(TypeError) as ctx:
       wrapper_lib.pass_holder_by_value(None)
-    self.assertEqual(
-        str(ctx.exception),
-        'pass_holder_by_value() argument holder is not valid for'
-        ' ::clif_testing::IntHolder (NoneType instance given)')
+
+    error_message = str(ctx.exception)
+    self.assertIn('pass_holder_by_value()', error_message)
+    self.assertTrue('incompatible' in error_message
+                    or 'not valid' in error_message)
 
   def testPassConstRefHolder(self, wrapper_lib):
     ih = wrapper_lib.IntHolder(37)
@@ -54,10 +55,11 @@ class ExtendMethodsTest(absltest.TestCase):
     self.assertEqual(res, 185)
     with self.assertRaises(TypeError) as ctx:
       wrapper_lib.pass_const_ref_holder(None)
-    self.assertEqual(
-        str(ctx.exception),
-        'pass_const_ref_holder() argument holder is not valid for'
-        ' ::clif_testing::IntHolder (NoneType instance given)')
+
+    error_message = str(ctx.exception)
+    self.assertIn('pass_const_ref_holder()', error_message)
+    self.assertTrue('incompatible' in error_message
+                    or 'not valid' in error_message)
 
   def testPassConstPtrHolder(self, wrapper_lib):
     ih = wrapper_lib.IntHolder(41)
@@ -70,16 +72,20 @@ class ExtendMethodsTest(absltest.TestCase):
     ih = wrapper_lib.IntHolder(43)
     res = wrapper_lib.pass_shared_ptr_holder(ih)
     self.assertEqual(res, 559)
-    # Potential Feature Request: support shared_ptr from None.
-    with self.assertRaises(TypeError) as ctx:
-      wrapper_lib.pass_shared_ptr_holder(None)
-    self.assertEqual(
-        str(ctx.exception),
-        'pass_shared_ptr_holder() argument holder is not valid for'
-        ' ::std::shared_ptr<::clif_testing::IntHolder>'
-        ' (NoneType instance given): expecting'
-        ' clif.testing.python.pass_none.IntHolder'
-        ' instance, got NoneType instance')
+
+    if wrapper_lib is pass_none_pybind11:
+      self.assertEqual(wrapper_lib.pass_shared_ptr_holder(None), 17)
+    else:
+      # The generated C API code does not support shared_ptr from None.
+      with self.assertRaises(TypeError) as ctx:
+        wrapper_lib.pass_shared_ptr_holder(None)
+      self.assertEqual(
+          str(ctx.exception),
+          'pass_shared_ptr_holder() argument holder is not valid for'
+          ' ::std::shared_ptr<::clif_testing::IntHolder>'
+          ' (NoneType instance given): expecting'
+          ' clif.testing.python.pass_none.IntHolder'
+          ' instance, got NoneType instance')
 
 
 if __name__ == '__main__':
