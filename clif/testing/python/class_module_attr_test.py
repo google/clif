@@ -25,8 +25,10 @@ except ImportError:
   class_module_attr_pybind11 = None
 # pylint: enable=g-import-not-at-top
 
-EXPECTED_CLASS_MODULE_ATTR = (
+EXPECTED_CLASS_MODULE_ATTR_CAPI = (
     'clif.testing.python.class_module_attr')
+EXPECTED_CLASS_MODULE_ATTR_PYBIND11 = (
+    'clif.testing.python.class_module_attr_pybind11')
 
 
 @parameterized.named_parameters([
@@ -37,12 +39,16 @@ EXPECTED_CLASS_MODULE_ATTR = (
 class ClassModuleAttrTest(absltest.TestCase):
 
   def testAllTypeOfClasses(self, wrapper_lib):
+    if wrapper_lib is class_module_attr:
+      expected_class_module_attr = EXPECTED_CLASS_MODULE_ATTR_CAPI
+    else:
+      expected_class_module_attr = EXPECTED_CLASS_MODULE_ATTR_PYBIND11
     self.assertEqual(wrapper_lib.ConcreteEmpty.__module__,
-                     EXPECTED_CLASS_MODULE_ATTR)
+                     expected_class_module_attr)
     self.assertEqual(wrapper_lib.VirtualBaseEmpty.__module__,
-                     EXPECTED_CLASS_MODULE_ATTR)
+                     expected_class_module_attr)
     self.assertEqual(wrapper_lib.VirtualDerivedEmpty.__module__,
-                     EXPECTED_CLASS_MODULE_ATTR)
+                     expected_class_module_attr)
 
 
 if __name__ == '__main__':
