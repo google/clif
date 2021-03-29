@@ -23,7 +23,10 @@
 
 void TakeBase(std::unique_ptr<t9::Base>) {}
 
-K* CreateK() { return new K(0); }
+K* CreateK() {
+  static K obj(0);
+  return &obj;
+}
 
 struct A : K {
   A() : K(0) {}

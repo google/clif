@@ -17,11 +17,13 @@
 namespace clif_testing {
 
 std::vector<AST*> all_ast_borrowed() {
+  static AST buffer[3];
   std::vector<AST*> r;
+  AST* ast = buffer;
   for (const char* p="123"; *p; ++p) {
-    AST* ast(new AST);
     ast->set_source(p, 1);
     r.push_back(ast);
+    ++ast;
   }
   return r;
 }

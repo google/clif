@@ -66,7 +66,10 @@ class Concrete : public Abstract {
   int Undef() override { return 1; }
 };
 
-inline Abstract* NewAbstract() { return new Concrete; }
+inline Abstract* NewAbstract() {
+  static Concrete obj;
+  return &obj;
+}
 
 }  // namespace t9
 

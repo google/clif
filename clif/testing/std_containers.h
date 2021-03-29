@@ -16,6 +16,7 @@
 #ifndef CLIF_TESTING_STD_CONTAINERS_H_
 #define CLIF_TESTING_STD_CONTAINERS_H_
 
+#include <algorithm>
 #include <array>
 #include <string>
 #include <unordered_map>
@@ -38,10 +39,12 @@ inline std::vector<bool> Even(const std::vector<int>& v) {
   return e;
 }
 
-inline std::vector<bool> Odd(const std::vector<int>& v) {
-  std::vector<bool> e(v.size());
+inline std::vector<bool>* Odd(const std::vector<int>& v) {
+  static std::vector<bool> e;
+  e.resize(v.size());
+  std::fill(e.begin(), e.end(), false);
   for (int i=0; i < v.size(); ++i) { if (v[i] & 1) { e[i] = true; }}
-  return e;
+  return &e;
 }
 
 // dict input arg.
