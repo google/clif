@@ -34,12 +34,7 @@ except ImportError:
 class T7Test(absltest.TestCase):
 
   def testFuncInput(self, wrapper_lib):
-    if str is bytes:  # PY2
-      wrapper_lib.SetCallback(lambda n: str(n + 2))
-    else:
-      # wrapper_lib.SetCallback(lambda n: b'%d' % (n+2))  # 3.5+
-      # until then use that ugly workaround:
-      wrapper_lib.SetCallback(lambda n: str(n + 2).encode('ascii'))
+    wrapper_lib.SetCallback(lambda n: b'%d' % (n + 2))
     self.assertEqual(wrapper_lib.settled(), b'3')
     # Following tests raises TypeError during callback and can't be caught here.
     # ifdef FATAL_CALLBACK_EXCEPTION on py_clif_cc rule, log.FATAL aborts.
@@ -49,10 +44,11 @@ class T7Test(absltest.TestCase):
     # self.assertRaises(TypeError, wrapper_lib.SetCallback, lambda a, b: '1')
 
   def testFuncOutput(self, wrapper_lib):
+    wrapper_lib.SetCallback(lambda n: b'%d' % (n + 99))
     f = wrapper_lib.GetF()
-    self.assertEqual(f(), 1)
+    self.assertEqual(f(), 3)
     f = wrapper_lib.GetF1()
-    self.assertEqual(f(True), 1)
+    self.assertEqual(f(True), 3)
     self.assertEqual(f(False), 0)
 
 
