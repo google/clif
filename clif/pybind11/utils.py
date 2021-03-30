@@ -15,6 +15,7 @@
 """Utility functions for pybind11 code generator."""
 
 import dataclasses
+from clif.protos import ast_pb2
 from clif.python import pytd2proto
 
 # Use two spaces indentation for generated code.
@@ -67,6 +68,34 @@ def is_nested_template(s: str) -> bool:
 
 def is_usable_cpp_exact_type(s: str) -> bool:
   return not is_nested_template(s) or '&' in s
+
+
+def get_params_strings_from_func_decl(func: ast_pb2.FuncDecl):
+  """Helper for function parameter formatting."""
+
+  params = func.params
+  lang_types = []
+  cpp_names = []
+  params_str_with_types_list = []
+  default_values = []
+
+  for param in params:
+    lang_types.append(param.type.lang_type)
+    cpp_names.append(param.name.cpp_name)
+    params_str_with_types_list.append(
+        f'{param.type.cpp_type} {param.name.cpp_name}')
+    if param.default_value:
+      default_values.append(
+          f'py::arg("{param.name.cpp_name}") = {param.default_value}')
+    else:
+      default_values.append(f'py::arg("{param.name.cpp_name}")')
+
+  result = ParamsStrings(
+      cpp_names=', '.join(cpp_names),
+      lang_types=', '.join(lang_types),
+      names_with_types=', '.join(params_str_with_types_list),
+      default_args=', '.join(default_values))
+  return result
 
 
 # Dataclass used to group together and pass around parameter lists.

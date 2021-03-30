@@ -80,7 +80,7 @@ def _generate_constructors(class_decl: ast_pb2.ClassDecl, class_name: str):
     if member.decltype != ast_pb2.Decl.Type.FUNC:
       continue
 
-    func_ps = function.get_params_strings(member.func)
+    func_ps = utils.get_params_strings_from_func_decl(member.func)
     add_default_args = lambda x: f', {x});' if x else ');'
 
     if member.func.name.native == '__init__' and member.func.is_extend_method:
