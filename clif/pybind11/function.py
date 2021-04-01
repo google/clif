@@ -39,7 +39,13 @@ def generate_from(module_name: str, func_decl: ast_pb2.FuncDecl,
     pybind11 function bindings code.
   """
 
-  yield from lambdas.generate_lambda_if_needed(func_decl, module_name)
+  lambda_generated = False
+  for s in lambdas.generate_lambda(func_decl, module_name):
+    yield s
+    if s:
+      lambda_generated = True
+  if lambda_generated:
+    return
 
   if func_decl.classmethod:
     for line in _generate_static_method(module_name, func_decl.name.native,
