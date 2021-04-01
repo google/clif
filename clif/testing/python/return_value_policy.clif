@@ -1,0 +1,56 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from "clif/testing/return_value_policy.h":
+  namespace `clif_testing`:
+    class Obj:
+      mtxt: str
+
+    def return_value() -> Obj
+    def return_reference() -> Obj
+    def return_const_reference() -> Obj
+    def return_pointer() -> Obj
+    def return_const_pointer() -> Obj
+    def return_shared_pointer() -> Obj
+    def return_unique_pointer() -> Obj
+
+    class NoCopy:
+      mtxt: str
+
+    # Other types of return values are not allowed.
+    def return_value_nocopy() -> NoCopy
+    def return_reference_nocopy() -> NoCopy
+    def return_pointer_nocopy() -> NoCopy
+    def return_shared_pointer_nocopy() -> NoCopy
+    def return_unique_pointer_nocopy() -> NoCopy
+
+    class NoMove:
+      mtxt: str
+
+    # Other types of return values are not allowed.
+    def return_value_nomove() -> NoMove
+    def return_reference_nomove() -> NoMove
+    def return_pointer_nomove() -> NoMove
+    def return_const_reference_nomove() -> NoMove
+    def return_const_pointer_nomove() -> NoMove
+    def return_shared_pointer_nomove() -> NoMove
+    def return_unique_pointer_nomove() -> NoMove
+
+    class NoCopyNoMove:
+      mtxt: str
+
+    # Other types of return values are not allowed.
+    def return_pointer_nocopy_nomove() -> NoCopyNoMove
+    def return_shared_pointer_nocopy_nomove() -> NoCopyNoMove
+    def return_unique_pointer_nocopy_nomove() -> NoCopyNoMove

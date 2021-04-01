@@ -169,6 +169,8 @@ add_pyclif_library_for_test(return_set_as_list return_set_as_list.clif
   PY_DEPS clif_python_postproc
 )
 
+add_pyclif_library_for_test(return_value_policy return_value_policy.clif)
+
 add_pyclif_library_for_test(sequence_methods sequence_methods.clif)
 
 add_pyclif_library_for_test(shared_ptr_proto_member shared_ptr_proto_member.clif
