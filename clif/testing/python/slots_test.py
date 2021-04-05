@@ -42,6 +42,8 @@ class SlotsTest(absltest.TestCase):
     self.assertEqual(hash(a), 0)
 
   def testRO(self, wrapper_lib):
+    if wrapper_lib is slots_pybind11:  # b/184390527
+      self.skipTest('pybind11 generates a segfault when calling list(a)')
     a = wrapper_lib.I5()
     self.assertLen(a, 5)
     self.assertEqual(list(a), [0]*5)
@@ -52,6 +54,8 @@ class SlotsTest(absltest.TestCase):
       del a[1]
 
   def testRW(self, wrapper_lib):
+    if wrapper_lib is slots_pybind11:  # b/184390527
+      self.skipTest('pybind11 generates a segfault when calling list(a)')
     a = wrapper_lib.Z5()
     self.assertLen(a, 5)
     self.assertEqual(list(a), [0]*5)
@@ -76,7 +80,7 @@ class SlotsTest(absltest.TestCase):
     a = wrapper_lib.Z5()
     with self.assertRaises(TypeError) as ctx:
       hash(a)
-    self.assertEqual(str(ctx.exception), '__hash__ must return int')
+    self.assertIn(' int', str(ctx.exception))
 
 
 if __name__ == '__main__':

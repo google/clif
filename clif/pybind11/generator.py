@@ -191,9 +191,13 @@ class ModuleGenerator(object):
 
   def _collect_class_cpp_names(self, decl: ast_pb2.Decl,
                                unique_classes: Set[Text]):
-    """Traverses the AST and adds every class name to a set."""
+    """Adds every class name to a set. Only to be used in this context."""
     if decl.decltype == ast_pb2.Decl.Type.CLASS:
-      unique_classes.add(decl.class_.name.cpp_name)
+      cpp_name = decl.class_.name.cpp_name
+      if any(t in cpp_name for t in {',', ' ', '<', '>'}):
+        unique_classes.add(f'PYBIND11_TYPE({cpp_name})')
+      else:
+        unique_classes.add(cpp_name)
       for member in decl.class_.members:
         self._collect_class_cpp_names(member, unique_classes)
 
