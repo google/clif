@@ -123,6 +123,10 @@ def _func_needs_implicit_conversion(func_decl):
   if len(func_decl.params) == 1:
     param = func_decl.params[0]
     if not utils.is_usable_cpp_exact_type(param.cpp_exact_type):
+      # Stop-gap approach. This `if` condition needs to be removed after
+      # resolution of b/118736768. Until then this detection function cannot
+      # work correctly in this situation (but there are no corresponding unit
+      # tests).
       return False
     if (_extract_fundamental_type(param.cpp_exact_type) !=
         _extract_fundamental_type(param.type.cpp_type) and
