@@ -35,21 +35,31 @@ class SimpleTypeConversions(absltest.TestCase):
   def testSignedCharManipulation(self, wrapper_lib):
     self.assertEqual(wrapper_lib.SignedCharManipulation(2), 29)
     for inp in [-129, 128]:
-      with self.assertRaises(ValueError) as ctx:
-        wrapper_lib.SignedCharManipulation(inp)
-      self.assertEqual(
-          str(ctx.exception),
-          'SignedCharManipulation() argument inp is not valid:'
-          ' value %d is out of range for signed char' % inp)
+      if wrapper_lib is simple_type_conversions_pybind11:
+        with self.assertRaises(TypeError) as ctx:
+          wrapper_lib.SignedCharManipulation(inp)
+        self.assertIn('incompatible function arguments.', str(ctx.exception))
+      else:
+        with self.assertRaises(ValueError) as ctx:
+          wrapper_lib.SignedCharManipulation(inp)
+        self.assertEqual(
+            str(ctx.exception),
+            'SignedCharManipulation() argument inp is not valid:'
+            ' value %d is out of range for signed char' % inp)
 
   def testUnsignedCharManipulation(self, wrapper_lib):
     self.assertEqual(wrapper_lib.UnsignedCharManipulation(3), 39)
-    with self.assertRaises(ValueError) as ctx:
-      wrapper_lib.UnsignedCharManipulation(256)
-    self.assertEqual(
-        str(ctx.exception),
-        'UnsignedCharManipulation() argument inp is not valid:'
-        ' value 256 is too large for unsigned char')
+    if wrapper_lib is simple_type_conversions_pybind11:
+      with self.assertRaises(TypeError) as ctx:
+        wrapper_lib.SignedCharManipulation(256)
+      self.assertIn('incompatible function arguments.', str(ctx.exception))
+    else:
+      with self.assertRaises(ValueError) as ctx:
+        wrapper_lib.UnsignedCharManipulation(256)
+      self.assertEqual(
+          str(ctx.exception),
+          'UnsignedCharManipulation() argument inp is not valid:'
+          ' value 256 is too large for unsigned char')
 
 
 if __name__ == '__main__':
