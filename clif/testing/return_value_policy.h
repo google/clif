@@ -118,13 +118,11 @@ struct NoMove {
   NoMove() : mtxt("DefaultConstructor") {}
   NoMove(const std::string &mtxt_) : mtxt(mtxt_) {}
   NoMove(const NoMove &other) { mtxt = other.mtxt + "_CpCtor"; }
-  NoMove(NoMove&&) = delete;
 
   NoMove& operator=(const NoMove &other) {
     mtxt = other.mtxt + "_CpCtor";
     return *this;
   }
-  NoMove& operator=(NoMove&&) = delete;
 };
 
 inline NoMove return_value_nomove() {

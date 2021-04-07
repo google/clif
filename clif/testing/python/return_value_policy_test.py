@@ -26,7 +26,7 @@ class ReturnValuePolicyTestCase(parameterized.TestCase):
 
   @parameterized.parameters(
       (return_value_policy.return_value,
-       'return_value_MvCtor'),
+       'return_value(_MvCtor)*_MvCtor'),
       (return_value_policy.return_reference,
        'return_reference_CpCtor_MvCtor'),
       (return_value_policy.return_const_reference,
@@ -42,11 +42,11 @@ class ReturnValuePolicyTestCase(parameterized.TestCase):
   )
   def testReturnValue(self, return_function, expected):
     ret = return_function()
-    self.assertEqual(ret.mtxt, expected)
+    self.assertRegex(ret.mtxt, expected)
 
   @parameterized.parameters(
       (return_value_policy.return_value_nocopy,
-       'return_value_nocopy_MvCtor'),
+       'return_value_nocopy(_MvCtor)*_MvCtor'),
       (return_value_policy.return_reference_nocopy,
        'return_reference_nocopy_MvCtor'),
       (return_value_policy.return_pointer_nocopy,
@@ -58,11 +58,11 @@ class ReturnValuePolicyTestCase(parameterized.TestCase):
   )
   def testNoCopy(self, return_function, expected):
     ret = return_function()
-    self.assertEqual(ret.mtxt, expected)
+    self.assertRegex(ret.mtxt, expected)
 
   @parameterized.parameters(
       (return_value_policy.return_value_nomove,
-       'return_value_nomove_CpCtor'),
+       'return_value_nomove(_CpCtor)*_CpCtor'),
       (return_value_policy.return_reference_nomove,
        'return_reference_nomove_CpCtor_CpCtor'),
       (return_value_policy.return_pointer_nomove,
@@ -78,7 +78,7 @@ class ReturnValuePolicyTestCase(parameterized.TestCase):
   )
   def testNoMove(self, return_function, expected):
     ret = return_function()
-    self.assertEqual(ret.mtxt, expected)
+    self.assertRegex(ret.mtxt, expected)
 
   @parameterized.parameters(
       (return_value_policy.return_pointer_nocopy_nomove,
@@ -90,7 +90,7 @@ class ReturnValuePolicyTestCase(parameterized.TestCase):
   )
   def testNoCopyNoMove(self, return_function, expected):
     ret = return_function()
-    self.assertEqual(ret.mtxt, expected)
+    self.assertRegex(ret.mtxt, expected)
 
 
 if __name__ == '__main__':

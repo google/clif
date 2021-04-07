@@ -767,7 +767,12 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
     yield I+'PyThreadState* _save;'
     yield I+'Py_UNBLOCK_THREADS'
   optional_ret0 = False
+  convert_ref_to_ptr = False
   if (minargs < nargs or catch) and not void_return_type:
+    if catch and return_type.rstrip().endswith('&'):
+      convert_ref_to_ptr = True
+      idx = return_type.rindex('&')
+      return_type = return_type[:idx] + '*'
     if func_ast.returns[0].type.cpp_has_def_ctor:
       yield I+return_type+' ret0;'
     else:
@@ -805,7 +810,10 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
     if void_return_type:
       yield _I+I+call+';'
     elif catch:
-      yield _I+I+'ret0 = '+call+';'
+      if convert_ref_to_ptr:
+        yield _I+I+'ret0 = &'+call+';'
+      else:
+        yield _I+I+'ret0 = '+call+';'
     else:
       yield _I+I+return_type+' ret0 = '+call+';'
   if catch:
@@ -830,14 +838,16 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
     assert nret == 0, '-> self must have no other output parameters'
   else:
     return_self = False
+  ret = '*ret' if convert_ref_to_ptr else 'ret'
   # If ctxmgr, force return self on enter, None on exit.
   if nret > 1 or (func_ast.postproc or ctxmgr) and nret:
     yield I+'// Convert return values to Python.'
     yield I+'PyObject* p, * result_tuple = PyTuple_New(%d);' % nret
     yield I+'if (result_tuple == nullptr) return nullptr;'
     for i in range(nret):
-      yield I+'if ((p=Clif_PyObjFrom(std::move(ret%d), %s)) == nullptr) {' % (
-          i, postconv.Initializer(func_ast.returns[i].type, typepostconversion))
+      yield I+'if ((p=Clif_PyObjFrom(std::move(%s%d), %s)) == nullptr) {' % (
+          ret, i,
+          postconv.Initializer(func_ast.returns[i].type, typepostconversion))
       yield I+I+'Py_DECREF(result_tuple);'
       yield I+I+'return nullptr;'
       yield I+'}'
@@ -866,8 +876,8 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
     else:
       yield I+'return result_tuple;'
   elif nret:
-    yield I+'return Clif_PyObjFrom(std::move(ret0%s), %s);' % (
-        ('.value()' if optional_ret0 else ''),
+    yield I+'return Clif_PyObjFrom(std::move(%s0%s), %s);' % (
+        ret, ('.value()' if optional_ret0 else ''),
         postconv.Initializer(func_ast.returns[0].type, typepostconversion))
   elif return_self or ctxmgr == '__enter__@':
     yield I+'Py_INCREF(self);'
