@@ -14,6 +14,7 @@
 
 """Generates pybind11 bindings code for functions."""
 
+import re
 from typing import Sequence, Text, Optional
 
 from clif.protos import ast_pb2
@@ -67,6 +68,7 @@ def generate_from(module_name: str, func_decl: ast_pb2.FuncDecl,
   if func_decl.params:
     func_def += _generate_params_list(func_decl.params,
                                       func_decl.is_extend_method)
+  func_def += f', {_generate_return_value_policy(func_decl)}'
   if func_decl.docstring:
     func_def += f', {_generate_docstring(func_decl.docstring)}'
   func_def += ');'
@@ -150,3 +152,45 @@ def _generate_static_method(class_name: str, func_name_native: str,
                             func_name_cpp_name: str):
   yield (f'{class_name}.def_static("{func_name_native}", '
          f'&{func_name_cpp_name});')
+
+
+def _generate_return_value_policy(func_decl: ast_pb2.FuncDecl) -> Text:
+  """Generates pybind11 return value policy based on function return type.
+
+  Emulates the behavior of the generated Python C API code.
+
+  Args:
+    func_decl: The function declaration that needs to be processed.
+
+  Returns:
+    pybind11 return value policy based on the function return value.
+  """
+  prefix = 'py::return_value_policy::'
+  if func_decl.cpp_void_return or not func_decl.returns:
+    return prefix + 'automatic'
+  return_type = func_decl.returns[0]
+  # For smart pointers, it is unncessary to specify a return value policy in
+  # pybind11.
+  if re.match('::std::unique_ptr<.*>', return_type.cpp_exact_type):
+    return prefix + 'automatic'
+  elif re.match('::std::shared_ptr<.*>', return_type.cpp_exact_type):
+    return prefix + 'automatic'
+  elif return_type.type.cpp_raw_pointer:
+    # Const pointers to uncopyable object are not supported by PyCLIF.
+    if return_type.cpp_exact_type.startswith('const '):
+      return prefix + 'copy'
+    else:
+      return prefix + 'reference'
+  elif return_type.cpp_exact_type.endswith('&'):
+    if return_type.cpp_exact_type.startswith('const '):
+      return prefix + 'copy'
+    elif return_type.type.cpp_movable:
+      return prefix + 'move'
+    else:
+      return prefix + 'automatic'
+  else:  # Function returns objects directly.
+    if return_type.type.cpp_movable:
+      return prefix + 'move'
+    elif return_type.type.cpp_copyable:
+      return prefix + 'copy'
+  return prefix + 'automatic'

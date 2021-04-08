@@ -26,11 +26,11 @@ class ReturnValuePolicyTestCase(parameterized.TestCase):
 
   @parameterized.parameters(
       (return_value_policy.return_value,
-       'return_value(_MvCtor)*_MvCtor'),
+       'return_value_MvCtor(_MvCtor)*'),
       (return_value_policy.return_reference,
-       'return_reference_CpCtor_MvCtor'),
+       'return_reference_CpCtor(_MvCtor)*'),
       (return_value_policy.return_const_reference,
-       'return_const_reference_CpCtor_MvCtor'),
+       'return_const_reference_CpCtor(_MvCtor)*'),
       (return_value_policy.return_pointer,
        'return_pointer'),
       (return_value_policy.return_const_pointer,
@@ -46,7 +46,7 @@ class ReturnValuePolicyTestCase(parameterized.TestCase):
 
   @parameterized.parameters(
       (return_value_policy.return_value_nocopy,
-       'return_value_nocopy(_MvCtor)*_MvCtor'),
+       'return_value_nocopy_MvCtor(_MvCtor)*'),
       (return_value_policy.return_reference_nocopy,
        'return_reference_nocopy_MvCtor'),
       (return_value_policy.return_pointer_nocopy,
@@ -62,13 +62,13 @@ class ReturnValuePolicyTestCase(parameterized.TestCase):
 
   @parameterized.parameters(
       (return_value_policy.return_value_nomove,
-       'return_value_nomove(_CpCtor)*_CpCtor'),
+       'return_value_nomove_CpCtor(_CpCtor)*'),
       (return_value_policy.return_reference_nomove,
-       'return_reference_nomove_CpCtor_CpCtor'),
+       'return_reference_nomove_CpCtor(_CpCtor)*'),
       (return_value_policy.return_pointer_nomove,
        'return_pointer_nomove'),
       (return_value_policy.return_const_reference_nomove,
-       'return_const_reference_nomove_CpCtor_CpCtor'),
+       'return_const_reference_nomove_CpCtor(_CpCtor)*'),
       (return_value_policy.return_const_pointer_nomove,
        'return_const_pointer_nomove_CpCtor'),
       (return_value_policy.return_shared_pointer_nomove,
