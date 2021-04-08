@@ -19,8 +19,13 @@ from clif.pybind11 import utils
 I = utils.I
 
 
-def generate_lambda(func_decl: ast_pb2.FuncDecl, module_name: str):
+def generate_lambda(func_decl: ast_pb2.FuncDecl, module_name: str,
+                    class_decl: ast_pb2.ClassDecl):
   """Entry point for generation of lambda functions in pybind11."""
+
+  if _func_needs_inplace_op_lambda(func_decl, class_decl):
+    yield from _generate_inplace_op_lambda(func_decl, module_name, class_decl)
+    return
 
   if _func_needs_implicit_conversion(func_decl):
     yield from _generate_implicit_conversion_lambda(func_decl)
@@ -146,3 +151,23 @@ def _extract_fundamental_type(cpp_name: str):
   if t[-1] in {'&', '*'}:  # Minimum viable approach. To be refined as needed.
     t = t[:-1]
   return ' '.join(t)
+
+
+def _func_needs_inplace_op_lambda(func_decl: ast_pb2.FuncDecl,
+                                  class_decl: ast_pb2.ClassDecl):
+  return (utils.is_special_operation(func_decl.name.native) and
+          len(func_decl.params) == 1 and func_decl.postproc == '->self' and
+          func_decl.ignore_return_value and func_decl.cpp_void_return and
+          class_decl)
+
+
+def _generate_inplace_op_lambda(func_decl: ast_pb2.FuncDecl, module_name: str,
+                                class_decl: ast_pb2.ClassDecl):
+  param = func_decl.params[0]
+  assert func_decl.name.native[-1] == '#'
+  yield I + (f'{module_name}.def("{func_decl.name.native[:-1]}", '
+             f'[]({class_decl.name.cpp_name}& self, {param.cpp_exact_type} '
+             f'{param.name.native}) {{')
+  yield I + I + (f'self.{func_decl.name.cpp_name}({param.name.native}); return '
+                 f'self;')
+  yield I + '});'

@@ -41,7 +41,7 @@ def generate_from(module_name: str, func_decl: ast_pb2.FuncDecl,
   """
 
   lambda_generated = False
-  for s in lambdas.generate_lambda(func_decl, module_name):
+  for s in lambdas.generate_lambda(func_decl, module_name, class_decl):
     yield s
     if s:
       lambda_generated = True
