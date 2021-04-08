@@ -164,7 +164,8 @@ message Type {
   optional bool cpp_touniqptr_conversion = 11;  // true iff there is a Lang to unique_ptr<T> conversion.
   optional bool cpp_abstract = 9;  // true iff the type is a C++ abstract class.
   optional bool cpp_has_public_dtor = 10 [default = true];  // C++ class can be destroyed.
-  // Next available: 13
+  optional bool implicitly_converted = 13;  // true if the parameter needs implicit conversion to match the cpp function definition.
+  // Next available: 14
 };
 
 message Exception {
