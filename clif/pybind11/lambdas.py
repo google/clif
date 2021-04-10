@@ -74,8 +74,8 @@ def _generate_return_args_lambda(func_decl: ast_pb2.FuncDecl, module_name: str):
 
   params_strings = utils.get_params_strings_from_func_decl(func_decl)
 
-  yield (f'{module_name}.def("{func_decl.name.native}",'
-         f'[]({params_strings.names_with_types}) {{')
+  yield I + (f'{module_name}.def("{func_decl.name.native}",'
+             f'[]({params_strings.names_with_types}) {{')
 
   main_return = ''
   main_return_cpp_name = ''
@@ -83,36 +83,42 @@ def _generate_return_args_lambda(func_decl: ast_pb2.FuncDecl, module_name: str):
   for i, r in enumerate(func_decl.returns):
     if i == 0:
       main_return_cpp_name = r.name.cpp_name
-      main_return = f'{r.type.cpp_type} {r.name.cpp_name}'
+      main_return = f'{r.type.cpp_type} {main_return_cpp_name}'
       continue
     other_returns_cpp_names.append(r.name.cpp_name)
-    yield I + f'{r.type.cpp_type} {r.name.cpp_name};'
+    yield I + I + f'{r.type.cpp_type} {r.name.cpp_name};'
   other_returns = ', '.join(other_returns_cpp_names)
   other_returns_params_list = [f'&{r}' for r in other_returns_cpp_names]
 
   if not func_decl.cpp_void_return:
-    yield I + (f'{main_return} = {func_decl.name.cpp_name}'
-               f'({params_strings.cpp_names}, &y);')
-    yield I + (f'return std::make_tuple({main_return_cpp_name}, '
-               f'{other_returns});')
+    yield I + I + (f'{main_return} = {func_decl.name.cpp_name}'
+                   f'({params_strings.cpp_names}, &y);')
+    yield I + I + (f'return std::make_tuple({main_return_cpp_name}, '
+                   f'{other_returns});')
   else:
-    yield I + f'{main_return};'
+    yield I + I + f'{main_return};'
     if not other_returns_cpp_names:
-      yield I + (f'{func_decl.name.cpp_name}({params_strings.cpp_names},'
-                 f'&{main_return_cpp_name});')
-      yield I + f'return {main_return_cpp_name};'
+      if params_strings.cpp_names:
+        yield I + I + (f'{func_decl.name.cpp_name}({params_strings.cpp_names},'
+                       f'&{main_return_cpp_name});')
+      else:
+        yield I + I + f'{func_decl.name.cpp_name}(&{main_return_cpp_name});'
+      yield I + I + f'return {main_return_cpp_name};'
     else:
-      yield I + (f'{func_decl.name.cpp_name}({params_strings.cpp_names},'
-                 f'&{main_return_cpp_name}, {other_returns_params_list});')
-      yield I + (f'return std::make_tuple({main_return_cpp_name}, '
-                 f'{other_returns});')
-  yield '});'
+      yield I + I + (f'{func_decl.name.cpp_name}({params_strings.cpp_names},'
+                     f'&{main_return_cpp_name}, {other_returns_params_list});')
+      yield I + I + (f'return std::make_tuple({main_return_cpp_name}, '
+                     f'{other_returns});')
+  yield I + '});'
 
 
 def _func_has_return_param(func_decl) -> bool:
+  for r in func_decl.returns:
+    if not r.name.cpp_name:
+      return False  # Cannot create a lambda function without a cpp_name.
+
   num_returns = len(func_decl.returns)
-  return num_returns >= 2 or (num_returns == 1 and func_decl.cpp_void_return and
-                              len(func_decl.params) >= 1)
+  return num_returns >= 2 or (num_returns == 1 and func_decl.cpp_void_return)
 
 
 def _has_bytes_return(func_decl: ast_pb2.FuncDecl):
