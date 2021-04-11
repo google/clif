@@ -123,8 +123,8 @@ class ModuleGenerator(object):
 
   def _generate_python_override_class_names(
       self, python_override_class_names: Dict[Text, Text], decl: ast_pb2.Decl,
-      overrider_class_name_suffix: str = '_virtual_overrider',
-      self_life_support: str = 'py::virtual_overrider_self_life_support'):
+      trampoline_name_suffix: str = '_trampoline',
+      self_life_support: str = 'py::trampoline_self_life_support'):
     """Generates Python overrides classes dictionary for virtual functions."""
     if decl.decltype == ast_pb2.Decl.Type.CLASS:
       virtual_members = []
@@ -134,7 +134,7 @@ class ModuleGenerator(object):
       if not virtual_members:
         return
       python_override_class_name = (
-          f'{decl.class_.name.native}_{overrider_class_name_suffix}')
+          f'{decl.class_.name.native}_{trampoline_name_suffix}')
       assert decl.class_.name.cpp_name not in python_override_class_names
       python_override_class_names[
           decl.class_.name.cpp_name] = python_override_class_name
