@@ -49,11 +49,22 @@ from __future__ import print_function
 
 import gc
 import sys
-import unittest
 
-import parameterized
+
+from absl.testing import absltest
+from absl.testing import parameterized
 
 from clif.testing.python import extension_type_refcount
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import extension_type_refcount_pybind11
+except ImportError:
+  extension_type_refcount_pybind11 = None
+# pylint: enable=g-import-not-at-top
+
+# extension_type_refcount_pybind11 = None
+HAVE_PB11 = extension_type_refcount_pybind11 is not None
 
 
 # Exercising Python-derived classes because they are currently handled in a
@@ -73,18 +84,49 @@ class PyDerivedVirtualDerivedEmpty(extension_type_refcount.VirtualDerivedEmpty):
   pass
 
 
-class ClassModuleAttrTest(unittest.TestCase):
+class PyDerivedConcreteEmptyPybind11(
+    extension_type_refcount_pybind11.ConcreteEmpty if HAVE_PB11 else object):
+  pass
 
-  @parameterized.parameterized.expand([
-      (extension_type_refcount.ConcreteEmpty,
-       None),
-      (extension_type_refcount.VirtualDerivedEmpty,
-       None),
-      (extension_type_refcount.ConcreteEmpty,
-       PyDerivedConcreteEmpty),
-      (extension_type_refcount.VirtualDerivedEmpty,
-       PyDerivedVirtualDerivedEmpty),
-  ])
+
+class PyDerivedVirtualDerivedEmptyPybind11(
+    extension_type_refcount_pybind11.VirtualDerivedEmpty
+    if HAVE_PB11 else object):
+  pass
+
+
+def _get_derived(wrapper_lib, s):
+  if wrapper_lib is extension_type_refcount_pybind11:
+    if s is PyDerivedConcreteEmpty:
+      return PyDerivedConcreteEmptyPybind11
+    elif s is PyDerivedVirtualDerivedEmpty:
+      return PyDerivedVirtualDerivedEmptyPybind11
+  return s
+
+
+_TEST_CASES = (
+    ('ConcreteEmpty', None),
+    ('VirtualDerivedEmpty', None),
+    ('ConcreteEmpty', PyDerivedConcreteEmpty),
+    ('VirtualDerivedEmpty', PyDerivedVirtualDerivedEmpty),
+)
+
+
+def MakeNamedParameters():  # pylint: disable=invalid-name
+  np = []
+  for code_gen, wrapper_lib in (('c_api', extension_type_refcount),
+                                ('pybind11', extension_type_refcount_pybind11)):
+    if wrapper_lib is not None:
+      for test, derived in _TEST_CASES:
+        attr = getattr(wrapper_lib, test)
+        np.append(('_'.join((test, str(derived), code_gen)), attr,
+                   _get_derived(wrapper_lib, derived)))
+  return np
+
+
+@parameterized.named_parameters(MakeNamedParameters())
+class ClassModuleAttrTest(absltest.TestCase):
+
   def testBasicRefcountHealth(self, ext_type, py_type, num_objs=10000):
     if (py_type is None and sys.version_info.major == 3 and
         sys.version_info.minor >= 8):
@@ -113,4 +155,4 @@ class ClassModuleAttrTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()
