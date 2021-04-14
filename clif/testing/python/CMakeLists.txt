@@ -155,6 +155,8 @@ add_pyclif_library_for_test(overload overload.clif)
 
 add_pyclif_library_for_test(pass_none pass_none.clif)
 
+add_pyclif_library_for_test(pointer_parameters pointer_parameters.clif)
+
 add_py_library(pickle_compatibility_helper pickle_compatibility_helper.py)
 
 add_py_library(pickle_compatibility pickle_compatibility.py)
