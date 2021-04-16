@@ -18,12 +18,28 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import unittest
 
+from absl.testing import absltest
+from absl.testing import parameterized
 import six
 
 from clif.python import type_customization
+
 from clif.testing.python import extend_methods
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.python import extend_methods_pybind11
+except ImportError:
+  extend_methods_pybind11 = None
+# pylint: enable=g-import-not-at-top
+
+# extend_methods_pybind11 = None
+HAVE_PB11 = extend_methods_pybind11 is not None
+
+
+class DummyForExtend:
+  """Used only if pybind11 is not available."""
 
 
 def DirectlyAssigned(self, prefix):
@@ -33,75 +49,110 @@ def DirectlyAssigned(self, prefix):
 # Direct assignment for unit test, NOT recommended for general use.
 extend_methods.ConcreteHolder.DirectlyAssigned = DirectlyAssigned
 extend_methods.VirtualBaseHolder.DirectlyAssigned = DirectlyAssigned
+if HAVE_PB11:
+  extend_methods_pybind11.ConcreteHolder.DirectlyAssigned = DirectlyAssigned
+  extend_methods_pybind11.VirtualBaseHolder.DirectlyAssigned = DirectlyAssigned
 
 
 # RECOMMENDED for general use.
-@type_customization.extend(extend_methods.ConcreteHolder)
-class _(object):  # The object base is needed for Python 2 only.
-  # This works in Python 3 but not in Python 2:
-  # """Docstring."""
-  if not six.PY2:  # Workaround.
-    __doc__ = """Added to ConcreteHolder."""
+for concrete_holder in (extend_methods.ConcreteHolder,
+                        extend_methods_pybind11.ConcreteHolder
+                        if HAVE_PB11 else DummyForExtend):
 
-  data = 'Data added to ConcreteHolder.'
+  @type_customization.extend(concrete_holder)
+  class _(object):  # The object base is needed for Python 2 only.
+    # This works in Python 3 but not in Python 2:
+    # """Docstring."""
+    if not six.PY2:  # Workaround.
+      __doc__ = """Added to ConcreteHolder."""
 
-  def AnInstanceMethod(self, prefix):
-    return ':'.join((prefix.upper(), 'self', self.__class__.__name__))
+      data = 'Data added to ConcreteHolder.'
 
-  @classmethod
-  def AClassMethod(cls, prefix):
-    return ':'.join((prefix.lower(), 'cls', cls.__name__))
+    def AnInstanceMethod(self, prefix):
+      return ':'.join((prefix.upper(), 'self', self.__class__.__name__))
 
-  @staticmethod
-  def AStaticMethod(prefix):
-    return ':'.join((prefix.capitalize(), 'static'))
+    @classmethod
+    def AClassMethod(cls, prefix):
+      return ':'.join((prefix.lower(), 'cls', cls.__name__))
 
-  @property
-  def a_property(self):
-    return ':'.join(('getter', str(self.Get()), self.__class__.__name__))
+    @staticmethod
+    def AStaticMethod(prefix):
+      return ':'.join((prefix.capitalize(), 'static'))
 
-  @a_property.setter
-  def a_property(self, value):
-    self.Set(value + 5)
+    @property
+    def a_property(self):
+      return ':'.join(('getter', str(self.Get()), self.__class__.__name__))
 
-
-@type_customization.extend(extend_methods.VirtualBaseHolder)
-class _(object):  # The object base is needed for Python 2 only.
-  # This works in Python 3 but not in Python 2:
-  # """Docstring."""
-  # An alternative workaround is below.
-
-  data = 'Data added to VirtualBaseHolder.'
-
-  def AnInstanceMethod(self, prefix):
-    return ':'.join((prefix.capitalize(), 'self', self.__class__.__name__))
-
-  @classmethod
-  def AClassMethod(cls, prefix):
-    return ':'.join((prefix.upper(), 'cls', cls.__name__))
-
-  @staticmethod
-  def AStaticMethod(prefix):
-    return ':'.join((prefix.lower(), 'static'))
-
-  @property
-  def a_property(self):
-    return ':'.join(('Getter', str(self.Get()), self.__class__.__name__))
-
-  @a_property.setter
-  def a_property(self, value):
-    self.Set(value + 7)
+    @a_property.setter
+    def a_property(self, value):
+      self.Set(value + 5)
 
 
-if not six.PY2:
-  @type_customization.extend(extend_methods.VirtualBaseHolder)
-  class _(object):
-    """Added to VirtualBaseHolder."""
+for virtual_base_holder in (extend_methods.VirtualBaseHolder,
+                            extend_methods_pybind11.VirtualBaseHolder
+                            if HAVE_PB11 else DummyForExtend):
+
+  @type_customization.extend(virtual_base_holder)
+  class _(object):  # The object base is needed for Python 2 only.
+    # This works in Python 3 but not in Python 2:
+    # """Docstring."""
+    # An alternative workaround is below.
+
+    data = 'Data added to VirtualBaseHolder.'
+
+    def AnInstanceMethod(self, prefix):
+      return ':'.join((prefix.capitalize(), 'self', self.__class__.__name__))
+
+    @classmethod
+    def AClassMethod(cls, prefix):
+      return ':'.join((prefix.upper(), 'cls', cls.__name__))
+
+    @staticmethod
+    def AStaticMethod(prefix):
+      return ':'.join((prefix.lower(), 'static'))
+
+    @property
+    def a_property(self):
+      return ':'.join(('Getter', str(self.Get()), self.__class__.__name__))
+
+    @a_property.setter
+    def a_property(self, value):
+      self.Set(value + 7)
+
+  if not six.PY2:
+
+    @type_customization.extend(virtual_base_holder)
+    class _(object):
+      """Added to VirtualBaseHolder."""
 
 
-# It may be useful to re-use extension methods for multiple extension types.
 @type_customization.extend(extend_methods.ConcreteHolder)
 class NamedFromClass(object):
+
+  def NfcInstanceMethod(self, prefix):
+    return ':'.join(
+        (''.join(reversed(prefix)), 'self', self.__class__.__name__))
+
+  @classmethod
+  def NfcClassMethod(cls, prefix):
+    return ':'.join((''.join(reversed(prefix)), 'cls', cls.__name__))
+
+  @staticmethod
+  def NfcStaticMethod(prefix):
+    return ':'.join((''.join(reversed(prefix)), 'static'))
+
+  @property
+  def nfc_property(self):
+    return ':'.join(('GETTER', str(self.Get()), self.__class__.__name__))
+
+  @nfc_property.setter
+  def nfc_property(self, value):
+    self.Set(value + 11)
+
+
+@type_customization.extend(
+    extend_methods_pybind11.ConcreteHolder if HAVE_PB11 else DummyForExtend)
+class NamedFromClassPybind11(object):
 
   def NfcInstanceMethod(self, prefix):
     return ':'.join(
@@ -132,9 +183,13 @@ class NfcInstanceMethodOverride(object):
 
 
 # Re-use with override.
-@type_customization.extend(extend_methods.VirtualBaseHolder)
-class _(NfcInstanceMethodOverride, NamedFromClass):
-  pass
+for virtual_base_holder in (extend_methods.VirtualBaseHolder,
+                            extend_methods_pybind11.VirtualBaseHolder
+                            if HAVE_PB11 else DummyForExtend):
+
+  @type_customization.extend(virtual_base_holder)
+  class _(NfcInstanceMethodOverride, NamedFromClass):
+    pass
 
 
 # Keeping the failure tests below at module scope (not inside test methods)
@@ -192,36 +247,83 @@ else:
   _tuple_as_base_failure_test_error = None
 
 
-class ExtendMethodsTest(unittest.TestCase):
+if HAVE_PB11:
+  try:
 
-  def testConcreteDirectAssignment(self):
-    ch = extend_methods.ConcreteHolder()
+    @type_customization.extend(extend_methods_pybind11.ConcreteHolder)
+    class _:
+      pass
+  except TypeError as e:
+    _from_class_old_style_failure_test_error = str(e)
+  else:
+    _from_class_old_style_failure_test_error = None
+
+  try:
+
+    @type_customization.extend(extend_methods_pybind11.ConcreteHolder)
+    class _(_BaseOldStyleFailureTestBase, object):
+      pass
+  except TypeError as e:
+    _base_old_style_failure_test_error = str(e)
+  else:
+    _base_old_style_failure_test_error = None
+
+  try:
+
+    @type_customization.extend(extend_methods_pybind11.ConcreteHolder)
+    class _(_BaseBaseFailureTestDerived):
+      pass
+  except TypeError as e:
+    _base_base_failure_test_error = str(e)
+  else:
+    _base_base_failure_test_error = None
+
+  try:
+
+    @type_customization.extend(extend_methods_pybind11.ConcreteHolder)
+    class _(tuple):  # Any type exercising rejection of __getattribute__.
+      pass
+  except TypeError as e:
+    _tuple_as_base_failure_test_error = str(e)
+  else:
+    _tuple_as_base_failure_test_error = None
+
+
+@parameterized.named_parameters([
+    np for np in zip(('c_api', 'pybind11'), (extend_methods,
+                                             extend_methods_pybind11))
+    if np[1] is not None
+])
+class ExtendMethodsTest(absltest.TestCase):
+
+  def testConcreteDirectAssignment(self, wrapper_lib):
+    ch = wrapper_lib.ConcreteHolder()
     s = ch.DirectlyAssigned('Red:')
     self.assertEqual(s, 'RED:ConcreteHolder')
 
-  def testVirtualDirectAssignment(self):
-    vdh = extend_methods.VirtualDerivedHolder()
+  def testVirtualDirectAssignment(self, wrapper_lib):
+    vdh = wrapper_lib.VirtualDerivedHolder()
     s = vdh.DirectlyAssigned('Blue:')
     self.assertEqual(s, 'BLUE:VirtualDerivedHolder')
 
-  def testConcreteExtend(self):
-    expected_doc = (
-        'CLIF wrapper for ::clif_testing::ConcreteHolder' if six.PY2 else
-        'Added to ConcreteHolder.')
-    self.assertEqual(extend_methods.ConcreteHolder.__doc__, expected_doc)
-    self.assertEqual(
-        extend_methods.ConcreteHolder.data,
-        'Data added to ConcreteHolder.')
-    ch = extend_methods.ConcreteHolder()
+  def testConcreteExtend(self, wrapper_lib):
+    if wrapper_lib is extend_methods:
+      expected_doc = ('CLIF wrapper for ::clif_testing::ConcreteHolder'
+                      if six.PY2 else 'Added to ConcreteHolder.')
+      self.assertEqual(wrapper_lib.ConcreteHolder.__doc__, expected_doc)
+      if not six.PY2:
+        self.assertEqual(wrapper_lib.ConcreteHolder.data,
+                         'Data added to ConcreteHolder.')
+    ch = wrapper_lib.ConcreteHolder()
     s = ch.AnInstanceMethod('Green')
     self.assertEqual(s, 'GREEN:self:ConcreteHolder')
     s = ch.AClassMethod('Yellow')
     self.assertEqual(s, 'yellow:cls:ConcreteHolder')
-    s = extend_methods.ConcreteHolder.AClassMethod('Gray')
+    s = wrapper_lib.ConcreteHolder.AClassMethod('Gray')
     self.assertEqual(s, 'gray:cls:ConcreteHolder')
     s = ch.AStaticMethod('magenta')
     self.assertEqual(s, 'Magenta:static')
-    s = extend_methods.ConcreteHolder.AStaticMethod('silver')
+    s = wrapper_lib.ConcreteHolder.AStaticMethod('silver')
     self.assertEqual(s, 'Silver:static')
     s = ch.a_property
     self.assertEqual(s, 'getter:0:ConcreteHolder')
@@ -229,34 +331,31 @@ class ExtendMethodsTest(unittest.TestCase):
     s = ch.a_property
     self.assertEqual(s, 'getter:18:ConcreteHolder')
 
-  def testVirtualExtend(self):
-    expected_doc = (
-        'CLIF wrapper for ::clif_testing::VirtualBaseHolder' if six.PY2 else
-        'Added to VirtualBaseHolder.')
-    self.assertEqual(extend_methods.VirtualBaseHolder.__doc__, expected_doc)
-    self.assertEqual(
-        extend_methods.VirtualDerivedHolder.__doc__,
-        'CLIF wrapper for ::clif_testing::VirtualDerivedHolder')
-    self.assertEqual(
-        extend_methods.VirtualBaseHolder.data,
-        'Data added to VirtualBaseHolder.')
-    self.assertEqual(
-        extend_methods.VirtualDerivedHolder.data,
-        'Data added to VirtualBaseHolder.')
-    vdh = extend_methods.VirtualDerivedHolder()
+  def testVirtualExtend(self, wrapper_lib):
+    if wrapper_lib is extend_methods:
+      expected_doc = ('CLIF wrapper for ::clif_testing::VirtualBaseHolder'
+                      if six.PY2 else 'Added to VirtualBaseHolder.')
+      self.assertEqual(wrapper_lib.VirtualBaseHolder.__doc__, expected_doc)
+      self.assertEqual(wrapper_lib.VirtualDerivedHolder.__doc__,
+                       'CLIF wrapper for ::clif_testing::VirtualDerivedHolder')
+    self.assertEqual(wrapper_lib.VirtualBaseHolder.data,
+                     'Data added to VirtualBaseHolder.')
+    self.assertEqual(wrapper_lib.VirtualDerivedHolder.data,
+                     'Data added to VirtualBaseHolder.')
+    vdh = wrapper_lib.VirtualDerivedHolder()
     s = vdh.AnInstanceMethod('orange')
     self.assertEqual(s, 'Orange:self:VirtualDerivedHolder')
     s = vdh.AClassMethod('Purple')
     self.assertEqual(s, 'PURPLE:cls:VirtualDerivedHolder')
-    s = extend_methods.VirtualBaseHolder.AClassMethod('Cyan')
+    s = wrapper_lib.VirtualBaseHolder.AClassMethod('Cyan')
     self.assertEqual(s, 'CYAN:cls:VirtualBaseHolder')
-    s = extend_methods.VirtualDerivedHolder.AClassMethod('Mint')
+    s = wrapper_lib.VirtualDerivedHolder.AClassMethod('Mint')
     self.assertEqual(s, 'MINT:cls:VirtualDerivedHolder')
     s = vdh.AStaticMethod('Black')
     self.assertEqual(s, 'black:static')
-    s = extend_methods.VirtualBaseHolder.AStaticMethod('Gold')
+    s = wrapper_lib.VirtualBaseHolder.AStaticMethod('Gold')
     self.assertEqual(s, 'gold:static')
-    s = extend_methods.VirtualDerivedHolder.AStaticMethod('Platinum')
+    s = wrapper_lib.VirtualDerivedHolder.AStaticMethod('Platinum')
     self.assertEqual(s, 'platinum:static')
     s = vdh.a_property
     self.assertEqual(s, 'Getter:0:VirtualDerivedHolder')
@@ -264,46 +363,53 @@ class ExtendMethodsTest(unittest.TestCase):
     s = vdh.a_property
     self.assertEqual(s, 'Getter:36:VirtualDerivedHolder')
 
-  def testNamedFromClass(self):
-    nfc = NamedFromClass()
-    ch = extend_methods.ConcreteHolder()
-    vdh = extend_methods.VirtualDerivedHolder()
+  def testNamedFromClass(self, wrapper_lib):
+    if wrapper_lib is extend_methods_pybind11:
+      nfc = NamedFromClassPybind11()
+      pb11_suffix = 'Pybind11'
+    else:
+      nfc = NamedFromClass()
+      pb11_suffix = ''
+    ch = wrapper_lib.ConcreteHolder()
+    vdh = wrapper_lib.VirtualDerivedHolder()
 
     s = nfc.NfcInstanceMethod('eeffoc')
-    self.assertEqual(s, 'coffee:self:NamedFromClass')
+    self.assertEqual(s, 'coffee:self:NamedFromClass' + pb11_suffix)
     s = ch.NfcInstanceMethod('eeffoC')
     self.assertEqual(s, 'Coffee:self:ConcreteHolder')
     s = vdh.NfcInstanceMethod('eeffoc')
     self.assertEqual(s, 'COFFEE:self:VirtualDerivedHolder')
 
     s = nfc.NfcClassMethod('ynobe')
-    self.assertEqual(s, 'ebony:cls:NamedFromClass')
+    self.assertEqual(s, 'ebony:cls:NamedFromClass' + pb11_suffix)
     s = NamedFromClass.NfcClassMethod('yrovI')
     self.assertEqual(s, 'Ivory:cls:NamedFromClass')
     s = ch.NfcClassMethod('ynobE')
     self.assertEqual(s, 'Ebony:cls:ConcreteHolder')
-    s = extend_methods.ConcreteHolder.NfcClassMethod('yrovi')
+    s = wrapper_lib.ConcreteHolder.NfcClassMethod('yrovi')
     self.assertEqual(s, 'ivory:cls:ConcreteHolder')
     s = vdh.NfcClassMethod('YNOBE')
     self.assertEqual(s, 'EBONY:cls:VirtualDerivedHolder')
-    s = extend_methods.VirtualDerivedHolder.NfcClassMethod('YROVI')
+    s = wrapper_lib.VirtualDerivedHolder.NfcClassMethod('YROVI')
     self.assertEqual(s, 'IVORY:cls:VirtualDerivedHolder')
 
     s = NamedFromClass.NfcStaticMethod('doow')
     self.assertEqual(s, 'wood:static')
-    s = extend_methods.ConcreteHolder.NfcStaticMethod('dooW')
+    s = wrapper_lib.ConcreteHolder.NfcStaticMethod('dooW')
     self.assertEqual(s, 'Wood:static')
-    s = extend_methods.VirtualDerivedHolder.NfcStaticMethod('DOOW')
+    s = wrapper_lib.VirtualDerivedHolder.NfcStaticMethod('DOOW')
     self.assertEqual(s, 'WOOD:static')
 
     with self.assertRaises(AttributeError) as ctx:
       nfc.nfc_property  # pylint: disable=pointless-statement
     self.assertEqual(
-        str(ctx.exception), "'NamedFromClass' object has no attribute 'Get'")
+        str(ctx.exception),
+        "'NamedFromClass" + pb11_suffix + "' object has no attribute 'Get'")
     with self.assertRaises(AttributeError) as ctx:
       nfc.nfc_property = 0
     self.assertEqual(
-        str(ctx.exception), "'NamedFromClass' object has no attribute 'Set'")
+        str(ctx.exception),
+        "'NamedFromClass" + pb11_suffix + "' object has no attribute 'Set'")
 
     s = ch.nfc_property
     self.assertEqual(s, 'GETTER:0:ConcreteHolder')
@@ -316,7 +422,8 @@ class ExtendMethodsTest(unittest.TestCase):
     s = vdh.nfc_property
     self.assertEqual(s, 'GETTER:82:VirtualDerivedHolder')
 
-  def testFromClassOldStyleFailureTestError(self):
+  def testFromClassOldStyleFailureTestError(self, wrapper_lib):
+    self.assertIsNotNone(wrapper_lib)
     if six.PY2:
       self.assertEqual(
           _from_class_old_style_failure_test_error,
@@ -324,7 +431,8 @@ class ExtendMethodsTest(unittest.TestCase):
     else:
       self.assertIsNone(_from_class_old_style_failure_test_error)
 
-  def testBaseOldStyleFailureTestError(self):
+  def testBaseOldStyleFailureTestError(self, wrapper_lib):
+    self.assertIsNotNone(wrapper_lib)
     if six.PY2:
       self.assertIn(
           'extend base must be a new-style class ',
@@ -338,7 +446,8 @@ class ExtendMethodsTest(unittest.TestCase):
     else:
       self.assertIsNone(_base_old_style_failure_test_error)
 
-  def testBaseBaseFailureTestError(self):
+  def testBaseBaseFailureTestError(self, wrapper_lib):
+    self.assertIsNotNone(wrapper_lib)
     self.assertIsNotNone(_base_base_failure_test_error)
     self.assertIn('extend from_class base ', _base_base_failure_test_error)
     self.assertIn(
@@ -346,7 +455,8 @@ class ExtendMethodsTest(unittest.TestCase):
     self.assertIn('BaseBaseFailureTestDerived', _base_base_failure_test_error)
     self.assertIn('BaseBaseFailureTestBase', _base_base_failure_test_error)
 
-  def testTupleAsBaseFailureTestError(self):
+  def testTupleAsBaseFailureTestError(self, wrapper_lib):
+    self.assertIsNotNone(wrapper_lib)
     self.assertIn(
         'extend base must not have a __getattribute__ attribute (base ',
         _tuple_as_base_failure_test_error)
@@ -355,4 +465,4 @@ class ExtendMethodsTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()
