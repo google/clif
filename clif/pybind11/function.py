@@ -54,25 +54,21 @@ def generate_from(module_name: str, func_decl: ast_pb2.FuncDecl,
       yield I + line
     return
 
-  operator_index = utils.find_operator(func_decl.name.cpp_name)
-  if operator_index >= 0 and utils.is_special_operation(func_decl.name.native):
-    for s in operators.generate_operator(module_name, func_decl,
-                                         operator_index):
-      yield I + s
-      return
-
-  func_name = utils.format_func_name(func_decl.name.native)
-  func_def = I + f'{module_name}.def("{func_name}", '
-  func_def += _generate_cpp_function_cast(func_decl, class_decl)
-  func_def += f'&{func_decl.name.cpp_name}'
-  if func_decl.params:
-    func_def += _generate_params_list(func_decl.params,
-                                      func_decl.is_extend_method)
-  func_def += f', {_generate_return_value_policy(func_decl)}'
-  if func_decl.docstring:
-    func_def += f', {_generate_docstring(func_decl.docstring)}'
-  func_def += ');'
-  yield func_def
+  if operators.needs_operator_overloading(func_decl):
+    yield from operators.generate_operator(module_name, func_decl)
+  else:
+    func_name = utils.format_func_name(func_decl.name.native)
+    func_def = I + f'{module_name}.def("{func_name}", '
+    func_def += _generate_cpp_function_cast(func_decl, class_decl)
+    func_def += f'&{func_decl.name.cpp_name}'
+    if func_decl.params:
+      func_def += _generate_params_list(func_decl.params,
+                                        func_decl.is_extend_method)
+    func_def += f', {_generate_return_value_policy(func_decl)}'
+    if func_decl.docstring:
+      func_def += f', {_generate_docstring(func_decl.docstring)}'
+    func_def += ');'
+    yield func_def
 
 
 def _generate_cpp_function_cast(func_decl: ast_pb2.FuncDecl,

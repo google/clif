@@ -21,29 +21,8 @@ from clif.python import pytd2proto
 # Use two spaces indentation for generated code.
 I = '  '
 
-default_supported_op_types = {'int', 'float', 'double', 'long', 'bool'}
-
 # Dict of python methods that map to C++ operators.
 _SPECIAL = pytd2proto._SPECIAL  # pylint: disable=protected-access
-
-
-def find_operator(s, prefix='::operator'):
-  """Use to find the operator in a cpp_name string."""
-  index = s.find(prefix)
-  if index < 0:
-    return -1
-  index += len(prefix)
-  c = s[index:index + 1]
-  if not c or c == '_' or c.isalnum():
-    return -1
-  return index
-
-
-def convert_operator_param(param_str: str):
-  if param_str in default_supported_op_types:
-    return f'{param_str}()'
-  else:
-    return 'py::self'
 
 
 def format_func_name(name: str):

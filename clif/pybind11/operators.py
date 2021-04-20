@@ -13,71 +13,162 @@
 # limitations under the License.
 """Generates pybind11 bindings code for functions."""
 
+from typing import Generator
+
 from clif.protos import ast_pb2
 from clif.pybind11 import utils
 
 I = utils.I
 
+UNARY_OPS = {
+    '__neg__': ('operator-', '~'),
+    '__pos__': ('operator+', '+'),
+    '__invert__': ('operator~', '~'),
+    '__bool__': ('operator bool', '!'),
+    '__int__': ('operator int', 'int_'),
+    '__float__': ('operator float', 'float_'),
+}
 
-def generate_operator(module_name: str, func_decl: ast_pb2.FuncDecl,
-                      operator_index: int):
+BINARY_OPS = {
+    '__sub__': ('operator-', '-'),
+    '__add__': ('operator+', '+'),
+    '__mul__': ('operator*', '*'),
+    '__div__': ('operator/', '/'),
+    '__truediv__': ('operator/', '/'),
+    '__mod__': ('operator%', '%'),
+    '__lshift__': ('operator<<', '<<'),
+    '__rshift__': ('operator>>', '>>'),
+    '__and__': ('operator&', '&'),
+    '__xor__': ('operator^', '^'),
+    '__eq__': ('operator==', '=='),
+    '__ne__': ('operator!=', '!='),
+    '__or__': ('operator|', '|'),
+    '__gt__': ('operator>', '>'),
+    '__ge__': ('operator>=', '>='),
+    '__lt__': ('operator<', '<'),
+    '__le__': ('operator<=', '<='),
+}
+
+INPLACE_OPS = {
+    '__iadd__': ('operator+=', '+='),
+    '__iadd__#': ('operator+=', '+='),
+    '__isub__': ('operator-=', '-='),
+    '__imul__': ('operator*=', '*='),
+    '__imul__#': ('operator*=', '*='),
+    '__idiv__': ('operator/=', '/='),
+    '__ifloordiv__': ('operator/=', '/='),
+    '__itruediv__': ('operator/=', '/='),
+    '__imod__': ('operator%=', '%='),
+    '__ilshift__': ('operator<<=', '<<='),
+    '__irshift__': ('operator>>=', '>>='),
+    '__iand__': ('operator&=', '&='),
+    '__ixor__': ('operator^=', '^='),
+    '__ior__': ('operator|=', '|='),
+}
+
+REFLECTED_OPS = {
+    '__radd__': ('operator+', '+'),
+    '__rsub__': ('operator-', '-'),
+    '__rmul__': ('operator*', '*'),
+    '__rdiv__': ('operator/', '/'),
+    '__rtruediv__': ('operator/', '/'),
+    '__rfloordiv__': ('operator/', '/'),
+    '__rmod__': ('operator%', '%'),
+    '__rlshift__': ('operator<<', '<<'),
+    '__rrshift__': ('operator>>', '>>'),
+    '__rand__': ('operator&', '&'),
+    '__rxor__': ('operator~', '~'),
+    '__ror__': ('operator|', '|'),
+}
+
+SUPPORTED_OPS = {**UNARY_OPS, **BINARY_OPS, **INPLACE_OPS, **REFLECTED_OPS}
+
+
+def needs_operator_overloading(func_decl: ast_pb2.FuncDecl) -> bool:
+  """Returns whether operator overloading is needed for the function."""
+  py_name = func_decl.name.native
+  assert len(SUPPORTED_OPS) == sum(len(d) for d in [
+      UNARY_OPS, BINARY_OPS, INPLACE_OPS, REFLECTED_OPS])
+  if py_name not in SUPPORTED_OPS:
+    return False
+  expected_operator = SUPPORTED_OPS.get(py_name)[0]
+  # If user does not use the pre-defined operator for a magic method,
+  # we just fall back to normal function generation.
+  operator_name = func_decl.name.cpp_name.split('::')[-1]
+  return operator_name == expected_operator
+
+
+def generate_operator(
+    module_name: str,
+    func_decl: ast_pb2.FuncDecl) -> Generator[str, None, None]:
   """Generates operator overload functions.
 
   Args:
     module_name: String containing the outer module name.
     func_decl: AST function declaration in proto format.
-    operator_index: Index of the operator in cpp_name.
 
   Yields:
     Pybind11 operator overload bindings code.
-
   """
 
-  if operator_index >= 0:
-    operator = func_decl.name.cpp_name[operator_index:]
-    operator = operator.strip()
-
-    if operator in {'~'}:
-      yield from _generate_unary_operator(module_name, operator)
-    elif operator in {'<<', '>>'}:
-      yield from _generate_shift_operator(module_name, operator)
-    elif operator in utils.default_supported_op_types:
-      yield from _generate_op_cast(module_name, operator, func_decl)
-    elif func_decl.postproc == '->self' and func_decl.ignore_return_value:
-      yield from _generate_inplace_operator(module_name, func_decl, operator)
-    elif func_decl.cpp_opfunction:
-      yield from _generate_default_operator(module_name, func_decl, operator)
-
-
-def _generate_unary_operator(module_name: str, operator: str):
-  yield f'{module_name}.def({operator}py::self);'
-
-
-def _generate_op_cast(module_name: str, operator: str,
-                      func_decl: ast_pb2.FuncDecl):
-  if operator in {'bool'}:
-    yield f'{module_name}.def("__bool__", &{func_decl.name.cpp_name});'
+  py_name = func_decl.name.native
+  if py_name in UNARY_OPS:
+    yield I + _generate_unary_operator(module_name, func_decl)
+  elif py_name in BINARY_OPS:
+    yield I + _generate_binary_operator(module_name, func_decl)
+  elif py_name in INPLACE_OPS:
+    yield I + _generate_inplace_operator(module_name, func_decl)
+  elif py_name in REFLECTED_OPS:
+    yield I + _generate_reflected_operator(module_name, func_decl)
   else:
-    yield f'{module_name}.def({operator}_(py::self));'
+    yield ''
 
 
-def _generate_shift_operator(module_name: str, operator: str):
-  # TODO: Change hardcoded 'int' to be dynamic.
-  yield f'{module_name}.def(py::self {operator} int());'
+def _generate_unary_operator(module_name: str,
+                             func_decl: ast_pb2.FuncDecl) -> str:
+  py_name = func_decl.name.native
+  assert py_name in UNARY_OPS, f'unsupported unary operator: {py_name}'
+  operator = UNARY_OPS[func_decl.name.native][1]
+  return f'{module_name}.def({operator}(py::self));'
 
 
-def _generate_default_operator(module_name: str, func_decl: ast_pb2.FuncDecl,
-                               operator: str):
-  params = []
-  for param in func_decl.params:
-    params.append(param.cpp_exact_type)
+def _generate_binary_operator(module_name: str,
+                              func_decl: ast_pb2.FuncDecl) -> str:
+  """Generates bindings code for binary operators."""
+  py_name = func_decl.name.native
+  assert py_name in BINARY_OPS, f'unsupported binary operator: {py_name}'
+  assert func_decl.params, f'function {py_name} does not have any parameters'
+  operator = BINARY_OPS[func_decl.name.native][1]
+  if len(func_decl.params) == 1:
+    param = func_decl.params[0].cpp_exact_type
+  else:
+    param = func_decl.params[1].cpp_exact_type
+  right_operand = _convert_param_to_operand(param)
+  return f'{module_name}.def(py::self {operator} {right_operand});'
 
-  yield (f'{module_name}.def({utils.convert_operator_param(params[0])} '
-         f'{operator} {utils.convert_operator_param(params[1])});')
+
+def _generate_inplace_operator(module_name: str,
+                               func_decl: ast_pb2.FuncDecl) -> str:
+  py_name = func_decl.name.native
+  assert py_name in INPLACE_OPS, f'unsupported inplace operator: {py_name}'
+  assert func_decl.params, f'function {py_name} does not have any parameters'
+  operator = INPLACE_OPS[func_decl.name.native][1]
+  operand = _convert_param_to_operand(func_decl.params[0].cpp_exact_type)
+  return f'{module_name}.def(py::self {operator} {operand});'
 
 
-def _generate_inplace_operator(module_name: str, func_decl: ast_pb2.FuncDecl,
-                               operator: str):
-  assert len(func_decl.params) == 1
-  param = utils.convert_operator_param(func_decl.params[0].cpp_exact_type)
-  yield f'{module_name}.def(py::self {operator} {param});'
+def _generate_reflected_operator(module_name: str,
+                                 func_decl: ast_pb2.FuncDecl) -> str:
+  py_name = func_decl.name.native
+  assert py_name in REFLECTED_OPS, f'unsupported reflected operator: {py_name}'
+  assert func_decl.params, f'function {py_name} does not have any parameters'
+  operator = REFLECTED_OPS[func_decl.name.native][1]
+  left_operand = _convert_param_to_operand(func_decl.params[0].cpp_exact_type)
+  return f'{module_name}.def({left_operand} {operator} py::self);'
+
+
+def _convert_param_to_operand(param: str) -> str:
+  if '::' in param:
+    return 'py::self'
+  else:
+    return f'{param}()'
