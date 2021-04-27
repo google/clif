@@ -13,123 +13,125 @@
 # limitations under the License.
 """Generates C++ lambda functions inside pybind11 bindings code."""
 
+from typing import Generator, Optional
+
 from clif.protos import ast_pb2
+from clif.pybind11 import function_lib
 from clif.pybind11 import utils
 
 I = utils.I
 
 
-def generate_lambda(func_decl: ast_pb2.FuncDecl, module_name: str,
-                    class_decl: ast_pb2.ClassDecl):
+def generate_lambda(
+    module_name: str, func_decl: ast_pb2.FuncDecl,
+    class_decl: Optional[ast_pb2.ClassDecl] = None
+) -> Generator[str, None, None]:
   """Entry point for generation of lambda functions in pybind11."""
-
-  if _func_needs_inplace_op_lambda(func_decl, class_decl):
-    yield from _generate_inplace_op_lambda(func_decl, module_name, class_decl)
-    return
-
-  if _func_needs_implicit_conversion(func_decl):
-    yield from _generate_implicit_conversion_lambda(func_decl)
-    return
-
-  if _func_has_return_param(func_decl):
-    yield from _generate_return_args_lambda(func_decl, module_name)
-    return
-
-  if _has_bytes_return(func_decl):
-    yield from _generate_bytes_conversion_lambda(func_decl, 'py::bytes',
-                                                 module_name)
-    return
+  params_with_type = _generate_lambda_params_with_types(func_decl, class_decl)
+  func_name = func_decl.name.native.rstrip('#')  # @sequential
+  yield (f'{module_name}.{function_lib.generate_def(func_decl)}'
+         f'("{func_name}", []({params_with_type}) {{')
+  yield from _generate_lambda_body(func_decl, class_decl)
+  yield f'}}, {function_lib.generate_function_suffixes(func_decl)}'
 
 
-def _generate_implicit_conversion_lambda(func_decl):
-  assert len(func_decl.params) == 1
-  p = func_decl.params[0]
-  yield (f'm.def("{func_decl.name.native}", []({p.type.cpp_type} '
-         f'{p.name.cpp_name}) {{')
-  yield I + f'return {func_decl.name.cpp_name}({p.name.cpp_name});'
-  yield '});'
-  return
+def _generate_lambda_body(
+    func_decl: ast_pb2.FuncDecl,
+    class_decl: Optional[ast_pb2.ClassDecl] = None
+) -> Generator[str, None, None]:
+  """Generates body of lambda expressions."""
+  function_call = _generate_function_call(func_decl, class_decl)
+  function_call_params = _generate_function_call_params(func_decl)
+  function_call_returns = _generate_function_call_returns(func_decl)
 
-
-def _generate_bytes_conversion_lambda(func_decl: ast_pb2.FuncDecl,
-                                      return_type: str, class_name: str):
-  """Generates C++ lambda functions."""
-
-  params_strings = utils.get_params_strings_from_func_decl(func_decl)
-
-  static = ''
-  if func_decl.classmethod:
-    static = '_static'
-
-  yield I + f'{class_name}.def{static}("{func_decl.name.native}",'
-  yield I + I + f'[]({params_strings.names_with_types}) -> {return_type} {{'
-  yield I + I + I + ('return '
-                     f'{func_decl.name.cpp_name}({params_strings.cpp_names});')
-  yield I + I + '}'
-  yield I + ');'
-
-
-def _generate_return_args_lambda(func_decl: ast_pb2.FuncDecl, module_name: str):
-  """Generates C++ lambda functions with return parameters."""
-
-  params_strings = utils.get_params_strings_from_func_decl(func_decl)
-
-  yield I + (f'{module_name}.def("{func_decl.name.native}",'
-             f'[]({params_strings.names_with_types}) {{')
-
-  main_return = ''
-  main_return_cpp_name = ''
-  other_returns_cpp_names = []
+  # Generates declarations of return values
   for i, r in enumerate(func_decl.returns):
-    if i == 0:
-      main_return_cpp_name = r.name.cpp_name
-      main_return = f'{r.type.cpp_type} {main_return_cpp_name}'
-      continue
-    other_returns_cpp_names.append(r.name.cpp_name)
-    yield I + I + f'{r.type.cpp_type} {r.name.cpp_name};'
-  other_returns = ', '.join(other_returns_cpp_names)
-  other_returns_params_list = [f'&{r}' for r in other_returns_cpp_names]
+    yield I + f'{r.type.cpp_type} ret{i}{{}};'
 
-  if not func_decl.cpp_void_return:
-    yield I + I + (f'{main_return} = {func_decl.name.cpp_name}'
-                   f'({params_strings.cpp_names}, &y);')
-    yield I + I + (f'return std::make_tuple({main_return_cpp_name}, '
-                   f'{other_returns});')
+  # Generates call to the wrapped function
+  if not func_decl.cpp_void_return and len(func_decl.returns):
+    yield I + (f'ret0 = {function_call}({function_call_params});')
   else:
-    yield I + I + f'{main_return};'
-    if not other_returns_cpp_names:
-      if params_strings.cpp_names:
-        yield I + I + (f'{func_decl.name.cpp_name}({params_strings.cpp_names},'
-                       f'&{main_return_cpp_name});')
-      else:
-        yield I + I + f'{func_decl.name.cpp_name}(&{main_return_cpp_name});'
-      yield I + I + f'return {main_return_cpp_name};'
+    yield I + f'{function_call}({function_call_params});'
+
+  # Generates returns of the lambda expression
+  if func_decl.postproc == '->self':
+    yield I + 'return self;'
+  elif len(func_decl.returns) > 1:
+    yield I + f'return std::make_tuple({function_call_returns});'
+  else:
+    yield I + f'return {function_call_returns};'
+
+
+def _generate_function_call_params(func_decl: ast_pb2.FuncDecl) -> str:
+  """Generates the parameters of function calls in lambda expressions."""
+  params = ', '.join([f'{p.name.cpp_name}' for p in func_decl.params])
+
+  # Ignore the return value of the function itself when generating pointer
+  # parameters.
+  stard_idx = 0
+  if not func_decl.cpp_void_return and len(func_decl.returns):
+    stard_idx = 1
+  pointer_params_str = ', '.join(
+      [f'&ret{i}' for i in range(stard_idx, len(func_decl.returns))])
+
+  if params and pointer_params_str:
+    return f'{params}, {pointer_params_str}'
+  elif pointer_params_str:
+    return pointer_params_str
+  else:
+    return params
+
+
+def _generate_function_call_returns(func_decl: ast_pb2.FuncDecl) -> str:
+  all_returns_list = []
+  for i, r in enumerate(func_decl.returns):
+    if r.type.lang_type == 'bytes':
+      all_returns_list.append(f'py::bytes(ret{i})')
     else:
-      yield I + I + (f'{func_decl.name.cpp_name}({params_strings.cpp_names},'
-                     f'&{main_return_cpp_name}, {other_returns_params_list});')
-      yield I + I + (f'return std::make_tuple({main_return_cpp_name}, '
-                     f'{other_returns});')
-  yield I + '});'
+      all_returns_list.append(f'ret{i}')
+  return ', '.join(all_returns_list)
 
 
-def _func_has_return_param(func_decl) -> bool:
-  for r in func_decl.returns:
-    if not r.name.cpp_name:
-      return False  # Cannot create a lambda function without a cpp_name.
+def needs_lambda(func_decl: ast_pb2.FuncDecl) -> bool:
+  return (func_decl.postproc == '->self' or
+          _func_needs_implicit_conversion(func_decl) or
+          _func_has_pointer_params(func_decl) or
+          _has_bytes_return(func_decl))
 
+
+def _generate_lambda_params_with_types(
+    func_decl: ast_pb2.FuncDecl,
+    class_decl: Optional[ast_pb2.ClassDecl] = None) -> str:
+  params_list = [
+      f'{p.type.cpp_type} {p.name.cpp_name}' for p in func_decl.params]
+  if class_decl and not func_decl.classmethod:
+    params_list = [f'{class_decl.name.cpp_name} &self'] + params_list
+  return ', '.join(params_list)
+
+
+def _generate_function_call(
+    func_decl: ast_pb2.FuncDecl,
+    class_decl: Optional[ast_pb2.ClassDecl] = None):
+  if func_decl.classmethod or not class_decl:
+    return func_decl.name.cpp_name
+  else:
+    return f'self.{func_decl.name.cpp_name}'
+
+
+def _func_has_pointer_params(func_decl: ast_pb2.FuncDecl) -> bool:
   num_returns = len(func_decl.returns)
   return num_returns >= 2 or (num_returns == 1 and func_decl.cpp_void_return)
 
 
-def _has_bytes_return(func_decl: ast_pb2.FuncDecl):
+def _has_bytes_return(func_decl: ast_pb2.FuncDecl) -> bool:
   for r in func_decl.returns:
-    if r.HasField('type'):
-      if r.type.lang_type == 'bytes':
-        return True
+    if r.type.lang_type == 'bytes':
+      return True
   return False
 
 
-def _func_needs_implicit_conversion(func_decl):
+def _func_needs_implicit_conversion(func_decl: ast_pb2.FuncDecl) -> bool:
   """Check if a function contains an implicitly converted parameter."""
   if len(func_decl.params) == 1:
     param = func_decl.params[0]
@@ -139,41 +141,20 @@ def _func_needs_implicit_conversion(func_decl):
       # work correctly in this situation (but there are no corresponding unit
       # tests).
       return False
-    if (_extract_fundamental_type(param.cpp_exact_type) !=
-        _extract_fundamental_type(param.type.cpp_type) and
+    if (_extract_bare_type(param.cpp_exact_type) !=
+        _extract_bare_type(param.type.cpp_type) and
         param.type.cpp_toptr_conversion and
         param.type.cpp_touniqptr_conversion):
       return True
   return False
 
 
-def _extract_fundamental_type(cpp_name: str):
+def _extract_bare_type(cpp_name: str) -> str:
   # This helper function is not general and only meant
   # to be used in _func_needs_implicit_conversion.
-
   t = cpp_name.split(' ')
   if t[0] == 'const':
     t = t[1:]
   if t[-1] in {'&', '*'}:  # Minimum viable approach. To be refined as needed.
     t = t[:-1]
   return ' '.join(t)
-
-
-def _func_needs_inplace_op_lambda(func_decl: ast_pb2.FuncDecl,
-                                  class_decl: ast_pb2.ClassDecl):
-  return (utils.is_special_operation(func_decl.name.native) and
-          len(func_decl.params) == 1 and func_decl.postproc == '->self' and
-          func_decl.ignore_return_value and func_decl.cpp_void_return and
-          class_decl)
-
-
-def _generate_inplace_op_lambda(func_decl: ast_pb2.FuncDecl, module_name: str,
-                                class_decl: ast_pb2.ClassDecl):
-  param = func_decl.params[0]
-  assert func_decl.name.native[-1] == '#'
-  yield I + (f'{module_name}.def("{func_decl.name.native[:-1]}", '
-             f'[]({class_decl.name.cpp_name}& self, {param.cpp_exact_type} '
-             f'{param.name.native}) {{')
-  yield I + I + (f'self.{func_decl.name.cpp_name}({param.name.native}); return '
-                 f'self;')
-  yield I + '});'

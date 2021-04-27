@@ -51,10 +51,8 @@ BINARY_OPS = {
 
 INPLACE_OPS = {
     '__iadd__': ('operator+=', '+='),
-    '__iadd__#': ('operator+=', '+='),
     '__isub__': ('operator-=', '-='),
     '__imul__': ('operator*=', '*='),
-    '__imul__#': ('operator*=', '*='),
     '__idiv__': ('operator/=', '/='),
     '__ifloordiv__': ('operator/=', '/='),
     '__itruediv__': ('operator/=', '/='),
@@ -113,13 +111,13 @@ def generate_operator(
 
   py_name = func_decl.name.native
   if py_name in UNARY_OPS:
-    yield I + _generate_unary_operator(module_name, func_decl)
+    yield _generate_unary_operator(module_name, func_decl)
   elif py_name in BINARY_OPS:
-    yield I + _generate_binary_operator(module_name, func_decl)
+    yield _generate_binary_operator(module_name, func_decl)
   elif py_name in INPLACE_OPS:
-    yield I + _generate_inplace_operator(module_name, func_decl)
+    yield _generate_inplace_operator(module_name, func_decl)
   elif py_name in REFLECTED_OPS:
-    yield I + _generate_reflected_operator(module_name, func_decl)
+    yield _generate_reflected_operator(module_name, func_decl)
   else:
     yield ''
 

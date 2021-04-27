@@ -36,7 +36,8 @@ class DefaultArgsTest(absltest.TestCase):
 
   def testDefaultArgs(self, wrapper_lib):
     a = wrapper_lib.MyClass()
-    with self.assertRaises(ValueError):
+    with self.assertRaises(
+        ValueError if wrapper_lib is default_args else TypeError):
       a.MethodWithDefaultClassArg(i=113)
     self.assertEqual(a.MethodWithDefaultEnumArg(i=5000), 5432)
     self.assertEqual(a.MethodWithDefaultPtrArg(i=1234), 1234)
