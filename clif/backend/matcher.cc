@@ -2322,6 +2322,7 @@ ClifErrorCode ClifMatcher::MatchAndSetSignatures(
       return kParameterCountsDiffer;
     }
   }
+  func_decl->set_cpp_num_params(clang_type->getNumParams());
   return kOK;
 }
 
