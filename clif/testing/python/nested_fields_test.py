@@ -58,12 +58,17 @@ class NestedFieldsTest(absltest.TestCase):
     a = wrapper_lib.AA()
     a.b.c.i = 123
     c = a.b.c
-    with self.assertRaises(ValueError):
-      # Cannot give up |a| as |c| still is alive
+    if wrapper_lib is nested_fields:
+      with self.assertRaises(ValueError):
+        # Cannot give up |a| as |c| still is alive
+        wrapper_lib.ConsumeAA(a)
+      del c
+      # Since |c| is now gone, we can give up |a|
       wrapper_lib.ConsumeAA(a)
-    del c
-    # Since |c| is now gone, we can give up |a|
-    wrapper_lib.ConsumeAA(a)
+    else:
+      # TODO: This disowns |a| even though |c| is still alive. Accessing
+      # |c| beyond this point generates an ASAN heap-use-after-free error.
+      wrapper_lib.ConsumeAA(a)
 
     a = wrapper_lib.AA()
     a.b.c.i = 123

@@ -19,9 +19,9 @@ from clif.pybind11 import utils
 I = utils.I
 
 
-def generate_from(enum_decl: ast_pb2.EnumDecl, class_str: str):
+def generate_from(class_name: str, enum_decl: ast_pb2.EnumDecl):
   """Generates enums."""
-  enum_def = I + (f'py::enum_<{enum_decl.name.cpp_name}>({class_str}, '
+  enum_def = I + (f'py::enum_<{enum_decl.name.cpp_name}>({class_name}, '
                   f'"{enum_decl.name.native}")')
   members = enum_decl.members
   for member in members:

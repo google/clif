@@ -28,12 +28,12 @@ I = utils.I
 class ModuleGenerator(object):
   """A class that generates pybind11 bindings code from CLIF ast."""
 
-  def __init__(self, ast: ast_pb2.AST, module_name: Text):
+  def __init__(self, ast: ast_pb2.AST, module_name: str):
     self._ast = ast
     self._module_name = module_name
 
   def generate_header(self,
-                      unused_ast: ast_pb2.AST) -> Generator[Text, None, None]:
+                      unused_ast: ast_pb2.AST) -> Generator[str, None, None]:
     # TODO: Generates header file content here.
     yield ''
 
@@ -67,7 +67,8 @@ class ModuleGenerator(object):
 
     for decl in ast.decls:
       if decl.decltype == ast_pb2.Decl.Type.FUNC:
-        yield from function.generate_from('m', decl.func, None)
+        for s in function.generate_from('m', decl.func, None):
+          yield I + s
       elif decl.decltype == ast_pb2.Decl.Type.CONST:
         yield from self._generate_const_variables(decl.const)
       elif decl.decltype == ast_pb2.Decl.Type.CLASS:
@@ -75,7 +76,7 @@ class ModuleGenerator(object):
             decl.class_, 'm',
             python_override_class_names.get(decl.class_.name.cpp_name, ''))
       elif decl.decltype == ast_pb2.Decl.Type.ENUM:
-        yield from enums.generate_from(decl.enum, 'm')
+        yield from enums.generate_from('m', decl.enum)
       yield ''
     yield '}'
 
