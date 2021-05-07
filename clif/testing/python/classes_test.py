@@ -45,7 +45,6 @@ class ClassesTest(absltest.TestCase):
     with self.assertRaises((AttributeError, TypeError)):
       k.i2 = 0
 
-  # TODO: Make this test case work with pybind11.
   def testDerivedClassDocstring(self, wrapper_lib):
     # Nothing special about this being a derived class; that is just the
     # one our test .clif file has a docstring on.
