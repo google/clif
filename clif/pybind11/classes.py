@@ -41,9 +41,10 @@ def generate_from(
 
   class_name = f'{class_decl.name.native}_class'
   definition = I + f'py::classh<{class_decl.name.cpp_name}'
-  for base in class_decl.bases:
-    if base.HasField('cpp_name'):
-      definition += f', {base.cpp_name}'
+  if not class_decl.supress_upcasts:
+    for base in class_decl.bases:
+      if base.HasField('cpp_name'):
+        definition += f', {base.cpp_name}'
   if python_override_class_name:
     definition += f', {python_override_class_name}'
   definition += (f'> {class_name}({superclass_name}, '
