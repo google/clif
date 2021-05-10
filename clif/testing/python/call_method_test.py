@@ -60,19 +60,14 @@ class CallOverrideTest(absltest.TestCase):
 
   def testPassingArgsToNoArg(self, wrapper_lib):
     add_constant = wrapper_lib.AddConstant(100.0)
-    with self.assertRaises(TypeError) as ctx:
+    with self.assertRaises(TypeError):
       add_constant(123, 456)
-    self.assertEqual(
-        str(ctx.exception),
-        '__call__() takes no arguments (2 given)')
 
   def testPassingKwargsToNoArg(self, wrapper_lib):
     add_constant = wrapper_lib.AddConstant(100.0)
-    with self.assertRaises(TypeError) as ctx:
+    with self.assertRaises(TypeError):
       add_constant(a=123)
-    self.assertEqual(
-        str(ctx.exception),
-        '__call__() takes no keyword arguments')
+
 
 if __name__ == '__main__':
   absltest.main()
