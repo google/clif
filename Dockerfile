@@ -109,7 +109,7 @@ RUN wget "https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOB
     rm -rf "/protobuf-$PROTOBUF_VERSION" "/protobuf-cpp-$PROTOBUF_VERSION.tar.gz"
 
 # Install googletest
-RUN cd /usr/src/gtest && \
+RUN cd /usr/src/googletest && \
     cmake . && \
     make install
 
