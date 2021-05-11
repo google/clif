@@ -38,9 +38,9 @@ def generate_from(
   Yields:
     pybind11 class bindings code.
   """
-
+  yield I + '{'
   class_name = f'{class_decl.name.native}_class'
-  definition = I + f'py::classh<{class_decl.name.cpp_name}'
+  definition = f'py::classh<{class_decl.name.cpp_name}'
   if not class_decl.supress_upcasts:
     for base in class_decl.bases:
       if base.HasField('cpp_name'):
@@ -52,33 +52,35 @@ def generate_from(
   if class_decl.HasField('docstring'):
     definition += f', {_as_cpp_string_literal(class_decl.docstring)}'
   definition += ');'
-  yield definition
+  yield I + I + definition
 
   constructor_defined = False
   for member in class_decl.members:
     if member.decltype == ast_pb2.Decl.Type.CONST:
       for s in _generate_const_members(class_name, member):
-        yield I + s
+        yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.FUNC:
       if member.func.constructor:
         constructor_defined = True
         for s in _generate_constructor(class_name, member.func, class_decl):
-          yield I + s
+          yield I + I + s
       else:
         for s in function.generate_from(class_name, member.func, class_decl):
-          yield I + s
+          yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.VAR:
       for s in variables.generate_from(class_name, member.var, class_decl):
-        yield I + s
+        yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.ENUM:
       for s in enums.generate_from(class_name, member.enum):
-        yield I + s
+        yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.CLASS:
-      yield from generate_from(member.class_, class_name,
-                               python_override_class_name)
+      for s in generate_from(member.class_, class_name,
+                             python_override_class_name):
+        yield I + s
 
   if not constructor_defined and class_decl.cpp_has_def_ctor:
-    yield I + f'{class_name}.def(py::init<>());'
+    yield I + I + f'{class_name}.def(py::init<>());'
+  yield I + '}'
 
 
 def _generate_constructor(
