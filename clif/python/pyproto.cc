@@ -101,7 +101,8 @@ PyObject* GetMessageName(PyObject* py) {
 }
 }  // namespace proto
 
-bool Clif_PyObjAs(PyObject* py, std::unique_ptr<::proto2::Message>* c) {
+bool Internal_Clif_PyObjAs(PyObject* py, std::unique_ptr<::proto2::Message>* c,
+                           bool force_from_generated_pool) {
   CHECK(c != nullptr);
   PyObject* fn = proto::GetMessageName(py);
   if (fn == nullptr) return false;
@@ -142,6 +143,10 @@ bool Clif_PyObjAs(PyObject* py, std::unique_ptr<::proto2::Message>* c) {
   Py_DECREF(ser);
   *c = ::std::unique_ptr<::proto2::Message>(m);
   return true;
+}
+
+bool Clif_PyObjAs(PyObject* py, std::unique_ptr<::proto2::Message>* c) {
+  return Internal_Clif_PyObjAs(py, c, false);
 }
 
 namespace proto {
@@ -211,7 +216,10 @@ bool InGeneratedPool(PyObject* pyproto, proto2::Message* cproto) {
         // Try to get the named message from the C++ generated pool.
         std::unique_ptr<proto2::Message> temp;
         PyErr_Clear();
-        if (Clif_PyObjAs(pyproto, &temp)) {
+        // The cproto->CopyFrom() reqiures messages are from the same pool.
+        // Force the temp message is from C++ generated pool even python side
+        // does not linked in the C++ generated lib.
+        if (Internal_Clif_PyObjAs(pyproto, &temp, true)) {
           cproto->CopyFrom(*temp);
           return true;
         }
