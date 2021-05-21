@@ -392,13 +392,7 @@ class Postprocessor(object):
       except IOError:
         pass
     else:
-      # Helpful pointer related to "_clif" infix change, added 2020-06-23.
-      # TODO: Remove this code after a few weeks.
-      if hdr.endswith('_clif.h') or hdr.endswith('_pyclif.h'):
-        go_link = ''
-      else:
-        go_link = ' (maybe related to >>> go/clif_h_infix <<< change?)'
-      raise NameError('include "%s" not found%s' % (hdr, go_link))
+      raise NameError('include "%s" not found' % hdr)
 
   def _import(self, unused_ln, p, unused_pb):
     """from full.python.path import postprocessor."""
