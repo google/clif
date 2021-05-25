@@ -85,11 +85,8 @@ class ClassModuleAttrTestMultipleTypes(absltest.TestCase):
     self.assertLen(obj.__dict__, 1)
     obj.height = '13'
     self.assertLen(obj.__dict__, 2)
-    with self.assertRaises(TypeError) as ctx:
+    with self.assertRaises(TypeError):
       obj.__dict__ = ''
-    self.assertEqual(
-        str(ctx.exception),
-        '__dict__ must be set to a dict, not a str')
     initial_dict = obj.__dict__
     self.assertEqual(sys.getrefcount(initial_dict), 3)
     obj.__dict__ = {'seven': 7, 'ate': 8, 'nine': 9}

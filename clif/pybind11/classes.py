@@ -51,6 +51,10 @@ def generate_from(
                  f'"{class_decl.name.native}"')
   if class_decl.HasField('docstring'):
     definition += f', {_as_cpp_string_literal(class_decl.docstring)}'
+  if class_decl.enable_instance_dict:
+    definition += ', py::dynamic_attr()'
+  if class_decl.final:
+    definition += ', py::is_final()'
   definition += ');'
   yield I + I + definition
 
