@@ -878,6 +878,7 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
   elif nret:
     yield I+'return Clif_PyObjFrom(std::move(%s0%s), %s);' % (
         ret, ('.value()' if optional_ret0 else ''),
+        'py::postconv::MarkedNonRaising' if func_ast.marked_non_raising else
         postconv.Initializer(func_ast.returns[0].type, typepostconversion))
   elif return_self or ctxmgr == '__enter__@':
     yield I+'Py_INCREF(self);'

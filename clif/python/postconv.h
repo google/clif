@@ -43,6 +43,7 @@ namespace clif {
 namespace py {
 namespace postconv {
 inline PyObject* PASS(PyObject* x) { return x; }
+inline PyObject* MarkedNonRaising(PyObject*) { return nullptr; }
 }  // namespace postconv
 
 class PostConv {
@@ -62,6 +63,8 @@ class PostConv {
   PostConv(Func f) : noop_(false), f_(f ? f : postconv::PASS) {}
   PostConv(std::initializer_list<PostConv> lst)
       : noop_(!lst.size()), f_(nullptr), c_(lst) {}
+
+  bool isMarkedNonRaising() const { return f_ == postconv::MarkedNonRaising; }
 
  private:
   friend class PostConvTest;

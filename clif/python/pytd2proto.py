@@ -784,6 +784,9 @@ class Postprocessor(object):
     if 'extend' in decorators:
       f.is_extend_method = True
       decorators.remove('extend')
+    if 'non_raising' in decorators:
+      f.marked_non_raising = True
+      decorators.remove('non_raising')
     if '__enter__' in decorators:
       f.name.native = '__enter__@'  # A hack to flag a ctx mgr.
       decorators.remove('__enter__')

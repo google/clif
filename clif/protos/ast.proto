@@ -132,7 +132,8 @@ message FuncDecl {
   optional bool is_overloaded = 22;  // Set to true if C++ func is overloaded.
   optional string mangled_name = 23;
   optional int32 cpp_num_params = 24;  // Number of parameters of C++ func.
-  // Next available: 25
+  optional bool marked_non_raising = 25;  // Set to true if @non_raising decorator is present.
+  // Next available: 26
 };
 
 // ForwardDecl describe a C++ name declaration match (only make sense for
