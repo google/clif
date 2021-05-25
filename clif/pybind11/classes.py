@@ -90,7 +90,8 @@ def _generate_constructor(
   params_with_types = ', '.join(
       [f'{p.type.cpp_type} {p.name.cpp_name}' for p in func_decl.params])
   params = ', '.join([f'{p.name.cpp_name}' for p in func_decl.params])
-  cpp_types = ', '.join([f'{p.type.cpp_type}' for p in func_decl.params])
+  cpp_types = ', '.join(
+      [f'{function_lib.generate_param_type(p)}' for p in func_decl.params])
   if func_decl.name.native == '__init__' and func_decl.is_extend_method:
     yield f'{class_name}.def(py::init([]({params_with_types}) {{'
     yield I + f'return {func_decl.name.cpp_name}({params});'

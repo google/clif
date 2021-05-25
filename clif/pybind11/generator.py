@@ -20,6 +20,7 @@ from clif.protos import ast_pb2
 from clif.pybind11 import classes
 from clif.pybind11 import enums
 from clif.pybind11 import function
+from clif.pybind11 import function_lib
 from clif.pybind11 import utils
 
 I = utils.I
@@ -87,14 +88,15 @@ class ModuleGenerator(object):
       includes.add(decl.cpp_file)
       if decl.decltype == ast_pb2.Decl.Type.CONST:
         self._generate_const_variables_headers(decl.const, includes)
-    for include in includes:
-      if include:
-        yield f'#include "{include}"'
+    yield '#include "third_party/pybind11/include/pybind11/complex.h"'
+    yield '#include "third_party/pybind11/include/pybind11/functional.h"'
+    yield '#include "third_party/pybind11/include/pybind11/operators.h"'
     yield '#include "third_party/pybind11/include/pybind11/smart_holder.h"'
     yield '// potential future optimization: generate this line only as needed.'
     yield '#include "third_party/pybind11/include/pybind11/stl.h"'
-    yield '#include <pybind11/operators.h>'
-    yield '#include <pybind11/complex.h>'
+    for include in includes:
+      if include:
+        yield f'#include "{include}"'
     yield ''
     yield 'namespace py = pybind11;'
     yield ''
@@ -141,54 +143,52 @@ class ModuleGenerator(object):
           decl.class_.name.cpp_name] = python_override_class_name
       yield (f'struct {python_override_class_name} : '
              f'{decl.class_.name.cpp_name}, {self_life_support} {{')
-      yield I + I + (
+      yield I + (
           f'using {decl.class_.name.cpp_name}::{decl.class_.name.native};')
       for member in virtual_members:
-        yield from self._generate_virtual_function(decl.class_, member)
+        yield from self._generate_virtual_function(
+            decl.class_.name.native, member.func)
       if python_override_class_name:
         yield '};'
 
-  def _generate_virtual_function(self, class_decl: ast_pb2.ClassDecl,
-                                 member: ast_pb2.Decl):
+  def _generate_virtual_function(self,
+                                 class_name: str, func_decl: ast_pb2.Decl):
     """Generates virtual function overrides calling Python methods."""
-
     return_type = ''
-    if member.func.cpp_void_return:
+    if func_decl.cpp_void_return:
       return_type = 'void'
-    elif member.func.returns:
-      for v in member.func.returns:
+    elif func_decl.returns:
+      for v in func_decl.returns:
         if v.HasField('cpp_exact_type'):
           return_type = v.cpp_exact_type
 
-    params_list = []
+    params = ', '.join([f'{p.name.cpp_name}' for p in func_decl.params])
     params_list_with_types = []
-    for param in member.func.params:
-      params_list.append(param.name.native)
+    for p in func_decl.params:
       params_list_with_types.append(
-          f'{param.type.lang_type} {param.name.native}')
-    params_str = ', '.join(params_list)
+          f'{function_lib.generate_param_type(p)} {p.name.cpp_name}')
     params_str_with_types = ', '.join(params_list_with_types)
 
     cpp_const = ''
-    if member.func.cpp_const_method:
-      cpp_const = ' const '
+    if func_decl.cpp_const_method:
+      cpp_const = ' const'
 
-    yield I + I + (f'{return_type} '
-                   f'{member.func.name.native}({params_str_with_types}) '
-                   f'{cpp_const}override {{')
+    yield I + (f'{return_type} '
+               f'{func_decl.name.native}({params_str_with_types}) '
+               f'{cpp_const} override {{')
 
-    if member.func.is_pure_virtual:
+    if func_decl.is_pure_virtual:
       pybind11_override = 'PYBIND11_OVERRIDE_PURE'
     else:
       pybind11_override = 'PYBIND11_OVERRIDE'
 
-    yield I + I + I + f'{pybind11_override}('
-    yield I + I + I + I + f'{return_type},'
-    yield I + I + I + I + f'{class_decl.name.native},'
-    yield I + I + I + I + f'{member.func.name.native},'
-    yield I + I + I + I + f'{params_str}'
-    yield I + I + I + ');'
-    yield I + I + '}'
+    yield I + I + f'{pybind11_override}('
+    yield I + I + I + f'{return_type},'
+    yield I + I + I + f'{class_name},'
+    yield I + I + I + f'{func_decl.name.native},'
+    yield I + I + I + f'{params}'
+    yield I + I + ');'
+    yield I + '}'
 
   def _collect_class_cpp_names(self, decl: ast_pb2.Decl,
                                unique_classes: Set[Text]):

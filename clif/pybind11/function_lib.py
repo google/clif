@@ -33,6 +33,13 @@ def generate_function_suffixes(func_decl: ast_pb2.FuncDecl) -> str:
   return suffix
 
 
+def generate_param_type(param: ast_pb2.ParamDecl) -> str:
+  if param.type.HasField('callable'):
+    return param.cpp_exact_type
+  else:
+    return param.type.cpp_type
+
+
 def generate_def(func_decl: ast_pb2.FuncDecl) -> str:
   static_str = '_static' if func_decl.classmethod else ''
   return f'def{static_str}'
