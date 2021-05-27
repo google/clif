@@ -152,7 +152,7 @@ class ModuleGenerator(object):
         yield '};'
 
   def _generate_virtual_function(self,
-                                 class_name: str, func_decl: ast_pb2.Decl):
+                                 class_name: str, func_decl: ast_pb2.FuncDecl):
     """Generates virtual function overrides calling Python methods."""
     return_type = ''
     if func_decl.cpp_void_return:
