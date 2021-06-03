@@ -41,7 +41,7 @@ def generate_from(
   Yields:
     pybind11 function bindings code.
   """
-  if lambdas.needs_lambda(func_decl):
+  if lambdas.needs_lambda(func_decl, class_decl):
     yield from lambdas.generate_lambda(module_name, func_decl, class_decl)
   elif operators.needs_operator_overloading(func_decl):
     yield from operators.generate_operator(module_name, func_decl)

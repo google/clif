@@ -101,7 +101,11 @@ def _generate_function_call_returns(func_decl: ast_pb2.FuncDecl) -> str:
   return ', '.join(all_returns_list)
 
 
-def needs_lambda(func_decl: ast_pb2.FuncDecl) -> bool:
+def needs_lambda(
+    func_decl: ast_pb2.FuncDecl,
+    class_decl: Optional[ast_pb2.ClassDecl] = None) -> bool:
+  if class_decl and _has_inherited_methods(class_decl):
+    return True
   return (bool(func_decl.postproc) or
           _func_needs_implicit_conversion(func_decl) or
           _func_has_pointer_params(func_decl) or
@@ -124,12 +128,24 @@ def _generate_function_call(
   if func_decl.classmethod or not class_decl:
     return func_decl.name.cpp_name
   else:
-    return f'self.{func_decl.name.cpp_name}'
+    method_name = func_decl.name.cpp_name.split('::')[-1]
+    return f'self.{method_name}'
 
 
 def _func_has_pointer_params(func_decl: ast_pb2.FuncDecl) -> bool:
   num_returns = len(func_decl.returns)
   return num_returns >= 2 or (num_returns == 1 and func_decl.cpp_void_return)
+
+
+def _has_inherited_methods(class_decl: ast_pb2.ClassDecl) -> bool:
+  if class_decl.cpp_bases:
+    for member in class_decl.members:
+      if (member.decltype == ast_pb2.Decl.Type.FUNC and not
+          member.func.is_extend_method):
+        namespaces = member.func.name.cpp_name.split('::')
+        if len(namespaces) > 1 and namespaces[-2] != class_decl.name.cpp_name:
+          return True
+  return False
 
 
 def _has_bytes_return(func_decl: ast_pb2.FuncDecl) -> bool:
