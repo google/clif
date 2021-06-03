@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef CLIF_TESTING_RETURN_SET_AS_LIST_H_
-#define CLIF_TESTING_RETURN_SET_AS_LIST_H_
+#ifndef CLIF_TESTING_POSTPROC_H_
+#define CLIF_TESTING_POSTPROC_H_
 
 #include <set>
 #include <string>
@@ -29,6 +29,19 @@ inline std::set<std::string> get_set_string(int size) {
   return ss;
 }
 
+inline int get_one() {
+  return 1;
+}
+
+inline bool add_one_if_positive(int input, int* output = nullptr) {
+  if (input > 0) {
+    *output = input + 1;
+  } else {
+    *output = input;
+  }
+  return input > 0;
+}
+
 }  // namespace clif_testing
 
-#endif  // CLIF_TESTING_RETURN_SET_AS_LIST_H_
+#endif  // CLIF_TESTING_POSTPROC_H_

@@ -57,6 +57,14 @@ def _generate_lambda_body(
   # Generates returns of the lambda expression
   if func_decl.postproc == '->self':
     yield I + 'return self;'
+  elif func_decl.postproc:
+    assert '.' in func_decl.postproc
+    module_name, method_name = func_decl.postproc.rsplit('.', maxsplit=1)
+    # TODO: Port or reuse `clif::ImportFQName`.
+    yield I + f'auto mod = py::module_::import("{module_name}");'
+    yield I + ('py::object result = '
+               f'mod.attr("{method_name}")({function_call_returns});')
+    yield I + 'return result;'
   elif len(func_decl.returns) > 1:
     yield I + f'return std::make_tuple({function_call_returns});'
   else:
@@ -94,7 +102,7 @@ def _generate_function_call_returns(func_decl: ast_pb2.FuncDecl) -> str:
 
 
 def needs_lambda(func_decl: ast_pb2.FuncDecl) -> bool:
-  return (func_decl.postproc == '->self' or
+  return (bool(func_decl.postproc) or
           _func_needs_implicit_conversion(func_decl) or
           _func_has_pointer_params(func_decl) or
           _has_bytes_return(func_decl))

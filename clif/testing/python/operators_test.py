@@ -39,8 +39,8 @@ class OperatorsTest(absltest.TestCase):
     self.assertEqual(int(abc), 1)
     self.assertAlmostEqual(float(abc), 1.1)
     self.assertLen(abc, 26)
-    self.assertEqual(abc[0], 'a')
-    self.assertEqual(abc[1], 'b')
+    self.assertEqual(abc[0], ord('a'))
+    self.assertEqual(abc[1], ord('b'))
     #    self.assertEqual(abc[-1], 'z')
     ABC = wrapper_lib.Abc(ord('A'), ord('Z'))  # pylint: disable=invalid-name
     self.assertNotEqual(abc, ABC)
@@ -48,7 +48,7 @@ class OperatorsTest(absltest.TestCase):
     self.assertLess(ABC, abc, str(ABC[0] < abc[0]))
     abc += 2  # a->c
     self.assertLen(abc, 26)
-    self.assertEqual(abc[0], 'c')
+    self.assertEqual(abc[0], ord('c'))
     self.assertIn(ord('c'), abc)
     self.assertLessEqual(ABC, abc, str(ABC[0] <= abc[0]))
     self.assertGreater(abc, ABC, str(abc[0] > ABC[0]))

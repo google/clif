@@ -1,0 +1,46 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from clif.python.postproc import AsSortedList
+from clif.python.postproc import AsSortedTuple
+from clif.python.postproc import IgnoreTrueOrFalse
+from clif.python.postproc import RuntimeErrorOnFalse
+from clif.python.postproc import ValueErrorOnFalse
+
+from "clif/testing/postproc.h":
+  namespace `clif_testing`:
+    # TODO: Eliminate need for postproc.
+    def `get_set_string` as as_sorted_list(size: int) -> `std::set` as list<str>:
+      return AsSortedList(...)
+
+    def `get_set_string` as as_sorted_tuple(size: int) -> `std::set` as tuple<str>:
+      return AsSortedTuple(...)
+
+    def `get_set_string` as invalid_postproc(size: int) -> `std::set` as list<str>:
+      return ValueErrorOnFalse(...)
+
+    def `add_one_if_positive` as value_error_on_false(input: int) ->
+        (success: bool, output: int):
+      return ValueErrorOnFalse(...)
+
+    def `add_one_if_positive` as runtime_error_on_false(input: int) ->
+        (success: bool, output: int):
+      return RuntimeErrorOnFalse(...)
+
+    def `add_one_if_positive` as ignore_true_or_false(input: int) ->
+        (success: bool, output: int):
+      return IgnoreTrueOrFalse(...)
+
+    def get_one() -> int:
+      return chr(...)

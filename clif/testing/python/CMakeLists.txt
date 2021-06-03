@@ -167,7 +167,7 @@ add_pyclif_library_for_test(_pickle_compatibility pickle_compatibility.clif
   TEST pickle_compatibility_test.py
 )
 
-add_pyclif_library_for_test(return_set_as_list return_set_as_list.clif
+add_pyclif_library_for_test(postproc postproc.clif
   PY_DEPS clif_python_postproc
 )
 

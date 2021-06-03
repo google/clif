@@ -24,7 +24,7 @@ struct Abc {
   explicit Abc(uint8_t start, uint8_t end)
       : s(start), l(end < start ? 0 : end-start+1) {}
   int length() { return l; }
-  char operator[](int i);
+  uint8_t operator[](int i);
 
   operator bool() const {
     return false;
@@ -67,7 +67,7 @@ inline bool operator<=(Abc const& lhs, Abc const& rhs) {
 inline bool operator>=(Abc const& lhs, Abc const& rhs) {
   return !(lhs < rhs);
 }
-inline char Abc::operator[](int i) { return (i >= 0 && i < l) ? s+i : 0; }
+inline uint8_t Abc::operator[](int i) { return (i >= 0 && i < l) ? s+i : 0; }
 
 // Check if |c| belongs to |abc| container.
 // It should be a non-member function to test that it can be wrapped in class.

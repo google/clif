@@ -28,8 +28,7 @@ from "clif/testing/operators.h":
       def __iadd__(self, other: int) -> self
       def `length` as __len__(self) -> int
       @sequential
-      def __getitem__(self, i: int) -> int:
-        return chr(...)
+      def __getitem__(self, i: int) -> int
       def `clif_ops_test::Abc_has` as __contains__(self, k: int) -> bool
 
     class Num:
