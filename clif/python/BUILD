@@ -125,7 +125,8 @@ py_test(
     name = "gen_test",
     size = "small",
     srcs = ["gen_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [":generator_lib"],
 )
 
@@ -141,7 +142,8 @@ py_test(
     name = "postconv_test",
     size = "small",
     srcs = ["postconv_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [":postconv_test_lib"],
 )
 
@@ -186,7 +188,8 @@ py_test(
     name = "postproc_test",
     size = "small",
     srcs = ["postproc_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":postproc",
         requirement("parameterized"),
@@ -215,7 +218,8 @@ py_test(
     name = "pytd_parser_test",
     size = "small",
     srcs = ["pytd_parser_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [":pytd_parser_test_lib"],
 )
 
@@ -260,7 +264,8 @@ py_test(
     name = "module_test",
     size = "small",
     srcs = ["module_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [":module_test_lib"],
 )
 
@@ -281,7 +286,8 @@ py_test(
     name = "func_test",
     size = "small",
     srcs = ["func_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [":func_test_lib"],
 )
 
@@ -302,7 +308,8 @@ py_test(
     name = "class_test",
     size = "small",
     srcs = ["class_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [":class_test_lib"],
 )
 
@@ -323,7 +330,8 @@ py_test(
     name = "types_test",
     size = "small",
     srcs = ["types_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [":types_test_lib"],
 )
 
@@ -342,7 +350,8 @@ py_test(
     name = "slots_test",
     size = "small",
     srcs = ["slots_test.py"],
-    srcs_version = "PY2AND3",
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [":slots_test_lib"],
 )
 
