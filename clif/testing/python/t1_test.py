@@ -17,7 +17,6 @@
 
 from absl.testing import absltest
 from absl.testing import parameterized
-import six
 
 from clif.testing.python import t1
 # TODO: Restore simple import after OSS setup includes pybind11.
@@ -67,11 +66,7 @@ class T1Test(parameterized.TestCase):
   def testBytes(self, wrapper_lib):
     self.assertEqual(wrapper_lib.StdBytes(), b'std')
 
-    # Pybind11 emulates python3 str/bytes behavior even when using python2.
-    if six.PY2 and wrapper_lib is t1:
-      self.assertEqual(wrapper_lib.UnicodeString(), u'\u0394'.encode('utf-8'))
-    else:
-      self.assertEqual(wrapper_lib.UnicodeString(), u'\u0394')
+    self.assertEqual(wrapper_lib.UnicodeString(), u'\u0394')
 
     self.assertEqual(wrapper_lib.UnicodeBytes(False), u'\u03B8'.encode('utf-8'))
     self.assertEqual(wrapper_lib.UnicodeBytes(True), b'\x80')

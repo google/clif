@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import base64
 import copy
 import itertools
@@ -26,7 +22,6 @@ import unittest
 import warnings
 
 import parameterized
-import six
 
 from clif.testing.python import extension_type_refcount
 from clif.testing.python import pickle_compatibility
@@ -51,8 +46,8 @@ class PickleCompatibilityTest(unittest.TestCase):
     self.assertIs(empty_type.__reduce__, object.__reduce__)
     self.assertIsNot(empty_type.__reduce_ex__, object.__reduce_ex__)
     for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
-      with six.assertRaisesRegex(
-          self, TypeError,
+      with self.assertRaisesRegex(
+          TypeError,
           "^can't pickle .* object: missing __getinitargs__"
           " and/or __getstate__$"):
         obj.__reduce_ex__(protocol)
@@ -102,8 +97,8 @@ class PickleCompatibilityTest(unittest.TestCase):
 
   def testStoreTwoG(self):
     obj = pickle_compatibility.StoreTwoG()
-    with six.assertRaisesRegex(
-        self, TypeError,
+    with self.assertRaisesRegex(
+        TypeError,
         "^can't pickle clif.testing.python"
         "._pickle_compatibility.StoreTwoG object:"
         " has __setstate__ but missing __getstate__$"):
@@ -111,8 +106,8 @@ class PickleCompatibilityTest(unittest.TestCase):
 
   def testStoreTwoS(self):
     obj = pickle_compatibility.StoreTwoS()
-    with six.assertRaisesRegex(
-        self, TypeError,
+    with self.assertRaisesRegex(
+        TypeError,
         "^can't pickle clif.testing.python"
         "._pickle_compatibility.StoreTwoS object:"
         " has __getstate__ but missing __setstate__$"):
@@ -120,8 +115,8 @@ class PickleCompatibilityTest(unittest.TestCase):
 
   def testStoreTwoImixup(self):
     obj = pickle_compatibility.StoreTwoImixup()
-    with six.assertRaisesRegex(
-        self, ValueError,
+    with self.assertRaisesRegex(
+        ValueError,
         r'^clif.testing.python'
         r'._pickle_compatibility.StoreTwoImixup.__getinitargs__'
         r' must return a tuple or list \(got str\)$'):
@@ -145,9 +140,6 @@ class PickleCompatibilityTest(unittest.TestCase):
                 pickle_compatibility.StoreTwoImixup):
       all_unpicklable.append(cls())
     pickle_implementations = [pickle]
-    if six.PY2:
-      import cPickle  # pylint: disable=g-import-not-at-top
-      pickle_implementations.append(cPickle)
     warnings.simplefilter('once')
     for counter in itertools.count():
       if limit is not None and counter >= limit:

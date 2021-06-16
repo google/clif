@@ -1,5 +1,3 @@
-# Lint-as: python3
-
 # Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,14 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 
 from absl.testing import absltest
 from absl.testing import parameterized
-import six
 
 from clif.python import type_customization
 
@@ -60,13 +53,10 @@ for concrete_holder in (extend_methods.ConcreteHolder,
                         if HAVE_PB11 else DummyForExtend):
 
   @type_customization.extend(concrete_holder)
-  class _(object):  # The object base is needed for Python 2 only.
-    # This works in Python 3 but not in Python 2:
-    # """Docstring."""
-    if not six.PY2:  # Workaround.
-      __doc__ = """Added to ConcreteHolder."""
+  class _:
+    """Added to ConcreteHolder."""
 
-      data = 'Data added to ConcreteHolder.'
+    data = 'Data added to ConcreteHolder.'
 
     def AnInstanceMethod(self, prefix):
       return ':'.join((prefix.upper(), 'self', self.__class__.__name__))
@@ -93,12 +83,8 @@ for virtual_base_holder in (extend_methods.VirtualBaseHolder,
                             if HAVE_PB11 else DummyForExtend):
 
   @type_customization.extend(virtual_base_holder)
-  class _(object):  # The object base is needed for Python 2 only.
-    # This works in Python 3 but not in Python 2:
-    # """Docstring."""
-    # An alternative workaround is below.
-
-    data = 'Data added to VirtualBaseHolder.'
+  class _:
+    data = """Data added to VirtualBaseHolder."""
 
     def AnInstanceMethod(self, prefix):
       return ':'.join((prefix.capitalize(), 'self', self.__class__.__name__))
@@ -119,11 +105,9 @@ for virtual_base_holder in (extend_methods.VirtualBaseHolder,
     def a_property(self, value):
       self.Set(value + 7)
 
-  if not six.PY2:
-
-    @type_customization.extend(virtual_base_holder)
-    class _(object):
-      """Added to VirtualBaseHolder."""
+  @type_customization.extend(virtual_base_holder)
+  class _(object):
+    """Added to VirtualBaseHolder."""
 
 
 @type_customization.extend(extend_methods.ConcreteHolder)
@@ -308,12 +292,10 @@ class ExtendMethodsTest(absltest.TestCase):
 
   def testConcreteExtend(self, wrapper_lib):
     if wrapper_lib is extend_methods:
-      expected_doc = ('CLIF wrapper for ::clif_testing::ConcreteHolder'
-                      if six.PY2 else 'Added to ConcreteHolder.')
+      expected_doc = 'Added to ConcreteHolder.'
       self.assertEqual(wrapper_lib.ConcreteHolder.__doc__, expected_doc)
-      if not six.PY2:
-        self.assertEqual(wrapper_lib.ConcreteHolder.data,
-                         'Data added to ConcreteHolder.')
+      self.assertEqual(wrapper_lib.ConcreteHolder.data,
+                       'Data added to ConcreteHolder.')
     ch = wrapper_lib.ConcreteHolder()
     s = ch.AnInstanceMethod('Green')
     self.assertEqual(s, 'GREEN:self:ConcreteHolder')
@@ -333,8 +315,7 @@ class ExtendMethodsTest(absltest.TestCase):
 
   def testVirtualExtend(self, wrapper_lib):
     if wrapper_lib is extend_methods:
-      expected_doc = ('CLIF wrapper for ::clif_testing::VirtualBaseHolder'
-                      if six.PY2 else 'Added to VirtualBaseHolder.')
+      expected_doc = 'Added to VirtualBaseHolder.'
       self.assertEqual(wrapper_lib.VirtualBaseHolder.__doc__, expected_doc)
       self.assertEqual(wrapper_lib.VirtualDerivedHolder.__doc__,
                        'CLIF wrapper for ::clif_testing::VirtualDerivedHolder')
@@ -424,27 +405,11 @@ class ExtendMethodsTest(absltest.TestCase):
 
   def testFromClassOldStyleFailureTestError(self, wrapper_lib):
     self.assertIsNotNone(wrapper_lib)
-    if six.PY2:
-      self.assertEqual(
-          _from_class_old_style_failure_test_error,
-          'extend from_class must be a new-style class.')
-    else:
-      self.assertIsNone(_from_class_old_style_failure_test_error)
+    self.assertIsNone(_from_class_old_style_failure_test_error)
 
   def testBaseOldStyleFailureTestError(self, wrapper_lib):
     self.assertIsNotNone(wrapper_lib)
-    if six.PY2:
-      self.assertIn(
-          'extend base must be a new-style class ',
-          _base_old_style_failure_test_error)
-      self.assertIn(
-          ' is not).',
-          _base_old_style_failure_test_error)
-      self.assertIn(
-          'BaseOldStyleFailureTestBase',
-          _base_old_style_failure_test_error)
-    else:
-      self.assertIsNone(_base_old_style_failure_test_error)
+    self.assertIsNone(_base_old_style_failure_test_error)
 
   def testBaseBaseFailureTestError(self, wrapper_lib):
     self.assertIsNotNone(wrapper_lib)

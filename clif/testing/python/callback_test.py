@@ -16,7 +16,6 @@
 
 from absl.testing import absltest
 from absl.testing import parameterized
-import six
 
 from clif.testing.python import callback
 # TODO: Restore simple import after OSS setup includes pybind11.
@@ -85,11 +84,11 @@ class CallbackTest(absltest.TestCase):
     wrapper_lib.SelfCallback(Callback)
 
   def testStrCallback(self, wrapper_lib):
-    def cb(s):
-      self.assertIsInstance(s, six.text_type)
+    def Cb(s):
+      self.assertIsInstance(s, str)
       self.assertEqual(s, 'foo')
 
-    wrapper_lib.StringCallback(cb)
+    wrapper_lib.StringCallback(Cb)
 
   def testCallableOutput(self, wrapper_lib):
     returned_callback = wrapper_lib.FunctionWithCallableReturn(Callback2)

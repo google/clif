@@ -14,7 +14,6 @@
 
 """Tests for clif.testing.python.t4."""
 
-
 from absl.testing import absltest
 from absl.testing import parameterized
 

@@ -14,10 +14,6 @@
 
 """Home for Python-side customizations."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from clif.python import type_customization
 from clif.testing.python._pickle_compatibility import *  # pylint: disable=wildcard-import
 

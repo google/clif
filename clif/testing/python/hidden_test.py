@@ -14,10 +14,6 @@
 
 """Tests for clif.testing.python.hidden."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import unittest
 from clif.testing.python import _hidden
 
