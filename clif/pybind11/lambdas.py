@@ -73,7 +73,13 @@ def _generate_lambda_body(
 
 def _generate_function_call_params(func_decl: ast_pb2.FuncDecl) -> str:
   """Generates the parameters of function calls in lambda expressions."""
-  params = ', '.join([f'{p.name.cpp_name}' for p in func_decl.params])
+  params_list = []
+  for p in func_decl.params:
+    if p.type.cpp_abstract:
+      params_list.append(f'*{p.name.cpp_name}')
+    else:
+      params_list.append(f'{p.name.cpp_name}')
+  params = ', '.join(params_list)
 
   # Ignore the return value of the function itself when generating pointer
   # parameters.
@@ -115,8 +121,13 @@ def needs_lambda(
 def _generate_lambda_params_with_types(
     func_decl: ast_pb2.FuncDecl,
     class_decl: Optional[ast_pb2.ClassDecl] = None) -> str:
-  params_list = [
-      f'{p.type.cpp_type} {p.name.cpp_name}' for p in func_decl.params]
+  """Generates parameters and types in the signatures of lambda expressions."""
+  params_list = []
+  for p in func_decl.params:
+    if p.type.cpp_abstract:
+      params_list.append(f'{p.type.cpp_type} *{p.name.cpp_name}')
+    else:
+      params_list.append(f'{p.type.cpp_type} {p.name.cpp_name}')
   if class_decl and not func_decl.classmethod:
     params_list = [f'{class_decl.name.cpp_name} &self'] + params_list
   return ', '.join(params_list)

@@ -29,14 +29,28 @@ I = utils.I
 class ModuleGenerator(object):
   """A class that generates pybind11 bindings code from CLIF ast."""
 
-  def __init__(self, ast: ast_pb2.AST, module_name: str):
+  def __init__(self, ast: ast_pb2.AST, module_name: str, header_path: str):
     self._ast = ast
     self._module_name = module_name
+    self._header_path = header_path
+    self._unique_classes = {}
 
   def generate_header(self,
-                      unused_ast: ast_pb2.AST) -> Generator[str, None, None]:
-    # TODO: Generates header file content here.
-    yield ''
+                      ast: ast_pb2.AST) -> Generator[str, None, None]:
+    """Generates pybind11 bindings code from CLIF ast."""
+    includes = set()
+    for decl in ast.decls:
+      includes.add(decl.cpp_file)
+      self._collect_class_cpp_names(decl)
+    yield '#include "third_party/pybind11/include/pybind11/smart_holder.h"'
+    for include in includes:
+      yield f'#include "{include}"'
+    yield '\n'
+    for cpp_name in self._unique_classes:
+      yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({cpp_name})'
+    yield '\n'
+    for cpp_name, py_name in self._unique_classes.items():
+      yield f'// CLIF use `{cpp_name}` as {py_name}'
 
   def generate_from(self, ast: ast_pb2.AST):
     """Generates pybind11 bindings code from CLIF ast.
@@ -51,18 +65,14 @@ class ModuleGenerator(object):
 
     # Find and keep track of virtual functions.
     python_override_class_names = {}
-    # Every unique class requires a pybind11 smart holder type cast macro.
-    unique_classes = set()
 
     for decl in ast.decls:
       yield from self._generate_python_override_class_names(
           python_override_class_names, decl)
-      self._collect_class_cpp_names(decl, unique_classes)
+      self._collect_class_cpp_names(decl)
 
-    for c in unique_classes:
-      yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({c})'
-    yield '\n'
     yield f'PYBIND11_MODULE({self._module_name}, m) {{'
+    yield from self._generate_import_modules(ast)
     yield I+('m.doc() = "CLIF-generated pybind11-based module for '
              f'{ast.source}";')
 
@@ -81,6 +91,17 @@ class ModuleGenerator(object):
       yield ''
     yield '}'
 
+  def _generate_import_modules(self,
+                               ast: ast_pb2.AST) -> Generator[str, None, None]:
+    for include in ast.pybind11_includes:
+      # Converts `full/project/path/cheader_pybind11_clif.h` to
+      # `full.project.path.cheader_pybind11`
+      names = include.split('/')
+      names.insert(0, 'google3')
+      names[-1] = names[-1][:-len('_clif.h')]
+      module = '.'.join(names)
+      yield f'py::module_::import("{module}");'
+
   def _generate_headlines(self):
     """Generates #includes and headers."""
     includes = set()
@@ -94,9 +115,11 @@ class ModuleGenerator(object):
     yield '#include "third_party/pybind11/include/pybind11/smart_holder.h"'
     yield '// potential future optimization: generate this line only as needed.'
     yield '#include "third_party/pybind11/include/pybind11/stl.h"'
+    for include in self._ast.pybind11_includes:
+      yield f'#include "{include}"'
+    yield f'#include "{self._header_path}"'
     for include in includes:
-      if include:
-        yield f'#include "{include}"'
+      yield f'#include "{include}"'
     yield ''
     yield 'namespace py = pybind11;'
     yield ''
@@ -191,12 +214,15 @@ class ModuleGenerator(object):
     yield I + '}'
 
   def _collect_class_cpp_names(self, decl: ast_pb2.Decl,
-                               unique_classes: Set[Text]):
+                               parent_name: str = '') -> None:
     """Adds every class name to a set. Only to be used in this context."""
     if decl.decltype == ast_pb2.Decl.Type.CLASS:
-      unique_classes.add(decl.class_.name.cpp_name)
+      full_native_name = decl.class_.name.native
+      if parent_name:
+        full_native_name = '.'.join([parent_name, decl.class_.name.native])
+      self._unique_classes[decl.class_.name.cpp_name] = full_native_name
       for member in decl.class_.members:
-        self._collect_class_cpp_names(member, unique_classes)
+        self._collect_class_cpp_names(member, full_native_name)
 
 
 def write_to(channel, lines):

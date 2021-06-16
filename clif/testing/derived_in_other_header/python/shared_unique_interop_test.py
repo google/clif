@@ -17,8 +17,22 @@ from absl.testing import parameterized
 
 from clif.testing.derived_in_other_header.python import concrete_base
 from clif.testing.derived_in_other_header.python import concrete_derived
-from clif.testing.derived_in_other_header.python import shared_unique_interop as mut
+from clif.testing.derived_in_other_header.python import shared_unique_interop
 from clif.testing.derived_in_other_header.python import virtual_derived
+
+# TODO: Restore simple import after OSS setup includes pybind11.
+# pylint: disable=g-import-not-at-top
+try:
+  from clif.testing.derived_in_other_header.python import concrete_base_pybind11
+  from clif.testing.derived_in_other_header.python import concrete_derived_pybind11
+  from clif.testing.derived_in_other_header.python import shared_unique_interop_pybind11
+  from clif.testing.derived_in_other_header.python import virtual_derived_pybind11
+except ImportError:
+  concrete_base_pybind11 = None
+  concrete_derived_pybind11 = None
+  shared_unique_interop_pybind11 = None
+  virtual_derived_pybind11 = None
+# pylint: enable=g-import-not-at-top
 
 CONCRETE_BASE_EMPTY_GET_RESULT = 90146438
 CONCRETE_DERIVED_EMPTY_GET_RESULT = 31607978
@@ -27,10 +41,17 @@ VIRTUAL_DERIVED_EMPTY_GET_RESULT = 29852452
 
 class ConcreteTest(parameterized.TestCase):
 
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    cls.concrete_base = concrete_base
+    cls.concrete_derived = concrete_derived
+    cls.shared_unique_interop = shared_unique_interop
+
   def testBaseAndDerived(self):
-    cbe = concrete_base.ConcreteBaseEmpty()
+    cbe = self.concrete_base.ConcreteBaseEmpty()
     self.assertEqual(cbe.Get(), CONCRETE_BASE_EMPTY_GET_RESULT)
-    cde = concrete_derived.ConcreteDerivedEmpty()
+    cde = self.concrete_derived.ConcreteDerivedEmpty()
     self.assertEqual(cde.Get(), CONCRETE_DERIVED_EMPTY_GET_RESULT)
     self.assertEqual(
         cde.BaseGet(cbe),
@@ -43,28 +64,29 @@ class ConcreteTest(parameterized.TestCase):
       ('DefaultDeleter', False),
       ('CustomDeleter', True))
   def testUnableToDisownOriginalShared(self, use_custom_deleter):
-    cbe = mut.make_shared_concrete_derived_empty_up_cast(use_custom_deleter)
-    with self.assertRaises(ValueError) as ctx:
-      mut.pass_unique_concrete_base_empty(cbe)
-    self.assertEqual(
-        str(ctx.exception),
-        'pass_unique_concrete_base_empty() argument cbe is not valid:'
-        ' Cannot convert ConcreteBaseEmpty instance to std::unique_ptr.')
+    cbe = self.shared_unique_interop.make_shared_concrete_derived_empty_up_cast(
+        use_custom_deleter)
+    with self.assertRaises(ValueError):
+      self.shared_unique_interop.pass_unique_concrete_base_empty(cbe)
 
   def testPassUniqueConcreteBaseEmpty(self):
-    cbe = mut.make_unique_concrete_derived_empty_up_cast()  # b/175568410
+    # b/175568410
+    cbe = (
+        self.shared_unique_interop.make_unique_concrete_derived_empty_up_cast())
     self.assertEqual(cbe.Get(), CONCRETE_BASE_EMPTY_GET_RESULT)
-    i = mut.pass_unique_concrete_base_empty(cbe)
+    i = self.shared_unique_interop.pass_unique_concrete_base_empty(cbe)
     self.assertEqual(i, CONCRETE_BASE_EMPTY_GET_RESULT)
     with self.assertRaises(ValueError):  # Disowned.
       cbe.Get()
 
   def testOriginalUniqueNotDisownedByShared(self):
-    cbe = mut.make_unique_concrete_derived_empty_up_cast()  # b/175568410
-    i = mut.pass_shared_concrete_base_empty(cbe)
+    # b/175568410
+    cbe = (
+        self.shared_unique_interop.make_unique_concrete_derived_empty_up_cast())
+    i = self.shared_unique_interop.pass_shared_concrete_base_empty(cbe)
     self.assertEqual(i, CONCRETE_BASE_EMPTY_GET_RESULT)
     self.assertEqual(cbe.Get(), CONCRETE_BASE_EMPTY_GET_RESULT)
-    i = mut.pass_unique_concrete_base_empty(cbe)
+    i = self.shared_unique_interop.pass_unique_concrete_base_empty(cbe)
     self.assertEqual(i, CONCRETE_BASE_EMPTY_GET_RESULT)
     with self.assertRaises(ValueError):  # Disowned.
       cbe.Get()
@@ -73,17 +95,35 @@ class ConcreteTest(parameterized.TestCase):
       ('DefaultDeleter', False),
       ('CustomDeleter', True))
   def testPassSharedConcreteBaseEmpty(self, use_custom_deleter):
-    cbe = mut.make_shared_concrete_derived_empty_up_cast(use_custom_deleter)
+    cbe = self.shared_unique_interop.make_shared_concrete_derived_empty_up_cast(
+        use_custom_deleter)
     self.assertEqual(cbe.Get(), CONCRETE_BASE_EMPTY_GET_RESULT)
-    i = mut.pass_shared_concrete_base_empty(cbe)
+    i = self.shared_unique_interop.pass_shared_concrete_base_empty(cbe)
     self.assertEqual(i, CONCRETE_BASE_EMPTY_GET_RESULT)
     self.assertEqual(cbe.Get(), CONCRETE_BASE_EMPTY_GET_RESULT)
 
 
+@absltest.skipIf(not concrete_base_pybind11, 'Failed to import pybind11 module')
+class ConcretePybind11Test(ConcreteTest):
+
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    cls.concrete_base = concrete_base_pybind11
+    cls.concrete_derived = concrete_derived_pybind11
+    cls.shared_unique_interop = shared_unique_interop_pybind11
+
+
 class VirtualTest(parameterized.TestCase):
 
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    cls.shared_unique_interop = shared_unique_interop
+    cls.virtual_derived = virtual_derived
+
   def testBaseAndDerived(self):
-    vde = virtual_derived.VirtualDerivedEmpty()
+    vde = self.virtual_derived.VirtualDerivedEmpty()
     self.assertEqual(vde.Get(), VIRTUAL_DERIVED_EMPTY_GET_RESULT)
     self.assertEqual(vde.BaseGet(vde), 2 * VIRTUAL_DERIVED_EMPTY_GET_RESULT)
 
@@ -91,28 +131,25 @@ class VirtualTest(parameterized.TestCase):
       ('DefaultDeleter', False),
       ('CustomDeleter', True))
   def testUnableToDisownOriginalShared(self, use_custom_deleter):
-    vbe = mut.make_shared_virtual_derived_empty_up_cast(use_custom_deleter)
-    with self.assertRaises(ValueError) as ctx:
-      mut.pass_unique_virtual_base_empty(vbe)
-    self.assertEqual(
-        str(ctx.exception),
-        'pass_unique_virtual_base_empty() argument vbe is not valid:'
-        ' Cannot convert VirtualBaseEmpty instance to std::unique_ptr.')
+    vbe = self.shared_unique_interop.make_shared_virtual_derived_empty_up_cast(
+        use_custom_deleter)
+    with self.assertRaises(ValueError):
+      self.shared_unique_interop.pass_unique_virtual_base_empty(vbe)
 
   def testPassUniqueVirtualBaseEmpty(self):
-    vbe = mut.make_unique_virtual_derived_empty_up_cast()
+    vbe = self.shared_unique_interop.make_unique_virtual_derived_empty_up_cast()
     self.assertEqual(vbe.Get(), VIRTUAL_DERIVED_EMPTY_GET_RESULT)
-    i = mut.pass_unique_virtual_base_empty(vbe)
+    i = self.shared_unique_interop.pass_unique_virtual_base_empty(vbe)
     self.assertEqual(i, VIRTUAL_DERIVED_EMPTY_GET_RESULT)
     with self.assertRaises(ValueError):  # Disowned.
       vbe.Get()
 
   def testOriginalUniqueNotDisownedByShared(self):
-    vbe = mut.make_unique_virtual_derived_empty_up_cast()
-    i = mut.pass_shared_virtual_base_empty(vbe)
+    vbe = self.shared_unique_interop.make_unique_virtual_derived_empty_up_cast()
+    i = self.shared_unique_interop.pass_shared_virtual_base_empty(vbe)
     self.assertEqual(i, VIRTUAL_DERIVED_EMPTY_GET_RESULT)
     self.assertEqual(vbe.Get(), VIRTUAL_DERIVED_EMPTY_GET_RESULT)
-    i = mut.pass_unique_virtual_base_empty(vbe)
+    i = self.shared_unique_interop.pass_unique_virtual_base_empty(vbe)
     self.assertEqual(i, VIRTUAL_DERIVED_EMPTY_GET_RESULT)
     with self.assertRaises(ValueError):  # Disowned.
       vbe.Get()
@@ -121,11 +158,23 @@ class VirtualTest(parameterized.TestCase):
       ('DefaultDeleter', False),
       ('CustomDeleter', True))
   def testPassSharedVirtualBaseEmpty(self, use_custom_deleter):
-    vbe = mut.make_shared_virtual_derived_empty_up_cast(use_custom_deleter)
+    vbe = self.shared_unique_interop.make_shared_virtual_derived_empty_up_cast(
+        use_custom_deleter)
     self.assertEqual(vbe.Get(), VIRTUAL_DERIVED_EMPTY_GET_RESULT)
-    i = mut.pass_shared_virtual_base_empty(vbe)
+    i = self.shared_unique_interop.pass_shared_virtual_base_empty(vbe)
     self.assertEqual(i, VIRTUAL_DERIVED_EMPTY_GET_RESULT)
     self.assertEqual(vbe.Get(), VIRTUAL_DERIVED_EMPTY_GET_RESULT)
+
+
+@absltest.skipIf(not virtual_derived_pybind11,
+                 'Failed to import pybind11 module')
+class VirtualPybind11Test(VirtualTest):
+
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    cls.shared_unique_interop = shared_unique_interop_pybind11
+    cls.virtual_derived = virtual_derived_pybind11
 
 
 if __name__ == '__main__':

@@ -59,6 +59,7 @@ def generate_from(
   yield I + I + definition
 
   constructor_defined = False
+  trampoline_generated = False
   for member in class_decl.members:
     if member.decltype == ast_pb2.Decl.Type.CONST:
       for s in _generate_const_members(class_name, member):
@@ -71,6 +72,8 @@ def generate_from(
       else:
         for s in function.generate_from(class_name, member.func, class_decl):
           yield I + I + s
+      if member.func.virtual:
+        trampoline_generated = True
     elif member.decltype == ast_pb2.Decl.Type.VAR:
       for s in variables.generate_from(class_name, member.var, class_decl):
         yield I + I + s
@@ -82,7 +85,8 @@ def generate_from(
                              python_override_class_name):
         yield I + s
 
-  if not constructor_defined and class_decl.cpp_has_def_ctor:
+  if (not constructor_defined and class_decl.cpp_has_def_ctor and
+      (not class_decl.cpp_abstract or trampoline_generated)):
     yield I + I + f'{class_name}.def(py::init<>());'
   yield I + '}'
 
