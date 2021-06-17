@@ -115,7 +115,8 @@ def needs_lambda(
   return (bool(func_decl.postproc) or
           _func_needs_implicit_conversion(func_decl) or
           _func_has_pointer_params(func_decl) or
-          _has_bytes_return(func_decl))
+          _has_bytes_return(func_decl) or
+          func_decl.cpp_num_params != len(func_decl.params))
 
 
 def _generate_lambda_params_with_types(
