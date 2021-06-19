@@ -444,7 +444,7 @@ class Postprocessor(object):
     pb.line_number = ln
     pb.decltype = pb.TYPE
     p = pb.fdecl
-    _set_name(p.name, ast.name, ns)
+    _set_name(p.name, ast.name, ns, allow_fqcppname=True)
     self.check_known_name(p.name.native)
     self._capsules[p.name.native] = p.name.cpp_name + ' *'
     return p.name.native

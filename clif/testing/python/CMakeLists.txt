@@ -88,6 +88,8 @@ add_pyclif_library_for_test(callback callback.clif)
 
 add_pyclif_library_for_test(call_method call_method.clif)
 
+add_pyclif_library_for_test(capsule_fqcppname capsule_fqcppname.clif)
+
 add_pyclif_library_for_test(circular circular.clif)
 
 add_pyclif_library_for_test(classes classes.clif)
@@ -144,6 +146,8 @@ add_pyclif_library_for_test(nested_inheritance nested_inheritance.clif)
 add_pyclif_library_for_test(nested_types nested_types.clif)
 
 add_pyclif_library_for_test(nonzero_mapping nonzero_mapping.clif)
+
+add_pyclif_library_for_test(non_raising non_raising.clif)
 
 add_pyclif_library_for_test(number_methods number_methods.clif)
 
