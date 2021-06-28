@@ -207,6 +207,8 @@ add_pyclif_library_for_test(templates templates.clif)
 
 add_pyclif_library_for_test(top_level_pass top_level_pass.clif)
 
+add_pyclif_library_for_test(type_caster type_caster.clif)
+
 add_pyclif_library_for_test(variables variables.clif)
 
 add_pyclif_library_for_test(vector_const_elem_ptr vector_const_elem_ptr.clif)

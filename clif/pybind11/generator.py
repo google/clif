@@ -14,13 +14,14 @@
 
 """Generates pybind11 bindings code."""
 
-from typing import Dict, Generator, Text, Set
+from typing import Dict, Generator, List, Text, Set
 
 from clif.protos import ast_pb2
 from clif.pybind11 import classes
 from clif.pybind11 import enums
 from clif.pybind11 import function
 from clif.pybind11 import function_lib
+from clif.pybind11 import type_casters
 from clif.pybind11 import utils
 
 I = utils.I
@@ -29,10 +30,12 @@ I = utils.I
 class ModuleGenerator(object):
   """A class that generates pybind11 bindings code from CLIF ast."""
 
-  def __init__(self, ast: ast_pb2.AST, module_name: str, header_path: str):
+  def __init__(self, ast: ast_pb2.AST, module_name: str, header_path: str,
+               include_paths: List[str]):
     self._ast = ast
     self._module_name = module_name
     self._header_path = header_path
+    self._include_paths = include_paths
     self._unique_classes = {}
 
   def generate_header(self,
@@ -71,6 +74,7 @@ class ModuleGenerator(object):
           python_override_class_names, decl)
       self._collect_class_cpp_names(decl)
 
+    yield from type_casters.generate_from(ast, self._include_paths)
     yield f'PYBIND11_MODULE({self._module_name}, m) {{'
     yield from self._generate_import_modules(ast)
     yield I+('m.doc() = "CLIF-generated pybind11-based module for '
@@ -109,17 +113,20 @@ class ModuleGenerator(object):
       includes.add(decl.cpp_file)
       if decl.decltype == ast_pb2.Decl.Type.CONST:
         self._generate_const_variables_headers(decl.const, includes)
+    for include in self._ast.pybind11_includes:
+      includes.add(include)
+    for include in self._ast.usertype_includes:
+      includes.add(include)
     yield '#include "third_party/pybind11/include/pybind11/complex.h"'
     yield '#include "third_party/pybind11/include/pybind11/functional.h"'
     yield '#include "third_party/pybind11/include/pybind11/operators.h"'
     yield '#include "third_party/pybind11/include/pybind11/smart_holder.h"'
     yield '// potential future optimization: generate this line only as needed.'
     yield '#include "third_party/pybind11/include/pybind11/stl.h"'
-    for include in self._ast.pybind11_includes:
-      yield f'#include "{include}"'
-    yield f'#include "{self._header_path}"'
+    yield ''
     for include in includes:
       yield f'#include "{include}"'
+    yield f'#include "{self._header_path}"'
     yield ''
     yield 'namespace py = pybind11;'
     yield ''
