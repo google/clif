@@ -36,6 +36,20 @@ class ValueHolderList {
   std::vector<ValueHolder> values;
 };
 
+class ValueHolderFromOnly {
+ public:
+  ValueHolderFromOnly(): value(0) { }
+  ValueHolderFromOnly(int v): value(v) { }
+  int value;
+};
+
+class ValueHolderAsOnly {
+ public:
+  ValueHolderAsOnly(): value(0) { }
+  ValueHolderAsOnly(int v): value(v) { }
+  int value;
+};
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_H_

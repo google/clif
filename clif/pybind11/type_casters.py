@@ -24,8 +24,11 @@ from clif.pybind11 import utils
 
 
 I = utils.I
-_CLIF_USE = re.compile(r'// *CLIF:? +use'
-                       r' +`(?P<cpp_name>.+)` +as +(?P<py_name>[\w.]+)')
+_PYOBJFROM_ONLY = ', HasPyObjFromOnly'
+_PYOBJAS_ONLY = ', HasPyObjAsOnly'
+_CLIF_USE = re.compile(
+    r'// *CLIF:? +use +`(?P<cpp_name>.+)` +as +(?P<py_name>[\w.]+)'
+    f'({_PYOBJFROM_ONLY}|{_PYOBJAS_ONLY}|)')
 
 
 def generate_from(ast: ast_pb2.AST,
@@ -59,7 +62,10 @@ def generate_from(ast: ast_pb2.AST,
             if use:
               cpp_name = use.group('cpp_name')
               py_name = use.group('py_name')
-              yield from _generate_type_caster(py_name, cpp_name)
+              generate_load = _PYOBJFROM_ONLY not in use[0]
+              generate_cast = _PYOBJAS_ONLY not in use[0]
+              yield from _generate_type_caster(py_name, cpp_name,
+                                               generate_load, generate_cast)
         break
       except IOError as e:
         # Failed to find the header file in one directory. Try other
@@ -69,8 +75,9 @@ def generate_from(ast: ast_pb2.AST,
         raise NameError('include "%s" not found' % include)
 
 
-def _generate_type_caster(py_name: str,
-                          cpp_name: str) -> Generator[str, None, None]:
+def _generate_type_caster(
+    py_name: str, cpp_name: str, generate_load: bool,
+    generate_cast: bool) -> Generator[str, None, None]:
   """Generates pybind11 type caster code."""
   yield 'namespace pybind11 {'
   yield 'namespace detail {'
@@ -78,16 +85,18 @@ def _generate_type_caster(py_name: str,
   yield ' public:'
   yield I + f'PYBIND11_TYPE_CASTER({cpp_name}, _("{py_name}"));'
   yield ''
-  yield I + 'bool load(handle src, bool) {'
-  yield I + I + 'using ::clif::Clif_PyObjAs;'
-  yield I + I + 'return Clif_PyObjAs(src.ptr(), &value);'
-  yield I + '}'
-  yield ''
-  yield I + (f'static handle cast({cpp_name} src, return_value_policy, '
-             'handle) {')
-  yield I + I + 'using ::clif::Clif_PyObjFrom;'
-  yield I + I + 'return Clif_PyObjFrom(src, {});'
-  yield I + '}'
+  if generate_load:
+    yield I + 'bool load(handle src, bool) {'
+    yield I + I + 'using ::clif::Clif_PyObjAs;'
+    yield I + I + 'return Clif_PyObjAs(src.ptr(), &value);'
+    yield I + '}'
+    yield ''
+  if generate_cast:
+    yield I + (f'static handle cast({cpp_name} src, return_value_policy, '
+               'handle) {')
+    yield I + I + 'using ::clif::Clif_PyObjFrom;'
+    yield I + I + 'return Clif_PyObjFrom(src, {});'
+    yield I + '}'
   yield '};'
   yield '}  // namespace detail'
   yield '}  // namespace pybind11'

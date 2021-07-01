@@ -40,6 +40,12 @@ class TypeCasterTest(absltest.TestCase):
     self.assertCountEqual(
         wrapper_lib.return_value_list([11, 12, 13]), [12, 13, 14])
 
+  def test_pyobjfrom_only(self, wrapper_lib):
+    self.assertEqual(wrapper_lib.return_value_pyobjfrom_only(11), 13)
+
+  def test_pyobjas_only(self, wrapper_lib):
+    self.assertEqual(wrapper_lib.get_value_pyobjas_only(10), 13)
+
 
 if __name__ == '__main__':
   absltest.main()
