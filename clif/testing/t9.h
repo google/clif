@@ -18,8 +18,8 @@
 
 // Testing "capsule".
 //
-// We have some class hierarhies and test how they passed up/down those
-// hierarhies with "class"/"capsule" intermix capabilities.
+// We have some class hierarchies and test how they passed up/down those
+// hierarchies with "class"/"capsule" intermix capabilities.
 
 #include <memory>
 

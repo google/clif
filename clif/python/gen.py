@@ -32,7 +32,7 @@ def TopologicalSortSimple(ideps):
   # Using variable names `cons` for dependent, `prod` for dependency
   # (consumer, producer) to increase readability.
   # cons is implied by the index into ideps.
-  # prod is the elmement of ideps (integer or None).
+  # prod is the element of ideps (integer or None).
   # This implies that each cons can only have one or no prod.
   # Example: ideps = [2, None, 1]
   # Read as:
@@ -619,7 +619,7 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
   Args:
     pyname: str - Python function name (may be special: ends with @)
     wrapper: str - generated function name
-    doc: str - C++ sinature
+    doc: str - C++ signature
     catch: bool - catch C++ exceptions
     call: str | [str] - C++ command(s) to call the wrapped function
       (without "(params);" part).

@@ -127,7 +127,7 @@ def generate_return_value_policy(func_decl: ast_pb2.FuncDecl) -> str:
   if func_decl.cpp_void_return or not func_decl.returns:
     return prefix + 'automatic'
   return_type = func_decl.returns[0]
-  # For smart pointers, it is unncessary to specify a return value policy in
+  # For smart pointers, it is unnecessary to specify a return value policy in
   # pybind11.
   if re.match('::std::unique_ptr<.*>', return_type.cpp_exact_type):
     return prefix + 'automatic'

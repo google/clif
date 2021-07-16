@@ -286,7 +286,7 @@ class Postprocessor(object):
         self._gather_dispatch(
             child,
             # Explicitly clear namespace to prevent the namespace from being
-            # redundantly and errorneously prepended to nested types. This
+            # redundantly and erroneously prepended to nested types. This
             # also mimics the normal parsing behavior.
             namespace=None)
 
@@ -629,7 +629,7 @@ class Postprocessor(object):
     Returns:
       True if ast is a @getter/@setter func that describes 'unproperty' C++ var.
     Raises:
-      ValueError: if @getter or @setter refers to exising var with =property().
+      ValueError: if @getter or @setter refers to existing var with =property().
     """
     assert ast[0] == 'func', repr(ast)
     getset = ast.decorators.asList()

@@ -1,4 +1,4 @@
-"""Subtest of pickle_compatiblity_test."""
+"""Subtest of pickle_compatibility_test."""
 
 import base64
 import pickle

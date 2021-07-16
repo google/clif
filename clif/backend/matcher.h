@@ -422,7 +422,7 @@ class ClifMatcher {
   ClifErrorCode CheckForLookupError(const ClifLookupResult& decls) const;
 
   // Display the types recorded by "RecordIncompatibleTypes, by
-  // formattting a string displaying the types in the canonical,
+  // formatting a string displaying the types in the canonical,
   // "Here's what Clif says, and it doesn't match what C++ says" way.
   std::string GetParallelTypeNames() const;
 
