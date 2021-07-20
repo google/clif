@@ -124,6 +124,7 @@ class ModuleGenerator(object):
     yield '// potential future optimization: generate this line only as needed.'
     yield '#include "third_party/pybind11/include/pybind11/stl.h"'
     yield ''
+    yield '#include "clif/pybind11/runtime.h"'
     yield '#include "clif/pybind11/type_casters.h"'
     yield ''
     for include in includes:

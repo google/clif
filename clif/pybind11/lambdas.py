@@ -46,11 +46,18 @@ def _generate_lambda_body(
 
   # Generates declarations of return values
   for i, r in enumerate(func_decl.returns):
-    yield I + f'{r.type.cpp_type} ret{i}{{}};'
+    if r.type.lang_type == 'object':
+      yield I + f'py::object ret{i}{{}};'
+    else:
+      yield I + f'{r.type.cpp_type} ret{i}{{}};'
 
   # Generates call to the wrapped function
   if not func_decl.cpp_void_return and len(func_decl.returns):
-    yield I + (f'ret0 = {function_call}({function_call_params});')
+    if func_decl.returns[0].type.lang_type == 'object':
+      yield I + ('ret0 = '
+                 f'ConvertPyObject({function_call}({function_call_params}));')
+    else:
+      yield I + f'ret0 = {function_call}({function_call_params});'
   else:
     yield I + f'{function_call}({function_call_params});'
 
@@ -77,6 +84,8 @@ def _generate_function_call_params(func_decl: ast_pb2.FuncDecl) -> str:
   for p in func_decl.params:
     if p.type.cpp_abstract:
       params_list.append(f'*{p.name.cpp_name}')
+    elif p.type.lang_type == 'object':
+      params_list.append(f'{p.name.cpp_name}.ptr()')
     else:
       params_list.append(f'{p.name.cpp_name}')
   params = ', '.join(params_list)
@@ -115,6 +124,7 @@ def needs_lambda(
   return (bool(func_decl.postproc) or
           _func_needs_implicit_conversion(func_decl) or
           _func_has_pointer_params(func_decl) or
+          _func_has_py_object_params(func_decl) or
           _has_bytes_return(func_decl) or
           func_decl.cpp_num_params != len(func_decl.params))
 
@@ -127,6 +137,8 @@ def _generate_lambda_params_with_types(
   for p in func_decl.params:
     if p.type.cpp_abstract:
       params_list.append(f'{p.type.cpp_type} *{p.name.cpp_name}')
+    elif p.type.lang_type == 'object':
+      params_list.append(f'py::object {p.name.cpp_name}')
     else:
       params_list.append(f'{p.type.cpp_type} {p.name.cpp_name}')
   if class_decl and not func_decl.classmethod:
@@ -147,6 +159,16 @@ def _generate_function_call(
 def _func_has_pointer_params(func_decl: ast_pb2.FuncDecl) -> bool:
   num_returns = len(func_decl.returns)
   return num_returns >= 2 or (num_returns == 1 and func_decl.cpp_void_return)
+
+
+def _func_has_py_object_params(func_decl: ast_pb2.FuncDecl) -> bool:
+  for p in func_decl.params:
+    if p.type.lang_type == 'object':
+      return True
+  for r in func_decl.returns:
+    if r.type.lang_type == 'object':
+      return True
+  return False
 
 
 def _has_inherited_methods(class_decl: ast_pb2.ClassDecl) -> bool:
