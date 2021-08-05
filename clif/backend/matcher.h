@@ -317,12 +317,12 @@ class ClifMatcher {
   // Primary entry-point when matching types. Does a small amount of
   // setup and then calls into the primary matching mechanism, which
   // does recursive handling of complicated types.
-  ClifErrorCode MatchAndSetTypeTop(const clang::QualType& reffed_type,
+  ClifErrorCode MatchAndSetTypeTop(const clang::QualType& clang_type,
                                    Type* clif_type,
                                    unsigned int flags = TMF_EXACT_TYPE);
 
   // Dispatcher to handle both the top-level type and any children.
-  ClifErrorCode MatchAndSetType(const clang::QualType& reffed_type,
+  ClifErrorCode MatchAndSetType(const clang::QualType& clang_type,
                                 Type* clif_type,
                                 unsigned int flags = TMF_EXACT_TYPE);
 
@@ -348,7 +348,7 @@ class ClifMatcher {
                                         const Type& clif_type);
 
   // Special case handling for smart pointers.
-  ClifErrorCode MatchAndSetStdSmartPtr(const clang::QualType& template_type,
+  ClifErrorCode MatchAndSetStdSmartPtr(const clang::QualType& smart_ptr_type,
                                        protos::Type* clif_type,
                                        unsigned int flags);
 
@@ -371,7 +371,7 @@ class ClifMatcher {
                                     FuncDecl* callable);
 
   // Helper for SetClifCppType which handles clif-composed types.
-  ClifErrorCode MatchAndSetContainer(const clang::QualType& reffed_type,
+  ClifErrorCode MatchAndSetContainer(const clang::QualType& clang_type,
                                      protos::Type* container,
                                      unsigned int flags);
 
@@ -506,8 +506,8 @@ class ClifMatcher {
                   clang::QualType* type_selected) const;
 
   // Sets various fields of a type-related clif_proto appropriately.
-  template<class T>
-  void SetTypeProperties(clang::QualType clang_type, T* clif_proto) const;
+  template <class T>
+  void SetTypeProperties(clang::QualType clang_type, T* clif_decl) const;
 
   template <class T>
   void SetTypePropertiesHelper(clang::CXXRecordDecl* clang_decl,

@@ -32,6 +32,7 @@
 #include <vector>
 
 #include "gtest/gtest_prod.h"  // Defines FRIEND_TEST.
+#include "absl/strings/match.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/CXXInheritance.h"
 #include "clang/AST/Decl.h"
@@ -136,7 +137,7 @@ class FakeTUScope {
         new clang::DiagnosticsEngine(new clang::DiagnosticIDs(),
                                      new clang::DiagnosticOptions()));
     scope.reset(
-        new clang::Scope(nullptr, clang::Scope::DeclScope, *diag_engine.get()));
+        new clang::Scope(nullptr, clang::Scope::DeclScope, *diag_engine));
   }
   // This class retains ownership of the TU scope.
   clang::Scope* getFakeTUScope() { return scope.get(); }
@@ -206,7 +207,7 @@ class TranslationUnitAST {
   // Lookup C++ declarations according clif rules, which don't follow
   // C++ scoping rules.
   ClifLookupResult ClifLookup(const std::string& name) {
-    if (name.find(':') != std::string::npos) {
+    if (absl::StrContains(name, ':')) {
       return LookupScopedSymbol(name);
     }
     if (contexts_.empty()) {
@@ -217,7 +218,7 @@ class TranslationUnitAST {
 
   // Lookup an operator or conversion function in the given context.
   ClifLookupResult LookupOperatorOrConversionFunction(
-      clang::DeclContext* context, const std::string& token);
+      clang::DeclContext* context, const std::string& name);
 
   // A name used by clif may or may not be defined within a class. So
   // for type names only, we want to do a normal cliff lookup and

@@ -344,7 +344,7 @@ bool TranslationUnitAST::Init(const std::string& code,
                               const std::string& input_file_name) {
   std::vector<std::string> modified_args = args;
   std::string original_arg_0 = args[0];
-  if (FLAGS_install_location != "") {
+  if (!FLAGS_install_location.empty()) {
     modified_args[0] = FLAGS_install_location;
     LLVM_DEBUG(llvm::dbgs()
                << "Using " << modified_args[0] << " for install_location");

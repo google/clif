@@ -33,6 +33,7 @@ cc_library(
     ],
     deps = [
         ":strutil",
+        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest_prod",
         "@llvm-project//clang:ast",
         "@llvm-project//clang:ast_matchers",
