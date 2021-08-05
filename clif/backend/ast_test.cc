@@ -113,4 +113,26 @@ TEST_F(TranslationUnitASTTest, FindConversionFunctions) {
       ast_->GetASTContext().getPointerType(float_type)));
 }
 
+TEST_F(TranslationUnitASTTest, IsStdSmartPtr) {
+  clang::QualType int_type = ast_->FindBuiltinType("int");
+  EXPECT_FALSE(ast_->IsStdSmartPtr(int_type));
+
+  const auto aliased_template_decls = ast_->LookupScopedSymbol("template_func");
+  EXPECT_EQ(aliased_template_decls.Size(), 2);
+  {
+    const auto f_decl = static_cast<clang::FunctionTemplateDecl*>(
+                            aliased_template_decls.GetFirst())
+                            ->getTemplatedDecl();
+    const auto aliased_template_type = f_decl->getParamDecl(0)->getType();
+    EXPECT_FALSE(ast_->IsStdSmartPtr(aliased_template_type));
+  }
+  {
+    const auto f_decl = static_cast<clang::FunctionTemplateDecl*>(
+                            aliased_template_decls.GetResults()[1])
+                            ->getTemplatedDecl();
+    const auto aliased_template_type = f_decl->getParamDecl(0)->getType();
+    EXPECT_TRUE(ast_->IsStdSmartPtr(aliased_template_type));
+  }
+}
+
 }  // namespace clif

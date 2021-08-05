@@ -308,6 +308,9 @@ clang::ClassTemplateDecl* TranslationUnitAST::GetQualTypeTemplateDecl(
     if (!special) {
       return nullptr;
     }
+    if (special->isTypeAlias()) {
+      return GetQualTypeTemplateDecl(special->getAliasedType(), args);
+    }
     templ = llvm::dyn_cast<clang::ClassTemplateDecl>(
         special->getTemplateName().getAsTemplateDecl());
     if (args) {

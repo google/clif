@@ -586,6 +586,15 @@ class map {};
 template <typename K, typename V>
 using clif_map = map<V>;
 
+template <typename T>
+void template_func(clif_map<T, T> s);
+
+template <typename T>
+using clif_shared_ptr = std::shared_ptr<T>;
+
+template <typename T>
+void template_func(clif_shared_ptr<T> s);
+
 void func_template_alias_map(map<int> s);
 
 class ClassWithInheritedConstructor : public ClassWithNonDefaultConstructor {
