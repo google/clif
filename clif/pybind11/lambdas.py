@@ -48,6 +48,8 @@ def _generate_lambda_body(
   for i, r in enumerate(func_decl.returns):
     if r.type.lang_type == 'object':
       yield I + f'py::object ret{i}{{}};'
+    elif r.cpp_exact_type == '::absl::Status':
+      yield I + f'pybind11::google::PyCLIFStatus<absl::Status> ret{i}{{}};'
     else:
       yield I + f'{r.type.cpp_type} ret{i}{{}};'
 
@@ -56,6 +58,9 @@ def _generate_lambda_body(
     if func_decl.returns[0].type.lang_type == 'object':
       yield I + ('ret0 = '
                  f'ConvertPyObject({function_call}({function_call_params}));')
+    elif (func_decl.returns[0].cpp_exact_type == '::absl::Status' and
+          class_decl):
+      yield I + f'ret0 = {function_call}(&self);'
     else:
       yield I + f'ret0 = {function_call}({function_call_params});'
   else:
@@ -149,7 +154,11 @@ def _generate_lambda_params_with_types(
 def _generate_function_call(
     func_decl: ast_pb2.FuncDecl,
     class_decl: Optional[ast_pb2.ClassDecl] = None):
-  if func_decl.classmethod or not class_decl:
+  """Generates the function call underneath the lambda expression."""
+  if (func_decl.returns and
+      func_decl.returns[0].cpp_exact_type == '::absl::Status'):
+    return f'py::google::ToPyCLIFStatus(&{func_decl.name.cpp_name})'
+  elif func_decl.classmethod or not class_decl:
     return func_decl.name.cpp_name
   else:
     method_name = func_decl.name.cpp_name.split('::')[-1]

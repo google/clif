@@ -51,6 +51,8 @@ def generate_from(ast: ast_pb2.AST,
     # `// CLIF USE` in those headers do not have associated `Clif_PyObjFrom` or
     # `Clif_PyObjAs`.
     if (include.startswith('clif/python') or
+        # Excluding absl::Status and absl::StatusOr
+        include.startswith('util/task/python') or
         include.endswith('_pybind11_clif.h')):
       continue
     for root in include_paths:
