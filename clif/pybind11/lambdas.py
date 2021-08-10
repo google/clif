@@ -146,7 +146,8 @@ def _generate_lambda_params_with_types(
       params_list.append(f'py::object {p.name.cpp_name}')
     else:
       params_list.append(f'{p.type.cpp_type} {p.name.cpp_name}')
-  if class_decl and not func_decl.classmethod:
+  if (class_decl and not func_decl.classmethod and
+      not func_decl.is_extend_method):
     params_list = [f'{class_decl.name.cpp_name} &self'] + params_list
   return ', '.join(params_list)
 
@@ -159,6 +160,8 @@ def _generate_function_call(
       func_decl.returns[0].cpp_exact_type == '::absl::Status'):
     return f'py::google::ToPyCLIFStatus(&{func_decl.name.cpp_name})'
   elif func_decl.classmethod or not class_decl:
+    return func_decl.name.cpp_name
+  elif func_decl.is_extend_method:
     return func_decl.name.cpp_name
   else:
     method_name = func_decl.name.cpp_name.split('::')[-1]
