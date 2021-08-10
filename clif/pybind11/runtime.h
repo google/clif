@@ -75,18 +75,39 @@ std::function<PyCLIFStatus<StatusType>(Class*, Args...)> ToPyCLIFStatus(
 
 namespace detail {
 
-template <typename StatusType>
-struct type_caster<google::PyCLIFStatus<StatusType>> {
-  static constexpr auto name = _<google::PyCLIFStatus<StatusType>>();
+template <>
+struct type_caster<google::PyCLIFStatus<absl::Status>> {
+  static constexpr auto name = _<google::PyCLIFStatus<absl::Status>>();
 
   // Convert C++->Python.
-  static handle cast(const google::PyCLIFStatus<StatusType>& src,
+  static handle cast(const google::PyCLIFStatus<absl::Status>& src,
                      return_value_policy policy, handle parent) {
     try {
-      return make_caster<StatusType>::cast(src.status, policy, parent);
+      return make_caster<absl::Status>::cast(src.status, policy, parent);
     } catch (const google::StatusNotOk& e) {
       // Convert google::StatusNotOk to util.task.python.error.StatusNotOk
       util_task_python_clif::ErrorFromStatus(src.status);
+      throw pybind11::error_already_set();
+    }
+    return none().release();
+  }
+};
+
+template <typename PayloadType>
+struct type_caster<google::PyCLIFStatus<absl::StatusOr<PayloadType>>> {
+  static constexpr auto name =
+      _<google::PyCLIFStatus<absl::StatusOr<PayloadType>>>();
+
+  // Convert C++->Python.
+  static handle cast(
+      const google::PyCLIFStatus<absl::StatusOr<PayloadType>>& src,
+      return_value_policy policy, handle parent) {
+    try {
+      return make_caster<absl::StatusOr<PayloadType>>::cast(
+          src.status, policy, parent);
+    } catch (const google::StatusNotOk& e) {
+      // Convert google::StatusNotOk to util.task.python.error.StatusNotOk
+      util_task_python_clif::ErrorFromStatus(src.status.status());
       throw pybind11::error_already_set();
     }
     return none().release();

@@ -13,6 +13,7 @@
 # limitations under the License.
 """Generates C++ lambda functions inside pybind11 bindings code."""
 
+import re
 from typing import Generator, Optional
 
 from clif.protos import ast_pb2
@@ -20,6 +21,8 @@ from clif.pybind11 import function_lib
 from clif.pybind11 import utils
 
 I = utils.I
+
+_STATUS_PATTERNS = (r'::absl::Status', r'::absl::StatusOr<(\S)+>')
 
 
 def generate_lambda(
@@ -48,8 +51,9 @@ def _generate_lambda_body(
   for i, r in enumerate(func_decl.returns):
     if r.type.lang_type == 'object':
       yield I + f'py::object ret{i}{{}};'
-    elif r.cpp_exact_type == '::absl::Status':
-      yield I + f'pybind11::google::PyCLIFStatus<absl::Status> ret{i}{{}};'
+    elif _is_status_param(r):
+      yield (I +
+             f'pybind11::google::PyCLIFStatus<{r.cpp_exact_type}> ret{i}{{}};')
     else:
       yield I + f'{r.type.cpp_type} ret{i}{{}};'
 
@@ -58,8 +62,7 @@ def _generate_lambda_body(
     if func_decl.returns[0].type.lang_type == 'object':
       yield I + ('ret0 = '
                  f'ConvertPyObject({function_call}({function_call_params}));')
-    elif (func_decl.returns[0].cpp_exact_type == '::absl::Status' and
-          class_decl):
+    elif (_is_status_param(func_decl.returns[0]) and class_decl):
       yield I + f'ret0 = {function_call}(&self);'
     else:
       yield I + f'ret0 = {function_call}({function_call_params});'
@@ -130,6 +133,7 @@ def needs_lambda(
           _func_needs_implicit_conversion(func_decl) or
           _func_has_pointer_params(func_decl) or
           _func_has_py_object_params(func_decl) or
+          _func_has_status_params(func_decl) or
           _has_bytes_return(func_decl) or
           func_decl.cpp_num_params != len(func_decl.params))
 
@@ -156,8 +160,7 @@ def _generate_function_call(
     func_decl: ast_pb2.FuncDecl,
     class_decl: Optional[ast_pb2.ClassDecl] = None):
   """Generates the function call underneath the lambda expression."""
-  if (func_decl.returns and
-      func_decl.returns[0].cpp_exact_type == '::absl::Status'):
+  if func_decl.returns and _is_status_param(func_decl.returns[0]):
     return f'py::google::ToPyCLIFStatus(&{func_decl.name.cpp_name})'
   elif func_decl.classmethod or not class_decl:
     return func_decl.name.cpp_name
@@ -179,6 +182,23 @@ def _func_has_py_object_params(func_decl: ast_pb2.FuncDecl) -> bool:
       return True
   for r in func_decl.returns:
     if r.type.lang_type == 'object':
+      return True
+  return False
+
+
+def _is_status_param(param: ast_pb2.ParamDecl) -> bool:
+  for pattern in _STATUS_PATTERNS:
+    if re.match(pattern, param.cpp_exact_type):
+      return True
+  return False
+
+
+def _func_has_status_params(func_decl: ast_pb2.FuncDecl) -> bool:
+  for p in func_decl.params:
+    if _is_status_param(p):
+      return True
+  for r in func_decl.returns:
+    if _is_status_param(r):
       return True
   return False
 
