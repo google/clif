@@ -113,6 +113,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<StructTy> cpp;
+        PyObject* weakrefs = nullptr;
       };
 
       static StructTy* ThisPtr(PyObject*);
@@ -153,6 +154,9 @@ class ClassTest(unittest.TestCase):
 
       // Struct __del__
       static void _dtor(PyObject* self) {
+        if (reinterpret_cast<wrapper*>(self)->weakrefs) {
+          PyObject_ClearWeakRefs(self);
+        }
         reinterpret_cast<wrapper*>(self)->cpp.Destruct();
         Py_TYPE(self)->tp_free(self);
       }
@@ -188,6 +192,7 @@ class ClassTest(unittest.TestCase):
         ty->tp_alloc = _new;
         ty->tp_new = PyType_GenericNew;
         ty->tp_free = _del;
+        ty->tp_weaklistoffset = offsetof(wrapper, weakrefs);
         return ty;
       }
 
@@ -307,6 +312,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<StructTy> cpp;
+        PyObject* weakrefs = nullptr;
       };
 
       static StructTy* ThisPtr(PyObject*);
@@ -355,6 +361,9 @@ class ClassTest(unittest.TestCase):
 
       // Struct __del__
       static void _dtor(PyObject* self) {
+        if (reinterpret_cast<wrapper*>(self)->weakrefs) {
+          PyObject_ClearWeakRefs(self);
+        }
         Py_BEGIN_ALLOW_THREADS
         reinterpret_cast<wrapper*>(self)->cpp.Destruct();
         Py_END_ALLOW_THREADS
@@ -392,6 +401,7 @@ class ClassTest(unittest.TestCase):
         ty->tp_alloc = _new;
         ty->tp_new = PyType_GenericNew;
         ty->tp_free = _del;
+        ty->tp_weaklistoffset = offsetof(wrapper, weakrefs);
         return ty;
       }
 
@@ -509,6 +519,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<StructTy> cpp;
+        PyObject* weakrefs = nullptr;
       };
 
       static StructTy* ThisPtr(PyObject*);
@@ -549,6 +560,9 @@ class ClassTest(unittest.TestCase):
 
       // Struct __del__
       static void _dtor(PyObject* self) {
+        if (reinterpret_cast<wrapper*>(self)->weakrefs) {
+          PyObject_ClearWeakRefs(self);
+        }
         Py_BEGIN_ALLOW_THREADS
         reinterpret_cast<wrapper*>(self)->cpp.Destruct();
         Py_END_ALLOW_THREADS
@@ -586,6 +600,7 @@ class ClassTest(unittest.TestCase):
         ty->tp_alloc = _new;
         ty->tp_new = PyType_GenericNew;
         ty->tp_free = _del;
+        ty->tp_weaklistoffset = offsetof(wrapper, weakrefs);
         return ty;
       }
 
@@ -738,6 +753,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<OutKlass> cpp;
+        PyObject* weakrefs = nullptr;
       };
 
       static OutKlass* ThisPtr(PyObject*);
@@ -747,6 +763,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<OutKlass::InnKlass> cpp;
+        PyObject* weakrefs = nullptr;
       };
 
       static OutKlass::InnKlass* ThisPtr(PyObject*);
@@ -819,6 +836,9 @@ class ClassTest(unittest.TestCase):
 
       // Inner __del__
       static void _dtor(PyObject* self) {
+        if (reinterpret_cast<wrapper*>(self)->weakrefs) {
+          PyObject_ClearWeakRefs(self);
+        }
         reinterpret_cast<wrapper*>(self)->cpp.Destruct();
         Py_TYPE(self)->tp_free(self);
       }
@@ -854,6 +874,7 @@ class ClassTest(unittest.TestCase):
         ty->tp_alloc = _new;
         ty->tp_new = PyType_GenericNew;
         ty->tp_free = _del;
+        ty->tp_weaklistoffset = offsetof(wrapper, weakrefs);
         return ty;
       }
 
@@ -917,6 +938,9 @@ class ClassTest(unittest.TestCase):
 
       // Outer __del__
       static void _dtor(PyObject* self) {
+        if (reinterpret_cast<wrapper*>(self)->weakrefs) {
+          PyObject_ClearWeakRefs(self);
+        }
         reinterpret_cast<wrapper*>(self)->cpp.Destruct();
         Py_TYPE(self)->tp_free(self);
       }
@@ -951,6 +975,7 @@ class ClassTest(unittest.TestCase):
         ty->tp_alloc = _new;
         ty->tp_new = PyType_GenericNew;
         ty->tp_free = _del;
+        ty->tp_weaklistoffset = offsetof(wrapper, weakrefs);
         return ty;
       }
 
@@ -1114,6 +1139,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<StructTy> cpp;
+        PyObject* weakrefs = nullptr;
       };
 
       static StructTy* ThisPtr(PyObject*);
@@ -1158,6 +1184,9 @@ class ClassTest(unittest.TestCase):
 
       // Struct __del__
       static void _dtor(PyObject* self) {
+        if (reinterpret_cast<wrapper*>(self)->weakrefs) {
+          PyObject_ClearWeakRefs(self);
+        }
         reinterpret_cast<wrapper*>(self)->cpp.Destruct();
         Py_TYPE(self)->tp_free(self);
       }
@@ -1193,6 +1222,7 @@ class ClassTest(unittest.TestCase):
         ty->tp_alloc = _new;
         ty->tp_new = PyType_GenericNew;
         ty->tp_free = _del;
+        ty->tp_weaklistoffset = offsetof(wrapper, weakrefs);
         return ty;
       }
 
@@ -1318,6 +1348,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<StructTy> cpp;
+        PyObject* weakrefs = nullptr;
       };
 
       static StructTy* ThisPtr(PyObject*);
@@ -1351,6 +1382,9 @@ class ClassTest(unittest.TestCase):
 
       // Struct __del__
       static void _dtor(PyObject* self) {
+        if (reinterpret_cast<wrapper*>(self)->weakrefs) {
+          PyObject_ClearWeakRefs(self);
+        }
         reinterpret_cast<wrapper*>(self)->cpp.Destruct();
         Py_TYPE(self)->tp_free(self);
       }
@@ -1385,6 +1419,7 @@ class ClassTest(unittest.TestCase):
         ty->tp_alloc = _new;
         ty->tp_new = PyType_GenericNew;
         ty->tp_free = _del;
+        ty->tp_weaklistoffset = offsetof(wrapper, weakrefs);
         return ty;
       }
 
@@ -1539,6 +1574,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<StructTy> cpp;
+        PyObject* weakrefs = nullptr;
       };
 
       static PyObject* get_a(PyObject* self, void* xdata) {
@@ -1584,6 +1620,9 @@ class ClassTest(unittest.TestCase):
 
       // Struct __del__
       static void _dtor(PyObject* self) {
+        if (reinterpret_cast<wrapper*>(self)->weakrefs) {
+          PyObject_ClearWeakRefs(self);
+        }
         reinterpret_cast<wrapper*>(self)->cpp.Destruct();
         Py_TYPE(self)->tp_free(self);
       }
@@ -1619,6 +1658,7 @@ class ClassTest(unittest.TestCase):
         ty->tp_alloc = _new;
         ty->tp_new = PyType_GenericNew;
         ty->tp_free = _del;
+        ty->tp_weaklistoffset = offsetof(wrapper, weakrefs);
         return ty;
       }
 
@@ -1711,6 +1751,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<StructCpp> cpp;
+        PyObject* weakrefs = nullptr;
       };
 
       // f()
@@ -1734,6 +1775,9 @@ class ClassTest(unittest.TestCase):
 
       // Struct __del__
       static void _dtor(PyObject* self) {
+        if (reinterpret_cast<wrapper*>(self)->weakrefs) {
+          PyObject_ClearWeakRefs(self);
+        }
         reinterpret_cast<wrapper*>(self)->cpp.Destruct();
         Py_TYPE(self)->tp_free(self);
       }
@@ -1768,6 +1812,7 @@ class ClassTest(unittest.TestCase):
         ty->tp_alloc = _new;
         ty->tp_new = PyType_GenericNew;
         ty->tp_free = _del;
+        ty->tp_weaklistoffset = offsetof(wrapper, weakrefs);
         return ty;
       }
 
@@ -1871,6 +1916,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<Overrider> cpp;
+        PyObject* weakrefs = nullptr;
       };
 
       static StructCpp* ThisPtr(PyObject*);
@@ -1909,6 +1955,9 @@ class ClassTest(unittest.TestCase):
 
       // Struct __del__
       static void _dtor(PyObject* self) {
+        if (reinterpret_cast<wrapper*>(self)->weakrefs) {
+          PyObject_ClearWeakRefs(self);
+        }
         Py_BEGIN_ALLOW_THREADS
         reinterpret_cast<wrapper*>(self)->cpp.Destruct();
         Py_END_ALLOW_THREADS
@@ -1945,6 +1994,7 @@ class ClassTest(unittest.TestCase):
         ty->tp_alloc = _new;
         ty->tp_new = PyType_GenericNew;
         ty->tp_free = _del;
+        ty->tp_weaklistoffset = offsetof(wrapper, weakrefs);
         return ty;
       }
 
@@ -2073,6 +2123,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<StructCpp> cpp;
+        PyObject* weakrefs = nullptr;
       };
 
       namespace py__iter__ {
@@ -2155,6 +2206,9 @@ class ClassTest(unittest.TestCase):
 
       // Struct __del__
       static void _dtor(PyObject* self) {
+        if (reinterpret_cast<wrapper*>(self)->weakrefs) {
+          PyObject_ClearWeakRefs(self);
+        }
         reinterpret_cast<wrapper*>(self)->cpp.Destruct();
         Py_TYPE(self)->tp_free(self);
       }
@@ -2190,6 +2244,7 @@ class ClassTest(unittest.TestCase):
         ty->tp_alloc = _new;
         ty->tp_new = PyType_GenericNew;
         ty->tp_free = _del;
+        ty->tp_weaklistoffset = offsetof(wrapper, weakrefs);
         return ty;
       }
 

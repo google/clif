@@ -354,11 +354,13 @@ def WrapperClassDef(name, ctype, cname, is_iter, has_iter, iter_ns,
   yield 'struct %s {' % name
   yield I+'PyObject_HEAD'
   if is_iter:
+    assert not enable_instance_dict
     yield I+'iterator iter;'
   else:
     yield I+'::clif::Instance<%s> cpp;' % ctype
     if enable_instance_dict:
-      yield I+'PyObject* instance_dict;'
+      yield I+'PyObject* instance_dict = nullptr;'
+    yield I+'PyObject* weakrefs = nullptr;'
   yield '};'
   if has_iter:
     yield ''
@@ -424,6 +426,10 @@ def TypeObject(ht_qualname, tracked_slot_groups,
   # the C++ dtors are run.
   tp_slots['tp_dealloc'] = '_dtor'
   yield 'static void _dtor(PyObject* self) {'
+  if not iterator:
+    yield I+'if (%s(self)->weakrefs) {' % _Cast(wname)
+    yield I+I+'PyObject_ClearWeakRefs(self);'
+    yield I+'}'
   if iterator or not trivial_dtor:
     yield I+'Py_BEGIN_ALLOW_THREADS'
   if iterator:
@@ -482,9 +488,11 @@ def TypeObject(ht_qualname, tracked_slot_groups,
   yield '#endif'
   for s in slots.GenTypeSlotsHeaptype(tracked_slot_groups, tp_slots, PY3OUTPUT):
     yield s
-  if not iterator and enable_instance_dict:
-    yield I+'pyclif_instance_dict_enable(ty, offsetof(%s, instance_dict));' % (
-        wname)
+  if not iterator:
+    if enable_instance_dict:
+      yield (I+'pyclif_instance_dict_enable(ty, offsetof(%s, instance_dict));'
+             % wname)
+    yield I+'ty->tp_weaklistoffset = offsetof(wrapper, weakrefs);'
   yield I+'return ty;'
   yield '}'
   if ctor:

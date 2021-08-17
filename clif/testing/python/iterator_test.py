@@ -14,6 +14,8 @@
 
 """Tests for clif.testing.python.iterator."""
 
+import weakref
+
 from absl.testing import absltest
 from absl.testing import parameterized
 
@@ -53,6 +55,13 @@ class IteratorTest(absltest.TestCase):
     self.assertEqual(list(r), [3, 4, 5, 6])
     r.clear()
     self.assertFalse(r)
+
+  def test_weakref(self, wrapper_lib):
+    r = wrapper_lib.Ring5()
+    self.assertIsNotNone(weakref.ref(r)())
+    with self.assertRaises(TypeError) as ctx:
+      weakref.ref(iter(r))
+    self.assertIn('cannot create weak reference', str(ctx.exception))
 
 
 if __name__ == '__main__':
