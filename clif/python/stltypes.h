@@ -27,6 +27,7 @@ headers are included.
 #include "Python.h"
 #include <functional>
 #include <deque>
+#include <iterator>
 #include <list>
 #include <queue>
 #include <stack>
@@ -284,6 +285,11 @@ class Iterator {
   static_assert(std::is_same<T&,
                 typename std::iterator_traits<ContainerIter>::reference>::value,
       "Iterators returning proxy refererence not currently supported.");
+  static_assert(
+      std::is_base_of_v<
+          std::forward_iterator_tag,
+          typename std::iterator_traits<ContainerIter>::iterator_category>,
+      "Input iterators are not currently supported.");
 
   const T* Next() noexcept {
     if (!self_) return nullptr;
