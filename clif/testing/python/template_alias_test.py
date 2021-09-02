@@ -44,6 +44,7 @@ class TemplateAliasTest(absltest.TestCase):
     self.assertLen(return_list, 1)
     self.assertEqual(return_list[0], 100)
     wrapper_lib.func_clif_vector([1])
+    wrapper_lib.func_signed_size_type_output()
 
 
 if __name__ == '__main__':

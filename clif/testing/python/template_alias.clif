@@ -26,3 +26,5 @@ from "clif/testing/template_alias.h":
   def func_default_vector_output() -> (s: `clif_vector` as list<int>)
   def func_default_vector_return() -> (s: `clif_vector` as list<int>)
   def func_clif_vector(c: `clif_vector` as list<int>)
+
+  def func_signed_size_type_output() -> int

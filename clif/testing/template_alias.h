@@ -42,4 +42,11 @@ default_vector<> func_default_vector_return() {
 // "vector<int>".
 void func_clif_vector(clif_vector<int> c) {}
 
+template<class T>
+using signed_size_type = typename std::make_signed<T>::type;
+
+inline signed_size_type<size_t> func_signed_size_type_output() {
+  return 123;
+}
+
 #endif  // CLIF_TESTING_TEMPLATE_ALIAS_H_
