@@ -14,27 +14,20 @@
 
 """Process Python __methods__ into XX_slots in CLASS_Type struct."""
 
-# Parsed slot definitions are cached in _SLOT_MAP for the Py2 or Py3
-# depending which version was called first. This is consistent with overall CLIF
-# tool usage as it generates code per target version depending on invocation
-# flag, ie. it's not changing in runtime.
-
 # TODO: Decide if we need as_buffer slots implemented.
 
 import copy
 import itertools
-from clif.python import py2slots
 from clif.python import py3slots
 
 I = '  '
 _SLOT_MAP = {}  # Known slots cache: {py_slot_name: slot_description}
 
 
-def _SplitSlots(orig_methods, py3=False):
+def _SplitSlots(orig_methods):
   """Remove slot methods from orig_methods and return them."""
   if not _SLOT_MAP:
     _SLOT_MAP.update(_COMMON_SLOT_MAP)
-    _SLOT_MAP.update(_SLOT_MAP_PY3 if py3 else _SLOT_MAP_PY2)
   methods = []
   slots = []
   for sc in _special_case: sc.data = {}  # {c_slot_name : s.init data}  # pylint: disable=multiple-statements
@@ -46,7 +39,7 @@ def _SplitSlots(orig_methods, py3=False):
       methods.append(m)
     else:
       if as_slot:
-        slots.extend(_SlotsFuncAddress(name.rstrip('#'), as_slot, m[1], py3))
+        slots.extend(_SlotsFuncAddress(name.rstrip('#'), as_slot, m[1]))
       else:
         raise NameError('Redefining %s is not allowed.' % name)
   if slots:
@@ -54,14 +47,13 @@ def _SplitSlots(orig_methods, py3=False):
   return slots
 
 
-def _SlotsFuncAddress(py_slot_name, slot_descr, cfunc_name, py3):
+def _SlotsFuncAddress(py_slot_name, slot_descr, cfunc_name):
   """Expand a [list of] slot(s) to (c_slot_name, func_addr)... generator.
 
   Args:
     py_slot_name: user-defined method name like __str__
     slot_descr: Slot description from the _SLOT_MAP
     cfunc_name: generated CFunction name like wrapFoo_as__str__
-    py3: True if for Python 3
   Yields:
     ('c_slot_name', 'c_slot_func_address' | special_case_data_struct)
   """
@@ -83,15 +75,15 @@ def _SlotsFuncAddress(py_slot_name, slot_descr, cfunc_name, py3):
   if not isinstance(slots, list): slots = [slots]
   for c_slot_name in slots:
     yield c_slot_name, (special.data[c_slot_name] if special else
-                        _SlotFunc(c_slot_name, cfunc_name, slot_descr[1], py3))
+                        _SlotFunc(c_slot_name, cfunc_name, slot_descr[1]))
 
 
-def _SlotFunc(cslot_name, cfunc_name, converter, py3):
+def _SlotFunc(cslot_name, cfunc_name, converter):
   """Compute c_slot_function name."""
   if cslot_name == 'tp_call':
     assert not converter
     return cfunc_name
-  ret, args = _SlotFuncSignature(cslot_name, py3)
+  ret, args = _SlotFuncSignature(cslot_name)
   if isinstance(args, list) or args.strip('O'):
     assert converter, 'Non PyObject* args needs a convertor.'
     assert not converter.startswith('+'), 'Not a special processor.'
@@ -106,12 +98,11 @@ def _SlotFunc(cslot_name, cfunc_name, converter, py3):
     return 'slot::adapter<%s, slot::%s, ' % (ret, converter[1:]) + args
 
 
-def GenRichCompare(rcslots, py3):
+def GenRichCompare(rcslots):
   """Generate tp_richcmp slot implementation.
 
   Args:
     rcslots: {'Py_LT': '__lt__ wrap function name'}
-    py3: Generate for Py3.
   Yields:
     C++ source
   """
@@ -120,25 +111,14 @@ def GenRichCompare(rcslots, py3):
   yield I+'switch (op) {'
   for op_func in sorted(rcslots.items()):
     yield I+I+'case %s: return slot::adapter<%s>(self, other);' % op_func
-  if py3:
-    yield I+I+'default: Py_RETURN_NOTIMPLEMENTED;'
-  else:
-    yield I+I+'default:'
-    yield I+I+I+'Py_INCREF(Py_NotImplemented);'
-    yield I+I+I+'return Py_NotImplemented;'
+  yield I+I+'default: Py_RETURN_NOTIMPLEMENTED;'
   yield I+'}'
   yield '}'
 GenRichCompare.name = 'slot_richcmp'  # Generated C++ name.
 
 
-def GenSetAttr(setattr_slots, unused_py3):
-  """Generate slot implementation for __set*__ / __del*__ user functions.
-
-  Args:
-    setattr_slots: [set_func, del_func]
-  Yields:
-    C++ source
-  """
+def GenSetAttr(setattr_slots):
+  """Generate slot implementation for __set*__ / __del*__ user functions."""
   assert len(setattr_slots) == 2, 'Need 2-slot input.'
   set_attr, del_attr = setattr_slots
   assert setattr or delattr, 'Need one or both set/del funcs.'
@@ -169,7 +149,7 @@ def GenSetAttr(setattr_slots, unused_py3):
 GenSetAttr.name = 'slot_seto'  # Generated C++ name.
 
 
-def GenSetItem(setitem_slots, py3):
+def GenSetItem(setitem_slots):
   """Combine __setitem__ / __delitem__ funcs into one xx_setitem slot."""
   assert len(setitem_slots) == 2, 'Need __setitem__ / __delitem__ funcs.'
   setitem, delitem = setitem_slots
@@ -178,7 +158,7 @@ def GenSetItem(setitem_slots, py3):
   yield 'int slot_seti(PyObject* self, Py_ssize_t idx, PyObject* value) {'
   yield I+'idx = slot::item_index(self, idx);'
   yield I+'if (idx < 0) return -1;'
-  yield I+'PyObject* i = Py%s_FromSize_t(idx);' % ('Long' if py3 else 'Int')
+  yield I+'PyObject* i = PyLong_FromSize_t(idx);'
   yield I+'if (i == nullptr) return -1;'
   yield I+'if (value != nullptr) {'
   if setitem:
@@ -251,7 +231,7 @@ _SUBSLOT_INFO = (
 )
 
 
-def GenTypeSlotsHeaptype(tracked_slot_groups, tp_group, py3):
+def GenTypeSlotsHeaptype(tracked_slot_groups, tp_group):
   """Assign slot values to dynamically allocated type object."""
   # tp_name:
   #   Following the approach of pybind11 (ignoring the Python docs):
@@ -264,7 +244,7 @@ def GenTypeSlotsHeaptype(tracked_slot_groups, tp_group, py3):
   #   motivation for using Py_TPFLAGS_HEAPTYPE is NOT actually to allocate
   #   the PyTypeObject data on the heap, but to unlock its side-effect of
   #   enabling injection of methods from Python.
-  for slot in (py3slots if py3 else py2slots).PyTypeObject:
+  for slot in py3slots.PyTypeObject:
     value = tp_group.get(slot)
     if slot in ('tp_as_number',
                 'tp_as_sequence',
@@ -279,54 +259,54 @@ def GenTypeSlotsHeaptype(tracked_slot_groups, tp_group, py3):
   for xx, tp_slot, stype, unused_sname in _SUBSLOT_INFO:
     xx_slots = tracked_slot_groups.get(xx)
     if xx_slots is not None:
-      for subslot in getattr(py3slots if py3 else py2slots, stype):
+      for subslot in getattr(py3slots, stype):
         value = xx_slots.get(subslot)
         if value is not None:
           yield I+'ty->%s->%s = %s;' % (tp_slot, subslot, value)
 
 
-def GenSlots(methods, tp_slots, py3=False, tracked_groups=None):
+def GenSlots(methods, tp_slots, tracked_groups=None):
   """Generate extra slots structs and update tp_slots dict."""
   if tracked_groups is None:
     tracked_groups = {}
-  all_slots = _SplitSlots(methods, py3)
+  all_slots = _SplitSlots(methods)
   if all_slots:
     tp_flags = tp_slots['tp_flags']
     for xx, it in itertools.groupby(sorted(all_slots), lambda s: s[0][:2]):
       xx_slots = tracked_groups[xx] = dict(it)
       if xx == 'tp':
-        for s in _UpdateSlotToGeneratedFunc(xx_slots,
-                                            'tp_setattro', GenSetAttr,
-                                            py3): yield s
-        for s in _UpdateSlotToGeneratedFunc(xx_slots,
-                                            'tp_richcompare', GenRichCompare,
-                                            py3): yield s
+        for s in _UpdateSlotToGeneratedFunc(
+            xx_slots, 'tp_setattro', GenSetAttr):
+          yield s
+        for s in _UpdateSlotToGeneratedFunc(
+            xx_slots, 'tp_richcompare', GenRichCompare):
+          yield s
         tp_slots.update(xx_slots)
       elif xx == 'mp':
-        for s in _UpdateSlotToGeneratedFunc(xx_slots,
-                                            'mp_ass_subscript', GenSetAttr,
-                                            py3): yield s
+        for s in _UpdateSlotToGeneratedFunc(
+            xx_slots, 'mp_ass_subscript', GenSetAttr):
+          yield s
       elif xx == 'sq':
-        for s in _UpdateSlotToGeneratedFunc(xx_slots,
-                                            'sq_ass_item', GenSetItem,
-                                            py3): yield s
+        for s in _UpdateSlotToGeneratedFunc(
+            xx_slots, 'sq_ass_item', GenSetItem):
+          yield s
       elif xx == 'nb':
-        for s in _UpdateSlotsToRopFunc(xx_slots): yield s  # pylint: disable=multiple-statements
+        for s in _UpdateSlotsToRopFunc(xx_slots):
+          yield s
     for xx, tp_slot, unused_stype, sname in _SUBSLOT_INFO:
       xx_slots = tracked_groups.get(xx)
       if xx_slots:
         tp_slots[tp_slot] = '&' + sname
     # Update tp_flags.
-    if py3:
-      if 'tp_finalize' in tp_slots:
-        tp_flags.append('Py_TPFLAGS_HAVE_FINALIZE')
-    # else: We skip flags that are already in Py_TPFLAGS_DEFAULT.
+    if 'tp_finalize' in tp_slots:
+      tp_flags.append('Py_TPFLAGS_HAVE_FINALIZE')
 
 
-def _UpdateSlotToGeneratedFunc(slots, name, gen_func, py3):
+def _UpdateSlotToGeneratedFunc(slots, name, gen_func):
   data = slots.get(name)
   if data:
-    for s in gen_func(data, py3): yield s  # pylint: disable=multiple-statements
+    for s in gen_func(data):
+      yield s
     slots[name] = gen_func.name
 
 
@@ -468,17 +448,6 @@ _COMMON_SLOT_MAP = {
     '__ge__': (_RICH, 'tp_richcompare', 'Py_GE'),
     '__eq__': (_RICH, 'tp_richcompare', 'Py_EQ'),
     '__ne__': (_RICH, 'tp_richcompare', 'Py_NE'),
-}
-_SLOT_MAP_PY2 = {
-    '__coerce__': FORBIDDEN,
-    '__div__': (_ROP, 'nb_divide', 'div'),
-    '__rdiv__': (_ROP, 'nb_divide', 'div'),
-    '__idiv__': 'nb_inplace_divide',
-    '__long__': 'nb_long',
-    '__cmp__': ('tp_compare', '+as_cmp'),
-    '__nonzero__': ('nb_nonzero', '+as_bool'),
-}
-_SLOT_MAP_PY3 = {
     '__bool__': ('nb_bool', '+as_bool'),
     # Enable for Python 3.5+
     # '__matmul__': 'nb_matrix_multiply',
@@ -489,5 +458,5 @@ _SLOT_MAP_PY3 = {
 }
 
 
-def _SlotFuncSignature(slot, py3=False):
-  return (py3slots if py3 else py2slots).SIGNATURES[slot]
+def _SlotFuncSignature(slot):
+  return py3slots.SIGNATURES[slot]

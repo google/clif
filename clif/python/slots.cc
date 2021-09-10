@@ -35,11 +35,7 @@ Py_ssize_t item_index(PyObject* self, Py_ssize_t idx) {
 }
 
 Py_ssize_t as_size(PyObject* res) {
-#if PY_MAJOR_VERSION < 3
-  Py_ssize_t size = PyInt_AsSsize_t(res);
-#else
   Py_ssize_t size = PyLong_AsSsize_t(res);
-#endif
   Py_DECREF(res);
   if (size < 0 && !PyErr_Occurred()) {
     PyErr_SetString(PyExc_ValueError, "__len__ returned a negative value");
@@ -48,11 +44,7 @@ Py_ssize_t as_size(PyObject* res) {
 }
 
 int as_bool(PyObject* res) {
-#if PY_MAJOR_VERSION < 3
-  if (PyInt_CheckExact(res) || PyBool_Check(res)) {
-#else
   if (PyLong_CheckExact(res) || PyBool_Check(res)) {
-#endif
     int i = PyObject_IsTrue(res);
     Py_DECREF(res);
     return i;
@@ -63,22 +55,10 @@ int as_bool(PyObject* res) {
   return -1;
 }
 
-#if PY_MAJOR_VERSION < 3
-#define PyLong_AsSsize_t PyLong_AsLong
-#endif
-
-#if PY_MAJOR_VERSION >= 3
-#define PyInt_AsLong PyLong_AsLong
-#endif
-
 Py_ssize_t as_hash(PyObject* res) {
   Py_ssize_t i = -1;
   if (PyLong_Check(res)) {
-    i = PyLong_AsSsize_t(res);
-#if PY_MAJOR_VERSION < 3
-  } else if (PyInt_Check(res)) {
-    i = PyInt_AsLong(res);
-#endif
+    i = PyLong_AsLong(res);
   } else {
     PyErr_SetString(PyExc_TypeError, "__hash__ must return int");
     goto cleanup;
@@ -95,7 +75,7 @@ cleanup:
 }
 
 int as_cmp(PyObject* res) {
-  long i = PyInt_AsLong(res);  //NOLINT: runtime/int
+  long i = PyLong_AsLong(res);  //NOLINT: runtime/int
   Py_DECREF(res);
   if (i == -1 && PyErr_Occurred()) {
     PyErr_SetString(PyExc_ValueError, "__cmp__ must return int");

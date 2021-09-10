@@ -59,7 +59,8 @@ class TypeDef(object):
     yield 'bool Clif_PyObjAs(PyObject* input, %s* output);' % self.cname
     yield 'PyObject* Clif_PyObjFrom(const %s&, py::PostConv);' % self.cname
 
-  def GenConverters(self, wrapper_namespace, py3output):  # pylint: disable=unused-argument
+  def GenConverters(self, wrapper_namespace):
+    del wrapper_namespace  # unused
     raise NotImplementedError()
 
 
@@ -149,7 +150,7 @@ class ClassType(TypeDef):
       else:
         yield 'PyObject* Clif_PyObjFrom(%s, py::PostConv);' % (arg % self.cname)
 
-  def GenConverters(self, ns, unused_py3=False):
+  def GenConverters(self, ns):
     """Generate Clif_PyObjAs() and Clif_PyObjFrom() definitions."""
     pytype = ns+'::'+self.wrapper_type
     yield ''
@@ -237,7 +238,7 @@ class EnumType(TypeDef):
     self.wrapper_type = pytype
     self.wrapper_name = wname
 
-  def CreateEnum(self, wname, varname, items, py3=False):
+  def CreateEnum(self, wname, varname, items):
     """Generate a function to create Enum-derived class and a cache var."""
     yield '// Create Python Enum object (cached in %s) for %s' % (varname,
                                                                   self.cname)
@@ -251,17 +252,11 @@ class EnumType(TypeDef):
       yield I+'if ((py = Py_BuildValue("(NN)", %s, %s)' % pair
       yield I+I+I+') == nullptr) goto err;'
       yield I+'PyTuple_SET_ITEM(names, %d, py);' % i
-    if py3:
-      yield I+'py = PyUnicode_FromString("%s");' % self.pyname
-    else:
-      yield I+'py = PyString_FromString("%s");' % self.pyname
+    yield I+'py = PyUnicode_FromString("%s");' % self.pyname
     yield I+'if (py == nullptr) {'
     yield I+'  goto err;'
     yield I+'}'
-    if py3:
-      yield I+'modname = PyUnicode_FromString(ThisModuleName);'
-    else:
-      yield I+'modname = PyString_FromString(ThisModuleName);'
+    yield I+'modname = PyUnicode_FromString(ThisModuleName);'
     yield I+'if (modname == nullptr) {'
     yield I+'  goto err;'
     yield I+'}'
@@ -279,7 +274,7 @@ class EnumType(TypeDef):
     yield ''
     yield 'static PyObject* %s{};  // set by above func in Init()' % varname
 
-  def GenConverters(self, ns, unused_py3=False):
+  def GenConverters(self, ns):
     """Generate Clif_PyObjAs() and Clif_PyObjFrom() definitions."""
     wname = ns + '::' + self.wrapper_name
     yield ''
@@ -302,7 +297,7 @@ class EnumType(TypeDef):
     yield '}'
     yield ''
     yield 'PyObject* Clif_PyObjFrom(const %s& c, py::PostConv) {' % self.cname
-    yield I+'return PyObject_CallFunctionObjArgs(%s, PyInt_FromLong(' % wname
+    yield I+'return PyObject_CallFunctionObjArgs(%s, PyLong_FromLong(' % wname
     yield I+I+I+AsType(EnumIntType(self.cname), 'c')+'), nullptr);'
     yield '}'
 
@@ -329,7 +324,7 @@ class ProtoType(TypeDef):
     yield ('PyObject* Clif_PyObjFrom(std::shared_ptr<const %s>, py::PostConv);'
            % self.cname)
 
-  def GenConverters(self, unused_ns='', unused_py3=False):
+  def GenConverters(self, unused_ns=''):
     """Create convertors for C++ proto to/from Python protobuf."""
     top_name, _, el_name = self.pyname.partition('.')
     import_name = self.module + '.' + top_name
@@ -392,7 +387,7 @@ class ProtoEnumType(TypeDef):
     yield 'bool Clif_PyObjAs(PyObject* input, %s* output);' % self.cname
     yield 'PyObject* Clif_PyObjFrom(%s, py::PostConv);' % self.cname
 
-  def GenConverters(self, unused_ns='', unused_py3=False):
+  def GenConverters(self, unused_ns=''):
     yield ''
     yield '// %s to/from enum %s conversion' % (self.pyname, self.cname)
     yield 'bool Clif_PyObjAs(PyObject* py, %s* c) {' % self.cname
@@ -419,7 +414,7 @@ class CallableType(TypeDef):
     yield '// '+(self.pyname or self.cname)
     yield 'PyObject* Clif_PyObjFrom(%s, py::PostConv);' % self.cname
 
-  def GenConverters(self, ns, unused_py3=False):
+  def GenConverters(self, ns):
     """Generate a Clif_PyObjFrom(std::function<>) converter."""
     yield ''
     yield '// Create a Python function that calls %s cfunction.' % self.cname
@@ -441,7 +436,7 @@ class CapsuleType(TypeDef):
     yield 'bool Clif_PyObjAs(PyObject* input, %s** output);' % self.cname
     yield 'PyObject* Clif_PyObjFrom(const %s*, py::PostConv);' % self.cname
 
-  def GenConverters(self, unused_ns='', unused_py3=False):
+  def GenConverters(self, unused_ns=''):
     """Generate a Clif_PyObjFrom(Foo*) converter."""
     yield ''
     yield '// %s to/from %s conversion' % (self.pyname, self.cname)

@@ -52,11 +52,7 @@ int ignore(PyObject* res);
 
 template<PyObject* (*Wrapper)(PyObject*, PyObject*, PyObject*)>
 PyObject* repeat(PyObject* self, Py_ssize_t count) {
-#if PY_MAJOR_VERSION >= 3
   PyObject* i = PyLong_FromSsize_t(count);
-#else
-  PyObject* i = PyInt_FromSsize_t(count);
-#endif
   if (i == nullptr) return nullptr;
 
   PyObject* args = PyTuple_Pack(1, i);

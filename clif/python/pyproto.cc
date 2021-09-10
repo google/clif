@@ -27,14 +27,6 @@ headers are included.
 #include "google/protobuf/descriptor.h"
 #include "google/protobuf/dynamic_message.h"
 
-#if PY_MAJOR_VERSION < 3
-#define DESCRIPTOR_TypeCheck PyBytes_Check
-#else
-#define DESCRIPTOR_TypeCheck PyUnicode_Check
-#define PyString_AS_STRING PyUnicode_AsUTF8
-#define PyString_FromStringAndSize PyUnicode_FromStringAndSize
-#endif  // Python version check.
-
 namespace {
 
 class ModNameComponents {
@@ -83,16 +75,7 @@ PyObject* GetMessageName(PyObject* py) {
   PyObject* fn = PyObject_GetAttrString(pyd, C("full_name"));
   Py_DECREF(pyd);
   if (fn == nullptr) return nullptr;
-#if PY_MAJOR_VERSION < 3
-  // Global DB returns unicode names.
-  if (PyUnicode_Check(fn)) {
-    PyObject* s = PyUnicode_AsUTF8String(fn);
-    Py_DECREF(fn);
-    if (s == nullptr) return nullptr;
-    fn = s;
-  }
-#endif
-  if (!DESCRIPTOR_TypeCheck(fn)) {
+  if (!PyUnicode_Check(fn)) {
     PyErr_SetString(PyExc_TypeError, "DESCRIPTOR.full_name must return str");
     Py_DECREF(fn);
     return nullptr;
@@ -113,10 +96,10 @@ bool Internal_Clif_PyObjAs(PyObject* py, std::unique_ptr<::proto2::Message>* c,
     return false;
   }
   const proto2::Descriptor* d = dp->FindMessageTypeByName(
-      PyString_AS_STRING(fn));
+      PyUnicode_AsUTF8(fn));
   if (d == nullptr) {
     PyErr_Format(PyExc_TypeError, "DESCRIPTOR.full_name %s not found",
-                 PyString_AS_STRING(fn));
+                 PyUnicode_AsUTF8(fn));
     Py_DECREF(fn);
     return false;
   }
@@ -157,7 +140,7 @@ bool SetNestedName(PyObject** module_name, const char* nested_name) {
   DCHECK(nested_name != nullptr);
   if (*nested_name) {
     for (const auto& n : ModNameComponents(nested_name)) {
-      PyObject* attr_name = PyString_FromStringAndSize(n.data(), n.size());
+      PyObject* attr_name = PyUnicode_FromStringAndSize(n.data(), n.size());
       if (attr_name == nullptr) {
         Py_DECREF(*module_name);
         return false;
@@ -210,7 +193,7 @@ bool InGeneratedPool(PyObject* pyproto, proto2::Message* cproto) {
     PyObject *ptype, *pvalue, *ptraceback;
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
     if (PyObject* full_name = GetMessageName(pyproto)) {
-      std::string py_name(PyString_AS_STRING(full_name));
+      std::string py_name(PyUnicode_AsUTF8(full_name));
       Py_DECREF(full_name);
       if (py_name == cproto->GetDescriptor()->full_name()) {
         // Try to get the named message from the C++ generated pool.
@@ -240,17 +223,9 @@ PyObject* PyProtoFrom(const ::proto2::Message* cproto,
   Py_DECREF(imported_pyproto_class);
   if (pb == nullptr) return nullptr;
   std::string bytes = cproto->SerializePartialAsString();
-#if PY_MAJOR_VERSION < 3
-  // Python will automatically intern strings that are small, or look like
-  // identifiers, so there is no actual need to call InternFromString and it's
-  // gone in Py3.
-  PyObject* merge = PyString_InternFromString("MergeFromString");
-  PyObject* cpb = PyBuffer_FromMemory((void*)bytes.data(), bytes.size());  // NOLINT[readability/casting]
-#else
   PyObject* merge = PyUnicode_FromString("MergeFromString");
   PyObject* cpb = PyMemoryView_FromMemory(const_cast<char*>(bytes.data()),
                                           bytes.size(), PyBUF_READ);
-#endif
   if (!merge || !cpb) {
     Py_DECREF(pb);
     Py_XDECREF(merge);

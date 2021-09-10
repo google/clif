@@ -30,11 +30,7 @@ K* CreateK() {
 
 struct A : K {
   A() : K(0) {}
-#if PY_MAJOR_VERSION < 3
-  PyObject* __str__() { return PyString_FromString("A"); }
-#else
   PyObject* __str__() { return PyUnicode_FromString("A"); }
-#endif
 };
 
 inline PyObject* ConversionFunctionCheck(PyObject* x) { return x; }

@@ -62,6 +62,8 @@ headers are included.
 // CLIF use `::proto2::Message` as proto2_Message
 #include "clif/python/pyproto.h"
 #include "clif/python/runtime.h"
+
+// TODO: Update all call sites (outside the clif source tree).
 #if PY_MAJOR_VERSION >= 3
 #define PyInt_Check PyLong_Check
 #define PyInt_AsLong PyLong_AsLong
@@ -98,27 +100,27 @@ static_assert(std::is_same<Py_ssize_t, int>::value ||
               "The world is strange");
 // CLIF use `int` as int
 inline PyObject* Clif_PyObjFrom(int c, const py::PostConv& pc)  {
-  return pc.Apply(PyInt_FromLong(c));
+  return pc.Apply(PyLong_FromLong(c));
 }
 // CLIF use `unsigned int` as uint
 inline PyObject* Clif_PyObjFrom(unsigned int c, const py::PostConv& pc) {
-  return pc.Apply(PyInt_FromSize_t(c));
+  return pc.Apply(PyLong_FromSize_t(c));
 }
 #ifdef uint32_t
 // CLIF use `uint32` as uint32
 inline PyObject* Clif_PyObjFrom(uint32_t c, const py::PostConv& pc) {
-  return pc.Apply(PyInt_FromSize_t(c));
+  return pc.Apply(PyLong_FromSize_t(c));
 }
 #endif
 // CLIF use `long` as long
 inline PyObject* Clif_PyObjFrom(long c,
                                 const py::PostConv& pc) {  // NOLINT runtime/int
-  return pc.Apply(PyInt_FromLong(c));
+  return pc.Apply(PyLong_FromLong(c));
 }
 // CLIF use `ulong` as ulong
 inline PyObject* Clif_PyObjFrom(unsigned long c,
                                 const py::PostConv& pc) {  // NOLINT runtime/int
-  return pc.Apply(PyInt_FromSize_t(c));
+  return pc.Apply(PyLong_FromSize_t(c));
 }
 // CLIF use `int64` as int64
 #ifdef HAVE_LONG_LONG
@@ -136,7 +138,7 @@ inline PyObject* Clif_PyObjFrom(unsigned long long c,
 inline PyObject* Clif_PyObjFrom(absl::int128 c,
                                 const py::PostConv& pc) {  // NOLINT runtime/int
   auto hi = PyNumber_Lshift(PyLong_FromLongLong(absl::Int128High64(c)),
-                            PyInt_FromLong(64));
+                            PyLong_FromLong(64));
   auto lo = PyLong_FromUnsignedLongLong(absl::Int128Low64(c));
   return pc.Apply(PyNumber_Add(hi, lo));
 }
@@ -145,14 +147,14 @@ inline PyObject* Clif_PyObjFrom(absl::int128 c,
 inline PyObject* Clif_PyObjFrom(absl::uint128 c,
                                 const py::PostConv& pc) {  // NOLINT runtime/int
   auto hi = PyNumber_Lshift(PyLong_FromUnsignedLongLong(absl::Uint128High64(c)),
-                            PyInt_FromLong(64));
+                            PyLong_FromLong(64));
   auto lo = PyLong_FromUnsignedLongLong(absl::Uint128Low64(c));
   return pc.Apply(PyNumber_Add(hi, lo));
 }
 #endif
 // CLIF use `unsigned char` as uint8
 inline PyObject* Clif_PyObjFrom(unsigned char c, const py::PostConv& pc) {
-  return pc.Apply(PyInt_FromLong(c));
+  return pc.Apply(PyLong_FromLong(c));
 }
 
 // float (double)
@@ -186,7 +188,7 @@ PyObject* Clif_PyObjFrom(const std::string&, const py::PostConv&);
 typedef const char* char_ptr;  // A distinct type for constexpr CONST string.
 inline PyObject* Clif_PyObjFrom(const char_ptr c, const py::PostConv& unused) {
   // Always use native str, ignore postconversion.
-  return PyString_FromString(c);
+  return PyUnicode_FromString(c);
 }
 
 // CLIF use `::std::optional` as NoneOr

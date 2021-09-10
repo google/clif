@@ -105,7 +105,7 @@ class Postprocessor(object):
   """Process parsed IR."""
 
   def __init__(self, config_headers=None, include_paths=('.',), preamble='',
-               py3output=True, gen_pybind11=False):
+               gen_pybind11=False):
     self._names = {}  # Keep name->FQN for all 'from path import' statements.
     self._capsules = {}   # Keep raw pointer names (pytype -> cpptype).
     self._typenames = {}  # Keep typedef aliases (pytype -> type_ir).
@@ -118,7 +118,6 @@ class Postprocessor(object):
     # _macro_values [actual, param, values] only set in _class that
     # has implements MACRO<actual, param, values>.
     self._macro_values = []
-    self._py3output = py3output
     self._gen_pybind11 = gen_pybind11
 
   def is_pyname_known(self, name):
@@ -748,8 +747,6 @@ class Postprocessor(object):
     if modified_ast_name[-1] == '__nonzero__':
       raise NameError('Please define `__bool__` instead of `__nonzero__`. '
                       'See b/62796379 for details.')
-    if modified_ast_name[-1] == '__bool__' and not self._py3output:
-      modified_ast_name[-1] = '__nonzero__'
     _set_name(f.name, _fix_special_names(modified_ast_name), ns,
               allow_fqcppname=True)
     if ast.returns and ast.returns.asList() == [['', [['self']]]]:

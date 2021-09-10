@@ -838,11 +838,7 @@ bool IterToCont(PyObject* py, Inserter add) {
 // to a C++ container via functor add.
 template<typename T, typename U, typename F>
 bool ItemsToMap(PyObject* py, F add) {
-#if PY_MAJOR_VERSION < 3
-  py = PyObject_CallMethod(py, C("iteritems"), nullptr);
-#else
   py = PyObject_CallMethod(py, C("items"), nullptr);
-#endif
   if (py == nullptr) return false;
   bool ok = py::IterToCont<std::pair<T, U>>(py, add);
   Py_DECREF(py);

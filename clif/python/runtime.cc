@@ -157,15 +157,6 @@ PyObject* ImportFQName(const std::string& full_class_name,
 
 // py.__class__.__name__
 const char* ClassName(PyObject* py) {
-  /* PyPy doesn't have a separate C API for old-style classes. */
-#if PY_MAJOR_VERSION < 3 && !defined(PYPY_VERSION)
-  if (PyClass_Check(py))
-    return PyString_AS_STRING(CHECK_NOTNULL(
-        reinterpret_cast<PyClassObject*>(py)->cl_name));
-  if (PyInstance_Check(py))
-    return PyString_AS_STRING(CHECK_NOTNULL(
-        reinterpret_cast<PyInstanceObject*>(py)->in_class->cl_name));
-#endif
   if (Py_TYPE(py) == &PyType_Type) {
     return reinterpret_cast<PyTypeObject*>(py)->tp_name;
   }
@@ -174,11 +165,6 @@ const char* ClassName(PyObject* py) {
 
 // type(py) renamed from {classobj, instance, type, class X}
 const char* ClassType(PyObject* py) {
-  /* PyPy doesn't have a separate C API for old-style classes. */
-#if PY_MAJOR_VERSION < 3 && !defined(PYPY_VERSION)
-  if (PyClass_Check(py)) return "old class";
-  if (PyInstance_Check(py)) return "old class instance";
-#endif
   if (Py_TYPE(py) == &PyType_Type) {
     return "class";
   }
@@ -248,11 +234,7 @@ std::string ExcStr(bool add_type) {
     PyObject* val_str = PyObject_Str(val);
     Py_DECREF(val);
     if (val_str) {
-#if PY_MAJOR_VERSION < 3
-      err += PyString_AS_STRING(val_str);
-#else
       err += PyUnicode_AsUTF8(val_str);
-#endif
       Py_DECREF(val_str);
     }
   }

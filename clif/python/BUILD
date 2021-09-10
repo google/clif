@@ -109,7 +109,6 @@ py_library(
         "clif_types.py",
         "gen.py",
         "postconv.py",
-        "py2slots.py",
         "py3slots.py",
         "pyext.py",
         "slots.py",
@@ -252,7 +251,7 @@ py_library(
     ],
 )
 
-# Utility for generating py2slots.py, py3slots.py.
+# Utility for generating py3slots.py.
 # This target is not actually used. See slot_extractor.py module docstring.
 py_binary(
     name = "slot_extractor",

@@ -56,10 +56,6 @@ bool Clif_PyObjAs(PyObject* py, int* c) {
       return false;
     }
 #endif
-#if PY_MAJOR_VERSION < 3
-  } else if (PyInt_Check(py)) {
-    i = PyInt_AS_LONG(py);
-#endif
   } else {
     PyErr_SetString(PyExc_TypeError, "expecting int");
     return false;
@@ -116,20 +112,9 @@ bool Clif_PyObjAs(PyObject* py, unsigned char* c) {
 bool Clif_PyObjAs(PyObject* py, unsigned short* c) {  //NOLINT: runtime/int
   CHECK(c != nullptr);
   unsigned long i;  //NOLINT: runtime/int
-  if (PyLong_Check(py)) i = PyLong_AsUnsignedLong(py);
-  else  //NOLINT readability/braces
-#if PY_MAJOR_VERSION < 3
-  if (PyInt_Check(py)) {
-    long d = PyInt_AS_LONG(py);  //NOLINT: runtime/int
-    if (d < 0) {
-      PyErr_SetString(PyExc_ValueError, "expecting non-negative number");
-      return false;
-    }
-    i = d;
-  }
-  else  //NOLINT readability/braces
-#endif
-  {
+  if (PyLong_Check(py)) {
+    i = PyLong_AsUnsignedLong(py);
+  } else {
     PyErr_SetString(PyExc_TypeError, "expecting int");
     return false;
   }
@@ -145,20 +130,9 @@ bool Clif_PyObjAs(PyObject* py, unsigned short* c) {  //NOLINT: runtime/int
 bool Clif_PyObjAs(PyObject* py, unsigned int* c) {
   CHECK(c != nullptr);
   unsigned long i;  //NOLINT: runtime/int
-  if (PyLong_Check(py)) i = PyLong_AsUnsignedLong(py);
-  else  //NOLINT readability/braces
-#if PY_MAJOR_VERSION < 3
-  if (PyInt_Check(py)) {
-    long d = PyInt_AS_LONG(py);  //NOLINT: runtime/int
-    if (d < 0) {
-      PyErr_SetString(PyExc_ValueError, "expecting non-negative number");
-      return false;
-    }
-    i = d;
-  }
-  else  //NOLINT readability/braces
-#endif
-  {
+  if (PyLong_Check(py)) {
+    i = PyLong_AsUnsignedLong(py);
+  } else {
     PyErr_SetString(PyExc_TypeError, "expecting int");
     return false;
   }
@@ -173,20 +147,9 @@ bool Clif_PyObjAs(PyObject* py, unsigned int* c) {
 
 bool Clif_PyObjAs(PyObject* py, unsigned long* c) {  //NOLINT: runtime/int
   CHECK(c != nullptr);
-  if (PyLong_Check(py)) *c = PyLong_AsUnsignedLong(py);
-  else  //NOLINT readability/braces
-#if PY_MAJOR_VERSION < 3
-  if (PyInt_Check(py)) {
-    long i = PyInt_AS_LONG(py);  //NOLINT: runtime/int
-    if (i < 0) {
-      PyErr_SetString(PyExc_ValueError, "expecting non-negative number");
-      return false;
-    }
-    *c = i;
-  }
-  else  //NOLINT readability/braces
-#endif
-  {
+  if (PyLong_Check(py)) {
+    *c = PyLong_AsUnsignedLong(py);
+  } else {
     PyErr_SetString(PyExc_TypeError, "expecting int");
     return false;
   }
@@ -195,13 +158,9 @@ bool Clif_PyObjAs(PyObject* py, unsigned long* c) {  //NOLINT: runtime/int
 
 bool Clif_PyObjAs(PyObject* py, long* c) {  //NOLINT: runtime/int
   CHECK(c != nullptr);
-  if (PyLong_Check(py)) *c = PyLong_AsSsize_t(py);
-  else
-#if PY_MAJOR_VERSION < 3
-  if (PyInt_Check(py)) *c = PyInt_AsSsize_t(py);
-  else  //NOLINT readability/braces
-#endif
-  {
+  if (PyLong_Check(py)) {
+    *c = PyLong_AsSsize_t(py);
+  } else {
     PyErr_SetString(PyExc_TypeError, "expecting int");
     return false;
   }
@@ -212,13 +171,6 @@ bool Clif_PyObjAs(PyObject* py, long* c) {  //NOLINT: runtime/int
 #ifdef HAVE_LONG_LONG
 bool Clif_PyObjAs(PyObject* py, long long* c) {  //NOLINT: runtime/int
   CHECK(c != nullptr);
-#if PY_MAJOR_VERSION < 3
-  if (PyInt_Check(py)) {
-    long i = PyInt_AS_LONG(py);  //NOLINT: runtime/int
-    *c = i;
-    return true;
-  }
-#endif
   if (!PyLong_Check(py)) {
     PyErr_SetString(PyExc_TypeError, "expecting int");
     return false;
@@ -230,13 +182,9 @@ bool Clif_PyObjAs(PyObject* py, long long* c) {  //NOLINT: runtime/int
 // uint64
 bool Clif_PyObjAs(PyObject* py, unsigned long long* c) {  //NOLINT: runtime/int
   CHECK(c != nullptr);
-  if (PyLong_Check(py)) *c = PyLong_AsUnsignedLongLong(py);
-  else
-#if PY_MAJOR_VERSION < 3
-  if (PyInt_Check(py)) *c = PyInt_AsUnsignedLongLongMask(py);
-  else  //NOLINT readability/braces
-#endif
-  {
+  if (PyLong_Check(py)) {
+    *c = PyLong_AsUnsignedLongLong(py);
+  } else {
     PyErr_SetString(PyExc_TypeError, "expecting int");
     return false;
   }
@@ -249,12 +197,8 @@ bool Clif_PyObjAs(PyObject* py, absl::int128* c) {  // NOLINT: runtime/int
   if (PyLong_Check(py)) {
     auto lo = PyLong_AsUnsignedLongLong(
         PyNumber_And(py, PyLong_FromUnsignedLongLong(0xFFFFFFFFFFFFFFFF)));
-    auto hi = PyLong_AsLongLong(PyNumber_Rshift(py, PyInt_FromLong(64)));
+    auto hi = PyLong_AsLongLong(PyNumber_Rshift(py, PyLong_FromLong(64)));
     *c = absl::MakeInt128(hi, lo);
-#if PY_MAJOR_VERSION < 3
-  } else if (PyInt_Check(py)) {
-    *c = absl::int128(PyInt_AS_LONG(py));
-#endif
   } else {
     PyErr_SetString(PyExc_TypeError, "expecting int");
     return false;
@@ -269,19 +213,9 @@ bool Clif_PyObjAs(PyObject* py, absl::uint128* c) {  // NOLINT: runtime/int
     auto lo = PyLong_AsUnsignedLongLong(
         PyNumber_And(py, PyLong_FromUnsignedLongLong(0xFFFFFFFFFFFFFFFF)));
     auto hi =
-        PyLong_AsUnsignedLongLong(PyNumber_Rshift(py, PyInt_FromLong(64)));
+        PyLong_AsUnsignedLongLong(PyNumber_Rshift(py, PyLong_FromLong(64)));
     *c = absl::MakeUint128(hi, lo);
-  } else
-#if PY_MAJOR_VERSION < 3
-  if (PyInt_Check(py)) {
-    auto lo = PyInt_AsUnsignedLongLongMask(
-        PyNumber_And(py, PyLong_FromUnsignedLongLong(0xFFFFFFFFFFFFFFFF)));
-    auto hi =
-        PyInt_AsUnsignedLongLongMask(PyNumber_Rshift(py, PyInt_FromLong(64)));
-    *c = absl::MakeUint128(hi, lo);
-  } else  // NOLINT readability/braces
-#endif
-  {
+  } else {
     PyErr_SetString(PyExc_TypeError, "expecting int");
     return false;
   }

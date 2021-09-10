@@ -16,7 +16,6 @@
 
 import textwrap
 from absl.testing import absltest
-from clif.python import py2slots
 from clif.python import py3slots
 from clif.python import slots
 
@@ -30,9 +29,7 @@ class SlotsTest(absltest.TestCase):
         PyObject* slot_richcmp(PyObject* self, PyObject* other, int op) {
           switch (op) {
             case Py_EQ: return slot::adapter<wrap_eq>(self, other);
-            default:
-              Py_INCREF(Py_NotImplemented);
-              return Py_NotImplemented;
+            default: Py_RETURN_NOTIMPLEMENTED;
           }
         }"""))
 
@@ -67,7 +64,7 @@ class SlotsTest(absltest.TestCase):
         int slot_seti(PyObject* self, Py_ssize_t idx, PyObject* value) {
           idx = slot::item_index(self, idx);
           if (idx < 0) return -1;
-          PyObject* i = PyInt_FromSize_t(idx);
+          PyObject* i = PyLong_FromSize_t(idx);
           if (i == nullptr) return -1;
           if (value != nullptr) {
             PyObject* args = PyTuple_Pack(2, i, value);
@@ -118,45 +115,29 @@ class SlotsTest(absltest.TestCase):
     with self.assertRaises(NameError):
       list(slots.GenSlots([('__sizeof__', 'wrap_so')], {'tp_flags': []}))
 
-  def testTypeSlotsPy2(self):
-    tp_slots = py2slots.PyTypeObject
-    self.assertLen(tp_slots, 46)
-    self.assertEqual(tp_slots[0], 'tp_name')
-    self.assertEqual(tp_slots[-1], 'tp_version_tag')
-
   def testTypeSlotsPy3(self):
     tp_slots = py3slots.PyTypeObject
     self.assertLen(tp_slots, 47)
     self.assertEqual(tp_slots[0], 'tp_name')
     self.assertEqual(tp_slots[-1], 'tp_finalize')
 
-  def testSlotFuncPy2(self):
+  def testSlotFunc(self):
     slots._SLOT_TYPES = {}
-    for d in slots._COMMON_SLOT_MAP, slots._SLOT_MAP_PY2:
-      _SlotFunc(self, d, False)
-
-  def testSlotFuncPy3(self):
-    slots._SLOT_TYPES = {}
-    for d in slots._COMMON_SLOT_MAP, slots._SLOT_MAP_PY3:
-      _SlotFunc(self, d, True)
-
-
-def _SlotFunc(self, d, py3):
-  for s in d.values():
-    if s:
-      if isinstance(s, str):
-        s = [s]
-      elif isinstance(s, int):
-        continue
-      else:
-        s = s[0]
+    for s in slots._COMMON_SLOT_MAP.values():
+      if s:
         if isinstance(s, str):
           s = [s]
-        elif not isinstance(s, list):
+        elif isinstance(s, int):
           continue
-      for name in s:
-        self.assertTrue(slots._SlotFuncSignature(name, py3),
-                        name+' func type not found')
+        else:
+          s = s[0]
+          if isinstance(s, str):
+            s = [s]
+          elif not isinstance(s, list):
+            continue
+        for name in s:
+          self.assertTrue(slots._SlotFuncSignature(name),
+                          name+' func type not found')
 
 if __name__ == '__main__':
   absltest.main()

@@ -122,16 +122,11 @@ class Module(object):
                full_dotted_modname,
                typemap=(),
                namemap=(),
-               for_py3=None,
                indent=None):
     global I
     if indent is None:
       indent = I
     if I != indent: I = gen.I = types.I = slots.I = indent
-    if for_py3 is None:  # Get the value via our runtime environment.
-      self.py3output = gen.PY3OUTPUT
-    else:
-      self.py3output = gen.PY3OUTPUT = for_py3
     self.path = full_dotted_modname
     self.modname = full_dotted_modname.rsplit('.', 1)[-1]
     assert self.modname, 'Module name should be a full.path.name'
@@ -440,8 +435,7 @@ class Module(object):
           cvar,
           v,
           setval,
-          as_str=('PyUnicode_AsUTF8'
-                  if self.py3output else 'PyString_AS_STRING'),
+          as_str='PyUnicode_AsUTF8',
           is_extend=v.is_extend_variable):
         yield s
 
@@ -523,8 +517,6 @@ class Module(object):
       tp_slots = {'tp_flags': ['Py_TPFLAGS_DEFAULT']}
       if c.cpp_abstract:
         tp_slots['tp_flags'].append('Py_TPFLAGS_IS_ABSTRACT')
-      if not self.py3output:
-        tp_slots['tp_flags'].append('Py_TPFLAGS_CHECKTYPES')
       if not c.final:
         tp_slots['tp_flags'].append('Py_TPFLAGS_BASETYPE')
       if has_iterator:
@@ -549,7 +541,7 @@ class Module(object):
             self.methods.append((w, w, NOARGS, 'Upcast to %s*' % p))
       _AppendReduceExIfNeeded(self.methods)
       if self.methods:
-        for s in slots.GenSlots(self.methods, tp_slots, py3=self.py3output,
+        for s in slots.GenSlots(self.methods, tp_slots,
                                 tracked_groups=tracked_slot_groups):
           yield s
         if self.methods:  # If all methods are slots, it's empty.
@@ -620,7 +612,6 @@ class Module(object):
     """Process AST.EnumDecl e."""
     # Enum(pyname, ((name, value),...))
     pytype = 'Enum' if e.enum_class else 'IntEnum'
-    pystr = 'PyUnicode_FromString' if self.py3output else 'PyString_FromString'
     items = []
     for m in e.members:
       if ':' in m.cpp_name:
@@ -628,8 +619,8 @@ class Module(object):
       else:
         name = e.name.cpp_name + '::' + m.cpp_name
       items.append((
-          '%s("%s")' % (pystr, m.native or Ident(m.cpp_name)),
-          'PyInt_FromLong(\n%s%s)' % (
+          'PyUnicode_FromString("%s")' % (m.native or Ident(m.cpp_name)),
+          'PyLong_FromLong(\n%s%s)' % (
               4*I,
               types.AsType(types.EnumIntType(e.name.cpp_name), name))))
     assert items, 'matcher should populate enum members'
@@ -655,7 +646,7 @@ class Module(object):
           I+'goto err;',
           '}'])
     yield ''
-    for s in t.CreateEnum(genw, wclass, items, self.py3output):
+    for s in t.CreateEnum(genw, wclass, items):
       yield s
 
   def WrapCapsule(self, p, unused_ln, ns, unused_class_ns=''):
@@ -729,14 +720,12 @@ class Module(object):
       # Save sorted types for GenerateHeader.
       self.types = sorted(self.types, key=types.Order)
       for ns, ts in itertools.groupby(self.types, types.Namespace):
-        for s in gen.TypeConverters(ns, ts, self.wrap_namespace,
-                                    self.py3output):
+        for s in gen.TypeConverters(ns, ts, self.wrap_namespace):
           yield s
     if self.static_init:
       for s in gen.PyModInitFunction(
           init_name=self.static_init,
-          ns=self.wrap_namespace,
-          py3=self.py3output):
+          ns=self.wrap_namespace):
         yield s
 
   def GenerateInit(self, source_filename, skip_initfunc=False):
@@ -752,7 +741,7 @@ class Module(object):
     yield '}  // namespace %s' % self.wrap_namespace
     if not skip_initfunc:
       for s in gen.PyModInitFunction(
-          modname=self.modname, py3=self.py3output, ns=self.wrap_namespace):
+          modname=self.modname, ns=self.wrap_namespace):
         yield s
 
   def GenerateHeader(self, source_filename, api_header_filename, macros,

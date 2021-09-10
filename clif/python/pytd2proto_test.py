@@ -27,13 +27,12 @@ from clif.python import pytd_parser
 TMP_FILE = 'clif_python_pytd2proto_test'
 
 
-def _ParseFile(pytd, types, py3output):
+def _ParseFile(pytd, types):
   with open(TMP_FILE, 'w') as pytd_file:
     pytd_file.write(pytd)
   p = pytd2proto.Postprocessor(
       config_headers=types,
-      include_paths=[os.environ['CLIF_DIR']],
-      py3output=py3output)
+      include_paths=[os.environ['CLIF_DIR']])
   with open(TMP_FILE, 'r') as pytd_file:
     pb = p.Translate(pytd_file)
   return pb
@@ -53,11 +52,10 @@ class ToprotoTest(unittest.TestCase):
                 types=None,
                 include_typemaps=False,
                 include_namemaps=False,
-                add_extra_init=True,
-                py3output=True):
+                add_extra_init=True):
     pytd = textwrap.dedent(pytd)
     try:
-      pb = _ParseFile(pytd, types, py3output)
+      pb = _ParseFile(pytd, types)
     except:
       print('\nLine', '.123456789' * 4)
       for i, s in enumerate(pytd.splitlines()):
@@ -91,45 +89,6 @@ class ToprotoTest(unittest.TestCase):
             class `CppAlpha` as Alpha:
               def __nonzero__(self) -> bool
         """, '')
-
-  def testParsingBoolGeneratesNonzeroForPY2(self):
-    self.ClifEqualWithTypes("""\
-        from "foo.h":
-          namespace `TheNamespace`:
-            class `CppAlpha` as Alpha:
-              def `IsValid` as __bool__(self) -> bool
-      """, """\
-        source: "clif_python_pytd2proto_test"
-        usertype_includes: "clif/python/types.h"
-        decls {
-          decltype: CLASS
-          cpp_file: "foo.h"
-          line_number: 3
-          namespace_: "TheNamespace"
-          class_ {
-            name {
-              native: "Alpha"
-              cpp_name: "TheNamespace::CppAlpha"
-            }
-            members {
-              decltype: FUNC
-              line_number: 4
-              func {
-                name {
-                  native: "__nonzero__"
-                  cpp_name: "IsValid"
-                }
-                returns {
-                  type {
-                    lang_type: "bool"
-                    cpp_type: "bool"
-                  }
-                }
-              }
-            }
-          }
-        }
-      """, py3output=False)
 
   def testForwardAndCircularTypeUsages(self):
     self.ClifEqualWithTypes("""\
@@ -2233,8 +2192,8 @@ class IncludeTest(unittest.TestCase):
 
   def setUp(self):
     super(IncludeTest, self).setUp()
-    self._path_prefix = os.environ['CLIF_DIR']
-    self._cpp_string = 'std::string'
+    self._path_prefix = None
+    self._cpp_string = 'string'
 
   def testInclude(self):
     typetable = pytd2proto._TypeTable()
@@ -2263,5 +2222,6 @@ class IncludeTest(unittest.TestCase):
     self.assertFalse(init)
 
 
-if __name__ == '__main__':
-  unittest.main()
+# NOTE: Currently this test is a py_library.
+# if __name__ == '__main__':
+#   unittest.main()
