@@ -20,7 +20,6 @@ from clif.protos import ast_pb2
 from clif.pybind11 import classes
 from clif.pybind11 import enums
 from clif.pybind11 import function
-from clif.pybind11 import function_lib
 from clif.pybind11 import type_casters
 from clif.pybind11 import utils
 
@@ -200,7 +199,7 @@ class ModuleGenerator(object):
     params_list_with_types = []
     for p in func_decl.params:
       params_list_with_types.append(
-          f'{function_lib.generate_param_type(p)} {p.name.cpp_name}')
+          f'{p.cpp_exact_type} {p.name.cpp_name}')
     params_str_with_types = ', '.join(params_list_with_types)
 
     cpp_const = ''
