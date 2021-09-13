@@ -36,6 +36,7 @@ class ModuleGenerator(object):
     self._header_path = header_path
     self._include_paths = include_paths
     self._unique_classes = {}
+    self._unique_enums = {}
 
   def generate_header(self,
                       ast: ast_pb2.AST) -> Generator[str, None, None]:
@@ -43,7 +44,7 @@ class ModuleGenerator(object):
     includes = set()
     for decl in ast.decls:
       includes.add(decl.cpp_file)
-      self._collect_class_cpp_names(decl)
+      self._collect_cpp_names_to_export(decl)
     yield '#include "third_party/pybind11/include/pybind11/smart_holder.h"'
     for include in includes:
       yield f'#include "{include}"'
@@ -52,6 +53,8 @@ class ModuleGenerator(object):
       yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({cpp_name})'
     yield '\n'
     for cpp_name, py_name in self._unique_classes.items():
+      yield f'// CLIF use `{cpp_name}` as {py_name}'
+    for cpp_name, py_name in self._unique_enums.items():
       yield f'// CLIF use `{cpp_name}` as {py_name}'
 
   def generate_from(self, ast: ast_pb2.AST):
@@ -71,7 +74,7 @@ class ModuleGenerator(object):
     for decl in ast.decls:
       yield from self._generate_python_override_class_names(
           python_override_class_names, decl)
-      self._collect_class_cpp_names(decl)
+      self._collect_cpp_names_to_export(decl)
 
     yield from type_casters.generate_from(ast, self._include_paths)
     yield f'PYBIND11_MODULE({self._module_name}, m) {{'
@@ -223,16 +226,22 @@ class ModuleGenerator(object):
     yield I + I + ');'
     yield I + '}'
 
-  def _collect_class_cpp_names(self, decl: ast_pb2.Decl,
-                               parent_name: str = '') -> None:
-    """Adds every class name to a set. Only to be used in this context."""
+  def _collect_cpp_names_to_export(self, decl: ast_pb2.Decl,
+                                   parent_name: str = '') -> None:
+    """Adds every class and enum name to a set."""
     if decl.decltype == ast_pb2.Decl.Type.CLASS:
       full_native_name = decl.class_.name.native
       if parent_name:
-        full_native_name = '.'.join([parent_name, decl.class_.name.native])
+        full_native_name = '.'.join([parent_name, full_native_name])
       self._unique_classes[decl.class_.name.cpp_name] = full_native_name
       for member in decl.class_.members:
-        self._collect_class_cpp_names(member, full_native_name)
+        self._collect_cpp_names_to_export(member, full_native_name)
+    elif decl.decltype == ast_pb2.Decl.Type.ENUM:
+      full_native_name = decl.enum.name.native
+      full_cpp_name = decl.enum.name.cpp_name
+      if parent_name:
+        full_native_name = '.'.join([parent_name, full_native_name])
+      self._unique_enums[full_cpp_name] = full_native_name
 
 
 def write_to(channel, lines):
