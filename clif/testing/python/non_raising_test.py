@@ -13,31 +13,18 @@
 # limitations under the License.
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import non_raising
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import non_raising_pybind11
-except ImportError:
-  non_raising_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (non_raising,
-                                             non_raising_pybind11))
-    if np[1] is not None
-])
 class NonRaisingTest(absltest.TestCase):
 
-  def testPlain(self, wrapper_lib):
-    num = wrapper_lib.MakeTestNonRaisingPlain()
+  def testPlain(self):
+    num = non_raising.MakeTestNonRaisingPlain()
     self.assertEqual(num, 1)
 
-  def testMarked(self, wrapper_lib):
-    num = wrapper_lib.MakeTestNonRaisingMarked()
+  def testMarked(self):
+    num = non_raising.MakeTestNonRaisingMarked()
     self.assertEqual(num, -1)
 
 

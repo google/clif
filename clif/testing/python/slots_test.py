@@ -15,32 +15,20 @@
 """Tests for clif.testing.python.slots."""
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import slots
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import slots_pybind11
-except ImportError:
-  slots_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (slots, slots_pybind11))
-    if np[1] is not None
-])
 class SlotsTest(absltest.TestCase):
 
-  def testObjectMethods(self, wrapper_lib):
-    a = wrapper_lib.I5()
+  def testObjectMethods(self):
+    a = slots.I5()
     self.assertEqual(hash(a), 0)
 
-  def testRO(self, wrapper_lib):
-    if wrapper_lib is slots_pybind11:  # b/184390527
+  def testRO(self):
+    if 'pybind11' in slots.__doc__:  # b/184390527
       self.skipTest('pybind11 generates a segfault when calling list(a)')
-    a = wrapper_lib.I5()
+    a = slots.I5()
     self.assertLen(a, 5)
     self.assertEqual(list(a), [0]*5)
     a[1] = 1
@@ -49,10 +37,10 @@ class SlotsTest(absltest.TestCase):
     with self.assertRaises(NotImplementedError):
       del a[1]
 
-  def testRW(self, wrapper_lib):
-    if wrapper_lib is slots_pybind11:  # b/184390527
+  def testRW(self):
+    if 'pybind11' in slots.__doc__:  # b/184390527
       self.skipTest('pybind11 generates a segfault when calling list(a)')
-    a = wrapper_lib.Z5()
+    a = slots.Z5()
     self.assertLen(a, 5)
     self.assertEqual(list(a), [0]*5)
     a[1] = 1
@@ -61,19 +49,19 @@ class SlotsTest(absltest.TestCase):
     del a[1]
     self.assertEqual(list(a), [0]*5)
 
-  def testHashSmallInt(self, wrapper_lib):
-    a = wrapper_lib.I5()
+  def testHashSmallInt(self):
+    a = slots.I5()
     a[2] = 3
     a[4] = 5
     self.assertEqual(hash(a), 8)
 
-  def testHashSsizetOverflow(self, wrapper_lib):
-    a = wrapper_lib.I5()
+  def testHashSsizetOverflow(self):
+    a = slots.I5()
     a[0] = 999
     self.assertNotEqual(hash(a), 999)
 
-  def testUnHashable(self, wrapper_lib):
-    a = wrapper_lib.Z5()
+  def testUnHashable(self):
+    a = slots.Z5()
     with self.assertRaises(TypeError) as ctx:
       hash(a)
     self.assertIn(' int', str(ctx.exception))

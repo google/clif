@@ -13,30 +13,14 @@
 # limitations under the License.
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import virtual_derived_before_base
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import virtual_derived_before_base_pybind11
-except ImportError:
-  virtual_derived_before_base_pybind11 = None
-# pylint: enable=g-import-not-at-top
-
-test_names = ('c_api', 'pybind11')
-test_imports = (virtual_derived_before_base,
-                virtual_derived_before_base_pybind11)
 
 
-@parameterized.named_parameters([
-    np for np in zip(test_names, test_imports)
-    if np[1] is not None
-])
 class VirtualDerivedBeforeBaseTest(absltest.TestCase):
 
-  def testDerivedGet(self, wrapper_lib):
-    d = wrapper_lib.Derived(12345)
+  def testDerivedGet(self):
+    d = virtual_derived_before_base.Derived(12345)
     self.assertEqual(d.Get(), 12345)
 
 

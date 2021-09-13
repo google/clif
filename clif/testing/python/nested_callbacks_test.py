@@ -13,43 +13,30 @@
 # limitations under the License.
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import nested_callbacks
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import nested_callbacks_pybind11
-except ImportError:
-  nested_callbacks_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (nested_callbacks,
-                                             nested_callbacks_pybind11))
-    if np[1] is not None
-])
 class NestedCallbacksTest(absltest.TestCase):
 
-  def testNestedCb(self, wrapper_lib):
+  def testNestedCb(self):
 
     def nested_cb_cb(cb, num):
       return cb(num + 5) + 6
 
-    res = wrapper_lib.nested_cb(nested_cb_cb, 7)
+    res = nested_callbacks.nested_cb(nested_cb_cb, 7)
     self.assertEqual(res, 146)
 
-  def testVirtualOverride(self, wrapper_lib):
+  def testVirtualOverride(self):
 
     # Based on cl/272290922.
-    class VirtualDerived(wrapper_lib.VirtualBase):
+    class VirtualDerived(nested_callbacks.VirtualBase):
 
       def virtual_method(self, cb, num):
         return cb(num + 8) + 9
 
     d = VirtualDerived()
-    res = wrapper_lib.call_virtual_method_from_cpp(d)
+    res = nested_callbacks.call_virtual_method_from_cpp(d)
     self.assertEqual(res, 123)
 
 

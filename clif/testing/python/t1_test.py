@@ -16,71 +16,59 @@
 
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import t1
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import t1_pybind11
-except ImportError:
-  t1_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('_c_api', '_pybind11'), (t1, t1_pybind11))
-    if np[1] is not None
-])
-class T1Test(parameterized.TestCase):
+class T1Test(absltest.TestCase):
 
-  def testIntId(self, wrapper_lib):
-    self.assertEqual(wrapper_lib.IntId(1), 1)
-    self.assertEqual(wrapper_lib.IntId(x=1), 1)
+  def testIntId(self):
+    self.assertEqual(t1.IntId(1), 1)
+    self.assertEqual(t1.IntId(x=1), 1)
     with self.assertRaises(TypeError):
-      wrapper_lib.IntId(a=1)
+      t1.IntId(a=1)
     with self.assertRaises(TypeError):
-      wrapper_lib.IntId()
+      t1.IntId()
     with self.assertRaises(TypeError):
-      wrapper_lib.IntId(1, 2)
+      t1.IntId(1, 2)
 
-  def testSum3(self, wrapper_lib):
-    self.assertEqual(wrapper_lib.Sum3(1, 2), 3)
-    self.assertEqual(wrapper_lib.Sum3(1, b=2), 3)
-    self.assertEqual(wrapper_lib.Sum3(a=1, b=2), 3)
-    self.assertEqual(wrapper_lib.Sum3(b=2, a=1), 3)
-    self.assertEqual(wrapper_lib.Sum3(b=2, c=3, a=1), 6)
-    self.assertEqual(wrapper_lib.Sum3(1, 2, 3), 6)
-    self.assertEqual(wrapper_lib.Sum3(1, 2, c=3), 6)
+  def testSum3(self):
+    self.assertEqual(t1.Sum3(1, 2), 3)
+    self.assertEqual(t1.Sum3(1, b=2), 3)
+    self.assertEqual(t1.Sum3(a=1, b=2), 3)
+    self.assertEqual(t1.Sum3(b=2, a=1), 3)
+    self.assertEqual(t1.Sum3(b=2, c=3, a=1), 6)
+    self.assertEqual(t1.Sum3(1, 2, 3), 6)
+    self.assertEqual(t1.Sum3(1, 2, c=3), 6)
     with self.assertRaises(TypeError):
-      wrapper_lib.Sum3()
+      t1.Sum3()
     with self.assertRaises(TypeError):
-      wrapper_lib.Sum3(1, b=2, x=1)
+      t1.Sum3(1, b=2, x=1)
     with self.assertRaises(TypeError):
-      wrapper_lib.Sum3(1, 2, 3, 4)
-    self.assertEqual(wrapper_lib.Sum3(1, c=3), 4)
+      t1.Sum3(1, 2, 3, 4)
+    self.assertEqual(t1.Sum3(1, c=3), 4)
 
-  def testString(self, wrapper_lib):
-    self.assertEqual(wrapper_lib.StdString(), 'std')
+  def testString(self):
+    self.assertEqual(t1.StdString(), 'std')
 
-  def testBytes(self, wrapper_lib):
-    self.assertEqual(wrapper_lib.StdBytes(), b'std')
+  def testBytes(self):
+    self.assertEqual(t1.StdBytes(), b'std')
 
-    self.assertEqual(wrapper_lib.UnicodeString(), u'\u0394')
+    self.assertEqual(t1.UnicodeString(), u'\u0394')
 
-    self.assertEqual(wrapper_lib.UnicodeBytes(False), u'\u03B8'.encode('utf-8'))
-    self.assertEqual(wrapper_lib.UnicodeBytes(True), b'\x80')
+    self.assertEqual(t1.UnicodeBytes(False), u'\u03B8'.encode('utf-8'))
+    self.assertEqual(t1.UnicodeBytes(True), b'\x80')
 
-  def testFunctionDocstring(self, wrapper_lib):
-    self.assertIn('function has a docstring.\n\n', wrapper_lib.Sum3.__doc__)
-    self.assertIn('spans multiple lines', wrapper_lib.Sum3.__doc__)
+  def testFunctionDocstring(self):
+    self.assertIn('function has a docstring.\n\n', t1.Sum3.__doc__)
+    self.assertIn('spans multiple lines', t1.Sum3.__doc__)
 
-  def testFunctionDocstringNoTrailingWhitespaces(self, wrapper_lib):
-    if wrapper_lib is not t1:
+  def testFunctionDocstringNoTrailingWhitespaces(self):
+    if 'pybind11' in t1.__doc__:
       self.skipTest(
           'pybind11 automatically adds a trailing whitespace to function '
           'docstrings.')
-    self.assertEqual(wrapper_lib.Sum3.__doc__, wrapper_lib.Sum3.__doc__.strip())
+    self.assertEqual(t1.Sum3.__doc__, t1.Sum3.__doc__.strip())
 
 
 if __name__ == '__main__':

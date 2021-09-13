@@ -13,58 +13,45 @@
 # limitations under the License.
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import pointer_parameters
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import pointer_parameters_pybind11
-except ImportError:
-  pointer_parameters_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (pointer_parameters,
-                                             pointer_parameters_pybind11))
-    if np[1] is not None
-])
 class PointerParametersTest(absltest.TestCase):
 
-  def test_no_input(self, wrapper_lib):
-    m = wrapper_lib.MyClass()
+  def test_no_input(self):
+    m = pointer_parameters.MyClass()
     self.assertEqual(m.no_input(), 1000)
 
-  def test_pointer_input(self, wrapper_lib):
-    m = wrapper_lib.MyClass()
+  def test_pointer_input(self):
+    m = pointer_parameters.MyClass()
     output = m.pointer_input(123)
     self.assertEqual(output, 1123)
 
-  def test_one_input(self, wrapper_lib):
-    m = wrapper_lib.MyClass()
+  def test_one_input(self):
+    m = pointer_parameters.MyClass()
     self.assertEqual(m.one_input(input=123), 1123)
 
-  def test_multiple_inputs(self, wrapper_lib):
-    m = wrapper_lib.MyClass()
+  def test_multiple_inputs(self):
+    m = pointer_parameters.MyClass()
     self.assertEqual(m.multiple_inputs(input1=1, input2=10, input3=100), 1111)
 
-  def test_multiple_outputs(self, wrapper_lib):
-    m = wrapper_lib.MyClass()
+  def test_multiple_outputs(self):
+    m = pointer_parameters.MyClass()
     self.assertEqual(
         m.multiple_outputs(input1=1, input2=10, input3=100), (1001, 1010, 1100))
 
-  def test_static_function(self, wrapper_lib):
+  def test_static_function(self):
     self.assertEqual(
-        wrapper_lib.MyClass.static_function(input=100), 1100)
+        pointer_parameters.MyClass.static_function(input=100), 1100)
 
-  def test_multiple_outputs_free_function(self, wrapper_lib):
+  def test_multiple_outputs_free_function(self):
     self.assertEqual(
-        wrapper_lib.multiple_outputs_free_function(
+        pointer_parameters.multiple_outputs_free_function(
             input1=1, input2=10, input3=100), (1001, 1010, 1100))
 
-  def test_multiple_outputs_and_int_return(self, wrapper_lib):
-    m = wrapper_lib.MyClass()
+  def test_multiple_outputs_and_int_return(self):
+    m = pointer_parameters.MyClass()
     self.assertEqual(
         m.multiple_outputs_and_int_return(input1=1, input2=10, input3=100),
         (1111, 1001, 1010, 1100))

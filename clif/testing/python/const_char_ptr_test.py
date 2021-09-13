@@ -13,33 +13,20 @@
 # limitations under the License.
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import const_char_ptr
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import const_char_ptr_pybind11
-except ImportError:
-  const_char_ptr_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (const_char_ptr,
-                                             const_char_ptr_pybind11))
-    if np[1] is not None
-])
 class ConstCharPtrTest(absltest.TestCase):
 
-  def testReturnConstCharPtrAsStr(self, wrapper_lib):
-    res = wrapper_lib.ReturnConstCharPtrAsStr()
+  def testReturnConstCharPtrAsStr(self):
+    res = const_char_ptr.ReturnConstCharPtrAsStr()
     self.assertIsInstance(res, str)
     self.assertEqual(res, 'string literal')
 
-  def testReturnConstCharPtrAsBytes(self, wrapper_lib):
-    res = wrapper_lib.ReturnConstCharPtrAsBytes()
-    if wrapper_lib is const_char_ptr:
+  def testReturnConstCharPtrAsBytes(self):
+    res = const_char_ptr.ReturnConstCharPtrAsBytes()
+    if 'pybind11' not in const_char_ptr.__doc__:
       # BUG: Return value should be bytes but is str (Python 3).
       self.assertIsInstance(res, str)  # Should be bytes.
       self.assertEqual(res, 'string literal')  # Should be b'string literal'.

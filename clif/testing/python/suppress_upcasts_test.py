@@ -15,27 +15,14 @@
 """Tests for clif.testing.python.suppress_upcasts."""
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import suppress_upcasts
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import suppress_upcasts_pybind11
-except ImportError:
-  suppress_upcasts_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (suppress_upcasts,
-                                             suppress_upcasts_pybind11))
-    if np[1] is not None
-])
 class SpupressUpcastsTest(absltest.TestCase):
 
-  def testClassWithoutUpcasts(self, wrapper_lib):
-    obj = wrapper_lib.DerivedSuppressUpcasts()
+  def testClassWithoutUpcasts(self):
+    obj = suppress_upcasts.DerivedSuppressUpcasts()
     self.assertEqual(obj.value(), 20)
 
 

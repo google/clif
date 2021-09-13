@@ -15,29 +15,16 @@
 """Tests for clif.testing.python.default_args."""
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import default_args
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import default_args_pybind11
-except ImportError:
-  default_args_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np
-    for np in zip(('c_api', 'pybind11'), (default_args, default_args_pybind11))
-    if np[1] is not None
-])
 class DefaultArgsTest(absltest.TestCase):
 
-  def testDefaultArgs(self, wrapper_lib):
-    a = wrapper_lib.MyClass()
+  def testDefaultArgs(self):
+    a = default_args.MyClass()
     with self.assertRaises(
-        ValueError if wrapper_lib is default_args else TypeError):
+        TypeError if 'pybind11' in default_args.__doc__ else ValueError):
       a.MethodWithDefaultClassArg(i=113)
     self.assertEqual(a.MethodWithDefaultEnumArg(i=5000), 5432)
     self.assertEqual(a.MethodWithDefaultPtrArg(i=1234), 1234)

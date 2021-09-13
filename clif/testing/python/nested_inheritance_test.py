@@ -14,27 +14,14 @@
 """Tests for clif.testing.python.nested_inheritance."""
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import nested_inheritance
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import nested_inheritance_pybind11
-except ImportError:
-  nested_inheritance_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (nested_inheritance,
-                                             nested_inheritance_pybind11))
-    if np[1] is not None
-])
 class NestedInheritanceTest(absltest.TestCase):
 
-  def testInheritInner(self, wrapper_lib):
-    n = wrapper_lib.InheritInner()
+  def testInheritInner(self):
+    n = nested_inheritance.InheritInner()
     n.a = 100
     self.assertEqual(n.a, 100)
 

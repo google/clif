@@ -13,54 +13,42 @@
 # limitations under the License.
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import variables
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import variables_pybind11
-except ImportError:
-  variables_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (variables, variables_pybind11))
-    if np[1] is not None
-])
 class VariablesTest(absltest.TestCase):
 
-  def test_const_int(self, wrapper_lib):
-    self.assertEqual(wrapper_lib.kMyConstInt, 42)
+  def test_const_int(self):
+    self.assertEqual(variables.kMyConstInt, 42)
 
-  def test_const_int_renamed(self, wrapper_lib):
-    self.assertEqual(wrapper_lib.const_int, 123)
+  def test_const_int_renamed(self):
+    self.assertEqual(variables.const_int, 123)
 
-  def test_const_float(self, wrapper_lib):
-    self.assertEqual(wrapper_lib.kMyConstFloat, 15.0)
+  def test_const_float(self):
+    self.assertEqual(variables.kMyConstFloat, 15.0)
 
-  def test_const_bool(self, wrapper_lib):
-    self.assertEqual(wrapper_lib.kMyConstBool, True)
+  def test_const_bool(self):
+    self.assertEqual(variables.kMyConstBool, True)
 
-  def test_const_complex(self, wrapper_lib):
-    self.assertEqual(wrapper_lib.kMyConstComplex, complex(1))
+  def test_const_complex(self):
+    self.assertEqual(variables.kMyConstComplex, complex(1))
 
-  def test_const_array(self, wrapper_lib):
+  def test_const_array(self):
     expected_array = [0, 10, 20, 30, 40]
-    self.assertSequenceEqual(expected_array, wrapper_lib.kMyConstIntArray)
+    self.assertSequenceEqual(expected_array, variables.kMyConstIntArray)
 
-  def test_const_pair(self, wrapper_lib):
+  def test_const_pair(self):
     expected_tuple = [0, 10]
-    self.assertSequenceEqual(expected_tuple, wrapper_lib.kMyConstPair)
+    self.assertSequenceEqual(expected_tuple, variables.kMyConstPair)
 
-  def test_const_dict(self, wrapper_lib):
+  def test_const_dict(self):
     expected_dict = {1: 10, 2: 20, 3: 30}
-    self.assertDictEqual(expected_dict, wrapper_lib.kMyConstMap)
+    self.assertDictEqual(expected_dict, variables.kMyConstMap)
 
-  def test_const_set(self, wrapper_lib):
+  def test_const_set(self):
     expected_set = {1, 2, 3}
-    self.assertSetEqual(expected_set, wrapper_lib.kMyConstSet)
+    self.assertSetEqual(expected_set, variables.kMyConstSet)
 
 
 if __name__ == '__main__':

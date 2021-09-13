@@ -13,28 +13,15 @@
 # limitations under the License.
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import top_level_pass
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import top_level_pass_pybind11
-except ImportError:
-  top_level_pass_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (top_level_pass,
-                                             top_level_pass_pybind11))
-    if np[1] is not None
-])
 class TopLevelPassTest(absltest.TestCase):
 
-  def testEmptyModule(self, wrapper_lib):
+  def testEmptyModule(self):
     self.assertRegexpMatches(  # pylint: disable=deprecated-method
-        wrapper_lib.__doc__,
+        top_level_pass.__doc__,
         'CLIF-generated .*module for .*top_level_pass.clif')
 
 

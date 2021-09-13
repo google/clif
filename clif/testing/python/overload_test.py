@@ -15,26 +15,14 @@
 """Tests for clif.testing.python.overload."""
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import overload
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import overload_pybind11
-except ImportError:
-  overload_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (overload, overload_pybind11))
-    if np[1] is not None
-])
 class OverloadTest(absltest.TestCase):
 
-  def testCreate(self, wrapper_lib):
-    r = wrapper_lib.CreateWithAddress('hello')
+  def testCreate(self):
+    r = overload.CreateWithAddress('hello')
     self.assertTrue(r)
 
 

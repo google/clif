@@ -16,16 +16,9 @@ from absl.testing import absltest
 from absl.testing import parameterized
 
 from clif.testing.python import return_value_policy
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import return_value_policy_pybind11
-except ImportError:
-  return_value_policy_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-_TEST_CASES = (
+@parameterized.parameters(
     ('return_value', '^return_value_MvCtor(_MvCtor)*$'),
     ('return_reference', r'^return_reference(_CpCtor)*(_MvCtor)*$'),
     ('return_const_reference', '^return_const_reference_CpCtor(_MvCtor)*$'),
@@ -50,27 +43,12 @@ _TEST_CASES = (
     ('return_shared_pointer_nocopy_nomove',
      '^return_shared_pointer_nocopy_nomove$'),
     ('return_unique_pointer_nocopy_nomove',
-     '^return_unique_pointer_nocopy_nomove$'),
+     '^return_unique_pointer_nocopy_nomove$')
 )
-
-
-def MakeNamedParameters():
-  np = []
-  for code_gen, wrapper_lib in (('c_api', return_value_policy),
-                                ('pybind11', return_value_policy_pybind11)):
-    if wrapper_lib is not None:
-      for return_function, expected_regex in _TEST_CASES:
-        np.append(('_'.join((return_function, code_gen)),
-                   getattr(wrapper_lib, return_function),
-                   expected_regex))
-  return np
-
-
-@parameterized.named_parameters(MakeNamedParameters())
 class ReturnValuePolicyTestCase(parameterized.TestCase):
 
   def testReturnValue(self, return_function, expected):
-    ret = return_function()
+    ret = getattr(return_value_policy, return_function)()
     self.assertRegex(ret.mtxt, expected)
 
 

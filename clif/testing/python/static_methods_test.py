@@ -15,28 +15,15 @@
 """Tests for clif.testing.python.static_methods."""
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import static_methods
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import static_methods_pybind11
-except ImportError:
-  static_methods_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (static_methods,
-                                             static_methods_pybind11))
-    if np[1] is not None
-])
 class StaticMethodsTest(absltest.TestCase):
 
-  def testStaticMethods(self, wrapper_lib):
-    self.assertEqual(wrapper_lib.MethodWithNoArgs().a, 123)
-    self.assertEqual(wrapper_lib.MethodWithOneArg(321).a, 321)
+  def testStaticMethods(self):
+    self.assertEqual(static_methods.MethodWithNoArgs().a, 123)
+    self.assertEqual(static_methods.MethodWithOneArg(321).a, 321)
 
 
 if __name__ == '__main__':

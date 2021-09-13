@@ -13,18 +13,8 @@
 # limitations under the License.
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import virtual_py_cpp_mix
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import virtual_py_cpp_mix_pybind11
-except ImportError:
-  virtual_py_cpp_mix_pybind11 = None
-# pylint: enable=g-import-not-at-top
-
-HAVE_PB11 = virtual_py_cpp_mix_pybind11 is not None
 
 
 class PyDerived(virtual_py_cpp_mix.Base):
@@ -36,56 +26,35 @@ class PyDerived(virtual_py_cpp_mix.Base):
     return 323
 
 
-class PyDerivedPybind11(virtual_py_cpp_mix_pybind11.Base if HAVE_PB11 else
-                        object):
-
-  def __init__(self):
-    virtual_py_cpp_mix_pybind11.Base.__init__(self)
-
-  def Get(self):
-    return 323
-
-
-def GetPyDerived(wrapper_lib):
-  if wrapper_lib is virtual_py_cpp_mix:
-    return PyDerived
-  return PyDerivedPybind11
-
-
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (virtual_py_cpp_mix,
-                                             virtual_py_cpp_mix_pybind11))
-    if np[1] is not None
-])
 class VirtualPyCppMixTest(absltest.TestCase):
 
-  def testPyDerivedGet(self, wrapper_lib):
-    d = GetPyDerived(wrapper_lib)()
+  def testPyDerivedGet(self):
+    d = PyDerived()
     self.assertEqual(d.Get(), 323)
 
-  def testGetFromCppPlaincPtrPassingPyDerived(self, wrapper_lib):
-    d = GetPyDerived(wrapper_lib)()
-    self.assertEqual(wrapper_lib.GetFromCppPlaincPtr(d), 4323)
+  def testGetFromCppPlaincPtrPassingPyDerived(self):
+    d = PyDerived()
+    self.assertEqual(virtual_py_cpp_mix.GetFromCppPlaincPtr(d), 4323)
 
-  def testGetFromCppUniquePtrPassingPyDerived(self, wrapper_lib):
-    d = GetPyDerived(wrapper_lib)()
-    self.assertEqual(wrapper_lib.GetFromCppUniquePtr(d), 5323)
+  def testGetFromCppUniquePtrPassingPyDerived(self):
+    d = PyDerived()
+    self.assertEqual(virtual_py_cpp_mix.GetFromCppUniquePtr(d), 5323)
 
-  def testCppDerivedGet(self, wrapper_lib):
-    d = wrapper_lib.CppDerived()
-    if wrapper_lib is virtual_py_cpp_mix:
-      expected = 101  # NOT GOOD, but this will be fixed in the switch to ...
+  def testCppDerivedGet(self):
+    d = virtual_py_cpp_mix.CppDerived()
+    if 'pybind11' in virtual_py_cpp_mix.__doc__:
+      expected = 212  # NOT GOOD, but this will be fixed in the switch to ...
     else:
-      expected = 212  # ... pybind11, because this result is correct.
+      expected = 101  # ... pybind11, because this result is correct.
     self.assertEqual(d.Get(), expected)
 
-  def testGetFromCppPlaincPtrPassingCppDerived(self, wrapper_lib):
-    d = wrapper_lib.CppDerived()
-    self.assertEqual(wrapper_lib.GetFromCppPlaincPtr(d), 4212)
+  def testGetFromCppPlaincPtrPassingCppDerived(self):
+    d = virtual_py_cpp_mix.CppDerived()
+    self.assertEqual(virtual_py_cpp_mix.GetFromCppPlaincPtr(d), 4212)
 
-  def testGetFromCppUniquePtrPassingCppDerived(self, wrapper_lib):
-    d = wrapper_lib.CppDerived()
-    self.assertEqual(wrapper_lib.GetFromCppUniquePtr(d), 5212)
+  def testGetFromCppUniquePtrPassingCppDerived(self):
+    d = virtual_py_cpp_mix.CppDerived()
+    self.assertEqual(virtual_py_cpp_mix.GetFromCppUniquePtr(d), 5212)
 
 
 if __name__ == '__main__':

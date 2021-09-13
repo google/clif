@@ -13,66 +13,54 @@
 # limitations under the License.
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import pass_none
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import pass_none_pybind11
-except ImportError:
-  pass_none_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (pass_none, pass_none_pybind11))
-    if np[1] is not None
-])
 class ExtendMethodsTest(absltest.TestCase):
 
-  def testPassByValue(self, wrapper_lib):
-    ih = wrapper_lib.IntHolder(29)
-    res = wrapper_lib.pass_holder_by_value(ih)
+  def testPassByValue(self):
+    ih = pass_none.IntHolder(29)
+    res = pass_none.pass_holder_by_value(ih)
     self.assertEqual(res, 87)
     with self.assertRaises(TypeError) as ctx:
-      wrapper_lib.pass_holder_by_value(None)
+      pass_none.pass_holder_by_value(None)
 
     error_message = str(ctx.exception)
     self.assertIn('pass_holder_by_value()', error_message)
     self.assertTrue('incompatible' in error_message
                     or 'not valid' in error_message)
 
-  def testPassConstRefHolder(self, wrapper_lib):
-    ih = wrapper_lib.IntHolder(37)
-    res = wrapper_lib.pass_const_ref_holder(ih)
+  def testPassConstRefHolder(self):
+    ih = pass_none.IntHolder(37)
+    res = pass_none.pass_const_ref_holder(ih)
     self.assertEqual(res, 185)
     with self.assertRaises(TypeError) as ctx:
-      wrapper_lib.pass_const_ref_holder(None)
+      pass_none.pass_const_ref_holder(None)
 
     error_message = str(ctx.exception)
     self.assertIn('pass_const_ref_holder()', error_message)
     self.assertTrue('incompatible' in error_message
                     or 'not valid' in error_message)
 
-  def testPassConstPtrHolder(self, wrapper_lib):
-    ih = wrapper_lib.IntHolder(41)
-    res = wrapper_lib.pass_const_ptr_holder(ih)
+  def testPassConstPtrHolder(self):
+    ih = pass_none.IntHolder(41)
+    res = pass_none.pass_const_ptr_holder(ih)
     self.assertEqual(res, 287)
-    res = wrapper_lib.pass_const_ptr_holder(None)
+    res = pass_none.pass_const_ptr_holder(None)
     self.assertEqual(res, 11)
 
-  def testPassSharedPtrHolder(self, wrapper_lib):
-    ih = wrapper_lib.IntHolder(43)
-    res = wrapper_lib.pass_shared_ptr_holder(ih)
+  def testPassSharedPtrHolder(self):
+    ih = pass_none.IntHolder(43)
+    res = pass_none.pass_shared_ptr_holder(ih)
     self.assertEqual(res, 559)
 
-    if wrapper_lib is pass_none_pybind11:
-      self.assertEqual(wrapper_lib.pass_shared_ptr_holder(None), 17)
+    if 'pybind11' in pass_none.__doc__:
+      self.assertEqual(pass_none.pass_shared_ptr_holder(None), 17)
     else:
       # The generated C API code does not support shared_ptr from None.
       with self.assertRaises(TypeError) as ctx:
-        wrapper_lib.pass_shared_ptr_holder(None)
+        pass_none.pass_shared_ptr_holder(None)
       self.assertEqual(
           str(ctx.exception),
           'pass_shared_ptr_holder() argument holder is not valid for'

@@ -15,26 +15,14 @@
 """Tests for clif.testing.python.operators."""
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import operators
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import operators_pybind11
-except ImportError:
-  operators_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (operators, operators_pybind11))
-    if np[1] is not None
-])
 class OperatorsTest(absltest.TestCase):
 
-  def testAbc(self, wrapper_lib):
-    abc = wrapper_lib.Abc(ord('a'), ord('z'))
+  def testAbc(self):
+    abc = operators.Abc(ord('a'), ord('z'))
     self.assertEqual(bool(abc), False)
     self.assertEqual(int(abc), 1)
     self.assertAlmostEqual(float(abc), 1.1)
@@ -42,7 +30,7 @@ class OperatorsTest(absltest.TestCase):
     self.assertEqual(abc[0], ord('a'))
     self.assertEqual(abc[1], ord('b'))
     #    self.assertEqual(abc[-1], 'z')
-    ABC = wrapper_lib.Abc(ord('A'), ord('Z'))  # pylint: disable=invalid-name
+    ABC = operators.Abc(ord('A'), ord('Z'))  # pylint: disable=invalid-name
     self.assertNotEqual(abc, ABC)
     self.assertEqual(len(abc), len(ABC))
     self.assertLess(ABC, abc, str(ABC[0] < abc[0]))
@@ -54,8 +42,8 @@ class OperatorsTest(absltest.TestCase):
     self.assertGreater(abc, ABC, str(abc[0] > ABC[0]))
     self.assertGreaterEqual(abc, ABC, str(abc[0] >= ABC[0]))
 
-  def testNum(self, wrapper_lib):
-    n = wrapper_lib.Num()
+  def testNum(self):
+    n = operators.Num()
     self.assertEqual(n%1, 1)
     self.assertEqual(2%n, 2)
     self.assertEqual(n+2, 2)

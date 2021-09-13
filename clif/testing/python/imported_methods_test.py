@@ -15,27 +15,14 @@
 """Tests for clif.testing.python.imported_methods."""
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import imported_methods
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import imported_methods_pybind11
-except ImportError:
-  imported_methods_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (imported_methods,
-                                             imported_methods_pybind11))
-    if np[1] is not None
-])
 class InheritedConstructorsTest(absltest.TestCase):
 
-  def testInheritedConstructor(self, wrapper_lib):
-    d = wrapper_lib.Derived(12345)
+  def testInheritedConstructor(self):
+    d = imported_methods.Derived(12345)
     self.assertEqual(d.GetA(), 12345)
     self.assertEqual(d.GetAWithOffset(43210), 55555)
     self.assertEqual(d.GetT(12345), 12345)

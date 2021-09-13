@@ -15,18 +15,8 @@
 """Tests for clif.testing.python.smart_ptrs."""
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import smart_ptrs
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import smart_ptrs_pybind11
-except ImportError:
-  smart_ptrs_pybind11 = None
-# pylint: enable=g-import-not-at-top
-
-HAVE_PB11 = smart_ptrs_pybind11 is not None
 
 
 class Add(smart_ptrs.Operation):
@@ -40,50 +30,31 @@ class Add(smart_ptrs.Operation):
     return self.a + self.b
 
 
-class AddPybind11(smart_ptrs_pybind11.Operation if HAVE_PB11 else object):
-
-  def __init__(self, a, b):
-    smart_ptrs_pybind11.Operation.__init__(self)
-    self.a = a
-    self.b = b
-
-  def Run(self):
-    return self.a + self.b
-
-
-def AddParameterized(wrapper_lib):
-  return AddPybind11 if wrapper_lib is smart_ptrs_pybind11 else Add
-
-
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (smart_ptrs, smart_ptrs_pybind11))
-    if np[1] is not None
-])
 class SmartPtrsTest(absltest.TestCase):
 
-  def testSmartPtrs(self, wrapper_lib):
-    a = wrapper_lib.A()
+  def testSmartPtrs(self):
+    a = smart_ptrs.A()
     a.a = 123
-    b = wrapper_lib.B()
+    b = smart_ptrs.B()
     b.Set(a)
     self.assertEqual(b.Get().a, 123)
     self.assertEqual(b.GetNew().a, 123)
 
     # |a| is not shared with C++. So, the below call to Func should invalidate
     # it.
-    b = wrapper_lib.Func(a)
+    b = smart_ptrs.Func(a)
     self.assertEqual(b.Get().a, 123)
     with self.assertRaises(ValueError):
       _ = a.a
     with self.assertRaises(ValueError):
-      wrapper_lib.Func(a)
+      smart_ptrs.Func(a)
 
-    a = wrapper_lib.A()
+    a = smart_ptrs.A()
     a.a = 54321
     b.SetSP(a)
     # |a| is shared between C++ and Python. So, cannot give it to Func.
     with self.assertRaises(ValueError):
-      wrapper_lib.Func(a)
+      smart_ptrs.Func(a)
 
     # Check |a| is intact.
     self.assertEqual(a.a, 54321)
@@ -91,79 +62,74 @@ class SmartPtrsTest(absltest.TestCase):
     # Remove the reference in |b|
     b.Set(a)
     # We should be able to call Func again
-    b = wrapper_lib.Func(a)
+    b = smart_ptrs.Func(a)
     self.assertEqual(b.Get().a, 54321)
     with self.assertRaises(ValueError):
       _ = a.a
     with self.assertRaises(ValueError):
-      wrapper_lib.Func(a)
+      smart_ptrs.Func(a)
 
-    add = AddParameterized(wrapper_lib)(120, 3)
-    self.assertEqual(wrapper_lib.PerformUP(add), 123)
+    add = Add(120, 3)
+    self.assertEqual(smart_ptrs.PerformUP(add), 123)
     # Previous call to Perform invalidated |add|
     with self.assertRaises(ValueError):
-      wrapper_lib.PerformUP(add)
+      smart_ptrs.PerformUP(add)
 
-    add = AddParameterized(wrapper_lib)(1230, 4)
-    self.assertEqual(wrapper_lib.PerformSP(add), 1234)
+    add = Add(1230, 4)
+    self.assertEqual(smart_ptrs.PerformSP(add), 1234)
     # Calls to PerformSP should not invalidate |add|.
-    self.assertEqual(wrapper_lib.PerformSP(add), 1234)
+    self.assertEqual(smart_ptrs.PerformSP(add), 1234)
 
-    self.assertEqual(wrapper_lib.D1(123).Get(), 123)
+    self.assertEqual(smart_ptrs.D1(123).Get(), 123)
 
-  def testPrivateDtor(self, wrapper_lib):
+  def testPrivateDtor(self):
     # Can deal with objects with private/protected destructor std::shared_ptr.
-    d = wrapper_lib.WithPrivateDtor.New()
+    d = smart_ptrs.WithPrivateDtor.New()
     self.assertEqual(d.Get(), 321)
 
-  def testF3(self, wrapper_lib):
-    x = wrapper_lib.X()
+  def testF3(self):
+    x = smart_ptrs.X()
     x.y = 123
-    x1 = wrapper_lib.F3(x)
+    x1 = smart_ptrs.F3(x)
     self.assertEqual(x1.y, 123)
     with self.assertRaises(ValueError):
       _ = x.y
 
-  def testInfiniteLoopAddRun(self, wrapper_lib):
+  def testInfiniteLoopAddRun(self):
     # No leak (manually verified under cl/362141489).
-    add = AddParameterized(wrapper_lib)
     while True:
-      add(1, 2).Run()
+      Add(1, 2).Run()
       return  # Comment out for manual leak checking (use `top` command).
 
-  def testInfiniteLoopPerformSP(self, wrapper_lib):
+  def testInfiniteLoopPerformSP(self):
     # No leak (manually verified under cl/362141489).
-    add = AddParameterized(wrapper_lib)
     while True:
-      self.assertEqual(wrapper_lib.PerformSP(add(19, 29)), 48)
+      self.assertEqual(smart_ptrs.PerformSP(Add(19, 29)), 48)
       return  # Comment out for manual leak checking (use `top` command).
 
-  def testInfiniteLoopPerformUP(self, wrapper_lib):
+  def testInfiniteLoopPerformUP(self):
     # No leak (manually verified under cl/362141489).
-    if wrapper_lib is not smart_ptrs:
+    if 'pybind11' in smart_ptrs.__doc__:
       return  # pybind11 raises a ValueError (exercised above).
-    add = AddParameterized(wrapper_lib)
     while True:
-      self.assertEqual(wrapper_lib.PerformUP(add(17, 23)), 40)
+      self.assertEqual(smart_ptrs.PerformUP(Add(17, 23)), 40)
       return  # Comment out for manual leak checking (use `top` command).
 
-  def testInfiniteLoopRunStashedSPOperation(self, wrapper_lib):
+  def testInfiniteLoopRunStashedSPOperation(self):
     # No leak (manually verified under cl/362141489).
-    add = AddParameterized(wrapper_lib)
     while True:
-      s = wrapper_lib.OperationStashSP()
-      s.Stash(add(13, 29))
+      s = smart_ptrs.OperationStashSP()
+      s.Stash(Add(13, 29))
       self.assertEqual(s.RunStashed(), 42)
       return  # Comment out for manual leak checking (use `top` command).
 
-  def testInfiniteLoopRunStashedUPOperation(self, wrapper_lib):
+  def testInfiniteLoopRunStashedUPOperation(self):
     # No leak (manually verified under cl/362141489).
-    if wrapper_lib is not smart_ptrs:
+    if 'pybind11' in smart_ptrs.__doc__:
       return  # pybind11 raises a ValueError (exercised above).
-    add = AddParameterized(wrapper_lib)
     while True:
-      s = wrapper_lib.OperationStashUP()
-      s.Stash(add(31, 59))
+      s = smart_ptrs.OperationStashUP()
+      s.Stash(Add(31, 59))
       self.assertEqual(s.RunStashed(), 90)
       return  # Comment out for manual leak checking (use `top` command).
 

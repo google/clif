@@ -15,28 +15,15 @@
 """Tests for clif.testing.python.implicit_conversion."""
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import implicit_conversion
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import implicit_conversion_pybind11
-except ImportError:
-  implicit_conversion_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (implicit_conversion,
-                                             implicit_conversion_pybind11))
-    if np[1] is not None
-])
 class ImplicitConversionTest(absltest.TestCase):
 
-  def testImplicitConversion(self, wrapper_lib):
-    b = wrapper_lib.B(123)
-    self.assertEqual(wrapper_lib.Func(b), 123)
+  def testImplicitConversion(self):
+    b = implicit_conversion.B(123)
+    self.assertEqual(implicit_conversion.Func(b), 123)
 
 
 if __name__ == '__main__':

@@ -15,31 +15,19 @@
 """Tests for clif.testing.python.t10."""
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.testing.python import t10
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import t10_pybind11
-except ImportError:
-  t10_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (t10, t10_pybind11))
-    if np[1] is not None
-])
 class T10Test(absltest.TestCase):
 
-  def testImportedClass(self, wrapper_lib):
-    k = wrapper_lib.CreateK()
+  def testImportedClass(self):
+    k = t10.CreateK()
     self.assertTrue(k.Int1)
 
-  def testDerivedClass(self, wrapper_lib):
-    a = wrapper_lib.A()
-    self.assertEqual(wrapper_lib.A.C, 1)
+  def testDerivedClass(self):
+    a = t10.A()
+    self.assertEqual(t10.A.C, 1)
     self.assertEqual(a.C, 1)
     self.assertEqual(str(a), 'A')
 

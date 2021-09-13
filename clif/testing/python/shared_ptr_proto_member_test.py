@@ -13,54 +13,41 @@
 # limitations under the License.
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 from clif.protos import ast_pb2
 
 from clif.testing.python import shared_ptr_proto_member
-# TODO: Restore simple import after OSS setup includes pybind11.
-# pylint: disable=g-import-not-at-top
-try:
-  from clif.testing.python import shared_ptr_proto_member_pybind11
-except ImportError:
-  shared_ptr_proto_member_pybind11 = None
-# pylint: enable=g-import-not-at-top
 
 
-@parameterized.named_parameters([
-    np for np in zip(('c_api', 'pybind11'), (shared_ptr_proto_member,
-                                             shared_ptr_proto_member_pybind11))
-    if np[1] is not None
-])
 class SharedPtrProtoMemberTest(absltest.TestCase):
 
-  def testProtoHolderByValue(self, wrapper_lib):
+  def testProtoHolderByValue(self):
     ast = ast_pb2.AST()
     ast.source = 'depot'
-    ph = wrapper_lib.ProtoHolderByValue(ast)
+    ph = shared_ptr_proto_member.ProtoHolderByValue(ast)
     self.assertEqual(ph.GetByValue().source, 'depot')
     self.assertEqual(ph.GetConstRef().source, 'depot')
     self.assertIsNone(ph.ResetSource('pool'))
     self.assertEqual(ph.GetConstRef().source, 'pool')
     self.assertEqual(ast.source, 'depot')
 
-  def testProtoHolderUniquePtr(self, wrapper_lib):
+  def testProtoHolderUniquePtr(self):
     ast = ast_pb2.AST()
     ast.source = 'depot'
-    ph = wrapper_lib.ProtoHolderUniquePtr(ast)
+    ph = shared_ptr_proto_member.ProtoHolderUniquePtr(ast)
     self.assertEqual(ph.GetUniquePtr().source, 'depot')
     # HAVE actual unique_ptr semantics returning unique_ptr from C++ to Python:
     self.assertIsNone(ph.GetUniquePtr())
-    ph = wrapper_lib.ProtoHolderUniquePtr(ast)
+    ph = shared_ptr_proto_member.ProtoHolderUniquePtr(ast)
     self.assertIsNone(ph.ResetSource('pool'))
     self.assertEqual(ph.GetUniquePtr().source, 'pool')
     # NO actual unique_ptr semantics in __init__ (passing from Python to C++):
     self.assertEqual(ast.source, 'depot')
 
-  def testProtoHolderSharedPtr(self, wrapper_lib):
+  def testProtoHolderSharedPtr(self):
     ast = ast_pb2.AST()
     ast.source = 'depot'
-    ph = wrapper_lib.ProtoHolderSharedPtr(ast)
+    ph = shared_ptr_proto_member.ProtoHolderSharedPtr(ast)
     self.assertEqual(ph.GetSharedPtrUseCount(), 1)
     sp1 = ph.GetSharedPtr()
     # NO actual shared_ptr semantics returning shared_ptr from C++ to Python:
