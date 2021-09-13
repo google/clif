@@ -42,8 +42,12 @@ inline std::unique_ptr<Decl::Type> decl_type_uniq_out(const Decl& pb) {
   return absl::make_unique<Decl::Type>(pb.decltype_());
 }
 
-inline int size_any_ref(const ::proto2::Message& pb) { return pb.ByteSize(); }
-inline int size_any_ptr(const ::proto2::Message* pb) { return pb->ByteSize(); }
+inline long size_any_ref(const ::proto2::Message& pb) {
+  return pb.ByteSizeLong();
+}
+inline long size_any_ptr(const ::proto2::Message* pb) {
+  return pb->ByteSizeLong();
+}
 
 std::vector<AST*> all_ast_borrowed();
 std::vector<std::unique_ptr<AST>> all_ast_holds();
