@@ -81,7 +81,6 @@ class ModuleGenerator(object):
     yield from self._generate_import_modules(ast)
     yield I+('m.doc() = "CLIF-generated pybind11-based module for '
              f'{ast.source}";')
-    yield I + 'py::google::ImportStatusModule();'
 
     for decl in ast.decls:
       if decl.decltype == ast_pb2.Decl.Type.FUNC:
