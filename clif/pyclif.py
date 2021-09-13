@@ -24,8 +24,6 @@ Loads CLIF configuration headers with [multiple] -p"types.h" to scan for types.
 
 If invoked with --dump_dir, no output files flags are needed: It
 dumps all output to the given dir.
-
-Another FLAG controls extension target version: --py3output
 """
 
 from __future__ import print_function
@@ -45,9 +43,6 @@ PIPE = subprocess.PIPE
 def _ParseCommandline(doc, argv):
   """Define command-line flags and return parsed argv."""
   parser = argparse.ArgumentParser(description=doc)
-  parser.add_argument('--py3output',
-                      default=sys.version_info.major == 3, action='store_true',
-                      help='Generate code for Python 3.4+')
   parser.add_argument('--matcher_bin',
                       default=(os.getenv('CLIF_MATCHER') or
                                sys.prefix+'/clang/bin/clif-matcher'),
@@ -110,7 +105,6 @@ def GenerateFrom(ast):
       modname,
       ast.typemaps,
       ast.namemaps,
-      for_py3=FLAGS.py3output,
       indent=FLAGS.indent)
   inc_headers.append(os.path.basename(FLAGS.header_out))
   # Order of generators is important.
@@ -203,18 +197,12 @@ def main():
 
 def _ParseClifSource(stream, dump_path):
   """Parse PYTD into serialized protobuf."""
-  if FLAGS.py3output:
-    init = ['type str = `UnicodeFromBytes` as bytes',
-            'type unicode = `UnicodeFromBytes` as bytes',
-            'from builtins import chr']
-  else:
-    init = ['type str = bytes',
-            'type unicode = `UnicodeFromBytes` as bytes',
-            'from __builtin__ import chr']
+  init = ['type str = `UnicodeFromBytes` as bytes',
+          'type unicode = `UnicodeFromBytes` as bytes',
+          'from builtins import chr']
   p = pytd2proto.Postprocessor(config_headers=FLAGS.prepend,
                                include_paths=FLAGS.include_paths,
-                               preamble='\n'.join(init),
-                               py3output=FLAGS.py3output)
+                               preamble='\n'.join(init))
   try:
     pb = p.Translate(stream)
   except Exception as e:  # pylint:disable=broad-except

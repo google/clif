@@ -108,7 +108,6 @@ function(add_pyclif_library name pyclif_file)
       --matcher_bin=${CMAKE_INSTALL_PREFIX}/bin/clif-matcher
       -c${gen_cc} -g${gen_h} -i${gen_init}
       # Specify the path to the generated files.
-      --py3output
       -I${CLIF_EXAMPLES_BINARY_DIR}
       --modname=${module_name}
       "-f-I${PYTHON_INCLUDE_DIRS} -I${CLIF_INSTALL_DIR}/.. -I${CLIF_EXAMPLES_SOURCE_DIR} -I${CLIF_EXAMPLES_BINARY_DIR} ${GOOGLE_PROTOBUF_CXX_FLAGS} -std=c++17 ${PYCLIF_LIBRARY_CXX_FLAGS}"
