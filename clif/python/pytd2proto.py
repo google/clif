@@ -493,9 +493,9 @@ class Postprocessor(object):
       if 'enable_instance_dict' in decorators:
         p.enable_instance_dict = True
         decorators.remove('enable_instance_dict')
-      if 'supress_upcasts' in decorators:
-        p.supress_upcasts = True
-        decorators.remove('supress_upcasts')
+      if 'suppress_upcasts' in decorators:
+        p.suppress_upcasts = True
+        decorators.remove('suppress_upcasts')
     if decorators:
       raise NameError('Unknown class decorator(s)%s: %s'
                       % (atln, ', '.join(decorators)))

@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from "clif/testing/supress_upcasts.h":
+from "clif/testing/suppress_upcasts.h":
   namespace `clif_testing`:
-    @supress_upcasts
-    class DerivedSupressUpcasts:
+    @suppress_upcasts
+    class DerivedSuppressUpcasts:
       def value(self) -> int

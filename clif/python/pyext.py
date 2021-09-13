@@ -531,7 +531,7 @@ class Module(object):
         for s in gen.GetSetDef(self.properties, c.enable_instance_dict):
           yield s
         tp_slots['tp_getset'] = gen.GetSetDef.name
-      if not c.supress_upcasts:
+      if not c.suppress_upcasts:
         for b in c.bases:
           if b.cpp_name and not b.native:
             p = b.cpp_name

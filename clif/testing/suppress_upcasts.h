@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef THIRD_PARTY_CLIF_TESTING_SUPRESS_UPCASTS_H_
-#define THIRD_PARTY_CLIF_TESTING_SUPRESS_UPCASTS_H_
+#ifndef THIRD_PARTY_CLIF_TESTING_SUPPRESS_UPCASTS_H_
+#define THIRD_PARTY_CLIF_TESTING_SUPPRESS_UPCASTS_H_
 
 namespace clif_testing {
 
@@ -25,10 +25,10 @@ class BaseWrapper {
     virtual int value() { return 10; }
     virtual ~Base() {}
   };
-  friend class DerivedSupressUpcasts;
+  friend class DerivedSuppressUpcasts;
 };
 
-class DerivedSupressUpcasts: public BaseWrapper::Base {
+class DerivedSuppressUpcasts: public BaseWrapper::Base {
  public:
   int value() override {
     return 20;
@@ -37,4 +37,4 @@ class DerivedSupressUpcasts: public BaseWrapper::Base {
 
 }  // namespace clif_testing
 
-#endif  // THIRD_PARTY_CLIF_TESTING_SUPRESS_UPCASTS_H_
+#endif  // THIRD_PARTY_CLIF_TESTING_SUPPRESS_UPCASTS_H_
