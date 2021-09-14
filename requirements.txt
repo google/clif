@@ -1,2 +1,2 @@
 parameterized==0.8.1
-pyparsing==2.2.0
+pyparsing==2.4.7
