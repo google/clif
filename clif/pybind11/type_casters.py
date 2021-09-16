@@ -43,7 +43,7 @@ def generate_from(ast: ast_pb2.AST,
   Yields:
     pybind11 type casters code.
   """
-  includes = set(ast.pybind11_includes).union(set(ast.usertype_includes))
+  includes = set(ast.usertype_includes)
 
   for include in includes:
     # Not generating type casters for the builtin types.
@@ -53,7 +53,7 @@ def generate_from(ast: ast_pb2.AST,
     if (include.startswith('clif/python') or
         # Excluding absl::Status and absl::StatusOr
         include.startswith('util/task/python') or
-        include.endswith('_pybind11_clif.h')):
+        include.endswith('_clif.h')):
       continue
     for root in include_paths:
       try:

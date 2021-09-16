@@ -99,14 +99,16 @@ class ModuleGenerator(object):
 
   def _generate_import_modules(self,
                                ast: ast_pb2.AST) -> Generator[str, None, None]:
-    for include in ast.pybind11_includes:
-      # Converts `full/project/path/cheader_pybind11_clif.h` to
-      # `full.project.path.cheader_pybind11`
-      names = include.split('/')
-      names.insert(0, 'google3')
-      names[-1] = names[-1][:-len('_clif.h')]
-      module = '.'.join(names)
-      yield f'py::module_::import("{module}");'
+    """Generates pybind11 module imports."""
+    for include in ast.usertype_includes:
+      # Converts `full/project/path/cheader_clif.h` to
+      # `full.project.path.cheader`
+      if include.endswith('_clif.h'):
+        names = include.split('/')
+        names.insert(0, 'google3')
+        names[-1] = names[-1][:-len('_clif.h')]
+        module = '.'.join(names)
+        yield I + f'py::module_::import("{module}");'
 
   def _generate_headlines(self):
     """Generates #includes and headers."""
@@ -115,8 +117,6 @@ class ModuleGenerator(object):
       includes.add(decl.cpp_file)
       if decl.decltype == ast_pb2.Decl.Type.CONST:
         self._generate_const_variables_headers(decl.const, includes)
-    for include in self._ast.pybind11_includes:
-      includes.add(include)
     for include in self._ast.usertype_includes:
       includes.add(include)
     yield '#include "third_party/pybind11/include/pybind11/complex.h"'

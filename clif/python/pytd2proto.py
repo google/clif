@@ -104,8 +104,7 @@ def _read_include(input_stream, fname, prefix, typetable, capsules, interfaces,
 class Postprocessor(object):
   """Process parsed IR."""
 
-  def __init__(self, config_headers=None, include_paths=('.',), preamble='',
-               gen_pybind11=False):
+  def __init__(self, config_headers=None, include_paths=('.',), preamble=''):
     self._names = {}  # Keep name->FQN for all 'from path import' statements.
     self._capsules = {}   # Keep raw pointer names (pytype -> cpptype).
     self._typenames = {}  # Keep typedef aliases (pytype -> type_ir).
@@ -118,7 +117,6 @@ class Postprocessor(object):
     # _macro_values [actual, param, values] only set in _class that
     # has implements MACRO<actual, param, values>.
     self._macro_values = []
-    self._gen_pybind11 = gen_pybind11
 
   def is_pyname_known(self, name):
     return (name in self._capsules or
@@ -377,14 +375,7 @@ class Postprocessor(object):
     assert len(p) in (1, 2), p
     hdr = p[0]
     if not scan_only:
-      if self._gen_pybind11 and hdr.endswith('_clif.h'):
-        # The generated header file is at
-        # `full/project/path/cheader_pybind11_clif.h` instead of
-        # `full/project/path/cheader_clif.h`
-        hdr = hdr[:-len('_clif.h')] + '_pybind11_clif.h'
-        pb.pybind11_includes.append(hdr)
-      else:
-        pb.usertype_includes.append(hdr)
+      pb.usertype_includes.append(hdr)
     # Scan hdr for new types
     namespace = p[1]+'.' if len(p) > 1 else ''
     for root in self._include_paths:
