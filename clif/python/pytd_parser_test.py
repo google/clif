@@ -35,7 +35,7 @@ def Parse(string):
 class PytdParserTest(absltest.TestCase):
 
   def setUp(self):
-    super(PytdParserTest, self).setUp()
+    super().setUp()
     reset_indentation()
 
   def _Parse(self, t, a, unused_b=''):

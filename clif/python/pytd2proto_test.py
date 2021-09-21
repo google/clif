@@ -77,7 +77,7 @@ class ToprotoTest(unittest.TestCase):
     self.ClifEqual(pytd, clif, types=['clif/python/types.h'], **kw)
 
   def setUp(self):
-    super(ToprotoTest, self).setUp()
+    super().setUp()
     pytd_parser.reset_indentation()
     self.maxDiff = 100000  # pylint: disable=invalid-name
 
@@ -2191,7 +2191,7 @@ class ToprotoTest(unittest.TestCase):
 class IncludeTest(unittest.TestCase):
 
   def setUp(self):
-    super(IncludeTest, self).setUp()
+    super().setUp()
     self._path_prefix = None
     self._cpp_string = 'string'
 

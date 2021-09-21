@@ -34,7 +34,7 @@ PATH = 'path.to.ext.module.test'
 class ClassTest(unittest.TestCase):
 
   def setUp(self):
-    super(ClassTest, self).setUp()
+    super().setUp()
     tm = ast_pb2.Namemap()
     text_format.Parse("""
         name: "ImportedBase"

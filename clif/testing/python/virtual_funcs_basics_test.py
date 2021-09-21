@@ -62,7 +62,7 @@ class AbstractClassNonDefConstImpl(
 class ClassNonDefConstImpl(virtual_funcs_basics.ClassNonDefConst):
 
   def __init__(self, a, b):
-    super(ClassNonDefConstImpl, self).__init__(a, b)
+    super().__init__(a, b)
     self.c = [1, 2, 3]  # Must have a non-trivial container to enable gc.
     # Remove self.invalidated after gaining (limited) access to invalidated ptr.
     self.invalidated = False

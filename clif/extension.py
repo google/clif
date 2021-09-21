@@ -67,5 +67,5 @@ class CLIFExtension(setuptools.Extension):
     kwargs['libraries'] = kwargs.get('libraries', []) + _CLIF_LIBRARIES
     kwargs['include_dirs'] = kwargs.get('include_dirs', []) + _CLIF_INCLUDE_DIRS
     sources += _CLIF_SOURCES
-    super(CLIFExtension, self).__init__(name, sources, *args, **kwargs)
+    super().__init__(name, sources, *args, **kwargs)
 

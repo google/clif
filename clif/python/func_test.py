@@ -25,7 +25,7 @@ from clif.python import pyext
 class FuncTest(unittest.TestCase):
 
   def setUp(self):
-    super(FuncTest, self).setUp()
+    super().setUp()
     tm = ast_pb2.Typemap()
     text_format.Parse("""
         lang_type: "str"

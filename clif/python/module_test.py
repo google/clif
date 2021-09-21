@@ -26,7 +26,7 @@ from clif.python import pyext
 class ModuleTest(unittest.TestCase):
 
   def setUp(self):
-    super(ModuleTest, self).setUp()
+    super().setUp()
     self.m = pyext.Module('my.test')
 
   def testFuncInit(self):

@@ -41,7 +41,7 @@ def _ParseFile(pytd, type_headers):
 class TypesNsTest(unittest.TestCase):
 
   def setUp(self):
-    super(TypesNsTest, self).setUp()
+    super().setUp()
     pytd_parser.reset_indentation()
 
   def assertNsEqual(self, proto, ns):
