@@ -24,8 +24,6 @@ In case of errors it will raise an exception. Possible exceptions are:
   SyntaxError - wrong construct or statement usage
 """
 
-from __future__ import print_function
-
 import codecs
 import contextlib
 import os

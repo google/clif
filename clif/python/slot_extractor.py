@@ -21,10 +21,6 @@ Usage:
 """
 # pylint: enable=line-too-long
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import sys
 sys.path.pop(0)  # types.py in this directory breaks python3 re import.
 import re  # pylint: disable=g-bad-import-order,g-import-not-at-top

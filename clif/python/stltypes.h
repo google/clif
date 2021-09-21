@@ -719,7 +719,8 @@ PyObject* Clif_PyObjFrom(std::list<T, Args...>&& c, const py::PostConv& pc) {
   return py::ListFromSizableCont(std::move(c), pc);
 }
 template<typename T, typename... Args>
-PyObject* Clif_PyObjFrom(const std::queue<T, Args...>& c, const py::PostConv& pc) {
+PyObject* Clif_PyObjFrom(const std::queue<T, Args...>& c,
+                         const py::PostConv& pc) {
   return py::ListFromSizableCont(c, pc);
 }
 template<typename T, typename... Args>

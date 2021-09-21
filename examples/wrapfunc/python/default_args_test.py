@@ -14,11 +14,8 @@
 
 """Tests for clif.examples.wrapfunc.python.default_args."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import unittest
+
 from wrapfunc.python import default_args
 
 

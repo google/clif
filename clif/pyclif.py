@@ -26,12 +26,12 @@ If invoked with --dump_dir, no output files flags are needed: It
 dumps all output to the given dir.
 """
 
-from __future__ import print_function
 import argparse
 import os
 import stat
 import subprocess
 import sys
+
 from clif.protos import ast_pb2
 from clif.python import gen, pyext, pytd2proto  # pylint: disable=g-multiple-import
 import google.protobuf.text_format

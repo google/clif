@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import random
 import unittest
 
@@ -90,7 +86,7 @@ class GenTest(unittest.TestCase):
         ([None, None, None, 3],
          'Trivial cyclic dependency in ideps: ideps[3] = 3'),
         ([1, 0],
-         'Cyclic dependency in ideps:'
+         'Cyclic dependency in ideps:' +
          ' following dependencies from 0 leads back to 0.'),
     )
     for ideps, expected_message in test_cases:

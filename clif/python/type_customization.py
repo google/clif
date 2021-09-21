@@ -1,9 +1,5 @@
 """Decorator for adding attributes (incl. methods) into extension classes."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 
 class _EmptyFromClass(object):
   pass

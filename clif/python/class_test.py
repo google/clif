@@ -14,13 +14,10 @@
 
 """Tests for clif.python.generator."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import itertools
 import textwrap
 import unittest
+
 from google.protobuf import text_format
 from clif.protos import ast_pb2
 from clif.python import pyext

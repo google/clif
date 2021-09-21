@@ -14,10 +14,10 @@
 
 """Tests for pytd2proto."""
 
-from __future__ import print_function
 import os
 import textwrap
 import unittest
+
 from google.protobuf import text_format
 from clif.python import pytd2proto
 from clif.python import pytd_parser
