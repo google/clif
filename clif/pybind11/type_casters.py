@@ -16,8 +16,9 @@
 
 import os
 import re
+import types
 
-from typing import Generator, List
+from typing import Generator, List, Set
 
 from clif.protos import ast_pb2
 from clif.pybind11 import utils
@@ -29,6 +30,44 @@ _PYOBJAS_ONLY = ', HasPyObjAsOnly'
 _CLIF_USE = re.compile(
     r'// *CLIF:? +use +`(?P<cpp_name>.+)` +as +(?P<py_name>[\w.]+)'
     f'({_PYOBJFROM_ONLY}|{_PYOBJAS_ONLY}|)')
+
+
+def get_imported_types(ast: ast_pb2.AST,
+                       include_paths: List[str]) -> Set[str]:
+  """Get cpp types that are imported from other header files."""
+  result = set()
+  includes = set(ast.usertype_includes)
+  for include in includes:
+    if include.endswith('_clif.h'):
+      clif_uses = _get_clif_uses(include, include_paths)
+      for clif_use in clif_uses:
+        result.add(clif_use.cpp_name)
+  return result
+
+
+def _get_clif_uses(
+    include: str, include_paths: List[str]) -> List[types.SimpleNamespace]:
+  """Get all lines that are like `// CLIF use <cpp_name> as <py_name>`."""
+  results = []
+  for root in include_paths:
+    try:
+      with open(os.path.join(root, include)) as include_file:
+        lines = include_file.readlines()
+        for line in lines:
+          use = _CLIF_USE.match(line)
+          if use:
+            results.append(types.SimpleNamespace(
+                cpp_name=use.group('cpp_name'), py_name=use.group('py_name'),
+                generate_load=_PYOBJFROM_ONLY not in use[0],
+                generate_cast=_PYOBJAS_ONLY not in use[0]))
+      break
+    except IOError:
+      # Failed to find the header file in one directory. Try other
+      # directories.
+      pass
+    else:
+      raise NameError('include "%s" not found' % include)
+  return results
 
 
 def generate_from(ast: ast_pb2.AST,
@@ -55,26 +94,11 @@ def generate_from(ast: ast_pb2.AST,
         include.startswith('util/task/python') or
         include.endswith('_clif.h')):
       continue
-    for root in include_paths:
-      try:
-        with open(os.path.join(root, include)) as include_file:
-          lines = include_file.readlines()
-          for line in lines:
-            use = _CLIF_USE.match(line)
-            if use:
-              cpp_name = use.group('cpp_name')
-              py_name = use.group('py_name')
-              generate_load = _PYOBJFROM_ONLY not in use[0]
-              generate_cast = _PYOBJAS_ONLY not in use[0]
-              yield from _generate_type_caster(py_name, cpp_name,
-                                               generate_load, generate_cast)
-        break
-      except IOError as e:
-        # Failed to find the header file in one directory. Try other
-        # directories.
-        pass
-      else:
-        raise NameError('include "%s" not found' % include)
+    clif_uses = _get_clif_uses(include, include_paths)
+    for clif_use in clif_uses:
+      yield from _generate_type_caster(clif_use.py_name, clif_use.cpp_name,
+                                       clif_use.generate_load,
+                                       clif_use.generate_cast)
 
 
 def _generate_type_caster(

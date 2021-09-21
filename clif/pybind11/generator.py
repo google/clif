@@ -37,6 +37,7 @@ class ModuleGenerator(object):
     self._include_paths = include_paths
     self._unique_classes = {}
     self._unique_enums = {}
+    self._all_types = set()
 
   def generate_header(self,
                       ast: ast_pb2.AST) -> Generator[str, None, None]:
@@ -44,7 +45,7 @@ class ModuleGenerator(object):
     includes = set()
     for decl in ast.decls:
       includes.add(decl.cpp_file)
-      self._collect_cpp_names_to_export(decl)
+      self._register_types(decl)
     yield '#include "third_party/pybind11/include/pybind11/smart_holder.h"'
     for include in includes:
       yield f'#include "{include}"'
@@ -74,13 +75,23 @@ class ModuleGenerator(object):
     for decl in ast.decls:
       yield from self._generate_python_override_class_names(
           python_override_class_names, decl)
-      self._collect_cpp_names_to_export(decl)
+      self._register_types(decl)
+
+    imported_types = type_casters.get_imported_types(ast, self._include_paths)
+    unknown_types = self._all_types.difference(imported_types).difference(
+        set(self._unique_classes.keys()))
+    for unknown_type in unknown_types:
+      yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({unknown_type})'
 
     yield from type_casters.generate_from(ast, self._include_paths)
     yield f'PYBIND11_MODULE({self._module_name}, m) {{'
     yield from self._generate_import_modules(ast)
     yield I+('m.doc() = "CLIF-generated pybind11-based module for '
              f'{ast.source}";')
+    for i, unknown_type in enumerate(unknown_types):
+      yield I + '{'
+      yield I + I+ f'py::classh<{unknown_type}> CLIFBase{i}(m, "CLIFBase{i}");'
+      yield I + '}'
 
     for decl in ast.decls:
       if decl.decltype == ast_pb2.Decl.Type.FUNC:
@@ -225,16 +236,37 @@ class ModuleGenerator(object):
     yield I + I + ');'
     yield I + '}'
 
-  def _collect_cpp_names_to_export(self, decl: ast_pb2.Decl,
-                                   parent_name: str = '') -> None:
-    """Adds every class and enum name to a set."""
+  def _register_types(self, decl: ast_pb2.Decl, parent_name: str = '') -> None:
+    """Register classes and enums defined in the ast."""
     if decl.decltype == ast_pb2.Decl.Type.CLASS:
       full_native_name = decl.class_.name.native
       if parent_name:
         full_native_name = '.'.join([parent_name, full_native_name])
       self._unique_classes[decl.class_.name.cpp_name] = full_native_name
+      if not decl.class_.suppress_upcasts:
+        bases = list(decl.class_.bases)
+        i = 0
+        while i < len(bases):
+          base = bases[i]
+          # Note: We are using a hack to avoid redefining aliased types. When
+          # a class inherits another class that is already defined in the .clif
+          # file, it is possible that base.cpp_name is an aliased name.
+          # Therefore we might generate duplicated wrapper code for the same
+          # class.
+          if base.native and not base.cpp_name:
+            # The class inherits from another class defined in .clif file. Two
+            # base definitions whose indexes are consecutive exist in the ast
+            # that refers to the same class.
+            assert i + 1 < len(bases), ('Cannot find cpp name for class '
+                                        f'{base.native}')
+            assert bases[i+1].cpp_name, f'Unexpected base class {bases[i+1]}'
+            i += 2
+          else:
+            if base.cpp_name:
+              self._all_types.add(base.cpp_name)
+            i += 1
       for member in decl.class_.members:
-        self._collect_cpp_names_to_export(member, full_native_name)
+        self._register_types(member, full_native_name)
     elif decl.decltype == ast_pb2.Decl.Type.ENUM:
       full_native_name = decl.enum.name.native
       full_cpp_name = decl.enum.name.cpp_name
