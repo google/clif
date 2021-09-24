@@ -731,6 +731,11 @@ bool ClifMatcher::AreAssignableTypes(const QualType from_type,
   clang::EnterExpressionEvaluationContext context(ast_->GetSema(),
       clang::Sema::ExpressionEvaluationContext::Unevaluated);
 
+  InitializedEntity entity = InitializedEntity::InitializeResult(loc, to_type
+#if LLVM_VERSION_MAJOR < 14
+      , false
+#endif
+  );
   InitializedEntity entity = InitializedEntity::InitializeResult(loc, to_type);
   clang::OpaqueValueExpr init_expr(loc, from_type.getNonReferenceType(),
                                    clang::ExprValueKind::VK_LValue);
