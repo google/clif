@@ -58,18 +58,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     unzip
 
-# Configure LLVM 11 apt repository
+# Configure LLVM 12 apt repository
 RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
-    add-apt-repository "deb http://apt.llvm.org/$(lsb_release -sc)/ llvm-toolchain-$(lsb_release -sc)-11 main"
+    add-apt-repository "deb http://apt.llvm.org/$(lsb_release -sc)/ llvm-toolchain-$(lsb_release -sc)-12 main"
 
 # Install CLIF dependencies
 RUN apt-get update && apt-get install -y \
-    clang-11 \
-    libclang-11-dev \
+    clang-12 \
+    libclang-12-dev \
     libgoogle-glog-dev \
     libgtest-dev \
-    libllvm11 \
-    llvm-11-dev \
+    libllvm12 \
+    llvm-12-dev \
     python3-dev \
     python3-pyparsing \
     zlib1g-dev
