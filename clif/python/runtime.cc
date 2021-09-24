@@ -192,16 +192,16 @@ bool CallableNeedsNarguments(PyObject* callable, int nargs) {
   return true;
 }
 
-PyObject* DefaultArgMissedError(const char func[], char* argname) {
+PyObject* DefaultArgMissedError(const char func[], const char* argname) {
   PyErr_Format(PyExc_ValueError, "%s() argument %s needs a non-default value",
                func, argname);
   return nullptr;
 }
 
 PyObject* ArgError(const char func[],
-                          char* argname,
-                          const char ctype[],
-                          PyObject* arg) {
+                   const char* argname,
+                   const char ctype[],
+                   PyObject* arg) {
   PyObject* exc = PyErr_Occurred();
   if (exc == nullptr) {
     PyErr_Format(
@@ -330,9 +330,10 @@ bool ensure_no_args_and_kw_args(const char* func, PyObject* args,
 }
 
 PyObject* ReduceExImpl(PyObject* self, PyObject* args, PyObject* kw) {
-  static char* kwlist[] = {C("protocol"), nullptr};
+  static const char* kwlist[] = {"protocol", nullptr};
   int protocol = -1;
-  if (!PyArg_ParseTupleAndKeywords(args, kw, "|i:__reduce_ex__", kwlist,
+  if (!PyArg_ParseTupleAndKeywords(args, kw, "|i:__reduce_ex__",
+                                   const_cast<char**>(kwlist),
                                    &protocol)) {
     return nullptr;
   }

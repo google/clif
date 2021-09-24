@@ -62,14 +62,11 @@ int ClearImportCache(PyObject*);
 // Ensure we have enough args for callable.
 bool CallableNeedsNarguments(PyObject* callable, int nargs);
 
-// Convert string literal "like this" to (char*) for C compatibility.
-inline constexpr char* C(const char c[]) { return const_cast<char*>(&c[0]); }
-
 // Format function argument missed error.
-PyObject* DefaultArgMissedError(const char func[], char* argname);
+PyObject* DefaultArgMissedError(const char func[], const char* argname);
 
 // Format function argument [conversion] error.
-PyObject* ArgError(const char func[], char* argname, const char ctype[],
+PyObject* ArgError(const char func[], const char* argname, const char ctype[],
                    PyObject* arg);
 
 // RAII pyobj attribute holder with GIL management for virtual override methods.

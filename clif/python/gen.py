@@ -153,8 +153,8 @@ def _DefLine(pyname, cname, meth, doc):
   if doc is None:
     doc = 'nullptr'
   else:
-    doc = 'C("%s")' % doc
-  return '{C("%s"), %s, %s, %s}' % (pyname, cname, meth, doc)
+    doc = '"%s"' % doc
+  return '{"%s", %s, %s, %s}' % (pyname, cname, meth, doc)
 
 
 def _DefTable(ctype, cname, lines):
@@ -659,12 +659,13 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
   minargs = sum(1 for p in func_ast.params if not p.default_value)
   if nargs:
     yield I+'PyObject* a[%d]%s;' % (nargs, '' if minargs == nargs else '{}')
-    yield I+'char* names[] = {'
+    yield I+'const char* names[] = {'
     for p in func_ast.params:
-      yield I+I+I+'C("%s"),' % p.name.native
+      yield I+I+I+'"%s",' % p.name.native
     yield I+I+I+'nullptr'
     yield I+'};'
-    yield I+('if (!PyArg_ParseTupleAndKeywords(args, kw, "%s:%s", names, %s)) '
+    yield I+('if (!PyArg_ParseTupleAndKeywords(args, kw, "%s:%s", '
+             'const_cast<char**>(names), %s)) '
              'return nullptr;' % ('O'*nargs if minargs == nargs else
                                   'O'*minargs+'|'+'O'*(nargs-minargs), pyname,
                                   ', '.join('&a[%d]'%i for i in range(nargs))))
@@ -940,7 +941,7 @@ def CastAsCapsule(wrapped_cpp, pointer_name, wrapper):
   yield 'static PyObject* %s(PyObject* self) {' % wrapper
   yield I+'%s* p = ::clif::python::Get(%s);' % (pointer_name, wrapped_cpp)
   yield I+'if (p == nullptr) return nullptr;'
-  yield I+('return PyCapsule_New(p, C("%s"), nullptr);') % pointer_name
+  yield I+('return PyCapsule_New(p, "%s", nullptr);') % pointer_name
   yield '}'
 
 

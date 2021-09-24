@@ -178,11 +178,11 @@ class FuncTest(unittest.TestCase):
       // f(a:int)
       static PyObject* wrapf(PyObject* self, PyObject* args, PyObject* kw) {
         PyObject* a[1];
-        char* names[] = {
-            C("a"),
+        const char* names[] = {
+            "a",
             nullptr
         };
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "O:f", names, &a[0])) return nullptr;
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "O:f", const_cast<char**>(names), &a[0])) return nullptr;
         int32 arg1;
         if (!Clif_PyObjAs(a[0], &arg1)) return ArgError("f", names[0], "int32", a[0]);
         // Call actual C++ method.
@@ -210,11 +210,11 @@ class FuncTest(unittest.TestCase):
       // f(a:int)
       static PyObject* wrapf(PyObject* self, PyObject* args, PyObject* kw) {
         PyObject* a[1];
-        char* names[] = {
-            C("a"),
+        const char* names[] = {
+            "a",
             nullptr
         };
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "O:f", names, &a[0])) return nullptr;
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "O:f", const_cast<char**>(names), &a[0])) return nullptr;
         int32 arg1;
         if (!Clif_PyObjAs(a[0], &arg1)) return ArgError("f", names[0], "int32", a[0]);
         // Call actual C++ method.
@@ -252,11 +252,11 @@ class FuncTest(unittest.TestCase):
       // f(a:Foo)
       static PyObject* wrapf(PyObject* self, PyObject* args, PyObject* kw) {
         PyObject* a[1];
-        char* names[] = {
-            C("a"),
+        const char* names[] = {
+            "a",
             nullptr
         };
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "O:f", names, &a[0])) return nullptr;
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "O:f", const_cast<char**>(names), &a[0])) return nullptr;
         ::Foo * arg1;
         if (!Clif_PyObjAs(a[0], &arg1)) return ArgError("f", names[0], "::Foo *", a[0]);
         // Call actual C++ method.
@@ -296,12 +296,12 @@ class FuncTest(unittest.TestCase):
       // f(a:int, b:bool)
       static PyObject* wrapf(PyObject* self, PyObject* args, PyObject* kw) {
         PyObject* a[2];
-        char* names[] = {
-            C("a"),
-            C("b"),
+        const char* names[] = {
+            "a",
+            "b",
             nullptr
         };
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO:f", names, &a[0], &a[1])) return nullptr;
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "OO:f", const_cast<char**>(names), &a[0], &a[1])) return nullptr;
         int32 arg1;
         if (!Clif_PyObjAs(a[0], &arg1)) return ArgError("f", names[0], "int32", a[0]);
         bool arg2;
@@ -345,12 +345,12 @@ class FuncTest(unittest.TestCase):
       // F(a:int=default, b:bool=default)
       static PyObject* wrapf_as_F(PyObject* self, PyObject* args, PyObject* kw) {
         PyObject* a[2]{};
-        char* names[] = {
-            C("a"),
-            C("b"),
+        const char* names[] = {
+            "a",
+            "b",
             nullptr
         };
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "|OO:F", names, &a[0], &a[1])) return nullptr;
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "|OO:F", const_cast<char**>(names), &a[0], &a[1])) return nullptr;
         int nargs;  // Find how many args actually passed in.
         for (nargs = 2; nargs > 0; --nargs) {
           if (a[nargs-1] != nullptr) break;
@@ -416,12 +416,12 @@ class FuncTest(unittest.TestCase):
       // F(a:int, b:bool=default) -> int
       static PyObject* wrapf_as_F(PyObject* self, PyObject* args, PyObject* kw) {
         PyObject* a[2]{};
-        char* names[] = {
-            C("a"),
-            C("b"),
+        const char* names[] = {
+            "a",
+            "b",
             nullptr
         };
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O:F", names, &a[0], &a[1])) return nullptr;
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O:F", const_cast<char**>(names), &a[0], &a[1])) return nullptr;
         int nargs;  // Find how many args actually passed in.
         for (nargs = 2; nargs > 1; --nargs) {
           if (a[nargs-1] != nullptr) break;
@@ -486,11 +486,11 @@ class FuncTest(unittest.TestCase):
       // f(a:int) -> (x:bool, y:str)
       static PyObject* wrapf(PyObject* self, PyObject* args, PyObject* kw) {
         PyObject* a[1];
-        char* names[] = {
-            C("a"),
+        const char* names[] = {
+            "a",
             nullptr
         };
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "O:f", names, &a[0])) return nullptr;
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "O:f", const_cast<char**>(names), &a[0])) return nullptr;
         int32 arg1;
         if (!Clif_PyObjAs(a[0], &arg1)) return ArgError("f", names[0], "int32", a[0]);
         std::string ret1{};
@@ -549,11 +549,11 @@ class FuncTest(unittest.TestCase):
       // f(cb:(in:list<int>)->None)
       static PyObject* wrapf(PyObject* self, PyObject* args, PyObject* kw) {
         PyObject* a[1];
-        char* names[] = {
-            C("cb"),
+        const char* names[] = {
+            "cb",
             nullptr
         };
-        if (!PyArg_ParseTupleAndKeywords(args, kw, "O:f", names, &a[0])) return nullptr;
+        if (!PyArg_ParseTupleAndKeywords(args, kw, "O:f", const_cast<char**>(names), &a[0])) return nullptr;
         std::function<void(const ::std::vector<int, ::std::allocator<int> > &)> arg1;
         if (!Clif_PyObjAs(a[0], &arg1, {{}})) return ArgError("f", names[0], "", a[0]);
         // Call actual C++ method.

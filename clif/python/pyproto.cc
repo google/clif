@@ -70,9 +70,9 @@ namespace proto {
 
 // Get py.DESCRIPTOR.full_name as a new object.
 PyObject* GetMessageName(PyObject* py) {
-  PyObject* pyd = PyObject_GetAttrString(py, C("DESCRIPTOR"));
+  PyObject* pyd = PyObject_GetAttrString(py, "DESCRIPTOR");
   if (pyd == nullptr) return nullptr;
-  PyObject* fn = PyObject_GetAttrString(pyd, C("full_name"));
+  PyObject* fn = PyObject_GetAttrString(pyd, "full_name");
   Py_DECREF(pyd);
   if (fn == nullptr) return nullptr;
   if (!PyUnicode_Check(fn)) {
@@ -173,7 +173,7 @@ bool TypeCheck(PyObject* pyproto,
 
 // Return bytes serialization of the given pyproto.
 PyObject* Serialize(PyObject* pyproto) {
-  PyObject* raw = PyObject_CallMethod(pyproto, C("SerializePartialToString"),
+  PyObject* raw = PyObject_CallMethod(pyproto, "SerializePartialToString",
                                       nullptr);
   if (raw == nullptr) return nullptr;
   if (!PyBytes_Check(raw)) {

@@ -130,12 +130,12 @@ class ClassTest(unittest.TestCase):
       }
 
       static PyGetSetDef Properties[] = {
-        {C("a"), get_a, set_a, C("C++ int StructTy.a")},
+        {"a", get_a, set_a, "C++ int StructTy.a"},
         {}
       };
 
       static PyMethodDef MethodsStaticAlloc[] = {
-        {C("__reduce_ex__"), (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, C("Helper for pickle.")},
+        {"__reduce_ex__", (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, "Helper for pickle."},
         {}
       };
 
@@ -211,12 +211,12 @@ class ClassTest(unittest.TestCase):
         if (Py_TYPE(py) == wrapper_Type) {
           return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
         }
-        PyObject* base = PyObject_CallMethod(py, C("as_StructTy"), nullptr);
+        PyObject* base = PyObject_CallMethod(py, "as_StructTy", nullptr);
         if (base == nullptr) {
           PyErr_Clear();
         } else {
           if (PyCapsule_CheckExact(base)) {
-            void* p = PyCapsule_GetPointer(base, C("StructTy"));
+            void* p = PyCapsule_GetPointer(base, "StructTy");
             if (!PyErr_Occurred()) {
               StructTy* c = static_cast<StructTy*>(p);
               Py_DECREF(base);
@@ -324,7 +324,7 @@ class ClassTest(unittest.TestCase):
       }
 
       static PyGetSetDef Properties[] = {
-        {C("a"), get_a, set_a, C("C++ int StructTy.a")},
+        {"a", get_a, set_a, "C++ int StructTy.a"},
         {}
       };
 
@@ -332,12 +332,12 @@ class ClassTest(unittest.TestCase):
       static PyObject* as_Base_Foo_ptr_constBar_ref(PyObject* self) {
         ::Base<Foo*, const Bar&>* p = ::clif::python::Get(reinterpret_cast<wrapper*>(self)->cpp);
         if (p == nullptr) return nullptr;
-        return PyCapsule_New(p, C("::Base<Foo*, const Bar&>"), nullptr);
+        return PyCapsule_New(p, "::Base<Foo*, const Bar&>", nullptr);
       }
 
       static PyMethodDef MethodsStaticAlloc[] = {
-        {C("as_Base_Foo_ptr_constBar_ref"), (PyCFunction)as_Base_Foo_ptr_constBar_ref, METH_NOARGS, C("Upcast to ::Base<Foo*, const Bar&>*")},
-        {C("__reduce_ex__"), (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, C("Helper for pickle.")},
+        {"as_Base_Foo_ptr_constBar_ref", (PyCFunction)as_Base_Foo_ptr_constBar_ref, METH_NOARGS, "Upcast to ::Base<Foo*, const Bar&>*"},
+        {"__reduce_ex__", (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, "Helper for pickle."},
         {}
       };
 
@@ -415,12 +415,12 @@ class ClassTest(unittest.TestCase):
         if (Py_TYPE(py) == wrapper_Type) {
           return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
         }
-        PyObject* base = PyObject_CallMethod(py, C("as_StructTy"), nullptr);
+        PyObject* base = PyObject_CallMethod(py, "as_StructTy", nullptr);
         if (base == nullptr) {
           PyErr_Clear();
         } else {
           if (PyCapsule_CheckExact(base)) {
-            void* p = PyCapsule_GetPointer(base, C("StructTy"));
+            void* p = PyCapsule_GetPointer(base, "StructTy");
             if (!PyErr_Occurred()) {
               StructTy* c = static_cast<StructTy*>(p);
               Py_DECREF(base);
@@ -527,12 +527,12 @@ class ClassTest(unittest.TestCase):
       }
 
       static PyGetSetDef Properties[] = {
-        {C("a"), get_a, set_a, C("C++ int StructTy.a")},
+        {"a", get_a, set_a, "C++ int StructTy.a"},
         {}
       };
 
       static PyMethodDef MethodsStaticAlloc[] = {
-        {C("__reduce_ex__"), (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, C("Helper for pickle.")},
+        {"__reduce_ex__", (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, "Helper for pickle."},
         {}
       };
 
@@ -610,12 +610,12 @@ class ClassTest(unittest.TestCase):
         if (Py_TYPE(py) == wrapper_Type) {
           return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
         }
-        PyObject* base = PyObject_CallMethod(py, C("as_StructTy"), nullptr);
+        PyObject* base = PyObject_CallMethod(py, "as_StructTy", nullptr);
         if (base == nullptr) {
           PyErr_Clear();
         } else {
           if (PyCapsule_CheckExact(base)) {
-            void* p = PyCapsule_GetPointer(base, C("StructTy"));
+            void* p = PyCapsule_GetPointer(base, "StructTy");
             if (!PyErr_Occurred()) {
               StructTy* c = static_cast<StructTy*>(p);
               Py_DECREF(base);
@@ -799,12 +799,12 @@ class ClassTest(unittest.TestCase):
       static PyObject* _X{};  // set by above func in Init()
 
       static PyGetSetDef Properties[] = {
-        {C("i"), get_i, set_i, C("C++ bool OutKlass::InnKlass.i")},
+        {"i", get_i, set_i, "C++ bool OutKlass::InnKlass.i"},
         {}
       };
 
       static PyMethodDef MethodsStaticAlloc[] = {
-        {C("__reduce_ex__"), (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, C("Helper for pickle.")},
+        {"__reduce_ex__", (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, "Helper for pickle."},
         {}
       };
 
@@ -880,12 +880,12 @@ class ClassTest(unittest.TestCase):
         if (Py_TYPE(py) == wrapper_Type) {
           return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
         }
-        PyObject* base = PyObject_CallMethod(py, C("as_OutKlass_InnKlass"), nullptr);
+        PyObject* base = PyObject_CallMethod(py, "as_OutKlass_InnKlass", nullptr);
         if (base == nullptr) {
           PyErr_Clear();
         } else {
           if (PyCapsule_CheckExact(base)) {
-            void* p = PyCapsule_GetPointer(base, C("OutKlass::InnKlass"));
+            void* p = PyCapsule_GetPointer(base, "OutKlass::InnKlass");
             if (!PyErr_Occurred()) {
               OutKlass::InnKlass* c = static_cast<OutKlass::InnKlass*>(p);
               Py_DECREF(base);
@@ -908,7 +908,7 @@ class ClassTest(unittest.TestCase):
       }  // namespace pyInner
 
       static PyMethodDef MethodsStaticAlloc[] = {
-        {C("__reduce_ex__"), (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, C("Helper for pickle.")},
+        {"__reduce_ex__", (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, "Helper for pickle."},
         {}
       };
 
@@ -983,12 +983,12 @@ class ClassTest(unittest.TestCase):
         if (Py_TYPE(py) == wrapper_Type) {
           return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
         }
-        PyObject* base = PyObject_CallMethod(py, C("as_OutKlass"), nullptr);
+        PyObject* base = PyObject_CallMethod(py, "as_OutKlass", nullptr);
         if (base == nullptr) {
           PyErr_Clear();
         } else {
           if (PyCapsule_CheckExact(base)) {
-            void* p = PyCapsule_GetPointer(base, C("OutKlass"));
+            void* p = PyCapsule_GetPointer(base, "OutKlass");
             if (!PyErr_Occurred()) {
               OutKlass* c = static_cast<OutKlass*>(p);
               Py_DECREF(base);
@@ -1133,12 +1133,12 @@ class ClassTest(unittest.TestCase):
       }
 
       static PyGetSetDef Properties[] = {
-        {C("a"), get_a, set_a, C("C++ int StructTy.getA()")},
+        {"a", get_a, set_a, "C++ int StructTy.getA()"},
         {}
       };
 
       static PyMethodDef MethodsStaticAlloc[] = {
-        {C("__reduce_ex__"), (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, C("Helper for pickle.")},
+        {"__reduce_ex__", (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, "Helper for pickle."},
         {}
       };
 
@@ -1214,12 +1214,12 @@ class ClassTest(unittest.TestCase):
         if (Py_TYPE(py) == wrapper_Type) {
           return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
         }
-        PyObject* base = PyObject_CallMethod(py, C("as_StructTy"), nullptr);
+        PyObject* base = PyObject_CallMethod(py, "as_StructTy", nullptr);
         if (base == nullptr) {
           PyErr_Clear();
         } else {
           if (PyCapsule_CheckExact(base)) {
-            void* p = PyCapsule_GetPointer(base, C("StructTy"));
+            void* p = PyCapsule_GetPointer(base, "StructTy");
             if (!PyErr_Occurred()) {
               StructTy* c = static_cast<StructTy*>(p);
               Py_DECREF(base);
@@ -1330,9 +1330,9 @@ class ClassTest(unittest.TestCase):
       }
 
       static PyMethodDef MethodsStaticAlloc[] = {
-        {C("get_a"), (PyCFunction)get_a, METH_NOARGS, C("get_a()->int  C++ StructTy.a getter")},
-        {C("set_a"), set_a, METH_O, C("set_a(int)  C++ StructTy.a setter")},
-        {C("__reduce_ex__"), (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, C("Helper for pickle.")},
+        {"get_a", (PyCFunction)get_a, METH_NOARGS, "get_a()->int  C++ StructTy.a getter"},
+        {"set_a", set_a, METH_O, "set_a(int)  C++ StructTy.a setter"},
+        {"__reduce_ex__", (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, "Helper for pickle."},
         {}
       };
 
@@ -1407,12 +1407,12 @@ class ClassTest(unittest.TestCase):
         if (Py_TYPE(py) == wrapper_Type) {
           return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
         }
-        PyObject* base = PyObject_CallMethod(py, C("as_StructTy"), nullptr);
+        PyObject* base = PyObject_CallMethod(py, "as_StructTy", nullptr);
         if (base == nullptr) {
           PyErr_Clear();
         } else {
           if (PyCapsule_CheckExact(base)) {
-            void* p = PyCapsule_GetPointer(base, C("StructTy"));
+            void* p = PyCapsule_GetPointer(base, "StructTy");
             if (!PyErr_Occurred()) {
               StructTy* c = static_cast<StructTy*>(p);
               Py_DECREF(base);
@@ -1560,13 +1560,13 @@ class ClassTest(unittest.TestCase):
       }
 
       static PyGetSetDef Properties[] = {
-        {C("a"), get_a, set_a, C("C++ int StructTy.getA()")},
-        {C("b"), get_b, nullptr, C("C++ int StructTy.getB()")},
+        {"a", get_a, set_a, "C++ int StructTy.getA()"},
+        {"b", get_b, nullptr, "C++ int StructTy.getB()"},
         {}
       };
 
       static PyMethodDef MethodsStaticAlloc[] = {
-        {C("__reduce_ex__"), (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, C("Helper for pickle.")},
+        {"__reduce_ex__", (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, "Helper for pickle."},
         {}
       };
 
@@ -1716,8 +1716,8 @@ class ClassTest(unittest.TestCase):
       }
 
       static PyMethodDef MethodsStaticAlloc[] = {
-        {C("f"), (PyCFunction)wrapf, METH_NOARGS, C("f()\n  Calls C++ function\n  void f()")},
-        {C("__reduce_ex__"), (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, C("Helper for pickle.")},
+        {"f", (PyCFunction)wrapf, METH_NOARGS, "f()\n  Calls C++ function\n  void f()"},
+        {"__reduce_ex__", (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, "Helper for pickle."},
         {}
       };
 
@@ -1887,13 +1887,13 @@ class ClassTest(unittest.TestCase):
       static PyObject* as_StructCpp(PyObject* self) {
         StructCpp* p = ::clif::python::Get(reinterpret_cast<wrapper*>(self)->cpp);
         if (p == nullptr) return nullptr;
-        return PyCapsule_New(p, C("StructCpp"), nullptr);
+        return PyCapsule_New(p, "StructCpp", nullptr);
       }
 
       static PyMethodDef MethodsStaticAlloc[] = {
-        {C("F"), (PyCFunction)wrapf_as_F, METH_NOARGS, C("F()\n  Calls C++ function\n  void ::StructCpp::f()")},
-        {C("as_StructCpp"), (PyCFunction)as_StructCpp, METH_NOARGS, C("Upcast to StructCpp*")},
-        {C("__reduce_ex__"), (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, C("Helper for pickle.")},
+        {"F", (PyCFunction)wrapf_as_F, METH_NOARGS, "F()\n  Calls C++ function\n  void ::StructCpp::f()"},
+        {"as_StructCpp", (PyCFunction)as_StructCpp, METH_NOARGS, "Upcast to StructCpp*"},
+        {"__reduce_ex__", (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, "Helper for pickle."},
         {}
       };
 
@@ -1971,12 +1971,12 @@ class ClassTest(unittest.TestCase):
         if (Py_TYPE(py) == wrapper_Type) {
           return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
         }
-        PyObject* base = PyObject_CallMethod(py, C("as_StructCpp"), nullptr);
+        PyObject* base = PyObject_CallMethod(py, "as_StructCpp", nullptr);
         if (base == nullptr) {
           PyErr_Clear();
         } else {
           if (PyCapsule_CheckExact(base)) {
-            void* p = PyCapsule_GetPointer(base, C("StructCpp"));
+            void* p = PyCapsule_GetPointer(base, "StructCpp");
             if (!PyErr_Occurred()) {
               StructCpp* c = static_cast<StructCpp*>(p);
               Py_DECREF(base);
@@ -2142,7 +2142,7 @@ class ClassTest(unittest.TestCase):
       }
 
       static PyMethodDef MethodsStaticAlloc[] = {
-        {C("__reduce_ex__"), (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, C("Helper for pickle.")},
+        {"__reduce_ex__", (PyCFunction)::clif::ReduceExImpl, METH_VARARGS | METH_KEYWORDS, "Helper for pickle."},
         {}
       };
 
@@ -2218,12 +2218,12 @@ class ClassTest(unittest.TestCase):
         if (Py_TYPE(py) == wrapper_Type) {
           return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
         }
-        PyObject* base = PyObject_CallMethod(py, C("as_StructCpp"), nullptr);
+        PyObject* base = PyObject_CallMethod(py, "as_StructCpp", nullptr);
         if (base == nullptr) {
           PyErr_Clear();
         } else {
           if (PyCapsule_CheckExact(base)) {
-            void* p = PyCapsule_GetPointer(base, C("StructCpp"));
+            void* p = PyCapsule_GetPointer(base, "StructCpp");
             if (!PyErr_Occurred()) {
               StructCpp* c = static_cast<StructCpp*>(p);
               Py_DECREF(base);

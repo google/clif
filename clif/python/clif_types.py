@@ -448,7 +448,7 @@ class CapsuleType(TypeDef):
     yield I+I+'return true;'
     yield I+'}'
     yield I+'if (PyCapsule_CheckExact(py)) {'
-    yield I+I+'void* p = PyCapsule_GetPointer(py, C("%s"));' % self.cname
+    yield I+I+'void* p = PyCapsule_GetPointer(py, "%s");' % self.cname
     yield I+I+'bool ok = PyErr_Occurred() == nullptr;'
     yield I+I+'if (ok) *c = %s;' % AsType(self.cname + '*', 'p')
     yield I+I+'return ok;'
@@ -462,7 +462,7 @@ class CapsuleType(TypeDef):
     yield ''
     yield 'PyObject* Clif_PyObjFrom(const %s* c, py::PostConv) {' % self.cname
     yield I+'if (c == nullptr) Py_RETURN_NONE;'
-    yield I+'return PyCapsule_New((void*)c, C("%s"), nullptr);' % self.cname
+    yield I+'return PyCapsule_New((void*)c, "%s", nullptr);' % self.cname
     yield '}'
 
 
@@ -512,13 +512,13 @@ def _GenBaseCapsule(cname, retptr=False):
   # Uses var naming convetion:
   # - from CapsuleType.GenConverters to set *c result (unless retptr set),
   # - from -/- and GenThisPointerFunc to use 'py' argument and 'base' object.
-  yield I+('PyObject* base = PyObject_CallMethod(py, C("as_%s"), nullptr);'
+  yield I+('PyObject* base = PyObject_CallMethod(py, "as_%s", nullptr);'
            % Mangle(cname))
   yield I+'if (base == nullptr) {'
   yield I+I+'PyErr_Clear();'
   yield I+'} else {'
   yield I+I+'if (PyCapsule_CheckExact(base)) {'
-  yield I+I+I+'void* p = PyCapsule_GetPointer(base, C("%s"));' % cname
+  yield I+I+I+'void* p = PyCapsule_GetPointer(base, "%s");' % cname
   yield I+I+I+'if (!PyErr_Occurred()) {'
   yield I+I+I+I+'%s* c = %s;' % (cname if retptr else '',
                                  AsType(cname + '*', 'p'))
