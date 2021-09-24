@@ -731,7 +731,9 @@ bool ClifMatcher::AreAssignableTypes(const QualType from_type,
   clang::EnterExpressionEvaluationContext context(ast_->GetSema(),
       clang::Sema::ExpressionEvaluationContext::Unevaluated);
 
-  InitializedEntity entity = InitializedEntity::InitializeResult(loc, to_type);
+  InitializedEntity entity =
+      InitializedEntity::InitializeResult(
+          loc, to_type, false);  // NRVO is irrelevant.
   clang::OpaqueValueExpr init_expr(loc, from_type.getNonReferenceType(),
                                    clang::ExprValueKind::VK_LValue);
   bool assignable = ast_->GetSema().CanPerformCopyInitialization(

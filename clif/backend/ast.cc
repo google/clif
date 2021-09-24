@@ -418,7 +418,8 @@ bool TranslationUnitAST::ConstructorIsAccessible(
   auto entity = clang::InitializedEntity::InitializeResult(
       SourceLocation(),
       ast_->getASTContext().getQualifiedType(
-          ctor->getParent()->getTypeForDecl(), clang::Qualifiers()));
+          ctor->getParent()->getTypeForDecl(), clang::Qualifiers()),
+      false);  // NRVO is irrelevant.
   Sema& sema = ast_->getSema();
   auto access = sema.CheckConstructorAccess(
       SourceLocation(), ctor,
