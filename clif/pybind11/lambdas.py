@@ -63,7 +63,11 @@ def _generate_lambda_body(
       yield I + ('ret0 = '
                  f'ConvertPyObject({function_call}({function_call_params}));')
     elif (_is_status_param(func_decl.returns[0]) and class_decl):
-      yield I + f'ret0 = {function_call}(&self);'
+      if function_call_params:
+        function_call_params = '&self, ' + function_call_params
+      else:
+        function_call_params = '&self'
+      yield I + f'ret0 = {function_call}({function_call_params});'
     else:
       yield I + f'ret0 = {function_call}({function_call_params});'
   else:
