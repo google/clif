@@ -17,6 +17,7 @@
 
 #include "third_party/pybind11/include/pybind11/smart_holder.h"
 
+#include "clif/pybind11/status_casters.h"
 #include "clif/python/types.h"
 
 #include <Python.h>
