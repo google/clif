@@ -165,7 +165,8 @@ def _generate_function_call(
     class_decl: Optional[ast_pb2.ClassDecl] = None):
   """Generates the function call underneath the lambda expression."""
   if func_decl.returns and _is_status_param(func_decl.returns[0]):
-    return f'py::google::ToPyCLIFStatus(&{func_decl.name.cpp_name})'
+    cast = function_lib.generate_cpp_function_cast(func_decl, class_decl)
+    return f'py::google::ToPyCLIFStatus({cast}&{func_decl.name.cpp_name})'
   elif func_decl.classmethod or not class_decl:
     return func_decl.name.cpp_name
   elif func_decl.is_extend_method:

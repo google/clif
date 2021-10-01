@@ -48,32 +48,33 @@ class ClassType(BaseType):
   def generate_header(self) -> Generator[str, None, None]:
     yield ''
     yield from self.generate_clif_use()
-    yield f'PyObject* Clif_PyObjFrom({self.cpp_name}*, clif::py::PostConv);'
-    yield f'PyObject* Clif_PyObjFrom({self.cpp_name}&&, clif::py::PostConv);'
+    yield f'PyObject* Clif_PyObjFrom({self.cpp_name}*, ::clif::py::PostConv);'
+    yield f'PyObject* Clif_PyObjFrom({self.cpp_name}&&, ::clif::py::PostConv);'
     yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}&, '
-           'clif::py::PostConv);')
+           '::clif::py::PostConv);')
     yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}*, '
-           'clif::py::PostConv);')
+           '::clif::py::PostConv);')
     yield ''
 
   def generate_converters(self) -> Generator[str, None, None]:
     yield ''
-    yield f'PyObject* Clif_PyObjFrom({self.cpp_name}* c, clif::py::PostConv) {{'
+    yield (f'PyObject* Clif_PyObjFrom({self.cpp_name}* c, '
+           '::clif::py::PostConv) {')
     yield '  return pybind11::cast(c).ptr();'
     yield '}'
     yield ''
     yield (f'PyObject* Clif_PyObjFrom({self.cpp_name}&& c, '
-           'clif::py::PostConv) {')
+           '::clif::py::PostConv) {')
     yield '  return pybind11::cast(&c).ptr();'
     yield '}'
     yield ''
     yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}& c, '
-           'clif::py::PostConv) {')
+           '::clif::py::PostConv) {')
     yield '  return pybind11::cast(&c).ptr();'
     yield '}'
     yield ''
     yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}* c, '
-           'clif::py::PostConv) {')
+           '::clif::py::PostConv) {')
     yield '  return pybind11::cast(c).ptr();'
     yield '}'
     yield ''
@@ -86,12 +87,13 @@ class EnumType(BaseType):
   def generate_header(self) -> Generator[str, None, None]:
     yield ''
     yield from self.generate_clif_use()
-    yield f'PyObject* Clif_PyObjFrom({self.cpp_name}*, clif::py::PostConv);'
+    yield f'PyObject* Clif_PyObjFrom({self.cpp_name}*, ::clif::py::PostConv);'
     yield ''
 
   def generate_converters(self) -> Generator[str, None, None]:
     yield ''
-    yield f'PyObject* Clif_PyObjFrom({self.cpp_name}* c, clif::py::PostConv) {{'
+    yield (f'PyObject* Clif_PyObjFrom({self.cpp_name}* c, '
+           '::clif::py::PostConv) {')
     yield '  return pybind11::cast(c).ptr();'
     yield '}'
     yield ''

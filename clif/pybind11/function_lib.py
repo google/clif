@@ -65,7 +65,11 @@ def generate_cpp_function_cast(
       params_list_types.append(param.type.cpp_type)
     else:
       params_list_types.append(param.cpp_exact_type)
-
+  for ret in func_decl.returns[1:]:
+    if not utils.is_usable_cpp_exact_type(ret.cpp_exact_type):
+      params_list_types.append(ret.type.cpp_type)
+    else:
+      params_list_types.append(ret.cpp_exact_type)
   params_str_types = ', '.join(params_list_types)
 
   return_type = ''
