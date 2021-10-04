@@ -69,4 +69,5 @@ from "clif/testing/virtual_funcs.h":
   class TestReturnsObject:
     @virtual
     def CreateObject(self) -> object
+    @do_not_release_gil
     def GetRefcntOfResult(self) -> int
