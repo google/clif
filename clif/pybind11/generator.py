@@ -15,6 +15,7 @@
 """Generates pybind11 bindings code."""
 
 import itertools
+import re
 from typing import Dict, Generator, List, Text
 
 from clif.protos import ast_pb2
@@ -27,14 +28,17 @@ from clif.pybind11 import utils
 
 I = utils.I
 
+_IMPORTMODULEPATTERN = r'module_path:(?P<module_path>.*)'
+
 
 class ModuleGenerator(object):
   """A class that generates pybind11 bindings code from CLIF ast."""
 
-  def __init__(self, ast: ast_pb2.AST, module_name: str, header_path: str,
+  def __init__(self, ast: ast_pb2.AST, module_path: str, header_path: str,
                include_paths: List[str]):
     self._ast = ast
-    self._module_name = module_name
+    self._module_path = module_path
+    self._module_name = module_path.split('.')[-1]
     self._header_path = header_path
     self._include_paths = include_paths
     self._types = []
@@ -55,10 +59,10 @@ class ModuleGenerator(object):
     yield '#include "third_party/pybind11/include/pybind11/smart_holder.h"'
     for include in includes:
       yield f'#include "{include}"'
-    yield '\n'
+    yield ''
     for typedef in self._types:
       yield from typedef.generate_type_caster()
-    yield '\n'
+    yield ''
 
     for namespace, typedefs in itertools.groupby(
         self._types, lambda gen_type: gen_type.cpp_namespace):
@@ -67,6 +71,8 @@ class ModuleGenerator(object):
       for t in typedefs:
         yield from t.generate_header()
       yield '} ' * (1 + namespace.count('::')) + ' // namespace ' + namespace
+    yield ''
+    yield f'// CLIF init_module module_path:{self._module_path}'
 
   def generate_from(self, ast: ast_pb2.AST):
     """Generates pybind11 bindings code from CLIF ast.
@@ -130,15 +136,11 @@ class ModuleGenerator(object):
   def _generate_import_modules(self,
                                ast: ast_pb2.AST) -> Generator[str, None, None]:
     """Generates pybind11 module imports."""
-    for include in ast.usertype_includes:
-      # Converts `full/project/path/cheader_clif.h` to
-      # `full.project.path.cheader`
-      if include.endswith('_clif.h'):
-        names = include.split('/')
-        names.insert(0, 'google3')
-        names[-1] = names[-1][:-len('_clif.h')]
-        module = '.'.join(names)
-        yield I + f'py::module_::import("{module}");'
+    for init in ast.extra_init:
+      res = re.search(_IMPORTMODULEPATTERN, init)
+      if res:
+        module_path = res.group('module_path')
+        yield I + f'py::module_::import("{module_path}");'
 
   def _generate_headlines(self):
     """Generates #includes and headers."""
