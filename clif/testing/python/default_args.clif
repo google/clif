@@ -21,6 +21,7 @@ from "clif/testing/default_args.h":
       e: Enum
     def MethodWithDefaultClassArg(
         self, arg: Arg = default, i: int = default) -> int
+    def MethodWithUnknownDefaultArg(self, i: int, arg: Arg = default) -> int
     def MethodWithDefaultEnumArg(
         self, e: Enum = default, i: int = default) -> int
     def MethodWithDefaultPtrArg(self, a: Arg = default, i: int = default) -> int

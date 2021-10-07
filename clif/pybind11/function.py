@@ -46,7 +46,12 @@ def generate_from(
   elif operators.needs_operator_overloading(func_decl):
     yield from operators.generate_operator(module_name, func_decl)
   else:
-    yield from _generate_simple_function(module_name, func_decl, class_decl)
+    num_unknown = _num_unknown_default_values(func_decl)
+    if num_unknown:
+      yield from _generate_overload_for_unknown_default_function(
+          num_unknown, module_name, func_decl, class_decl)
+    else:
+      yield from _generate_simple_function(module_name, func_decl, class_decl)
 
 
 def _generate_simple_function(
@@ -58,3 +63,24 @@ def _generate_simple_function(
   yield I + function_lib.generate_cpp_function_cast(func_decl, class_decl)
   yield I + f'&{func_decl.name.cpp_name},'
   yield I + function_lib.generate_function_suffixes(func_decl)
+
+
+def _num_unknown_default_values(func_decl: ast_pb2.FuncDecl) -> int:
+  num_unknown = 0
+  for param in func_decl.params:
+    if param.default_value == 'default':
+      num_unknown += 1
+  return num_unknown
+
+
+def _generate_overload_for_unknown_default_function(
+    num_unknown: int, module_name: str,
+    func_decl: ast_pb2.FuncDecl, class_decl: Optional[ast_pb2.ClassDecl] = None
+) -> Generator[str, None, None]:
+  """Generate multiple lambdas for functions with unknown default values."""
+  temp_func_decl = ast_pb2.FuncDecl()
+  temp_func_decl.CopyFrom(func_decl)
+  for _ in range(num_unknown + 1):
+    yield from lambdas.generate_lambda(
+        module_name, temp_func_decl, class_decl)
+    del temp_func_decl.params[-1]

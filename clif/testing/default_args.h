@@ -42,6 +42,10 @@ class MyClass {
     return arg.e + i;
   }
 
+  int MethodWithUnknownDefaultArg(int i, Arg arg = {10}) {
+    return arg.e + i;
+  }
+
   int MethodWithDefaultEnumArg(Enum e = kMyEnum, int i = 100) {
     return e + i;
   }

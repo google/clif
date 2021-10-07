@@ -23,9 +23,14 @@ class DefaultArgsTest(absltest.TestCase):
 
   def testDefaultArgs(self):
     a = default_args.MyClass()
+    arg = default_args.MyClass.Arg()
+    arg.e = 100
     with self.assertRaises(
         TypeError if 'pybind11' in default_args.__doc__ else ValueError):
       a.MethodWithDefaultClassArg(i=113)
+    self.assertEqual(a.MethodWithDefaultClassArg(arg=arg), 200)
+    self.assertEqual(a.MethodWithUnknownDefaultArg(i=100), 110)
+    self.assertEqual(a.MethodWithUnknownDefaultArg(i=100, arg=arg), 200)
     self.assertEqual(a.MethodWithDefaultEnumArg(i=5000), 5432)
     self.assertEqual(a.MethodWithDefaultPtrArg(i=1234), 1234)
     self.assertEqual(a.MethodWithDefaultFlag(i=32), 35)
