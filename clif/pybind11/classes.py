@@ -106,7 +106,8 @@ def _generate_constructor(
     yield f'}}), {function_lib.generate_function_suffixes(func_decl)}'
 
   elif func_decl.name.native == '__init__':
-    yield f'{class_name}.def(py::init<{cpp_types}>());'
+    yield (f'{class_name}.def(py::init<{cpp_types}>(), '
+           f'{function_lib.generate_function_suffixes(func_decl)}')
 
   elif func_decl.constructor:
     yield (f'{class_name}.def_static("{func_decl.name.native}", '
