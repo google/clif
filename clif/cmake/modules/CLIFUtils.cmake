@@ -34,7 +34,7 @@ pkg_check_modules(GOOGLE_GLOG REQUIRED libglog)
 
 find_package(absl REQUIRED)
 find_package(Clang REQUIRED)
-find_package(LLVM 11.1.0 REQUIRED)
+find_package(LLVM 11 REQUIRED)
 find_package(GTest REQUIRED)
 
 function(add_protobuf_include_directories)
