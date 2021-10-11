@@ -27,9 +27,10 @@ from clif.pybind11 import utils
 I = utils.I
 _PYOBJFROM_ONLY = ', HasPyObjFromOnly'
 _PYOBJAS_ONLY = ', HasPyObjAsOnly'
+_PYBIND11_IGNORE = ', Pybind11Ignore'
 _CLIF_USE = re.compile(
     r'// *CLIF:? +use +`(?P<cpp_name>.+)` +as +(?P<py_name>[\w.]+)'
-    f'({_PYOBJFROM_ONLY}|{_PYOBJAS_ONLY}|)')
+    f'({_PYOBJFROM_ONLY}|{_PYOBJAS_ONLY}|{_PYBIND11_IGNORE}|)')
 
 
 def get_imported_types(ast: ast_pb2.AST,
@@ -55,7 +56,7 @@ def _get_clif_uses(
         lines = include_file.readlines()
         for line in lines:
           use = _CLIF_USE.match(line)
-          if use:
+          if use and _PYBIND11_IGNORE not in use[0]:
             results.append(types.SimpleNamespace(
                 cpp_name=use.group('cpp_name'), py_name=use.group('py_name'),
                 generate_load=_PYOBJFROM_ONLY not in use[0],
@@ -91,8 +92,7 @@ def generate_from(ast: ast_pb2.AST,
     # `Clif_PyObjAs`.
     if (include.startswith('clif/python') or
         # Excluding absl::Status and absl::StatusOr
-        include.startswith('util/task/python') or
-        include.endswith('_clif.h')):
+        include.startswith('util/task/python')):
       continue
     clif_uses = _get_clif_uses(include, include_paths)
     for clif_use in clif_uses:

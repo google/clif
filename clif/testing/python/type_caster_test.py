@@ -33,6 +33,14 @@ class TypeCasterTest(absltest.TestCase):
   def test_pyobjas_only(self):
     self.assertEqual(type_caster.get_value_pyobjas_only(10), 13)
 
+  @absltest.skipIf(
+      'pybind11' not in type_caster.__doc__,
+      'Legacy PyCLIF does not recognize `Pybind11Ignore` in '
+      '`CLIF use` comments')
+  def test_pybind11_ignore(self):
+    with self.assertRaises(TypeError):
+      type_caster.get_value_pybind11_ignore(10)
+
 
 if __name__ == '__main__':
   absltest.main()

@@ -39,13 +39,17 @@ inline PyObject* Clif_PyObjFrom(const ValueHolder& c,
   return clif::Clif_PyObjFrom(c.value + 1, {});
 }
 
-// CLIF use `::clif_testing::ValueHolderFromOnly` as ValueHolderFromOnly, HasPyObjFromOnly NOLINT
+// NOLINTBEGIN
+// CLIF use `::clif_testing::ValueHolderFromOnly` as ValueHolderFromOnly, HasPyObjFromOnly
+// NOLINTEND
 inline PyObject* Clif_PyObjFrom(const ValueHolderFromOnly& c,
                                 const clif::py::PostConv& pc) {
   return clif::Clif_PyObjFrom(c.value + 2, {});
 }
 
-// CLIF use `::clif_testing::ValueHolderAsOnly` as ValueHolderAsOnly, HasPyObjAsOnly NOLINT
+// NOLINTBEGIN
+// CLIF use `::clif_testing::ValueHolderAsOnly` as ValueHolderAsOnly, HasPyObjAsOnly
+// NOLINTEND
 inline bool Clif_PyObjAs(PyObject* obj, ValueHolderAsOnly* c) {
   PyObject *tmp = PyNumber_Long(obj);
   if (!tmp) {
@@ -56,7 +60,23 @@ inline bool Clif_PyObjAs(PyObject* obj, ValueHolderAsOnly* c) {
   return true;
 }
 
+// NOLINTBEGIN
+// CLIF use `::clif_testing::ValueHolderPybind11Ignore` as ValueHolderPybind11Ignore, Pybind11Ignore
+// NOLINTEND
+inline bool Clif_PyObjAs(PyObject* obj, ValueHolderPybind11Ignore* c) {
+  PyObject *tmp = PyNumber_Long(obj);
+  if (!tmp) {
+    return false;
+  }
+  c->value = PyLong_AsLong(tmp);
+  ++(c->value);
+  return true;
+}
 
+inline PyObject* Clif_PyObjFrom(const ValueHolderPybind11Ignore& c,
+                                const clif::py::PostConv& pc) {
+  return clif::Clif_PyObjFrom(c.value + 1, {});
+}
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_CLIF_CONVERSION_H_

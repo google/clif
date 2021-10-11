@@ -27,3 +27,4 @@ from "clif/testing/type_caster.h":
     def return_value_pyobjfrom_only(v: int) -> ValueHolderFromOnly
 
     def get_value_pyobjas_only(vh: ValueHolderAsOnly) -> int
+    def get_value_pybind11_ignore(vh: ValueHolderPybind11Ignore) -> int

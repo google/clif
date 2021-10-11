@@ -62,6 +62,10 @@ inline int get_value_pyobjas_only(const ValueHolderAsOnly& vh) {
   return vh.value;
 }
 
+inline int get_value_pybind11_ignore(const ValueHolderPybind11Ignore& vh) {
+  return vh.value;
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_TYPE_CASTER_H_

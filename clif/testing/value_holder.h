@@ -50,6 +50,13 @@ class ValueHolderAsOnly {
   int value;
 };
 
+class ValueHolderPybind11Ignore {
+ public:
+  ValueHolderPybind11Ignore(): value(0) { }
+  ValueHolderPybind11Ignore(int v): value(v) { }
+  int value;
+};
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_H_

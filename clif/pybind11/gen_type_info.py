@@ -26,7 +26,7 @@ class BaseType:
   cpp_namespace: str
 
   def generate_clif_use(self) -> Generator[str, None, None]:
-    yield f'// CLIF use `{self.cpp_name}` as {self.py_name}'
+    yield f'// CLIF use `{self.cpp_name}` as {self.py_name}, Pybind11Ignore'
 
   def generate_header(self) -> Generator[str, None, None]:
     yield from self.generate_clif_use()
