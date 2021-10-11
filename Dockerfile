@@ -58,10 +58,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     unzip
 
-# Configure LLVM 11 apt repository
-RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
-    add-apt-repository "deb http://apt.llvm.org/$(lsb_release -sc)/ llvm-toolchain-$(lsb_release -sc)-11 main"
-
 # Install CLIF dependencies
 RUN apt-get update && apt-get install -y \
     clang-11 \
