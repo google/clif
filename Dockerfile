@@ -69,9 +69,10 @@ RUN apt-get update && apt-get install -y \
     libgoogle-glog-dev \
     libgtest-dev \
     libllvm11 \
+    llvm-11 \
     llvm-11-dev \
+    llvm-11-linker-tools \
     python3-dev \
-    python3-pyparsing \
     zlib1g-dev
 
 # Configure deadsnakes PPA with the more recent versions of python packaged for
@@ -117,4 +118,5 @@ RUN cd /usr/src/googletest && \
 RUN "python$PYTHON_VERSION" -m pip install \
     absl-py \
     parameterized \
-    protobuf=="$PROTOBUF_VERSION"
+    protobuf=="$PROTOBUF_VERSION" \
+    pyparsing==2.2.0

@@ -39,7 +39,6 @@ jobs:
         - 18.04
         - 20.04
         python:
-        - 3.6
         - 3.7
         - 3.8
         - 3.9
@@ -84,6 +83,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache
           build-args: |
               PYTHON_VERSION=${{ matrix.python }}
+              UBUNTU_VERSION=${{ matrix.ubuntu }}
 
     - name: Build and Install Examples
       run: |
