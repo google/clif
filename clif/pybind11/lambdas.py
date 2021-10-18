@@ -136,7 +136,10 @@ def _generate_function_call_returns(
   all_returns_list = []
   for i, r in enumerate(func_decl.returns):
     if r.type.lang_type == 'bytes':
-      all_returns_list.append(f'py::bytes(ret{i})')
+      if r.cpp_exact_type in ('::std::string_view', '::absl::string_view'):
+        all_returns_list.append(f'py::bytes(ret{i}.data())')
+      else:
+        all_returns_list.append(f'py::bytes(ret{i})')
     elif r.type.lang_type in capsule_types:
       all_returns_list.append(
           f'clif::CapsuleWrapper<{r.type.cpp_type}>(ret{i});')

@@ -25,6 +25,9 @@ inline int int_id(int x) { return x; }
 inline int int_plus3(int a, int b = 0, int c = 0) { return a+b+c; }
 
 inline std::string StdString() { return std::string("std"); }
+inline std::string_view StdStringView() {
+  return std::string_view("string_view");
+}
 inline std::string UnicodeString() { return std::string("\u0394"); }
 inline std::string UnicodeBytes(bool generate_malformed) {
   // generate_malformed ensures there is no accidental decode/encode

@@ -50,9 +50,11 @@ class T1Test(absltest.TestCase):
 
   def testString(self):
     self.assertEqual(t1.StdString(), 'std')
+    self.assertEqual(t1.StdStringView(), 'string_view')
 
   def testBytes(self):
     self.assertEqual(t1.StdBytes(), b'std')
+    self.assertEqual(t1.StdStringViewBytes(), b'string_view')
 
     self.assertEqual(t1.UnicodeString(), u'\u0394')
 
