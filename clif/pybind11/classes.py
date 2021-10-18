@@ -13,7 +13,7 @@
 # limitations under the License.
 """Generates pybind11 bindings code for classes."""
 
-from typing import Generator
+from typing import Generator, Set
 
 from clif.protos import ast_pb2
 from clif.pybind11 import enums
@@ -27,13 +27,15 @@ I = utils.I
 
 def generate_from(
     class_decl: ast_pb2.ClassDecl, superclass_name: str,
-    python_override_class_name: str) -> Generator[str, None, None]:
+    python_override_class_name: str, capsule_types: Set[str]
+) -> Generator[str, None, None]:
   """Generates a complete py::class_<>.
 
   Args:
     class_decl: Class declaration in proto format.
     superclass_name: String name of the superclass.
     python_override_class_name: Virtual function class name.
+    capsule_types: A list of C++ types that are defined as capsules.
 
   Yields:
     pybind11 class bindings code.
@@ -70,7 +72,8 @@ def generate_from(
         for s in _generate_constructor(class_name, member.func, class_decl):
           yield I + I + s
       else:
-        for s in function.generate_from(class_name, member.func, class_decl):
+        for s in function.generate_from(
+            class_name, member.func, capsule_types, class_decl):
           yield I + I + s
       if member.func.virtual:
         trampoline_generated = True
@@ -82,7 +85,7 @@ def generate_from(
         yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.CLASS:
       for s in generate_from(member.class_, class_name,
-                             python_override_class_name):
+                             python_override_class_name, capsule_types):
         yield I + s
 
   if (not constructor_defined and class_decl.cpp_has_def_ctor and

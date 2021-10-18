@@ -97,3 +97,8 @@ class EnumType(BaseType):
     yield '  return pybind11::cast(c).ptr();'
     yield '}'
     yield ''
+
+
+@dataclasses.dataclass
+class CapsuleType(BaseType):
+  """Wraps a C++ pointer as Python capsule."""

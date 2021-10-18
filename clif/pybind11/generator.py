@@ -42,6 +42,7 @@ class ModuleGenerator(object):
     self._header_path = header_path
     self._include_paths = include_paths
     self._types = []
+    self._capsule_types = set()
     self._all_types = set()
 
   def register_types(self, ast: ast_pb2.AST) -> None:
@@ -49,6 +50,10 @@ class ModuleGenerator(object):
     for decl in ast.decls:
       self._register_types(decl)
     self._types = sorted(self._types, key=lambda gen_type: gen_type.cpp_name)
+    self._capsule_types = set([
+        t.py_name for t in self._types
+        if isinstance(t, gen_type_info.CapsuleType)
+    ])
 
   def generate_header(self,
                       ast: ast_pb2.AST) -> Generator[str, None, None]:
@@ -112,17 +117,18 @@ class ModuleGenerator(object):
 
     for decl in ast.decls:
       if decl.decltype == ast_pb2.Decl.Type.FUNC:
-        for s in function.generate_from('m', decl.func, None):
+        for s in function.generate_from(
+            'm', decl.func, self._capsule_types, None):
           yield I + s
       elif decl.decltype == ast_pb2.Decl.Type.CONST:
         yield from self._generate_const_variables(decl.const)
       elif decl.decltype == ast_pb2.Decl.Type.CLASS:
         yield from classes.generate_from(
             decl.class_, 'm',
-            python_override_class_names.get(decl.class_.name.cpp_name, ''))
+            python_override_class_names.get(decl.class_.name.cpp_name, ''),
+            self._capsule_types)
       elif decl.decltype == ast_pb2.Decl.Type.ENUM:
         yield from enums.generate_from('m', decl.enum)
-      yield ''
     yield '}'
     yield ''
     for namespace, typedefs in itertools.groupby(
@@ -290,6 +296,14 @@ class ModuleGenerator(object):
           cpp_name=decl.enum.name.cpp_name, py_name=py_name,
           cpp_namespace=cpp_namespace)
       self._types.append(enum_type)
+    elif decl.decltype == ast_pb2.Decl.Type.TYPE:
+      py_name = decl.fdecl.name.native
+      if parent_py_name:
+        py_name = '.'.join([parent_py_name, py_name])
+      capsule_type = gen_type_info.CapsuleType(
+          cpp_name=decl.fdecl.name.cpp_name, py_name=py_name,
+          cpp_namespace=cpp_namespace)
+      self._types.append(capsule_type)
 
 
 def write_to(channel, lines):

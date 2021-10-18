@@ -19,11 +19,47 @@
 
 #include "third_party/pybind11/include/pybind11/pybind11.h"
 
+namespace clif {
+
 inline pybind11::object ConvertPyObject(PyObject* ptr) {
   if (PyErr_Occurred() || ptr == nullptr) {
     throw pybind11::error_already_set();
   }
   return pybind11::reinterpret_borrow<pybind11::object>(ptr);
 }
+
+template <typename T>
+struct CapsuleWrapper {
+  explicit CapsuleWrapper(): ptr(nullptr) { }
+  explicit CapsuleWrapper(T p): ptr(p) { }
+  T ptr;
+};
+
+}  // namespace clif
+
+namespace pybind11 {
+namespace detail {
+
+template <typename T>
+struct type_caster<clif::CapsuleWrapper<T>> {
+ public:
+  PYBIND11_TYPE_CASTER(clif::CapsuleWrapper<T>, _<clif::CapsuleWrapper<T>>());
+
+  bool load(handle src, bool convert) {
+    if (isinstance<capsule>(src)) {
+      value = clif::CapsuleWrapper<T>(reinterpret_borrow<capsule>(src.ptr()));
+      return true;
+    }
+    return false;
+  }
+
+  static handle cast(
+      clif::CapsuleWrapper<T> src, return_value_policy, handle) {
+    return capsule(src.ptr, typeid(T).name()).release();
+  }
+};
+
+}  // namespace detail
+}  // namespace pybind11
 
 #endif  // THIRD_PARTY_CLIF_PYBIND11_RUNTIME_H_
