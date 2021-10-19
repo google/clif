@@ -32,35 +32,40 @@ typedef std::function<std::pair<int, std::vector<int>>(const std::vector<int>&)>
 }  // namespace cliff
 
 // test for wrapping function with nonconst nonref function parameter
-std::vector<int> FunctionNewStyleCallbackNonConstRef(
+inline std::vector<int> FunctionNewStyleCallbackNonConstRef(
     const std::vector<int>& input, cliff::testing::NewCallback callback) {
   auto output = callback(input);
   return output.second;
 }
 
 // test for wrapping function with const reference function parameter
-std::vector<int> FunctionNewStyleCallbackConstRef(
+inline std::vector<int> FunctionNewStyleCallbackConstRef(
     const std::vector<int>& input,
     const cliff::testing::NewCallback& callback) {
   auto output = callback(input);
   return output.second;
 }
 
-std::vector<int> Function(const std::vector<int>& input,
+inline std::vector<int> Function(const std::vector<int>& input,
                           cliff::testing::OldCallback callback) {
   std::vector<int> output;
   callback(input, &output);
   return output;
 }
 
-std::function<int(int)> FunctionWithCallableReturn(
+inline std::function<int(int)> FunctionWithCallableReturn(
     std::function<int(int)> callback) {
   return callback;
 }
 
-void StringCallback(std::function<void(std::string)> f) { f("foo"); }
+inline void StringCallback(std::function<void(std::string)> f) { f("foo"); }
 
 struct SelfCallback {
   explicit SelfCallback(std::function<void(SelfCallback*)>) {}
 };
+
+inline std::string LambdaCallback(std::function<std::string()> f) {
+  return f();
+}
+
 #endif  // CLIF_TESTING_CALLBACK_H_

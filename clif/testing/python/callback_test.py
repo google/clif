@@ -35,6 +35,10 @@ def InvalidCallback2(a, b, c):  # pylint: disable=unused-argument
   return 0
 
 
+def StringCallback():
+  return 'abcd'
+
+
 class CallbackTest(absltest.TestCase):
 
   def CallbackMethod(self, data):
@@ -80,6 +84,11 @@ class CallbackTest(absltest.TestCase):
   def testCallableOutput(self):
     returned_callback = callback.FunctionWithCallableReturn(Callback2)
     self.assertEqual(returned_callback(5), 5)
+
+  def testBytesCallback(self):
+    res = callback.LambdaCallback(StringCallback)
+    self.assertIsInstance(res, bytes)
+    self.assertEqual(res, b'abcd')
 
 
 if __name__ == '__main__':

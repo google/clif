@@ -29,3 +29,5 @@ from "clif/testing/callback.h":
   class SelfCallback:
     def __init__(self, cb: (s:SelfCallback)->None)
 
+  # Testing pybind11 code generator generating lambda expressions with callbacks
+  def LambdaCallback(cb: () -> str) -> bytes

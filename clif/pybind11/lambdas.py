@@ -14,7 +14,7 @@
 """Generates C++ lambda functions inside pybind11 bindings code."""
 
 import re
-from typing import Generator, Optional, Set
+from typing import Generator, List, Optional, Set
 
 from clif.protos import ast_pb2
 from clif.pybind11 import function_lib
@@ -25,30 +25,103 @@ I = utils.I
 _STATUS_PATTERNS = (r'::absl::Status', r'::absl::StatusOr<(\S)+>')
 
 
+class Parameter:
+  """Wraps a C++ function parameter."""
+  cpp_type: str  # The actual generated cpp_type in lambda expressions
+  name: str  # cpp_name of this parameter
+  function_argument: str  # How to pass this parameter to functions
+
+  def __init__(self, param: ast_pb2.ParamDecl, capsule_types: Set[str]):
+    ptype = param.type
+    ctype = ptype.cpp_type
+    self.cpp_type = ctype
+    self.name = param.name.cpp_name
+    self.function_argument = self.name
+
+    if ptype.lang_type in capsule_types:
+      self.cpp_type = f'clif::CapsuleWrapper<{self.cpp_type}>'
+      self.function_argument = f'{param.name.cpp_name}.ptr'
+    elif ptype.lang_type == 'object':
+      self.cpp_type = 'py::object'
+      if param.cpp_exact_type == '::PyObject *':
+        self.function_argument = f'{param.name.cpp_name}.ptr()'
+      else:
+        self.function_argument = (
+            f'{param.name.cpp_name}.cast<{param.cpp_exact_type}>()')
+    elif not param.type.cpp_type:  # std::function
+      self.cpp_type = param.cpp_exact_type
+    elif ptype.cpp_raw_pointer:
+      if not ptype.cpp_toptr_conversion and ctype.endswith('*'):
+        if ptype.cpp_abstract:
+          if ptype.cpp_touniqptr_conversion:
+            self.cpp_type = f'::std::unique_ptr<{ctype[:-1]}>'
+            self.function_argument = f'{param.name.cpp_name}.get()'
+        elif ptype.cpp_has_public_dtor:
+          # Create a copy on stack and pass its address.
+          if ptype.cpp_has_def_ctor:
+            self.cpp_type = ctype[:-1]
+            self.function_argument = f'&{param.name.cpp_name}'
+          else:
+            self.cpp_type = f'::absl::optional<{ctype[:-1]}>'
+            self.function_argument = f'&{param.name.cpp_name}.value()'
+    # T, [const] T&
+    elif ptype.cpp_toptr_conversion:
+      self.cpp_type = f'{ctype}*'
+      self.function_argument = f'*{param.name.cpp_name}'
+    elif ptype.cpp_abstract:  # for AbstractType &
+      self.cpp_type = f'std::unique_ptr<{ctype}>'
+      self.function_argument = f'*{param.name.cpp_name}'
+    elif not ptype.cpp_has_def_ctor:
+      self.cpp_type = f'::absl::optional<{ctype}>'
+      self.function_argument = f'{param.name.cpp_name}.value()'
+
+
 def generate_lambda(
     module_name: str, func_decl: ast_pb2.FuncDecl,
     capsule_types: Set[str],
     class_decl: Optional[ast_pb2.ClassDecl] = None
 ) -> Generator[str, None, None]:
   """Entry point for generation of lambda functions in pybind11."""
+  params_list = []
+  for param in func_decl.params:
+    params_list.append(Parameter(param, capsule_types))
   params_with_type = _generate_lambda_params_with_types(
-      func_decl, capsule_types, class_decl)
+      func_decl, params_list, class_decl)
   func_name = func_decl.name.native.rstrip('#')  # @sequential
   yield (f'{module_name}.{function_lib.generate_def(func_decl)}'
          f'("{func_name}", []({params_with_type}) {{')
-  yield from _generate_lambda_body(func_decl, capsule_types, class_decl)
+  yield from _generate_lambda_body(
+      func_decl, params_list, capsule_types, class_decl)
   yield f'}}, {function_lib.generate_function_suffixes(func_decl)}'
+
+
+def needs_lambda(
+    func_decl: ast_pb2.FuncDecl,
+    capsule_types: Set[str],
+    class_decl: Optional[ast_pb2.ClassDecl] = None) -> bool:
+  if class_decl and _has_inherited_methods(class_decl):
+    return True
+  return (bool(func_decl.postproc) or
+          _func_has_capsule_params(func_decl, capsule_types) or
+          _func_has_status_params(func_decl) or
+          _func_needs_implicit_conversion(func_decl) or
+          _func_has_pointer_params(func_decl) or
+          _func_has_py_object_params(func_decl) or
+          _func_has_status_params(func_decl) or
+          _has_bytes_return(func_decl) or
+          func_decl.cpp_num_params != len(func_decl.params))
 
 
 def _generate_lambda_body(
     func_decl: ast_pb2.FuncDecl,
+    params: List[Parameter],
     capsule_types: Set[str],
     class_decl: Optional[ast_pb2.ClassDecl] = None
 ) -> Generator[str, None, None]:
   """Generates body of lambda expressions."""
   function_call = _generate_function_call(func_decl, class_decl)
   function_call_params = _generate_function_call_params(
-      func_decl, capsule_types, class_decl)
+      func_decl, params, class_decl)
   function_call_returns = _generate_function_call_returns(
       func_decl, capsule_types)
 
@@ -92,23 +165,10 @@ def _generate_lambda_body(
 
 def _generate_function_call_params(
     func_decl: ast_pb2.FuncDecl,
-    capsule_types: Set[str],
+    params: List[Parameter],
     class_decl: Optional[ast_pb2.ClassDecl] = None) -> str:
   """Generates the parameters of function calls in lambda expressions."""
-  params_list = []
-  for p in func_decl.params:
-    if p.type.lang_type in capsule_types:
-      params_list.append(f'{p.name.cpp_name}.ptr')
-    elif p.type.cpp_abstract:
-      params_list.append(f'*{p.name.cpp_name}')
-    elif p.type.lang_type == 'object':
-      if p.cpp_exact_type == '::PyObject *':
-        params_list.append(f'{p.name.cpp_name}.ptr()')
-      else:
-        params_list.append(f'{p.name.cpp_name}.cast<{p.cpp_exact_type}>()')
-    else:
-      params_list.append(f'{p.name.cpp_name}')
-
+  params_list = [p.function_argument for p in params]
   if (func_decl.returns and _is_status_param(func_decl.returns[0]) and
       class_decl and not func_decl.classmethod):
     params_list.insert(0, '&self')
@@ -142,45 +202,18 @@ def _generate_function_call_returns(
         all_returns_list.append(f'py::bytes(ret{i})')
     elif r.type.lang_type in capsule_types:
       all_returns_list.append(
-          f'clif::CapsuleWrapper<{r.type.cpp_type}>(ret{i});')
+          f'clif::CapsuleWrapper<{r.type.cpp_type}>(ret{i})')
     else:
       all_returns_list.append(f'ret{i}')
   return ', '.join(all_returns_list)
 
 
-def needs_lambda(
-    func_decl: ast_pb2.FuncDecl,
-    capsule_types: Set[str],
-    class_decl: Optional[ast_pb2.ClassDecl] = None) -> bool:
-  if class_decl and _has_inherited_methods(class_decl):
-    return True
-  return (bool(func_decl.postproc) or
-          _func_has_capsule_params(func_decl, capsule_types) or
-          _func_has_status_params(func_decl) or
-          _func_needs_implicit_conversion(func_decl) or
-          _func_has_pointer_params(func_decl) or
-          _func_has_py_object_params(func_decl) or
-          _func_has_status_params(func_decl) or
-          _has_bytes_return(func_decl) or
-          func_decl.cpp_num_params != len(func_decl.params))
-
-
 def _generate_lambda_params_with_types(
     func_decl: ast_pb2.FuncDecl,
-    capsule_types: Set[str],
+    params: List[Parameter],
     class_decl: Optional[ast_pb2.ClassDecl] = None) -> str:
   """Generates parameters and types in the signatures of lambda expressions."""
-  params_list = []
-  for p in func_decl.params:
-    if p.type.lang_type in capsule_types:
-      params_list.append(
-          f'clif::CapsuleWrapper<{p.type.cpp_type}> {p.name.cpp_name}')
-    elif p.type.cpp_abstract:
-      params_list.append(f'{p.type.cpp_type} *{p.name.cpp_name}')
-    elif p.type.lang_type == 'object':
-      params_list.append(f'py::object {p.name.cpp_name}')
-    else:
-      params_list.append(f'{p.type.cpp_type} {p.name.cpp_name}')
+  params_list = [f'{p.cpp_type} {p.name}' for p in params]
   if (class_decl and not func_decl.classmethod and
       not func_decl.is_extend_method):
     params_list = [f'{class_decl.name.cpp_name} &self'] + params_list
