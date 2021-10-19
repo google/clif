@@ -35,6 +35,10 @@ class T3Test(absltest.TestCase):
     # This is necessary for proper pickling.
     self.assertEqual(t3._New.__module__, t3.__name__)
 
+  def testEnumsExportedToParentScope(self):
+    self.assertEqual(t3.Outer.A, t3.Outer.Inner.A)
+    self.assertEqual(t3.Outer.B, t3.Outer.Inner.B)
+
 
 if __name__ == '__main__':
   absltest.main()

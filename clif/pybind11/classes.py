@@ -16,6 +16,7 @@
 from typing import Generator, Set
 
 from clif.protos import ast_pb2
+from clif.pybind11 import consts
 from clif.pybind11 import enums
 from clif.pybind11 import function
 from clif.pybind11 import function_lib
@@ -64,7 +65,7 @@ def generate_from(
   trampoline_generated = False
   for member in class_decl.members:
     if member.decltype == ast_pb2.Decl.Type.CONST:
-      for s in _generate_const_members(class_name, member):
+      for s in consts.generate_from(class_name, member.const):
         yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.FUNC:
       if member.func.constructor:
@@ -117,13 +118,6 @@ def _generate_constructor(
            f'[]({params_with_types}) {{')
     yield I + f'return {class_decl.name.cpp_name}({params});'
     yield f'}}, {function_lib.generate_function_suffixes(func_decl)}'
-
-
-def _generate_const_members(
-    class_name: str, member: ast_pb2.Decl) -> Generator[str, None, None]:
-  """Generates const member functions."""
-  yield (f'{class_name}.def_readonly_static("{member.const.name.native}", '
-         f'&{member.const.name.cpp_name});')
 
 
 def _as_cpp_string_literal(s: str) -> str:

@@ -70,4 +70,12 @@ class K {
 
 }  // namespace some
 
+class Outer {
+ public:
+  enum Inner {
+    A = 1,
+    B = 2,
+  };
+};
+
 #endif  // CLIF_TESTING_T3_H_

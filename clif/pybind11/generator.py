@@ -20,6 +20,7 @@ from typing import Dict, Generator, List, Text
 
 from clif.protos import ast_pb2
 from clif.pybind11 import classes
+from clif.pybind11 import consts
 from clif.pybind11 import enums
 from clif.pybind11 import function
 from clif.pybind11 import gen_type_info
@@ -121,7 +122,7 @@ class ModuleGenerator(object):
             'm', decl.func, self._capsule_types, None):
           yield I + s
       elif decl.decltype == ast_pb2.Decl.Type.CONST:
-        yield from self._generate_const_variables(decl.const)
+        yield from consts.generate_from('m', decl.const)
       elif decl.decltype == ast_pb2.Decl.Type.CLASS:
         yield from classes.generate_from(
             decl.class_, 'm',
@@ -171,20 +172,6 @@ class ModuleGenerator(object):
     yield ''
     yield 'namespace py = pybind11;'
     yield ''
-
-  def _generate_const_variables(self, const_decl: ast_pb2.ConstDecl):
-    """Generates variables."""
-    lang_type = const_decl.type.lang_type
-
-    if (lang_type in {'int', 'float', 'double', 'bool', 'str'} or
-        lang_type.startswith('tuple<')):
-      const_def = I + (f'm.attr("{const_decl.name.native}") = '
-                       f'{const_decl.name.cpp_name};')
-    else:
-      const_def = I + (f'm.attr("{const_decl.name.native}") = '
-                       f'py::cast({const_decl.name.cpp_name});')
-
-    yield const_def
 
   def _generate_python_override_class_names(
       self, python_override_class_names: Dict[Text, Text], decl: ast_pb2.Decl,

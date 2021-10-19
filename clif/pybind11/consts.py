@@ -1,4 +1,4 @@
-# Copyright 2017 Google Inc.
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,26 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Generates pybind11 bindings code for constants."""
 
-from "clif/testing/t3.h":
-  enum `OldGlobalE` as _Old with:
-    `kTop1` as TOP1
-    `kTopN` as TOPn
-  enum `NewGlobalE` as _New
-  namespace `some`:
-    class `K` as K:
-      enum `e` as OldE with:
-        `kOne` as ONE
-      enum `E` as NewE with:
-        `kOne` as ONE
-        `kTwo` as TWO
-      class O:
-        n: bytes
-        f: bool
-      def M(self, i: OldE)
-      `i_` as i: int
-  def `some::K::K2` as K2() -> K
-  class Outer:
-    enum Inner
-    const A: Inner
-    const B: Inner
+from clif.protos import ast_pb2
+from clif.pybind11 import utils
+
+I = utils.I
+
+
+def generate_from(class_name: str, const_decl: ast_pb2.ConstDecl):
+  """Generates bindings code for constants."""
+  yield I + (f'{class_name}.attr("{const_decl.name.native}") = '
+             f'py::cast({const_decl.name.cpp_name});')
