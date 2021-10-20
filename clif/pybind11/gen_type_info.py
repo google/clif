@@ -55,6 +55,7 @@ class ClassType(BaseType):
     yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}*, '
            '::clif::py::PostConv);')
     yield ''
+    yield f'bool Clif_PyObjAs(PyObject* input, {self.cpp_name}** output);'
 
   def generate_converters(self) -> Generator[str, None, None]:
     yield ''
@@ -76,6 +77,11 @@ class ClassType(BaseType):
     yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}* c, '
            '::clif::py::PostConv) {')
     yield '  return pybind11::cast(c).ptr();'
+    yield '}'
+    yield f'bool Clif_PyObjAs(PyObject* input, {self.cpp_name}** output) {{'
+    yield (f' *output = pybind11::cast<{self.cpp_name}*>'
+           '(pybind11::handle(input));')
+    yield '  return true;'
     yield '}'
     yield ''
 
