@@ -82,7 +82,7 @@ std::string GetGloballyQualifiedName(const NamedDecl* decl) {
 }
 
 static const char kConstToken[] = "const ";  // Trailing space is important.
-static const char kCppCharArray[] = "const char [";
+static const char kCppCharArray[] = "const char[";
 static const char kClifCharArray[] = "::clif::char_ptr";
 
 static std::string GetErrorCodeString(ClifErrorCode code) {
