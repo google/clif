@@ -16,7 +16,21 @@ from "clif/testing/non_raising.h" import *  # For `// CLIF use ...`
 
 from "clif/testing/non_raising.h":
   namespace `clif_testing`:
-    def `MakeTestNonRaising` as MakeTestNonRaisingPlain() -> TestNonRaising
+    def `ReturnTestNonRaising` as ReturnTestNonRaisingPlain() -> TestNonRaising
 
     @non_raising
-    def `MakeTestNonRaising` as MakeTestNonRaisingMarked() -> TestNonRaising
+    def `ReturnTestNonRaising` as ReturnTestNonRaisingMarked() -> TestNonRaising
+
+    def `ReturnTestNonRaisingAndIval` as ReturnTestNonRaisingAndIvalPlain()
+        -> (implicit_return: TestNonRaising, ival: int)
+
+    @non_raising
+    def `ReturnTestNonRaisingAndIval` as ReturnTestNonRaisingAndIvalMarked()
+        -> (implicit_return: TestNonRaising, ival: int)
+
+    def `ReturnIvalAndTestNonRaising` as ReturnIvalAndTestNonRaisingPlain()
+        -> (implicit_return: int, tnr: TestNonRaising)
+
+    @non_raising
+    def `ReturnIvalAndTestNonRaising` as ReturnIvalAndTestNonRaisingMarked()
+        -> (implicit_return: int, tnr: TestNonRaising)

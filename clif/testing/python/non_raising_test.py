@@ -19,12 +19,32 @@ from clif.testing.python import non_raising
 
 class NonRaisingTest(absltest.TestCase):
 
-  def testPlain(self):
-    num = non_raising.MakeTestNonRaisingPlain()
+  def testReturnTestNonRaisingPlain(self):
+    num = non_raising.ReturnTestNonRaisingPlain()
     self.assertEqual(num, 1)
 
-  def testMarked(self):
-    num = non_raising.MakeTestNonRaisingMarked()
+  def testReturnTestNonRaisingMarked(self):
+    num = non_raising.ReturnTestNonRaisingMarked()
+    self.assertEqual(num, -1)
+
+  def testReturnTestNonRaisingAndIvalPlain(self):
+    num, ival = non_raising.ReturnTestNonRaisingAndIvalPlain()
+    self.assertEqual(num, 1)
+    self.assertEqual(ival, 3)
+
+  def testReturnTestNonRaisingAndIvalMarked(self):
+    num, ival = non_raising.ReturnTestNonRaisingAndIvalMarked()
+    self.assertEqual(num, -1)
+    self.assertEqual(ival, 3)
+
+  def testReturnIvalAndTestNonRaisingPlain(self):
+    ival, num = non_raising.ReturnIvalAndTestNonRaisingPlain()
+    self.assertEqual(ival, 5)
+    self.assertEqual(num, 1)
+
+  def testReturnIvalAndTestNonRaisingMarked(self):
+    ival, num = non_raising.ReturnIvalAndTestNonRaisingMarked()
+    self.assertEqual(ival, 5)
     self.assertEqual(num, -1)
 
 

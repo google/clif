@@ -42,6 +42,13 @@ dict<int, pair<str, ztype>> -> {_0,{_1,_2}}
 
 PASS = '{}'
 
+# Hard-coded for now. We may want to generalize this in the future, but not
+# until after finishing the pybind11 integration.
+MARKED_NON_RAISING_SUPPORTED_TYPES = (
+    '::clif_testing::TestNonRaising',
+    '::absl::Status',
+)
+
 
 def GenPostConvTable(postconv_types):
   """Transform postconv_types dict(typename: convfunctionname) and yields it."""
@@ -56,12 +63,16 @@ def GenPostConvTable(postconv_types):
       postconv_types[pytype] = '_%d' % index
 
 
-def Initializer(ast_type, postconv_types_index_map, nested=False):
+def Initializer(ast_type, postconv_types_index_map, nested=False,
+                marked_non_raising=False):
   """Tranform [complex] ast_type to a postconversion initializer_list."""
   if ast_type.HasField('callable'):
     # TODO: Fix postconv for callable.
     # print ast_type
     return PASS
+  if (marked_non_raising and
+      ast_type.cpp_type in MARKED_NON_RAISING_SUPPORTED_TYPES):
+    return 'py::postconv::MarkedNonRaising'
   if not postconv_types_index_map: return PASS
   if ast_type.params:  # container type
     index = '{%s}' % ','.join(

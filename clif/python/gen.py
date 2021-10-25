@@ -836,7 +836,10 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
     for i in range(nret):
       yield I+'if ((p=Clif_PyObjFrom(std::move(%s%d), %s)) == nullptr) {' % (
           ret, i,
-          postconv.Initializer(func_ast.returns[i].type, typepostconversion))
+          postconv.Initializer(
+              func_ast.returns[i].type,
+              typepostconversion,
+              marked_non_raising=func_ast.marked_non_raising))
       yield I+I+'Py_DECREF(result_tuple);'
       yield I+I+'return nullptr;'
       yield I+'}'
@@ -867,8 +870,10 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
   elif nret:
     yield I+'return Clif_PyObjFrom(std::move(%s0%s), %s);' % (
         ret, ('.value()' if optional_ret0 else ''),
-        'py::postconv::MarkedNonRaising' if func_ast.marked_non_raising else
-        postconv.Initializer(func_ast.returns[0].type, typepostconversion))
+        postconv.Initializer(
+            func_ast.returns[0].type,
+            typepostconversion,
+            marked_non_raising=func_ast.marked_non_raising))
   elif return_self or ctxmgr == '__enter__@':
     yield I+'Py_INCREF(self);'
     yield I+'return self;'

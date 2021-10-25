@@ -25,7 +25,17 @@ namespace clif_testing {
 
 struct TestNonRaising {};
 
-TestNonRaising MakeTestNonRaising() { return TestNonRaising(); }
+inline TestNonRaising ReturnTestNonRaising() { return TestNonRaising(); }
+
+inline TestNonRaising ReturnTestNonRaisingAndIval(int *ival) {
+  *ival = 3;
+  return TestNonRaising();
+}
+
+inline int ReturnIvalAndTestNonRaising(TestNonRaising *tnr) {
+  *tnr = TestNonRaising();
+  return 5;
+}
 
 // CLIF use `::clif_testing::TestNonRaising` as TestNonRaising
 inline PyObject* Clif_PyObjFrom(const TestNonRaising& c,
