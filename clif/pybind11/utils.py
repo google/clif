@@ -14,8 +14,15 @@
 
 """Utility functions for pybind11 code generator."""
 
+from clif.protos import ast_pb2
+
+
 # Use two spaces indentation for generated code.
 I = '  '
+
+
+def trampoline_name(class_decl: ast_pb2.ClassDecl) -> str:
+  return f'{class_decl.name.native}_trampoline'
 
 
 def is_nested_template(s: str) -> bool:

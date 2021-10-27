@@ -16,7 +16,7 @@
 
 import itertools
 import re
-from typing import Dict, Generator, List, Text
+from typing import Generator, List, Set
 
 from clif.protos import ast_pb2
 from clif.pybind11 import classes
@@ -92,18 +92,19 @@ class ModuleGenerator(object):
     yield from self._generate_headlines()
 
     # Find and keep track of virtual functions.
-    python_override_class_names = {}
+    trampoline_class_names = set()
 
     for decl in ast.decls:
-      yield from self._generate_python_override_class_names(
-          python_override_class_names, decl)
+      yield from self._generate_trampoline_classes(trampoline_class_names, decl)
 
     imported_types = type_casters.get_imported_types(ast, self._include_paths)
     known_types = set([t.cpp_name for t in self._types])
     unknown_types = self._all_types.difference(imported_types).difference(
         known_types)
+    yield ''
     for unknown_type in unknown_types:
       yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({unknown_type})'
+    yield ''
 
     yield from type_casters.generate_from(ast, self._include_paths)
     yield f'PYBIND11_MODULE({self._module_name}, m) {{'
@@ -126,9 +127,7 @@ class ModuleGenerator(object):
         yield from consts.generate_from('m', decl.const)
       elif decl.decltype == ast_pb2.Decl.Type.CLASS:
         yield from classes.generate_from(
-            decl.class_, 'm',
-            python_override_class_names.get(decl.class_.name.cpp_name, ''),
-            self._capsule_types)
+            decl.class_, 'm', trampoline_class_names, self._capsule_types)
       elif decl.decltype == ast_pb2.Decl.Type.ENUM:
         yield from enums.generate_from('m', decl.enum)
     yield '}'
@@ -175,10 +174,8 @@ class ModuleGenerator(object):
     yield 'namespace py = pybind11;'
     yield ''
 
-  def _generate_python_override_class_names(
-      self, python_override_class_names: Dict[Text, Text], decl: ast_pb2.Decl,
-      trampoline_name_suffix: str = '_trampoline',
-      self_life_support: str = 'py::trampoline_self_life_support'):
+  def _generate_trampoline_classes(
+      self, trampoline_class_names: Set[str], decl: ast_pb2.Decl):
     """Generates Python overrides classes dictionary for virtual functions."""
     if decl.decltype == ast_pb2.Decl.Type.CLASS:
       virtual_members = []
@@ -187,20 +184,17 @@ class ModuleGenerator(object):
           virtual_members.append(member)
       if not virtual_members:
         return
-      python_override_class_name = (
-          f'{decl.class_.name.native}_{trampoline_name_suffix}')
-      assert decl.class_.name.cpp_name not in python_override_class_names
-      python_override_class_names[
-          decl.class_.name.cpp_name] = python_override_class_name
-      yield (f'struct {python_override_class_name} : '
-             f'{decl.class_.name.cpp_name}, {self_life_support} {{')
-      yield I + (
-          f'using {decl.class_.name.cpp_name}::{decl.class_.name.native};')
+      trampoline_class_name = utils.trampoline_name(decl.class_)
+      assert decl.class_.name.cpp_name not in trampoline_class_names
+      trampoline_class_names.add(trampoline_class_name)
+      yield (f'struct {trampoline_class_name} : {decl.class_.name.cpp_name}, '
+             'py::trampoline_self_life_support {')
+      class_name = decl.class_.name.cpp_name.split('::')[-1]
+      yield I + f'using {decl.class_.name.cpp_name}::{class_name};'
       for member in virtual_members:
         yield from self._generate_virtual_function(
             decl.class_.name.native, member.func)
-      if python_override_class_name:
-        yield '};'
+      yield '};'
 
   def _generate_virtual_function(self,
                                  class_name: str, func_decl: ast_pb2.FuncDecl):

@@ -28,14 +28,15 @@ I = utils.I
 
 def generate_from(
     class_decl: ast_pb2.ClassDecl, superclass_name: str,
-    python_override_class_name: str, capsule_types: Set[str]
+    trampoline_class_names: Set[str], capsule_types: Set[str]
 ) -> Generator[str, None, None]:
   """Generates a complete py::class_<>.
 
   Args:
     class_decl: Class declaration in proto format.
     superclass_name: String name of the superclass.
-    python_override_class_name: Virtual function class name.
+    trampoline_class_names: A Set of class names whose member functions
+      will be overriden in Python.
     capsule_types: A list of C++ types that are defined as capsules.
 
   Yields:
@@ -48,8 +49,9 @@ def generate_from(
     for base in class_decl.bases:
       if base.HasField('cpp_name'):
         definition += f', {base.cpp_name}'
-  if python_override_class_name:
-    definition += f', {python_override_class_name}'
+  trampoline_class_name = utils.trampoline_name(class_decl)
+  if trampoline_class_name in trampoline_class_names:
+    definition += f', {trampoline_class_name}'
   definition += (f'> {class_name}({superclass_name}, '
                  f'"{class_decl.name.native}"')
   if class_decl.HasField('docstring'):
@@ -86,7 +88,7 @@ def generate_from(
         yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.CLASS:
       for s in generate_from(member.class_, class_name,
-                             python_override_class_name, capsule_types):
+                             trampoline_class_names, capsule_types):
         yield I + s
 
   if (not constructor_defined and class_decl.cpp_has_def_ctor and
