@@ -111,6 +111,7 @@ class ModuleGenerator(object):
     yield I+('m.doc() = "CLIF-generated pybind11-based module for '
              f'{ast.source}";')
     yield I + 'py::google::ImportStatusModule();'
+    yield I + 'pybind11_protobuf::ImportNativeProtoCasters();'
     for i, unknown_type in enumerate(unknown_types):
       yield I + '{'
       yield I + I+ f'py::classh<{unknown_type}> CLIFBase{i}(m, "CLIFBase{i}");'
@@ -165,6 +166,7 @@ class ModuleGenerator(object):
     yield ''
     yield '#include "clif/pybind11/runtime.h"'
     yield '#include "clif/pybind11/type_casters.h"'
+    yield '#include "third_party/pybind11_protobuf/native_proto_caster.h"'
     yield ''
     for include in includes:
       yield f'#include "{include}"'

@@ -51,6 +51,8 @@ def _ParseCommandline(doc, argv):
   parser.add_argument('--allow_empty_package', action='store_true',
                       help=('Generate CLIF conversion library in ::clif '
                             'namespace, ADL will not work.'))
+  parser.add_argument('--pyclif_codegen_mode', default='c_api',
+                      help='The wrapper code that PyCLIF generates.')
   parser.add_argument('protobuf', nargs=1)
   return parser.parse_args(argv[1:])
 
@@ -88,6 +90,17 @@ def CreatePyTypeInfo(desc, path,
     for s in desc.Services():
       messages.append(types.CapsuleType(_CppName(s), _PyName(s, p), ns=n))
   return messages
+
+
+def GenerateForPybind11(messages):
+  """Generate no-op header files to bypass the checks of PyCLIF."""
+  with open(FLAGS.header_out, 'w') as hout:
+    for m in messages:
+      hout.write(f'// CLIF use `{m.cname}` as {m.pyname}, Pybind11Ignore')
+      hout.write('\n')
+
+  with open(FLAGS.ccdeps_out, 'w') as cout:
+    cout.write('')
 
 
 def GenerateFrom(messages, proto_filename, clif_hdr, proto_hdr):
@@ -147,7 +160,10 @@ def main(_):
   if not desc:
     raise _ParseError(desc.ErrorMsg())
   messages = CreatePyTypeInfo(desc, pypath, not FLAGS.allow_empty_package)
-  GenerateFrom(messages, name, hdr, pypath+'.pb.h')
+  if FLAGS.pyclif_codegen_mode == 'c_api':
+    GenerateFrom(messages, name, hdr, pypath+'.pb.h')
+  else:
+    GenerateForPybind11(messages)
 
 
 def ParseFlags():
