@@ -170,6 +170,7 @@ inline PyObject* Clif_PyObjFrom(T c, const py::PostConv& pc) {
 }
 
 PyObject* Clif_PyObjFrom(const std::string&, const py::PostConv&);
+PyObject* Clif_PyObjFrom(std::string_view, const py::PostConv&);
 // CLIF use `::std::string` as bytes
 
 typedef const char* char_ptr;  // A distinct type for constexpr CONST string.

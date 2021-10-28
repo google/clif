@@ -25,6 +25,10 @@ PyObject* Clif_PyObjFrom(const std::string& c, const py::PostConv& pc) {
   return pc.Apply(PyBytes_FromStringAndSize(c.data(), c.size()));
 }
 
+PyObject* Clif_PyObjFrom(std::string_view c, const py::PostConv& pc) {
+  return pc.Apply(PyBytes_FromStringAndSize(c.data(), c.size()));
+}
+
 PyObject* UnicodeFromBytes(PyObject* b) {
   if (!b || PyUnicode_Check(b)) return b;
   if (!PyBytes_Check(b)) {

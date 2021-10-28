@@ -82,7 +82,11 @@ std::string GetGloballyQualifiedName(const NamedDecl* decl) {
 }
 
 static const char kConstToken[] = "const ";  // Trailing space is important.
+#if LLVM_VERSION_MAJOR < 14
+static const char kCppCharArray[] = "const char [";
+#else
 static const char kCppCharArray[] = "const char[";
+#endif
 static const char kClifCharArray[] = "::clif::char_ptr";
 
 static std::string GetErrorCodeString(ClifErrorCode code) {
