@@ -169,7 +169,6 @@ inline PyObject* Clif_PyObjFrom(T c, const py::PostConv& pc) {
   return pc.Apply(PyBool_FromLong(c));
 }
 
-PyObject* Clif_PyObjFrom(const std::string&, const py::PostConv&);
 PyObject* Clif_PyObjFrom(std::string_view, const py::PostConv&);
 // CLIF use `::std::string` as bytes
 
