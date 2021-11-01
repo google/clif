@@ -27,3 +27,10 @@ from "clif/testing/python/extend_default_value_clif_aux.h":
       def __init__(self, v: int = default)
 
       value: int
+
+    class TestNestedDefaultValue:
+      class Inner:
+        def __init__(self, v: int)
+
+        @extend
+        def get_value(self, w: int = default) -> int

@@ -186,8 +186,7 @@ class Module(object):
 
   def FQClassName(self):
     """Get FQ current class name."""
-    fqn = (f.fqname for f in self.nested)
-    return '::'.join(fqn)
+    return self.nested[-1].fqname
 
   def WrapDecl(self, decl, parent_ns='', class_ns=''):
     """Process AST.Decl decl."""

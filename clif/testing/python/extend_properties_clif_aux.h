@@ -38,6 +38,22 @@ inline void PropertyHolder__extend__set_value_gs(
   self.value_holder_.set_value(value);
 }
 
+inline int NestedPropertyHolder_Inner__extend__get_value(
+    NestedPropertyHolder::Inner& self) {
+  return self.value_holder_.get_value() + 72;
+}
+
+
+inline int NestedPropertyHolder_Inner__extend__get_value_gs(
+    NestedPropertyHolder::Inner& self) {
+  return self.value_holder_.get_value() + 24;
+}
+
+inline void NestedPropertyHolder_Inner__extend__set_value_gs(
+    NestedPropertyHolder::Inner& self, int value) {
+  self.value_holder_.set_value(value + 57);
+}
+
 }  // namespace extend_properties
 }  // namespace clif_testing
 

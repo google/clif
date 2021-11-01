@@ -14,6 +14,13 @@ struct DefaultValueInConstructor {
   int value;
 };
 
+struct TestNestedDefaultValue {
+  struct Inner {
+    Inner(int v) : value{v + 70} {}
+    int value;
+  };
+};
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_EXTEND_DEFAULT_VALUE_H_

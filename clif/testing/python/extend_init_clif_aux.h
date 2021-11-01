@@ -48,6 +48,13 @@ TestNoDefaultConstructor__extend__init__() {
   return res;
 }
 
+inline std::unique_ptr<TestNestedInit::Inner>
+TestNestedInit_Inner__extend__init__(int v) {
+  auto res = std::make_unique<TestNestedInit::Inner>();
+  res->value = v + 102;
+  return res;
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_PYTHON_EXTEND_INIT_CLIF_AUX_H_

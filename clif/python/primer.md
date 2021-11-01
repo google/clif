@@ -50,7 +50,7 @@ but a little more involved:
     are also useful as a reference.
 
 Extending a C++ class with constructors is special. All extended constructors
-need to return a `unique_ptr` to the created instance:
+need to return a `unique_ptr` or `shared_ptr` to the created instance:
 
 *   [clif/testing/python/extend_init_clif_aux.h](
     ../testing/python/extend_init_clif_aux.h)
@@ -59,6 +59,20 @@ C++ classes can also be extended with properties:
 
 *   [clif/testing/python/extend_properties.clif](
     ../testing/python/extend_properties.clif)
+
+Caveat: When extending nested classes, type names in extended functions or
+properties must be fully qualified. For example::
+
+```
+class Outer:
+  class Inner:
+    def foo(other: Inner)  # Not using @extend: OK with unqualified type name.
+
+    @extend
+    def bar(other: Outer.Inner)  # Needs fully-qualified type name.
+```
+
+Unfortunately this is not easy to fix (cost/benefit is high).
 
 The `_clif_aux.h` feature can also be useful to work around PyCLIF limitations
 or bugs.

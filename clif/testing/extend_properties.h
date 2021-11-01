@@ -30,6 +30,13 @@ struct PropertyHolder {
   ValueHolder value_holder_;
 };
 
+struct NestedPropertyHolder {
+  struct Inner {
+    Inner(int v) : value_holder_{v + 93} {}
+    ValueHolder value_holder_;
+  };
+};
+
 }  // namespace clif_testing
 
 #endif  // CLIF_TESTING_EXTEND_PROPERTIES_H_

@@ -88,3 +88,15 @@ from "clif/testing/python/extend_from_clifaux_clif_aux.h":
       def `tbr_custom_function_name` as chosen_method_name(self, i: int, j: int) -> int
       @extend
       def `::clif_testing::extend_from_clifaux::ns_down::tbr_function` as ns_down_method(self, i: int, j: int) -> int
+
+    class TestNestedMethod:
+      class Inner:
+        def __init__(self, v: int)
+        @extend
+        def get_value(self) -> int
+
+        # Not using @extend
+        def fine_with_unqualified_names(self, other: Inner) -> Inner
+
+        @extend
+        def needs_qualified_names(self, other: TestNestedMethod.Inner) -> TestNestedMethod.Inner

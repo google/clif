@@ -28,3 +28,9 @@ from "clif/testing/python/extend_classmethods_clif_aux.h":
       @extend
       @classmethod
       def set_static_value(cls, v: int)
+
+    class TestNestedClassmethod:
+      class Inner:
+        @extend
+        @classmethod
+        def get_static_value(cls) -> int

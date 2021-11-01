@@ -28,3 +28,15 @@ from "clif/testing/python/extend_properties_clif_aux.h":
       # Property with both getter and setter
       @extend
       value_gs: int = property(`get_value_gs`, `set_value_gs`)
+
+    class NestedPropertyHolder:
+      class Inner:
+        def __init__(self, v: int)
+
+        # Simple getter
+        @extend
+        value: int = property(`get_value`)
+
+        # Property with both getter and setter
+        @extend
+        value_gs: int = property(`get_value_gs`, `set_value_gs`)

@@ -33,6 +33,17 @@ class WhatHappened {
 
 class ToBeRenamed : public WhatHappened {};
 
+struct TestNestedMethod {
+  struct Inner {
+    Inner(int v) : value{v + 10} {}
+    int value;
+
+    Inner fine_with_unqualified_names(const Inner& other) {
+      return Inner(100 * value + other.value);
+    }
+  };
+};
+
 }  // namespace extend_from_clifaux
 }  // namespace clif_testing
 

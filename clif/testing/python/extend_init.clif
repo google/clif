@@ -41,3 +41,9 @@ from "clif/testing/python/extend_init_clif_aux.h":
       def __init__(self)
       def get_value(self) -> int
       def set_value(self, v: int)
+
+    class TestNestedInit:
+      class Inner:
+        @extend
+        def __init__(self, v: int)
+        def get_value(self) -> int

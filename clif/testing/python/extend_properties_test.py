@@ -37,6 +37,16 @@ class ExtendPropertiesTest(absltest.TestCase):
     ph.value_gs = new_value
     self.assertEqual(ph.value_gs, new_value)
 
+  def test_nested_property_getter(self):
+    ph = extend_properties.NestedPropertyHolder.Inner(83)
+    self.assertEqual(ph.value, 83 + 93 + 72)
+
+  def test_nested_property_getter_setter(self):
+    ph = extend_properties.NestedPropertyHolder.Inner(29)
+    self.assertEqual(ph.value_gs, 29 + 93 + 24)
+    ph.value_gs = 8
+    self.assertEqual(ph.value_gs, 8 + 57 + 24)
+
 
 if __name__ == '__main__':
   absltest.main()

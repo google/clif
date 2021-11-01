@@ -110,6 +110,15 @@ class ExtendFromClifAuxTest(absltest.TestCase):
     self.assertEqual(
         rfp.Last(), 'ns_down::tbr_function(ToBeRenamed*, 117) -> int')
 
+  def test_nested_method(self):
+    obj = extend_from_clifaux.TestNestedMethod.Inner(3)
+    self.assertEqual(obj.get_value(), 3 + 10 + 200)
+    obj2 = extend_from_clifaux.TestNestedMethod.Inner(6)
+    obj3 = obj.fine_with_unqualified_names(obj2)
+    self.assertEqual(obj3.get_value(), ((3 + 10) * 100 + (6 + 10)) + 10 + 200)
+    obj4 = obj.needs_qualified_names(obj2)
+    self.assertEqual(obj4.get_value(), ((3 + 10) * 300 + (6 + 10)) + 10 + 200)
+
 
 if __name__ == '__main__':
   absltest.main()

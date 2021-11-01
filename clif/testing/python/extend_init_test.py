@@ -70,6 +70,10 @@ class ExtendInitTest(absltest.TestCase):
     with self.assertRaises(TypeError):
       extend_init.TestNoDefaultConstructor(a=1)
 
+  def test_nested_init(self):
+    obj = extend_init.TestNestedInit.Inner(21)
+    self.assertEqual(obj.get_value(), 21 + 102)
+
 
 if __name__ == '__main__':
   absltest.main()

@@ -177,6 +177,18 @@ inline int tbr_function(ToBeRenamed* self, int i, int j) {
 
 }  // namespace ns_down
 
+inline int TestNestedMethod_Inner__extend__get_value(
+    const TestNestedMethod::Inner& self) {
+  return self.value + 200;
+}
+
+inline TestNestedMethod::Inner
+TestNestedMethod_Inner__extend__needs_qualified_names(
+    const TestNestedMethod::Inner& self,
+    const TestNestedMethod::Inner& other) {
+  return TestNestedMethod::Inner(300 * self.value + other.value);
+}
+
 }  // namespace extend_from_clifaux
 
 }  // namespace clif_testing

@@ -12,6 +12,10 @@ struct Abc {
   static int static_value;
 };
 
+struct TestNestedClassmethod {
+  struct Inner {};
+};
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_EXTEND_CLASSMETHODS_H_

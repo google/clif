@@ -50,6 +50,13 @@ struct TestNoDefaultConstructor {
   int value;
 };
 
+struct TestNestedInit {
+  struct Inner {
+    int get_value() { return value; }
+    int value = -99;
+  };
+};
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_EXTEND_INIT_H_

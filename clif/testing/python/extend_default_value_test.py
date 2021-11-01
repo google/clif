@@ -53,6 +53,11 @@ class ExtendDefaultValueTest(absltest.TestCase):
     obj = extend_default_value.DefaultValueInConstructor(123)
     self.assertEqual(obj.value, 123)
 
+  def test_nested_default_value(self):
+    obj = extend_default_value.TestNestedDefaultValue.Inner(6)
+    self.assertEqual(obj.get_value(), 6 + 70 + 800 + 3)
+    self.assertEqual(obj.get_value(700), 6 + 70 + 700 + 3)
+
 
 if __name__ == '__main__':
   absltest.main()

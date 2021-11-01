@@ -19,6 +19,11 @@ DefaultValueInConstructor__extend__init__(
   return res;
 }
 
+inline int TestNestedDefaultValue_Inner__extend__get_value(
+    const TestNestedDefaultValue::Inner& self, int w = 800) {
+  return self.value + w + 3;
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_PYTHON_EXTEND_DEFAULT_VALUE_CLIF_AUX_H_

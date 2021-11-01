@@ -29,6 +29,10 @@ class ExtendClassmethodsTest(absltest.TestCase):
     extend_classmethods.Abc.set_static_value(expected_value)
     self.assertEqual(extend_classmethods.Abc.get_static_value(), expected_value)
 
+  def test_nested_classmethod(self):
+    v = extend_classmethods.TestNestedClassmethod.Inner.get_static_value()
+    self.assertEqual(v, 472)
+
 
 if __name__ == '__main__':
   absltest.main()
