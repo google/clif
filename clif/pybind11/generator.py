@@ -245,7 +245,8 @@ class ModuleGenerator(object):
         py_name = '.'.join([parent_py_name, py_name])
       class_type = gen_type_info.ClassType(
           cpp_name=decl.class_.name.cpp_name, py_name=py_name,
-          cpp_namespace=cpp_namespace)
+          cpp_namespace=cpp_namespace,
+          cpp_has_public_dtor=decl.class_.cpp_has_public_dtor)
       self._types.append(class_type)
       if not decl.class_.suppress_upcasts:
         bases = list(decl.class_.bases)

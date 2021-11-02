@@ -42,6 +42,8 @@ class BaseType:
 class ClassType(BaseType):
   """Wraps a C++ Class."""
 
+  cpp_has_public_dtor: bool
+
   def generate_type_caster(self) -> Generator[str, None, None]:
     yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({self.cpp_name})'
 
@@ -54,6 +56,9 @@ class ClassType(BaseType):
            '::clif::py::PostConv);')
     yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}*, '
            '::clif::py::PostConv);')
+    if self.cpp_has_public_dtor:
+      yield (f'PyObject* Clif_PyObjFrom(std::unique_ptr<{self.cpp_name}>,'
+             '::clif::py::PostConv);')
     yield ''
     yield f'bool Clif_PyObjAs(PyObject* input, {self.cpp_name}** output);'
 
@@ -63,7 +68,12 @@ class ClassType(BaseType):
            '::clif::py::PostConv) {')
     yield '  return pybind11::cast(c).ptr();'
     yield '}'
-    yield ''
+    if self.cpp_has_public_dtor:
+      yield (f'PyObject* Clif_PyObjFrom(std::unique_ptr<{self.cpp_name}> c, '
+             '::clif::py::PostConv) {')
+      yield '  return pybind11::cast(std::move(c)).ptr();'
+      yield '}'
+      yield ''
     yield (f'PyObject* Clif_PyObjFrom({self.cpp_name}&& c, '
            '::clif::py::PostConv) {')
     yield '  return pybind11::cast(&c).ptr();'
