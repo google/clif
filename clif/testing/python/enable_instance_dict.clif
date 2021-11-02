@@ -29,3 +29,22 @@ from "clif/testing/enable_instance_dict.h":
     @enable_instance_dict
     class ConcreteNonTrivialDestructorWithDict:
       def __init__(self)
+
+    @enable_instance_dict
+    class BaseDD:
+      pass
+    @enable_instance_dict
+    class DrvdDD(BaseDD):
+      pass
+
+    class BaseND:
+      pass
+    @enable_instance_dict
+    class DrvdND(BaseND):
+      pass
+
+    @enable_instance_dict
+    class BaseDN:
+      pass
+    class DrvdDN(BaseDN):
+      pass

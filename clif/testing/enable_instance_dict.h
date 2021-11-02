@@ -34,6 +34,15 @@ class ConcreteNonTrivialDestructorWithDict {
   int* raw_pointer;
 };
 
+// N = No instance dict.
+// D = Has instance dict.
+struct BaseDD {};
+struct DrvdDD : BaseDD {};
+struct BaseND {};
+struct DrvdND : BaseND {};
+struct BaseDN {};
+struct DrvdDN : BaseDN {};
+
 }  // namespace clif_testing
 
 #endif  // CLIF_TESTING_ENABLE_INSTANCE_DICT_H_

@@ -343,8 +343,7 @@ def WrapperClassDef(name, ctype, cname, is_iter, has_iter, iter_ns,
     yield I+'iterator iter;'
   else:
     yield I+'::clif::Instance<%s> cpp;' % ctype
-    if enable_instance_dict:
-      yield I+'PyObject* instance_dict = nullptr;'
+    yield I+'PyObject* instance_dict = nullptr;'
     yield I+'PyObject* weakrefs = nullptr;'
   yield '};'
   if has_iter:

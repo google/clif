@@ -80,5 +80,14 @@ class ClassModuleAttrTest(parameterized.TestCase):
     self.assertIn('is not an acceptable base type', str(ctx.exception))
 
 
+class BaseDrvdTest(parameterized.TestCase):
+
+  @parameterized.parameters('DrvdDD', 'DrvdND', 'DrvdDN')
+  def testAssignToDict(self, drvd_type_name):
+    obj = getattr(enable_instance_dict, drvd_type_name)()
+    obj.foo = 'foo'
+    del obj  # Triggered SIGSEGV for DrvdDN before b/203381676 was fixed.
+
+
 if __name__ == '__main__':
   absltest.main()

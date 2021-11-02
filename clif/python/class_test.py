@@ -106,6 +106,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<StructTy> cpp;
+        PyObject* instance_dict = nullptr;
         PyObject* weakrefs = nullptr;
       };
 
@@ -300,6 +301,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<StructTy> cpp;
+        PyObject* instance_dict = nullptr;
         PyObject* weakrefs = nullptr;
       };
 
@@ -503,6 +505,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<StructTy> cpp;
+        PyObject* instance_dict = nullptr;
         PyObject* weakrefs = nullptr;
       };
 
@@ -733,6 +736,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<OutKlass> cpp;
+        PyObject* instance_dict = nullptr;
         PyObject* weakrefs = nullptr;
       };
 
@@ -743,6 +747,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<OutKlass::InnKlass> cpp;
+        PyObject* instance_dict = nullptr;
         PyObject* weakrefs = nullptr;
       };
 
@@ -1105,6 +1110,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<StructTy> cpp;
+        PyObject* instance_dict = nullptr;
         PyObject* weakrefs = nullptr;
       };
 
@@ -1310,6 +1316,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<StructTy> cpp;
+        PyObject* instance_dict = nullptr;
         PyObject* weakrefs = nullptr;
       };
 
@@ -1532,6 +1539,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<StructTy> cpp;
+        PyObject* instance_dict = nullptr;
         PyObject* weakrefs = nullptr;
       };
 
@@ -1705,6 +1713,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<StructCpp> cpp;
+        PyObject* instance_dict = nullptr;
         PyObject* weakrefs = nullptr;
       };
 
@@ -1866,6 +1875,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<Overrider> cpp;
+        PyObject* instance_dict = nullptr;
         PyObject* weakrefs = nullptr;
       };
 
@@ -2069,6 +2079,7 @@ class ClassTest(unittest.TestCase):
       struct wrapper {
         PyObject_HEAD
         ::clif::Instance<StructCpp> cpp;
+        PyObject* instance_dict = nullptr;
         PyObject* weakrefs = nullptr;
       };
 
