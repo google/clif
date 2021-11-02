@@ -16,8 +16,10 @@
 #ifndef CLIF_TESTING_IMPPORTED_INHERITANCE_H_
 #define CLIF_TESTING_IMPPORTED_INHERITANCE_H_
 #include "clif/testing/nested_inheritance.h"
+#include "clif/testing/nested_fields.h"
 namespace clif_testing {
 struct InheritImportedNestedInner : public Nested::Inner {};
 struct InheritImportedNested : public Nested {};
+struct InheritImportedNestedField : public DD {};
 }  // namespace clif_testing
 #endif  // CLIF_TESTING_IMPPORTED_INHERITANCE_H_

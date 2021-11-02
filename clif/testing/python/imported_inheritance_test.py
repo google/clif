@@ -30,6 +30,11 @@ class ImportedInheritanceTest(absltest.TestCase):
     n.a = 100
     self.assertEqual(n.a, 100)
 
+  def testInheritFields(self):
+    n = imported_inheritance.InheritImportedNestedField()
+    n.i = 100
+    self.assertEqual(n.i, 100)
+
 
 if __name__ == '__main__':
   absltest.main()

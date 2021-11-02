@@ -15,7 +15,7 @@
 """Declare various types to collect information for code generation."""
 
 import dataclasses
-from typing import Generator
+from typing import Generator, Set
 
 
 @dataclasses.dataclass
@@ -43,6 +43,7 @@ class ClassType(BaseType):
   """Wraps a C++ Class."""
 
   cpp_has_public_dtor: bool
+  py_bases: Set[str]
 
   def generate_type_caster(self) -> Generator[str, None, None]:
     yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({self.cpp_name})'

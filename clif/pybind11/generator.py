@@ -143,11 +143,21 @@ class ModuleGenerator(object):
   def _generate_import_modules(self,
                                ast: ast_pb2.AST) -> Generator[str, None, None]:
     """Generates pybind11 module imports."""
+    all_modules = set()
     for init in ast.extra_init:
       res = re.search(_IMPORTMODULEPATTERN, init)
       if res:
-        module_path = res.group('module_path')
-        yield I + f'py::module_::import("{module_path}");'
+        all_modules.add(res.group('module_path'))
+    namemap = {m.name: m.fq_name for m in ast.namemaps}
+    for c in self._types:
+      if isinstance(c, gen_type_info.ClassType):
+        for b in c.py_bases:
+          if b in namemap:
+            fq_py_base = namemap[b]
+            # converts `module.type` to `module`
+            all_modules.add(fq_py_base[:fq_py_base.rfind('.')])
+    for module_path in all_modules:
+      yield I + f'py::module_::import("{module_path}");'
 
   def _generate_headlines(self):
     """Generates #includes and headers."""
@@ -243,9 +253,11 @@ class ModuleGenerator(object):
       py_name = decl.class_.name.native
       if parent_py_name:
         py_name = '.'.join([parent_py_name, py_name])
+      py_bases = set(
+          [b.native for b in decl.class_.bases if b.native and not b.cpp_name])
       class_type = gen_type_info.ClassType(
           cpp_name=decl.class_.name.cpp_name, py_name=py_name,
-          cpp_namespace=cpp_namespace,
+          cpp_namespace=cpp_namespace, py_bases=py_bases,
           cpp_has_public_dtor=decl.class_.cpp_has_public_dtor)
       self._types.append(class_type)
       if not decl.class_.suppress_upcasts:

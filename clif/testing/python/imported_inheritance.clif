@@ -14,6 +14,7 @@
 
 from "clif/testing/python/nested_inheritance_clif.h" import *
 from clif.testing.python.nested_inheritance import Nested
+from clif.testing.python.nested_fields import DD
 
 from "clif/testing/imported_inheritance.h":
  namespace `clif_testing`:
@@ -23,3 +24,5 @@ from "clif/testing/imported_inheritance.h":
   class InheritImportedNested(Nested):
     pass
 
+  class InheritImportedNestedField(DD):  # Test Python import
+    pass
