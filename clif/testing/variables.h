@@ -20,6 +20,11 @@ const std::pair<int, int> kMyConstPair{ 0, 10 };
 const std::unordered_map<int, int> kMyConstMap({{1, 10}, {2, 20}, {3, 30}});
 const std::unordered_set<int> kMyConstSet({1, 2, 3});
 
+enum {
+  kMyEnum1 = 50,
+  kMyEnum2 = 100
+};
+
 }  // namespace variables
 }  // namespace clif_testing
 

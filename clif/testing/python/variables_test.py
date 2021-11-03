@@ -50,6 +50,10 @@ class VariablesTest(absltest.TestCase):
     expected_set = {1, 2, 3}
     self.assertSetEqual(expected_set, variables.kMyConstSet)
 
+  def test_enum(self):
+    self.assertEqual(variables.kMyEnum1, 50)
+    self.assertEqual(variables.kMyEnum2, 100)
+
 
 if __name__ == '__main__':
   absltest.main()

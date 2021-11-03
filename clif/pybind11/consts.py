@@ -22,4 +22,5 @@ I = utils.I
 def generate_from(class_name: str, const_decl: ast_pb2.ConstDecl):
   """Generates bindings code for constants."""
   yield I + (f'{class_name}.attr("{const_decl.name.native}") = '
-             f'py::cast({const_decl.name.cpp_name});')
+             f'py::cast(static_cast<{const_decl.type.cpp_type}>('
+             f'{const_decl.name.cpp_name}));')

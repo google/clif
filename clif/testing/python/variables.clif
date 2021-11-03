@@ -24,3 +24,5 @@ from "clif/testing/variables.h":
     const kMyConstPair: tuple<int, int>
     const kMyConstMap: dict<int, int>
     const kMyConstSet: set<int>
+    const kMyEnum1: int
+    const kMyEnum2: int
