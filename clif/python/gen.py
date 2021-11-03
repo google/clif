@@ -575,7 +575,10 @@ def _CreateInputParameter(func_name, ast_param, arg, args):
           args.append('&%s.value()' % arg)
           return (False, '::absl::optional<%s> %s;' % (t, arg))
     raise TypeError("Can't convert %s to %s" % (ptype.lang_type, ctype))
-  if (smartptr or ptype.cpp_abstract) and not ptype.cpp_touniqptr_conversion:
+  if ((smartptr or ptype.cpp_abstract) and
+      not ptype.cpp_touniqptr_conversion and
+      not (ctype.startswith('::std::unique_ptr') and
+           ast_param.default_value == 'default')):
     raise TypeError('Can\'t create "%s" variable (C++ type %s) in function %s'
                     ', no valid conversion defined'
                     % (ast_param.name.native, ctype, func_name))
@@ -715,9 +718,15 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
                              ' argument. Drop =default in def %s(%s).'
                              % (pyname, p.name.native))
           if n < nargs:
-            yield I+I+('if (!a[{i}]) return DefaultArgMissedError('
-                       '"{}", names[{i}]);'.format(pyname, i=i))
-          yield I+I+cvt
+            if p.type.cpp_type.startswith('::std::unique_ptr'):
+              yield I+I+'if (!a[%d]) { /* default-constructed smartptr */ }' % i
+              yield I+I+'else '+cvt
+            else:
+              yield I+I+('if (!a[{i}]) return DefaultArgMissedError('
+                         '"{}", names[{i}]);'.format(pyname, i=i))
+              yield I+I+cvt
+          else:
+            yield I+I+cvt
           for s in YieldCheckNullptr(I+I):
             yield s
         elif (p.default_value and

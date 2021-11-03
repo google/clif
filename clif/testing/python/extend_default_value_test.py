@@ -46,6 +46,42 @@ class ExtendDefaultValueTest(absltest.TestCase):
     abc.sum_and_set_values(v1=v1, v2=v2)
     self.assertEqual(abc.get_value(), expected_value)
 
+  def test_pass_unique_ptr(self):
+    abc = extend_default_value.Abc(64)
+    kv = {9: 3, 7: 5}
+
+    f = abc.pass_unique_ptr_kv
+    res = f()
+    self.assertEqual(res, 64 + 46 + 2)
+    res = f(kv)
+    self.assertEqual(res, 64 + 46 + 9 * 10 + 3 + 7 * 10 + 5 + 2)
+
+    f = abc.pass_unique_ptr_kv_v
+    res = f()
+    self.assertEqual(res, 64 + 46 + 8)
+    res = f(kv)
+    self.assertEqual(res, 64 + 46 + 9 * 10 + 3 + 7 * 10 + 5 + 8)
+    res = f(kv, 1)
+    self.assertEqual(res, 64 + 46 + 9 * 10 + 3 + 7 * 10 + 5 + 1)
+
+    f = abc.pass_unique_ptr_v_kv
+    res = f()
+    self.assertEqual(res, 64 + 46 + 4)
+    res = f(7)
+    self.assertEqual(res, 64 + 46 + 7)
+    res = f(7, kv)
+    self.assertEqual(res, 64 + 46 + 9 * 10 + 3 + 7 * 10 + 5 + 7)
+
+    f = abc.pass_unique_ptr_v_kv_w
+    res = f()
+    self.assertEqual(res, 64 + 46 + 5 * 100 + 9)
+    res = f(7)
+    self.assertEqual(res, 64 + 46 + 7 * 100 + 9)
+    res = f(7, kv)
+    self.assertEqual(res, 64 + 46 + 9 * 10 + 3 + 7 * 10 + 5 + 7 * 100 + 9)
+    res = f(7, kv, 8)
+    self.assertEqual(res, 64 + 46 + 9 * 10 + 3 + 7 * 10 + 5 + 7 * 100 + 8)
+
   def test_default_value_in_constructor(self):
     expected_value = 10
     obj = extend_default_value.DefaultValueInConstructor()

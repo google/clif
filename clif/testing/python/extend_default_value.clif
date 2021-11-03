@@ -17,10 +17,22 @@ from "clif/testing/python/extend_default_value_clif_aux.h":
     class Abc:
       def __init__(self, v: int)
 
+      def get_value(self) -> int
+
       @extend
       def sum_and_set_values(self, v1: int = default, v2: int = default)
 
-      def get_value(self) -> int
+      @extend
+      def pass_unique_ptr_kv(self, kv: `std::map` as dict<int, int> = default) -> int
+
+      @extend
+      def pass_unique_ptr_kv_v(self, kv: `std::map` as dict<int, int> = default, v: int = default) -> int
+
+      @extend
+      def pass_unique_ptr_v_kv(self, v: int = default, kv: `std::map` as dict<int, int> = default) -> int
+
+      @extend
+      def pass_unique_ptr_v_kv_w(self, v: int = default, kv: `std::map` as dict<int, int> = default, w: int = default) -> int
 
     class DefaultValueInConstructor:
       @extend
