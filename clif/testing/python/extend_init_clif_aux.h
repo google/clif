@@ -16,6 +16,8 @@
 #ifndef THIRD_PARTY_CLIF_TESTING_PYTHON_EXTEND_INIT_CLIF_AUX_H_
 #define THIRD_PARTY_CLIF_TESTING_PYTHON_EXTEND_INIT_CLIF_AUX_H_
 
+#include <Python.h>
+
 #include <memory>
 
 #include "clif/testing/extend_init.h"
@@ -53,6 +55,15 @@ TestNestedInit_Inner__extend__init__(int v) {
   auto res = std::make_unique<TestNestedInit::Inner>();
   res->value = v + 102;
   return res;
+}
+
+inline std::unique_ptr<TestPyErrFromConstructor>
+TestPyErrFromConstructor__extend__init__(int v) {
+  if (v == 0) {
+    return std::make_unique<TestPyErrFromConstructor>();
+  }
+  PyErr_SetString(PyExc_ValueError, "RaisedFromExtendInit");
+  return nullptr;
 }
 
 }  // namespace clif_testing

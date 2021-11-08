@@ -74,6 +74,14 @@ class ExtendInitTest(absltest.TestCase):
     obj = extend_init.TestNestedInit.Inner(21)
     self.assertEqual(obj.get_value(), 21 + 102)
 
+  def test_py_err_from_constructor(self):
+    self.assertIsInstance(
+        extend_init.TestPyErrFromConstructor(0),
+        extend_init.TestPyErrFromConstructor)
+    with self.assertRaises(ValueError) as ctx:
+      extend_init.TestPyErrFromConstructor(1)
+    self.assertEqual(str(ctx.exception), 'RaisedFromExtendInit')
+
 
 if __name__ == '__main__':
   absltest.main()

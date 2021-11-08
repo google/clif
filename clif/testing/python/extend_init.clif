@@ -47,3 +47,8 @@ from "clif/testing/python/extend_init_clif_aux.h":
         @extend
         def __init__(self, v: int)
         def get_value(self) -> int
+
+    class TestPyErrFromConstructor:
+      @do_not_release_gil  # Critical.
+      @extend
+      def __init__(self, v: int)

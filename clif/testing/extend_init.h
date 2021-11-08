@@ -57,6 +57,8 @@ struct TestNestedInit {
   };
 };
 
+struct TestPyErrFromConstructor {};
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_EXTEND_INIT_H_

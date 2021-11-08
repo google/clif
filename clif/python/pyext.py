@@ -259,6 +259,9 @@ class Module(object):
         cpp = _GetCppObj()
         call = ('%s = ::clif::Instance<%s>' % (cpp, self.FQClassName()) +
                 '(%s%s)')  # % (fully-qualified function name, params_list)
+        if f.py_keep_gil:
+          # The assumption is that PyErrSet* or similar is used.
+          call += '; if (%s == nullptr) return nullptr' % cpp
         return call
     elif (self.nested and not f.classmethod and not f.cpp_opfunction):
       cpp = _GetCppObj()
