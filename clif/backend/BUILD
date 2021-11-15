@@ -89,6 +89,7 @@ cc_test(
     defines = ["CLIF_BACKEND_SOURCE_DIR=\\\"clif/backend\\\""],
     deps = [
         ":ast",
+        "//devtools/build/runtime:get_runfiles_dir",
         "@com_google_absl//absl/flags:flag",
         "@com_google_googletest//:gtest_main",
         "@llvm-project//clang:ast",
@@ -117,6 +118,7 @@ cc_test(
         ":matcher",
         ":strutil",
         "//clif/protos:ast_cc_proto",
+        "//devtools/build/runtime:get_runfiles_dir",
         "@com_google_absl//absl/flags:flag",
         "@com_google_googletest//:gtest_main",
         "@com_google_protobuf//:protobuf_headers",
