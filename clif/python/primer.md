@@ -666,7 +666,41 @@ ScaleWithRatios(5, offset=2)  # Raises ValueError as a value for
 
 ### Post processing return values
 
-Coming soon!
+C and C++ APIs often return a value indicating an error. It may be more Pythonic
+for this to be an exception. To accomplish this, CLIF supports the concept of
+post-processing return value filters. This saves you from needing to create
+Python wrapper libraries for everything to make common C++ API idioms Pythonic.
+
+Imagine this C++ API:
+
+```cpp
+// Returns False on error such as no such user.
+bool get_names(uint64_t user_id, std::vector<absl::string_view>* names);
+```
+
+Rather than get a tuple in Python, you just want the list or an exception. Use a
+Python post processor function to accomplish this in your .clif file via this
+syntax:
+
+```python
+from clif.python.postproc import ValueErrorOnFalse
+
+from "users.h":
+  def get_names(user_id: int) -> (bool, list<str>):
+    return ValueErrorOnFalse(...)
+```
+
+Now it returns a `List[str]` or raises an exception. Pythonic!
+
+Remember that `.clif` files are not actual code, the `return` "statement" and
+`...` are syntactic sugar to tell clif to invoke a given result post-processor.
+CLIF will import the Python name and call it as a post-processor passing it all
+of the return values as positional arguments. Whatever it returns becomes the
+actual return value.
+
+Some commonly needed post-processors have been provided in the above imported
+library with CLIF. You can also
+provide your own Python post-processor library.
 
 ## Naming Rules in CLIF Files {#naming_rules}
 
