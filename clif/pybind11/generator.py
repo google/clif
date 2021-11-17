@@ -16,6 +16,7 @@
 
 import itertools
 import re
+import types
 from typing import Generator, List, Set
 
 from clif.protos import ast_pb2
@@ -45,10 +46,15 @@ class ModuleGenerator(object):
     self._types = []
     self._capsule_types = set()
     self._all_types = set()
+    self._namemap = {}
 
-  def register_types(self, ast: ast_pb2.AST) -> None:
+  def preprocess_ast(self) -> None:
     """Preprocess the ast to collect type information."""
-    for decl in ast.decls:
+    self._namemap = {
+        m.name: types.SimpleNamespace(fq_name=m.fq_name, cpp_name='')
+        for m in self._ast.namemaps
+    }
+    for decl in self._ast.decls:
       self._register_types(decl)
     self._types = sorted(self._types, key=lambda gen_type: gen_type.cpp_name)
     self._capsule_types = set([
@@ -97,10 +103,13 @@ class ModuleGenerator(object):
     for decl in ast.decls:
       yield from self._generate_trampoline_classes(trampoline_class_names, decl)
 
-    imported_types = type_casters.get_imported_types(ast, self._include_paths)
+    cpp_import_types = type_casters.get_cpp_import_types(
+        ast, self._include_paths)
+    python_import_types = set(
+        [t.cpp_name for t in self._namemap.values() if t.cpp_name])
     known_types = set([t.cpp_name for t in self._types])
-    unknown_types = self._all_types.difference(imported_types).difference(
-        known_types)
+    unknown_types = self._all_types.difference(cpp_import_types).difference(
+        python_import_types).difference(known_types)
     yield ''
     for unknown_type in unknown_types:
       yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({unknown_type})'
@@ -148,12 +157,11 @@ class ModuleGenerator(object):
       res = re.search(_IMPORTMODULEPATTERN, init)
       if res:
         all_modules.add(res.group('module_path'))
-    namemap = {m.name: m.fq_name for m in ast.namemaps}
     for c in self._types:
       if isinstance(c, gen_type_info.ClassType):
         for b in c.py_bases:
-          if b in namemap:
-            fq_py_base = namemap[b]
+          if b in self._namemap:
+            fq_py_base = self._namemap[b].fq_name
             # converts `module.type` to `module`
             all_modules.add(fq_py_base[:fq_py_base.rfind('.')])
     for module_path in all_modules:
@@ -277,6 +285,8 @@ class ModuleGenerator(object):
             assert i + 1 < len(bases), ('Cannot find cpp name for class '
                                         f'{base.native}')
             assert bases[i+1].cpp_name, f'Unexpected base class {bases[i+1]}'
+            if base.native in self._namemap:
+              self._namemap[base.native].cpp_name = bases[i+1].cpp_name
             i += 2
           else:
             if base.cpp_name:

@@ -33,8 +33,8 @@ _CLIF_USE = re.compile(
     f'({_PYOBJFROM_ONLY}|{_PYOBJAS_ONLY}|{_PYBIND11_IGNORE}|)')
 
 
-def get_imported_types(ast: ast_pb2.AST,
-                       include_paths: List[str]) -> Set[str]:
+def get_cpp_import_types(ast: ast_pb2.AST,
+                         include_paths: List[str]) -> Set[str]:
   """Get cpp types that are imported from other header files."""
   result = set()
   includes = set(ast.usertype_includes)
@@ -56,9 +56,10 @@ def _get_clif_uses(
         lines = include_file.readlines()
         for line in lines:
           use = _CLIF_USE.match(line)
-          if use and _PYBIND11_IGNORE not in use[0]:
+          if use:
             results.append(types.SimpleNamespace(
                 cpp_name=use.group('cpp_name'), py_name=use.group('py_name'),
+                pybind11_ignore=_PYBIND11_IGNORE in use[0],
                 generate_load=_PYOBJFROM_ONLY not in use[0],
                 generate_cast=_PYOBJAS_ONLY not in use[0]))
       break
@@ -96,9 +97,10 @@ def generate_from(ast: ast_pb2.AST,
       continue
     clif_uses = _get_clif_uses(include, include_paths)
     for clif_use in clif_uses:
-      yield from _generate_type_caster(clif_use.py_name, clif_use.cpp_name,
-                                       clif_use.generate_load,
-                                       clif_use.generate_cast)
+      if not clif_use.pybind11_ignore:
+        yield from _generate_type_caster(clif_use.py_name, clif_use.cpp_name,
+                                         clif_use.generate_load,
+                                         clif_use.generate_cast)
 
 
 def _generate_type_caster(
