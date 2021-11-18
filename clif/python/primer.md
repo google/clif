@@ -686,7 +686,7 @@ syntax:
 from clif.python.postproc import ValueErrorOnFalse
 
 from "users.h":
-  def get_names(user_id: int) -> (bool, list<str>):
+  def get_names(user_id: int) -> (status: bool, names: list<str>):
     return ValueErrorOnFalse(...)
 ```
 
