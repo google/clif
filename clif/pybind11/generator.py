@@ -47,6 +47,7 @@ class ModuleGenerator(object):
     self._capsule_types = set()
     self._all_types = set()
     self._namemap = {}
+    self._registered_types = set()
 
   def preprocess_ast(self) -> None:
     """Preprocess the ast to collect type information."""
@@ -61,6 +62,12 @@ class ModuleGenerator(object):
         t.py_name for t in self._types
         if isinstance(t, gen_type_info.CapsuleType)
     ])
+    cpp_import_types = type_casters.get_cpp_import_types(
+        self._ast, self._include_paths)
+    python_import_types = set(
+        [t.cpp_name for t in self._namemap.values() if t.cpp_name])
+    self._registered_types = set([t.cpp_name for t in self._types]).union(
+        cpp_import_types).union(python_import_types)
 
   def generate_header(self,
                       ast: ast_pb2.AST) -> Generator[str, None, None]:
@@ -102,19 +109,7 @@ class ModuleGenerator(object):
 
     for decl in ast.decls:
       yield from self._generate_trampoline_classes(trampoline_class_names, decl)
-
-    cpp_import_types = type_casters.get_cpp_import_types(
-        ast, self._include_paths)
-    python_import_types = set(
-        [t.cpp_name for t in self._namemap.values() if t.cpp_name])
-    known_types = set([t.cpp_name for t in self._types])
-    unknown_types = self._all_types.difference(cpp_import_types).difference(
-        python_import_types).difference(known_types)
     yield ''
-    for unknown_type in unknown_types:
-      yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({unknown_type})'
-    yield ''
-
     yield from type_casters.generate_from(ast, self._include_paths)
     yield f'PYBIND11_MODULE({self._module_name}, m) {{'
     yield from self._generate_import_modules(ast)
@@ -122,10 +117,6 @@ class ModuleGenerator(object):
              f'{ast.source}";')
     yield I + 'py::google::ImportStatusModule();'
     yield I + 'pybind11_protobuf::ImportNativeProtoCasters();'
-    for i, unknown_type in enumerate(unknown_types):
-      yield I + '{'
-      yield I + I+ f'py::classh<{unknown_type}> CLIFBase{i}(m, "CLIFBase{i}");'
-      yield I + '}'
 
     for decl in ast.decls:
       if decl.decltype == ast_pb2.Decl.Type.FUNC:
@@ -136,7 +127,8 @@ class ModuleGenerator(object):
         yield from consts.generate_from('m', decl.const)
       elif decl.decltype == ast_pb2.Decl.Type.CLASS:
         yield from classes.generate_from(
-            decl.class_, 'm', trampoline_class_names, self._capsule_types)
+            decl.class_, 'm', trampoline_class_names, self._capsule_types,
+            self._registered_types)
       elif decl.decltype == ast_pb2.Decl.Type.ENUM:
         yield from enums.generate_from('m', decl.enum)
     yield '}'

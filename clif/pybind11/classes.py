@@ -28,7 +28,8 @@ I = utils.I
 
 def generate_from(
     class_decl: ast_pb2.ClassDecl, superclass_name: str,
-    trampoline_class_names: Set[str], capsule_types: Set[str]
+    trampoline_class_names: Set[str], capsule_types: Set[str],
+    registered_types: Set[str]
 ) -> Generator[str, None, None]:
   """Generates a complete py::class_<>.
 
@@ -37,7 +38,8 @@ def generate_from(
     superclass_name: String name of the superclass.
     trampoline_class_names: A Set of class names whose member functions
       will be overriden in Python.
-    capsule_types: A list of C++ types that are defined as capsules.
+    capsule_types: A set of C++ types that are defined as capsules.
+    registered_types: A set of C++ types that are registered with Pybind11.
 
   Yields:
     pybind11 class bindings code.
@@ -47,7 +49,7 @@ def generate_from(
   definition = f'py::classh<{class_decl.name.cpp_name}'
   if not class_decl.suppress_upcasts:
     for base in class_decl.bases:
-      if base.HasField('cpp_name'):
+      if base.HasField('cpp_name') and base.cpp_name in registered_types:
         definition += f', {base.cpp_name}'
   trampoline_class_name = utils.trampoline_name(class_decl)
   if trampoline_class_name in trampoline_class_names:
@@ -88,7 +90,8 @@ def generate_from(
         yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.CLASS:
       for s in generate_from(member.class_, class_name,
-                             trampoline_class_names, capsule_types):
+                             trampoline_class_names, capsule_types,
+                             registered_types):
         yield I + s
 
   if (not constructor_defined and class_decl.cpp_has_def_ctor and
