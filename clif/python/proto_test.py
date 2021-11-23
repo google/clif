@@ -52,8 +52,12 @@ class ProtoTest(unittest.TestCase):
 
   def testNoPkg(self):
     d = proto_util.ProtoFileInfo(PKG+'testdata/no_pkg.proto.data', TEST_SRCDIR)
-    with self.assertRaises(ValueError):
+    with self.assertRaises(ValueError) as ctx:
       _ = proto.CreatePyTypeInfo(d, 'a/b/c')
+    self.assertEqual(
+        str(ctx.exception),
+        'proto with empty package: a/b/c'
+        ' (see go/unsupported_empty_package_wrapper)')
 
 
 if __name__ == '__main__':

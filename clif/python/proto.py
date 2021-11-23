@@ -80,7 +80,9 @@ def CreatePyTypeInfo(desc, path,
     n = '::'+p.replace('.', '::') + '::'
   else:
     if package_required:
-      raise ValueError('Package statement required')
+      raise ValueError(
+          f'proto with empty package: {path}'
+          ' (see go/unsupported_empty_package_wrapper)')
     n = '::'
   for m in desc.Messages():
     messages.append(types.ProtoType(_CppName(m), _PyName(m, p), pypath, ns=n))
