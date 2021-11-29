@@ -47,6 +47,113 @@ headers are included.
 #include "absl/types/variant.h"
 #include "clif/python/types.h"
 
+namespace clif {
+
+// Declare Clif_PyObjAs and Clif_PyObjFrom for all STL types here before they
+// are needed, e.g. by clif::py::ListFromSizableCont or clif::py::IterToCont.
+
+template <typename R, typename... T>
+bool Clif_PyObjAs(PyObject* py, std::function<R(T...)>* c,
+                  const py::PostConv& pc = {});
+
+template <typename T>
+bool Clif_PyObjAs(PyObject* py, std::unique_ptr<T>* c);
+
+// std::pair
+template <typename T, typename U>
+PyObject* Clif_PyObjFrom(const std::pair<T, U>& c, const py::PostConv& pc);
+template <typename T, typename U>
+bool Clif_PyObjAs(PyObject* py, std::pair<T, U>* c);
+
+// std::tuple
+template <typename... T>
+PyObject* Clif_PyObjFrom(const std::tuple<T...>& c, const py::PostConv& pc);
+template <typename... T>
+bool Clif_PyObjAs(PyObject* py, std::tuple<T...>* c);
+
+// std::optional
+#ifdef ABSL_HAVE_STD_OPTIONAL
+template <typename T>
+PyObject* Clif_PyObjFrom(const std::optional<T>& opt,
+                         const ::clif::py::PostConv& pc);
+template <typename T>
+bool Clif_PyObjAs(PyObject* py, std::optional<T>* c);
+#endif  // ABSL_HAVE_STD_OPTIONAL
+
+// std::vector
+template <typename T, typename... Args>
+PyObject* Clif_PyObjFrom(const std::vector<T, Args...>& c,
+                         const py::PostConv& pc);
+template <typename... Args>
+PyObject* Clif_PyObjFrom(const std::vector<bool, Args...>& c,
+                         const py::PostConv& pc);
+template <typename T, typename... Args>
+PyObject* Clif_PyObjFrom(std::vector<T, Args...>&& c, const py::PostConv& pc);
+template <typename... Args>
+PyObject* Clif_PyObjFrom(std::vector<bool, Args...>&& c,
+                         const py::PostConv& pc);
+template <typename T, typename... Args>
+
+// std::list
+PyObject* Clif_PyObjFrom(const std::list<T, Args...>& c,
+                         const py::PostConv& pc);
+template <typename T, typename... Args>
+PyObject* Clif_PyObjFrom(std::list<T, Args...>&& c, const py::PostConv& pc);
+template <typename T, typename... Args>
+
+// Queue types
+PyObject* Clif_PyObjFrom(const std::queue<T, Args...>& c,
+                         const py::PostConv& pc);
+template <typename T, typename... Args>
+PyObject* Clif_PyObjFrom(std::queue<T, Args...>&& c, const py::PostConv& pc);
+template <typename T, typename... Args>
+PyObject* Clif_PyObjFrom(const std::priority_queue<T, Args...>& c,
+                         const py::PostConv& pc);
+template <typename T, typename... Args>
+PyObject* Clif_PyObjFrom(std::priority_queue<T, Args...>&& c,
+                         const py::PostConv& pc);
+template <typename T, typename... Args>
+PyObject* Clif_PyObjFrom(const std::deque<T, Args...>& c,
+                         const py::PostConv& pc);
+template <typename T, typename... Args>
+PyObject* Clif_PyObjFrom(std::deque<T, Args...>&& c, const py::PostConv& pc);
+template <typename T, typename... Args>
+PyObject* Clif_PyObjFrom(const std::stack<T, Args...>& c,
+                         const py::PostConv& pc);
+template <typename T, typename... Args>
+PyObject* Clif_PyObjFrom(std::stack<T, Args...>&& c, const py::PostConv& pc);
+
+// std::array
+template <typename T, std::size_t N>
+bool Clif_PyObjAs(PyObject* py, std::array<T, N>* c);
+template <typename T, std::size_t N>
+PyObject* Clif_PyObjFrom(const std::array<T, N>& c, const py::PostConv& pc);
+template <typename T, std::size_t N>
+PyObject* Clif_PyObjFrom(std::array<T, N>&& c, const py::PostConv& pc);
+
+// Map types
+template <typename T, typename U, typename... Args>
+PyObject* Clif_PyObjFrom(const std::unordered_map<T, U, Args...>& c,
+                         const py::PostConv& pc);
+template <typename T, typename U, typename... Args>
+PyObject* Clif_PyObjFrom(std::unordered_map<T, U, Args...>&& c,
+                         const py::PostConv& pc);
+
+template <typename T, typename U, typename... Args>
+PyObject* Clif_PyObjFrom(const std::map<T, U, Args...>& c,
+                         const py::PostConv& pc);
+template <typename T, typename U, typename... Args>
+PyObject* Clif_PyObjFrom(std::map<T, U, Args...>&& c, const py::PostConv& pc);
+
+// Set types
+template <typename T, typename... Args>
+PyObject* Clif_PyObjFrom(const std::unordered_set<T, Args...>& c,
+                         const py::PostConv& pc);
+template <typename T, typename... Args>
+PyObject* Clif_PyObjFrom(const std::set<T, Args...>& c, const py::PostConv& pc);
+
+}  // namespace clif
+
 #ifdef ABSL_HAVE_STD_VARIANT
 // CLIF use `::std::variant` as OneOf
 //
@@ -437,7 +544,7 @@ PyObject* FunctionCapsule(std::function<R(T...)> cfunction) {
 
 template<typename R, typename... T>
 bool Clif_PyObjAs(PyObject* py, std::function<R(T...)>* c,
-                  const py::PostConv& pc = {}) {
+                  const py::PostConv& pc) {
   CHECK(c != nullptr);
   if (!PyCallable_Check(py)) {
     PyErr_SetString(PyExc_TypeError, "callable expected");
