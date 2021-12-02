@@ -61,7 +61,10 @@ def generate_cpp_function_cast(
 
   params_list_types = []
   for param in func_decl.params:
-    if not utils.is_usable_cpp_exact_type(param.cpp_exact_type):
+    if param.type.HasField('callable'):
+      params_list_types.append(
+          _generate_callback_signature(param.type.callable))
+    elif not utils.is_usable_cpp_exact_type(param.cpp_exact_type):
       params_list_types.append(param.type.cpp_type)
     else:
       params_list_types.append(param.cpp_exact_type)
@@ -92,6 +95,19 @@ def generate_cpp_function_cast(
   if func_decl.cpp_const_method:
     cpp_const = ' const'
   return f'({return_type} ({class_sig}*)({params_str_types}){cpp_const})'
+
+
+def _generate_callback_signature(func_decl: ast_pb2.FuncDecl) -> str:
+  """Generate signatures for callback functions."""
+  params_list_types = []
+  for param in func_decl.params:
+    params_list_types.append(param.cpp_exact_type)
+  params_str_types = ', '.join(params_list_types)
+  if func_decl.cpp_void_return:
+    return_type = 'void'
+  elif func_decl.returns:
+    return_type = func_decl.returns[0].cpp_exact_type
+  return f'::std::function<{return_type}({params_str_types})>'
 
 
 def generate_py_args(func_decl: ast_pb2.FuncDecl) -> str:
