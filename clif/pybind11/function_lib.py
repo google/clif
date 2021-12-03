@@ -35,7 +35,7 @@ def generate_function_suffixes(func_decl: ast_pb2.FuncDecl) -> str:
 
 def generate_param_type(param: ast_pb2.ParamDecl) -> str:
   if param.type.HasField('callable'):
-    return param.cpp_exact_type
+    return _generate_callback_signature(param.type.callable)
   else:
     return param.type.cpp_type
 
