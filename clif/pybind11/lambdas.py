@@ -133,9 +133,9 @@ def _generate_lambda_body(
     module_name, method_name = func_decl.postproc.rsplit('.', maxsplit=1)
     # TODO: Port or reuse `clif::ImportFQName`.
     yield I + f'auto mod = py::module_::import("{module_name}");'
-    yield I + ('py::object result = '
+    yield I + ('py::object result_ = '
                f'mod.attr("{method_name}")({function_call_returns});')
-    yield I + 'return result;'
+    yield I + 'return result_;'
   elif len(func_decl.returns) > 1:
     yield I + f'return std::make_tuple({function_call_returns});'
   else:
