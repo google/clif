@@ -49,31 +49,10 @@ class Parameter:
         self.function_argument = (
             f'{param.name.cpp_name}.cast<{param.cpp_exact_type}>()')
     elif not param.type.cpp_type:  # std::function
-      self.cpp_type = param.cpp_exact_type
-    elif ptype.cpp_raw_pointer:
-      if not ptype.cpp_toptr_conversion and ctype.endswith('*'):
-        if ptype.cpp_abstract:
-          if ptype.cpp_touniqptr_conversion:
-            self.cpp_type = f'::std::unique_ptr<{ctype[:-1]}>'
-            self.function_argument = f'{param.name.cpp_name}.get()'
-        elif ptype.cpp_has_public_dtor:
-          # Create a copy on stack and pass its address.
-          if ptype.cpp_has_def_ctor:
-            self.cpp_type = ctype[:-1]
-            self.function_argument = f'&{param.name.cpp_name}'
-          else:
-            self.cpp_type = f'::absl::optional<{ctype[:-1]}>'
-            self.function_argument = f'&{param.name.cpp_name}.value()'
-    # T, [const] T&
-    elif ptype.cpp_toptr_conversion:
-      self.cpp_type = f'{ctype}*'
-      self.function_argument = f'*{param.name.cpp_name}'
-    elif ptype.cpp_abstract:  # for AbstractType &
+      self.cpp_type = function_lib.generate_callback_signature(param)
+    elif ptype.cpp_abstract and not ptype.cpp_raw_pointer:  # AbstractType &
       self.cpp_type = f'std::unique_ptr<{ctype}>'
       self.function_argument = f'*{param.name.cpp_name}'
-    elif not ptype.cpp_has_def_ctor:
-      self.cpp_type = f'::absl::optional<{ctype}>'
-      self.function_argument = f'{param.name.cpp_name}.value()'
 
 
 def generate_lambda(

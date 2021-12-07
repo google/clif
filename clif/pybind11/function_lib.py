@@ -35,7 +35,7 @@ def generate_function_suffixes(func_decl: ast_pb2.FuncDecl) -> str:
 
 def generate_param_type(param: ast_pb2.ParamDecl) -> str:
   if param.type.HasField('callable'):
-    return _generate_callback_signature(param.type.callable)
+    return generate_callback_signature(param)
   else:
     return param.type.cpp_type
 
@@ -62,8 +62,7 @@ def generate_cpp_function_cast(
   params_list_types = []
   for param in func_decl.params:
     if param.type.HasField('callable'):
-      params_list_types.append(
-          _generate_callback_signature(param.type.callable))
+      params_list_types.append(generate_callback_signature(param))
     elif not utils.is_usable_cpp_exact_type(param.cpp_exact_type):
       params_list_types.append(param.type.cpp_type)
     else:
@@ -97,8 +96,9 @@ def generate_cpp_function_cast(
   return f'({return_type} ({class_sig}*)({params_str_types}){cpp_const})'
 
 
-def _generate_callback_signature(func_decl: ast_pb2.FuncDecl) -> str:
+def generate_callback_signature(param: ast_pb2.ParamDecl) -> str:
   """Generate signatures for callback functions."""
+  func_decl = param.type.callable
   params_list_types = []
   for param in func_decl.params:
     params_list_types.append(param.cpp_exact_type)
