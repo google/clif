@@ -113,7 +113,10 @@ def GenerateFrom(ast):
   with open(FLAGS.ccinit_out, 'w') as iout:
     gen.WriteTo(iout, m.GenerateInit(ast.source))
   with open(FLAGS.header_out, 'w') as hout:
-    gen.WriteTo(hout, m.GenerateHeader(ast.source, api_header, ast.macros))
+    gen.WriteTo(
+        hout, m.GenerateHeader(
+            ast.source, api_header, ast.macros,
+            ast.options.get('is_extended_from_python', 'False') == 'True'))
 
 
 def _GetHeaders(ast):
