@@ -22,6 +22,8 @@ from "clif/testing/default_args.h":
     def MethodWithDefaultClassArg(
         self, arg: Arg = default, i: int = default) -> int
     def MethodWithUnknownDefaultArg(self, i: int, arg: Arg = default) -> int
+    # Forces pybind11 code generator generate a lambda expression
+    def MethodWithUnknownDefaultArgLambdaExpression(self, i: int, arg: Arg = default) -> bytes
     def MethodWithDefaultEnumArg(
         self, e: Enum = default, i: int = default) -> int
     def MethodWithDefaultPtrArg(self, a: Arg = default, i: int = default) -> int

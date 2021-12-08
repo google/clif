@@ -43,18 +43,28 @@ def generate_from(
   Yields:
     pybind11 function bindings code.
   """
+  num_unknown = _num_unknown_default_values(func_decl)
+  if num_unknown:
+    yield from _generate_overload_for_unknown_default_function(
+        num_unknown, module_name, func_decl, capsule_types, class_decl)
+  else:
+    yield from _generate_function(
+        module_name, func_decl, capsule_types, class_decl)
+
+
+def _generate_function(
+    module_name: str, func_decl: ast_pb2.FuncDecl,
+    capsule_types: Set[str],
+    class_decl: Optional[ast_pb2.ClassDecl] = None,
+) -> Generator[str, None, None]:
+  """Generates pybind11 bindings code for ast_pb2.FuncDecl."""
   if lambdas.needs_lambda(func_decl, capsule_types, class_decl):
     yield from lambdas.generate_lambda(
         module_name, func_decl, capsule_types, class_decl)
   elif operators.needs_operator_overloading(func_decl):
     yield from operators.generate_operator(module_name, func_decl)
   else:
-    num_unknown = _num_unknown_default_values(func_decl)
-    if num_unknown:
-      yield from _generate_overload_for_unknown_default_function(
-          num_unknown, module_name, func_decl, capsule_types, class_decl)
-    else:
-      yield from _generate_simple_function(module_name, func_decl, class_decl)
+    yield from _generate_simple_function(module_name, func_decl, class_decl)
 
 
 def _generate_simple_function(
@@ -81,10 +91,10 @@ def _generate_overload_for_unknown_default_function(
     func_decl: ast_pb2.FuncDecl, capsule_types: Set[str],
     class_decl: Optional[ast_pb2.ClassDecl] = None
 ) -> Generator[str, None, None]:
-  """Generate multiple lambdas for functions with unknown default values."""
+  """Generate multiple definitions for functions with unknown default values."""
   temp_func_decl = ast_pb2.FuncDecl()
   temp_func_decl.CopyFrom(func_decl)
   for _ in range(num_unknown + 1):
-    yield from lambdas.generate_lambda(
+    yield from _generate_function(
         module_name, temp_func_decl, capsule_types, class_decl)
     del temp_func_decl.params[-1]

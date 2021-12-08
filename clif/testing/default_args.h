@@ -17,6 +17,7 @@
 #define CLIF_TESTING_DEFAULT_ARGS_H_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 class MyClass {
@@ -44,6 +45,11 @@ class MyClass {
 
   int MethodWithUnknownDefaultArg(int i, Arg arg = {10}) {
     return arg.e + i;
+  }
+
+  std::string MethodWithUnknownDefaultArgLambdaExpression(
+      int i, Arg arg = {10}) {
+    return std::to_string(arg.e + i);
   }
 
   int MethodWithDefaultEnumArg(Enum e = kMyEnum, int i = 100) {

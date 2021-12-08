@@ -31,6 +31,10 @@ class DefaultArgsTest(absltest.TestCase):
     self.assertEqual(a.MethodWithDefaultClassArg(arg=arg), 200)
     self.assertEqual(a.MethodWithUnknownDefaultArg(i=100), 110)
     self.assertEqual(a.MethodWithUnknownDefaultArg(i=100, arg=arg), 200)
+    self.assertEqual(
+        a.MethodWithUnknownDefaultArgLambdaExpression(i=100), b'110')
+    self.assertEqual(
+        a.MethodWithUnknownDefaultArgLambdaExpression(i=100, arg=arg), b'200')
     self.assertEqual(a.MethodWithDefaultEnumArg(i=5000), 5432)
     self.assertEqual(a.MethodWithDefaultPtrArg(i=1234), 1234)
     self.assertEqual(a.MethodWithDefaultFlag(i=32), 35)
