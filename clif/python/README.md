@@ -107,6 +107,44 @@ from path.to.project.library.module import SomeClassOrFunction
 This statement is typically used to load a Python [postprocessing function]
 (#postprocessing).
 
+
+### OPTION statement {#OPTION}
+
+The general form of the _OPTION_ statement is:
+
+```
+OPTION name = value
+```
+
+However, currently the only available _OPTION_ is:
+
+```
+OPTION is_extended_from_python = True
+```
+
+This *OPTION* is important when wrapped C++ types are extended from Python
+(go/clif-primer#py_library_wrapper), which involves a **private module**, i.e. a
+module with a `name` that has a leading underscore (see
+[Wrapping a C++ library][WrappingACppLibrary] above), and a matching
+`py_library`, for example:
+
+```
+py_clif_cc(name="_mylib")
+py_library(name="mylib")
+```
+
+The `is_extended_from_python` _OPTION_ controls which of these is imported
+from _other_ `py_clif_cc` modules, for example:
+
+```
+py_clif_cc(name="myapp", clif_deps=["_mylib"], py_deps=["mylib"])
+```
+
+With `OPTION is_extended_from_python = True`, the PyCLIF-generated `myapp`
+module will never `import _mylib` directly, but always `import mylib`. This
+ensures that all Python-side customizations are applied.
+
+
 ### from statement {#from}
 
 The _from_ statement tells CLIF what library file to wrap.
