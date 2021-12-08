@@ -747,7 +747,7 @@ class Module(object):
         yield s
 
   def GenerateHeader(self, source_filename, api_header_filename, macros,
-                     more_headers=None):
+                     is_extended_from_python, more_headers=None):
     """Generate header file with type conversion declarations."""
     if more_headers is None:
       more_headers = []
@@ -769,8 +769,19 @@ class Module(object):
         yield ''
         yield gen.CloseNs(ns)
       yield ''
+      import_path = self.path
+      if is_extended_from_python:
+        flds = import_path.split('.')
+        if not flds[-1].startswith('_'):
+          raise ValueError(
+              'OPTION is_extended_from_python is applicable only to private'
+              ' extensions (i.e. the unqualified name of the extension must'
+              ' start with an underscore). Fully-qualified extension name: %s'
+              % self.path)
+        flds[-1] = flds[-1][1:]
+        import_path = '.'.join(flds)
       yield ('// CLIF init_module if (PyObject* m = PyImport_ImportModule('
-             '"%s")) Py_DECREF(m);' % self.path)
+             '"%s")) Py_DECREF(m);' % import_path)
       yield '// CLIF init_module else goto err;'
     else:
       yield '// This module defines no types.'

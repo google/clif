@@ -81,6 +81,41 @@ class ToprotoTest(unittest.TestCase):
     pytd_parser.reset_indentation()
     self.maxDiff = 100000  # pylint: disable=invalid-name
 
+  def testOptionIsExtendedFromPythonFalseTrue(self):
+    for value in ('False', 'True'):
+      pytd = f'OPTION is_extended_from_python = {value}'
+      pb = _ParseFile(pytd, None)
+      self.assertDictEqual(dict(pb.options), {'is_extended_from_python': value})
+
+  def testUnknownOptionName(self):
+    pytd = '\n'.join([
+        'OPTION is_extended_from_python=True',
+        'OPTION xyz=0'])
+    with self.assertRaises(ValueError) as ctx:
+      _ParseFile(pytd, None)
+    self.assertEqual(str(ctx.exception), 'Unknown OPTION name at line 2: xyz')
+
+  def testDuplicateOptionName(self):
+    pytd = '\n'.join([
+        'OPTION is_extended_from_python=True',
+        '',
+        'OPTION is_extended_from_python=False'])
+    with self.assertRaises(ValueError) as ctx:
+      _ParseFile(pytd, None)
+    self.assertEqual(
+        str(ctx.exception),
+        'Duplicate OPTION name at line 3: is_extended_from_python')
+
+  def testInvalidOptionValue(self):
+    pytd = '\n'.join([
+        '', '', '',
+        '  OPTION  is_extended_from_python  =  1e-5  '])
+    with self.assertRaises(ValueError) as ctx:
+      _ParseFile(pytd, None)
+    self.assertEqual(
+        str(ctx.exception),
+        'Invalid OPTION value at line 4: 1e-5 (must be False or True)')
+
   def testParsingNonzeroRaisesNameError(self):
     with self.assertRaises(NameError):
       self.ClifEqualWithTypes("""\

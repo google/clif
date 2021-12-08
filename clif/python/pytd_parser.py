@@ -157,6 +157,8 @@ global_decl = (
     K('pass') | funcdef | capsule_def | _decl | interface_stmt | stmeth_stmt)
 nested_decl <<= vardef | methoddef | _decl | K('pass') | implementsdef
 
+option_stmt = G(K('OPTION') + pp.WordEnd() + NAME + S('=') +
+                pp.Word(pp.alphanums+'_.+-').setName('value') + NEWLINE)
 import_stmt = G(S('from') + pp.WordEnd() + dotted_name - K('import') + NAME)
 # Put 'import' first.
 import_stmt.setParseAction(lambda t: [t[1], t[2], t[0], t[3]])
@@ -168,6 +170,7 @@ typedef_stmt = G(K('type') - NAME + S('=') + type)
 use_stmt = G(K('use') - crename)
 
 stmt = Group(NEWLINE |
+             option_stmt |
              from_stmt | import_stmt | include_stmt |
              typedef_stmt | use_stmt | interface_stmt
             )

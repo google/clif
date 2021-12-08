@@ -107,7 +107,6 @@ from path.to.project.library.module import SomeClassOrFunction
 This statement is typically used to load a Python [postprocessing function]
 (#postprocessing).
 
-
 ### from statement {#from}
 
 The _from_ statement tells CLIF what library file to wrap.

@@ -135,9 +135,18 @@ class _(object):
     ...
 ```
 
-Extending methods from Python in this way is known to work not just for
-instance methods, but also for properties, classmethods, staticmethods,
-and even docstrings and other data members.
+Extending methods from Python in this way works for instance methods,
+properties, classmethods, staticmethods, and even docstrings and other
+data members.
+
+To ensure that the Python-side customizations are always applied, it is
+important to specify
+
+```
+OPTION is_extended_from_python = True
+```
+
+in mylib.clif (see go/pyclif#OPTION).
 
 Current Limitation:
 

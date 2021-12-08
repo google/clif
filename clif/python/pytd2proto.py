@@ -103,6 +103,7 @@ class Postprocessor(object):
   """Process parsed IR."""
 
   def __init__(self, config_headers=None, include_paths=('.',), preamble=''):
+    self._options = []
     self._names = {}  # Keep name->FQN for all 'from path import' statements.
     self._capsules = {}   # Keep raw pointer names (pytype -> cpptype).
     self._typenames = {}  # Keep typedef aliases (pytype -> type_ir).
@@ -298,6 +299,20 @@ class Postprocessor(object):
   #   ln: line number in the .clif file
   #   p: IR subtree (with statement keyword removed)
   #   pb: AST proto for this statement to fill
+
+  def _OPTION(self, ln, p, pb):  # pylint: disable=invalid-name
+    """Processing of `OPTION name = value` (go/pyclif#OPTION)."""
+    assert len(p) == 2, (ln, p)
+    name, value = p
+    if name != 'is_extended_from_python':
+      raise ValueError('Unknown OPTION name at line %d: %s' % (ln, name))
+    if name in pb.options:
+      raise ValueError('Duplicate OPTION name at line %d: %s' % (ln, name))
+    if value not in ('False', 'True'):
+      raise ValueError(
+          'Invalid OPTION value at line %d: %s (must be False or True)'
+          % (ln, value))
+    pb.options[name] = value
 
   def _interface(self, ln, p, unused_pb=None):
     """'Macro definition' stores a subtree with var placeholders (%0, %1...)."""
