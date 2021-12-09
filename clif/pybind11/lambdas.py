@@ -38,21 +38,25 @@ class Parameter:
     self.name = param.name.cpp_name
     self.function_argument = self.name
 
-    if ptype.lang_type in capsule_types:
-      self.cpp_type = f'clif::CapsuleWrapper<{self.cpp_type}>'
-      self.function_argument = f'{param.name.cpp_name}.ptr'
-    elif ptype.lang_type == 'object':
+    if ptype.lang_type == 'object':
       self.cpp_type = 'py::object'
       if param.cpp_exact_type == '::PyObject *':
         self.function_argument = f'{param.name.cpp_name}.ptr()'
       else:
         self.function_argument = (
             f'{param.name.cpp_name}.cast<{param.cpp_exact_type}>()')
-    elif not param.type.cpp_type:  # std::function
+    elif not ptype.cpp_type:  # std::function
       self.cpp_type = function_lib.generate_callback_signature(param)
-    elif ptype.cpp_abstract and not ptype.cpp_raw_pointer:  # AbstractType &
-      self.cpp_type = f'std::unique_ptr<{ctype}>'
-      self.function_argument = f'*{param.name.cpp_name}'
+    # T, [const] T&
+    elif not ptype.cpp_raw_pointer and (
+        param.cpp_exact_type.endswith('&') and not ctype.endswith('&')):
+      # CLIF matcher might set param.type.cpp_type to `T` when the function
+      # being wrapped takes `T&`.
+      self.cpp_type = param.cpp_exact_type
+
+    if ptype.lang_type in capsule_types:
+      self.cpp_type = f'clif::CapsuleWrapper<{self.cpp_type}>'
+      self.function_argument = f'{param.name.cpp_name}.ptr'
 
 
 def generate_lambda(

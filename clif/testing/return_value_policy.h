@@ -169,7 +169,7 @@ struct NoCopyNoMove {
   NoCopyNoMove(NoCopyNoMove&&) = delete;
 
   NoCopyNoMove& operator=(const NoCopyNoMove &) = delete;
-  NoCopyNoMove& operator=(Obj&&) = delete;
+  NoCopyNoMove& operator=(NoCopyNoMove&&) = delete;
 };
 
 inline NoCopyNoMove* return_pointer_nocopy_nomove() {
