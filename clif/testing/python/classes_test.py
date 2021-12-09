@@ -60,6 +60,10 @@ class ClassesTest(absltest.TestCase):
     self.assertEqual(k.i, 1)
     self.assertEqual(k.j, 2)
 
+  def testAddInit(self):
+    # Test generation of default constructor
+    k = classes.AddInit()
+    self.assertEqual(k.i, 567483)
 
 if __name__ == '__main__':
   absltest.main()

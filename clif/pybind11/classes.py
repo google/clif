@@ -65,7 +65,7 @@ def generate_from(
   definition += ');'
   yield I + I + definition
 
-  constructor_defined = False
+  default_constructor_defined = False
   trampoline_generated = False
   for member in class_decl.members:
     if member.decltype == ast_pb2.Decl.Type.CONST:
@@ -73,7 +73,8 @@ def generate_from(
         yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.FUNC:
       if member.func.constructor:
-        constructor_defined = True
+        if not member.func.params:
+          default_constructor_defined = True
         for s in _generate_constructor(class_name, member.func, class_decl):
           yield I + I + s
       else:
@@ -94,7 +95,7 @@ def generate_from(
                              registered_types):
         yield I + s
 
-  if (not constructor_defined and class_decl.cpp_has_def_ctor and
+  if (not default_constructor_defined and class_decl.cpp_has_def_ctor and
       (not class_decl.cpp_abstract or trampoline_generated)):
     yield I + I + f'{class_name}.def(py::init<>());'
   yield I + '}'

@@ -48,6 +48,15 @@ class Derived : public K {
   }
 };
 
+struct AddInit {
+  int i = 567483;
+  AddInit() = default;
+  AddInit(const AddInit&) = default;
+  AddInit(AddInit&&) = default;
+  AddInit& operator=(const AddInit&) = default;
+  AddInit& operator=(AddInit&&) = default;
+};
+
 }  // namespace classes
 }  // namespace clif_testing
 

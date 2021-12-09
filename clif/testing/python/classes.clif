@@ -36,3 +36,8 @@ from "clif/testing/classes.h":
       @add__init__
       def Init(self, i: int, j: int)
       def `has` as __contains__(self, k: int) -> bool
+
+    class AddInit:
+      i: int
+      @add__init__
+      def Init(self, other: AddInit)
