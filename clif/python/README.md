@@ -484,13 +484,25 @@ class Child:
   def Useful(self)
 ```
 
-If the parent C++ class is already wrapped in the CLIF specification, use it as
-you normally do with a parent Python class (`class Child(Parent):`):
+If the parent C++ class is already wrapped in another .clif file, use a
+Python-style import to define it as a base class, for example:
 
 ```
 from full.path.to.another.python.wrapper import Parent
-from "c/include/path/to/child.h":
+from "cpp/include/path/to/child.h":
   class Child(Parent):
+```
+
+Note that Python-style imports only enable defining base classes.
+An additional C-style import is needed if a parent C++ class also appears
+as a return type or argument type, for example:
+
+```
+from "full/path/to/another/python/wrapper_clif.h" import *
+from full.path.to.another.python.wrapper import Parent
+from "cpp/include/path/to/child.h":
+  class Child(Parent):  # Needs the Python-style import.
+    def SomeMethod(self) -> Parent  # Needs the C-style import.
 ```
 
 Multiple inheritance in CLIF declaration is prohibited, but the C++ class being
