@@ -107,8 +107,7 @@ def _generate_lambda_body(
 ) -> Generator[str, None, None]:
   """Generates body of lambda expressions."""
   function_call = _generate_function_call(func_decl, class_decl)
-  function_call_params = _generate_function_call_params(
-      func_decl, params, class_decl)
+  function_call_params = _generate_function_call_params(func_decl, params)
   function_call_returns = _generate_function_call_returns(
       func_decl, capsule_types)
 
@@ -151,16 +150,9 @@ def _generate_lambda_body(
 
 
 def _generate_function_call_params(
-    func_decl: ast_pb2.FuncDecl,
-    params: List[Parameter],
-    class_decl: Optional[ast_pb2.ClassDecl] = None) -> str:
+    func_decl: ast_pb2.FuncDecl, params: List[Parameter]) -> str:
   """Generates the parameters of function calls in lambda expressions."""
-  params_list = [p.function_argument for p in params]
-  if (func_decl.returns and _is_status_param(func_decl.returns[0]) and
-      class_decl and not func_decl.classmethod):
-    params_list.insert(0, '&self')
-  params = ', '.join(params_list)
-
+  params = ', '.join([p.function_argument for p in params])
   # Ignore the return value of the function itself when generating pointer
   # parameters.
   stard_idx = 0
@@ -211,12 +203,7 @@ def _generate_function_call(
     func_decl: ast_pb2.FuncDecl,
     class_decl: Optional[ast_pb2.ClassDecl] = None):
   """Generates the function call underneath the lambda expression."""
-  if func_decl.returns and _is_status_param(func_decl.returns[0]):
-    cast = ''
-    if func_decl.is_overloaded:
-      cast = function_lib.generate_cpp_function_cast(func_decl, class_decl)
-    return f'py::google::ToPyCLIFStatus({cast}&{func_decl.name.cpp_name})'
-  elif func_decl.classmethod or not class_decl:
+  if func_decl.classmethod or not class_decl:
     return func_decl.name.cpp_name
   elif func_decl.is_extend_method:
     return func_decl.name.cpp_name
