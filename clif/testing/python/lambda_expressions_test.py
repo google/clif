@@ -39,6 +39,11 @@ class LambdaExpressionsTest(absltest.TestCase):
     self.assertEqual(lambda_expressions.nocopy_nomove_pointer_param(obj),
                      b'nocopy_nomove_pointer')
 
+  def test_unique_pointer_parameter(self):
+    obj = lambda_expressions.Derived(10)
+    self.assertEqual(lambda_expressions.unique_pointer_param(obj),
+                     b'unique_ptr')
+
 
 if __name__ == '__main__':
   absltest.main()

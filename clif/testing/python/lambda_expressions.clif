@@ -30,3 +30,4 @@ from "clif/testing/lambda_expressions.h":
     def abstract_pointer_param(obj: Abstract) -> bytes
     def nocopy_nomove_reference_param(obj: NoCopyNoMove) -> bytes
     def nocopy_nomove_pointer_param(obj: NoCopyNoMove) -> bytes
+    def unique_pointer_param(obj: Abstract) -> bytes

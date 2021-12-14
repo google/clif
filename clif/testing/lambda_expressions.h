@@ -59,6 +59,10 @@ inline std::string nocopy_nomove_pointer_param(NoCopyNoMove*) {
   return "nocopy_nomove_pointer";
 }
 
+inline std::string unique_pointer_param(std::unique_ptr<Abstract>) {
+  return "unique_ptr";
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_LAMBDA_EXPRESSIONS_H_

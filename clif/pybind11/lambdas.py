@@ -47,6 +47,10 @@ class Parameter:
             f'{param.name.cpp_name}.cast<{param.cpp_exact_type}>()')
     elif not ptype.cpp_type:  # std::function
       self.cpp_type = function_lib.generate_callback_signature(param)
+    # unique_ptr<T>, shared_ptr<T>
+    elif (param.cpp_exact_type.startswith('::std::unique_ptr') or
+          param.cpp_exact_type.startswith('::std::shared_ptr')):
+      self.function_argument = f'std::move({param.name.cpp_name})'
     # T, [const] T&
     elif not ptype.cpp_raw_pointer and (
         param.cpp_exact_type.endswith('&') and not ctype.endswith('&')):
