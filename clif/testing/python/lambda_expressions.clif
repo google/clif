@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from "clif/testing/lambda_expressions.h":
+from "clif/testing/python/lambda_expressions_clif_aux.h":
   namespace `clif_testing`:
     class Abstract:
       pass
@@ -31,3 +31,15 @@ from "clif/testing/lambda_expressions.h":
     def nocopy_nomove_reference_param(obj: NoCopyNoMove) -> bytes
     def nocopy_nomove_pointer_param(obj: NoCopyNoMove) -> bytes
     def unique_pointer_param(obj: Abstract) -> bytes
+
+    class Arg:
+      value: int
+
+    class TestCtor:
+      value: int
+      def __init__(self, arg: Arg = default)
+
+    class TestExtendCtor:
+      value: int
+      @extend
+      def __init__(self, i: int, arg: Arg = default)

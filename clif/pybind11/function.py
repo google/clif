@@ -43,7 +43,7 @@ def generate_from(
   Yields:
     pybind11 function bindings code.
   """
-  num_unknown = _num_unknown_default_values(func_decl)
+  num_unknown = function_lib.num_unknown_default_values(func_decl)
   if num_unknown:
     yield from _generate_overload_for_unknown_default_function(
         num_unknown, module_name, func_decl, capsule_types, class_decl)
@@ -78,14 +78,6 @@ def _generate_simple_function(
   yield I + function_lib.generate_function_suffixes(func_decl)
 
 
-def _num_unknown_default_values(func_decl: ast_pb2.FuncDecl) -> int:
-  num_unknown = 0
-  for param in func_decl.params:
-    if param.default_value == 'default':
-      num_unknown += 1
-  return num_unknown
-
-
 def _generate_overload_for_unknown_default_function(
     num_unknown: int, module_name: str,
     func_decl: ast_pb2.FuncDecl, capsule_types: Set[str],
@@ -94,7 +86,9 @@ def _generate_overload_for_unknown_default_function(
   """Generate multiple definitions for functions with unknown default values."""
   temp_func_decl = ast_pb2.FuncDecl()
   temp_func_decl.CopyFrom(func_decl)
-  for _ in range(num_unknown + 1):
+  for _ in range(num_unknown):
     yield from _generate_function(
         module_name, temp_func_decl, capsule_types, class_decl)
     del temp_func_decl.params[-1]
+  yield from _generate_function(
+      module_name, temp_func_decl, capsule_types, class_decl)

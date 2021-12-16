@@ -104,7 +104,35 @@ def generate_from(
 def _generate_constructor(
     class_name: str, func_decl: ast_pb2.FuncDecl,
     class_decl: ast_pb2.ClassDecl) -> Generator[str, None, None]:
-  """Generates constructor methods."""
+  """Generates pybind11 bindings code for a constructor.
+
+  Multiple deinitions will be generated when the constructor contains unknown
+  default value arguments.
+
+  Args:
+    class_name: Name of the class that defines the contructor.
+    func_decl: Constructor declaration in proto format.
+    class_decl: Class declaration in proto format.
+
+  Yields:
+    pybind11 function bindings code.
+  """
+  num_unknown = function_lib.num_unknown_default_values(func_decl)
+  temp_func_decl = ast_pb2.FuncDecl()
+  temp_func_decl.CopyFrom(func_decl)
+  if num_unknown:
+    for _ in range(num_unknown):
+      yield from _generate_constructor_overload(class_name, temp_func_decl,
+                                                class_decl)
+      del temp_func_decl.params[-1]
+  yield from _generate_constructor_overload(class_name, temp_func_decl,
+                                            class_decl)
+
+
+def _generate_constructor_overload(
+    class_name: str, func_decl: ast_pb2.FuncDecl,
+    class_decl: ast_pb2.ClassDecl) -> Generator[str, None, None]:
+  """Generates pybind11 bindings code for a constructor."""
   params_with_types = ', '.join(
       [f'{p.type.cpp_type} {p.name.cpp_name}' for p in func_decl.params])
   params = ', '.join([f'{p.name.cpp_name}' for p in func_decl.params])

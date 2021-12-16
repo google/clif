@@ -20,6 +20,14 @@ from clif.protos import ast_pb2
 from clif.pybind11 import utils
 
 
+def num_unknown_default_values(func_decl: ast_pb2.FuncDecl) -> int:
+  num_unknown = 0
+  for param in func_decl.params:
+    if param.default_value == 'default':
+      num_unknown += 1
+  return num_unknown
+
+
 def generate_function_suffixes(func_decl: ast_pb2.FuncDecl) -> str:
   """Generates py_args, docstrings and return value policys."""
   py_args = generate_py_args(func_decl)

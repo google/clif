@@ -44,6 +44,14 @@ class LambdaExpressionsTest(absltest.TestCase):
     self.assertEqual(lambda_expressions.unique_pointer_param(obj),
                      b'unique_ptr')
 
+  def test_ctor_unknown_default_parameter(self):
+    obj = lambda_expressions.TestCtor()
+    self.assertEqual(obj.value, 10)
+
+  def test_extend_ctor_unknown_default_parameter(self):
+    obj = lambda_expressions.TestExtendCtor(10)
+    self.assertEqual(obj.value, 110)
+
 
 if __name__ == '__main__':
   absltest.main()

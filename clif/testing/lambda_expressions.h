@@ -63,6 +63,19 @@ inline std::string unique_pointer_param(std::unique_ptr<Abstract>) {
   return "unique_ptr";
 }
 
+struct Arg {
+  int value;
+};
+
+struct TestCtor {
+  int value;
+  TestCtor(Arg arg = {10}): value(arg.value) { }
+};
+
+struct TestExtendCtor {
+  int value;
+};
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_LAMBDA_EXPRESSIONS_H_
