@@ -67,9 +67,9 @@ pyclif_proto --allow_empty_package -c somename.cc -h somename.h your_proto.proto
 
 **A:** CLIF allows users to extend it by writing to/from Python conversion
 functions.
-For ex. protobuf has a canonical C++ representation, so pyclif_proto generates
-a CLIF C++ extension library that converts between Python canonical proto and
-C++ canonical proto.
+To pick a contrasting example for illustration, protobuf has a canonical
+C++ representation, so pyclif_proto generates a CLIF C++ extension library
+that converts between Python canonical proto and C++ canonical proto.
 OTOH C++ has no canonical "numarray", so CLIF does not know what to convert
 NumPy types to/from. Users must write the conversions.
 
