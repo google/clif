@@ -1,0 +1,6 @@
+from "clif/testing/final_nested.h":
+  namespace `clif_testing_final_nested`:
+    # @final  # UNCOMMENT to reproduce b/212441720
+    class Outer:
+      class Inner:
+        pass
