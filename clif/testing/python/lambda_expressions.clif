@@ -43,3 +43,8 @@ from "clif/testing/python/lambda_expressions_clif_aux.h":
       value: int
       @extend
       def __init__(self, i: int, arg: Arg = default)
+
+    class NoDefaultConstructor:
+      def get(self) -> int
+
+    def no_default_ctor_return(value: int) -> (output: NoDefaultConstructor, unused: int)

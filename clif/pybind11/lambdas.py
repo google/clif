@@ -111,24 +111,30 @@ def _generate_lambda_body(
   function_call_returns = _generate_function_call_returns(
       func_decl, capsule_types)
 
+  cpp_void_return = func_decl.cpp_void_return or not func_decl.returns
+
   # Generates declarations of return values
   for i, r in enumerate(func_decl.returns):
-    if r.type.lang_type == 'object':
-      yield I + f'py::object ret{i}{{}};'
-    elif _is_status_param(r):
-      yield (I +
-             f'pybind11::google::PyCLIFStatus<{r.cpp_exact_type}> ret{i}{{}};')
-    else:
-      yield I + f'{r.type.cpp_type} ret{i}{{}};'
+    if i or cpp_void_return:
+      if r.type.lang_type == 'object':
+        yield I + f'py::object ret{i}{{}};'
+      else:
+        yield I + f'{r.type.cpp_type} ret{i}{{}};'
 
   # Generates call to the wrapped function
-  if not func_decl.cpp_void_return and len(func_decl.returns):
-    if func_decl.returns[0].type.lang_type == 'object':
-      yield I + ('ret0 = '
+  if not cpp_void_return:
+    ret0 = func_decl.returns[0]
+    if ret0.type.lang_type == 'object':
+      yield I + ('py::object ret0 = '
                  f'clif::ConvertPyObject({function_call}'
                  f'({function_call_params}));')
+    elif _is_status_param(ret0):
+      yield (I +
+             f'pybind11::google::PyCLIFStatus<{ret0.cpp_exact_type}> ret0 = '
+             f'{function_call}({function_call_params});')
     else:
-      yield I + f'ret0 = {function_call}({function_call_params});'
+      yield I + (f'{ret0.type.cpp_type} ret0 = '
+                 f'{function_call}({function_call_params});')
   else:
     yield I + f'{function_call}({function_call_params});'
 

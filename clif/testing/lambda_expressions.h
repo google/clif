@@ -76,6 +76,17 @@ struct TestExtendCtor {
   int value;
 };
 
+struct NoDefaultConstructor {
+  int value_;
+  explicit NoDefaultConstructor(int v) : value_(v) {}
+  int get() { return value_; }
+};
+
+inline NoDefaultConstructor no_default_ctor_return(
+    int value, int* unused) {
+  return NoDefaultConstructor(value);
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_LAMBDA_EXPRESSIONS_H_

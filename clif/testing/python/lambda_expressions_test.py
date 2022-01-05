@@ -52,6 +52,10 @@ class LambdaExpressionsTest(absltest.TestCase):
     obj = lambda_expressions.TestExtendCtor(10)
     self.assertEqual(obj.value, 110)
 
+  def test_no_default_ctor_return(self):
+    obj = lambda_expressions.no_default_ctor_return(100)[0]
+    self.assertEqual(obj.get(), 100)
+
 
 if __name__ == '__main__':
   absltest.main()
