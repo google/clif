@@ -94,9 +94,11 @@ def CreatePyTypeInfo(desc, path,
   return messages
 
 
-def GenerateForPybind11(messages):
+def GenerateForPybind11(messages, proto_hdr):
   """Generate no-op header files to bypass the checks of PyCLIF."""
   with open(FLAGS.header_out, 'w') as hout:
+    hout.write(f'#include "{proto_hdr}"')
+    hout.write('\n')
     for m in messages:
       hout.write(f'// CLIF use `{m.cname}` as {m.pyname}, Pybind11Ignore')
       hout.write('\n')
@@ -165,7 +167,7 @@ def main(_):
   if FLAGS.pyclif_codegen_mode == 'c_api':
     GenerateFrom(messages, name, hdr, pypath+'.pb.h')
   else:
-    GenerateForPybind11(messages)
+    GenerateForPybind11(messages, pypath+'.pb.h')
 
 
 def ParseFlags():
