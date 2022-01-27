@@ -14,7 +14,7 @@
 
 from "clif/testing/value_holder_clif_conversions.h" import *
 
-from "clif/testing/type_caster.h":
+from "clif/testing/python/type_caster_clif_aux.h":
   namespace `clif_testing`:
     def get_value_direct(vh: ValueHolder) -> int
     def get_value_optional(vh: NoneOr<ValueHolder>) -> int
@@ -28,3 +28,9 @@ from "clif/testing/type_caster.h":
 
     def get_value_pyobjas_only(vh: ValueHolderAsOnly) -> int
     def get_value_pybind11_ignore(vh: ValueHolderPybind11Ignore) -> int
+
+    def get_refcount_from_raw_ptr() -> int
+    def get_refcount_from_unique_ptr() -> int
+    def get_refcount_from_rvalue() -> int
+    def get_refcount_from_const_ref() -> int
+    def get_refcount_from_const_ptr() -> int

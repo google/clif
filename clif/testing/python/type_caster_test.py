@@ -13,11 +13,17 @@
 # limitations under the License.
 
 from absl.testing import absltest
+from absl.testing import parameterized
 
+# Register the classes so that pybind11 knows how to convert them from Python
+# to C++.
+# pylint: disable=unused-import
+from clif.testing.python import lambda_expressions
+# pylint: enable=unused-import
 from clif.testing.python import type_caster
 
 
-class TypeCasterTest(absltest.TestCase):
+class TypeCasterTest(parameterized.TestCase):
 
   def test_get_values(self):
     self.assertEqual(type_caster.get_value_direct(10), 11)
@@ -40,6 +46,16 @@ class TypeCasterTest(absltest.TestCase):
   def test_pybind11_ignore(self):
     with self.assertRaises(TypeError):
       type_caster.get_value_pybind11_ignore(10)
+
+  @parameterized.parameters(
+      type_caster.get_refcount_from_raw_ptr,
+      type_caster.get_refcount_from_unique_ptr,
+      type_caster.get_refcount_from_rvalue,
+      type_caster.get_refcount_from_const_ref,
+      type_caster.get_refcount_from_const_ptr)
+  def test_generated_pyobjfrom(self, func):
+    res = func()
+    self.assertGreater(res, 0)
 
 
 if __name__ == '__main__':
