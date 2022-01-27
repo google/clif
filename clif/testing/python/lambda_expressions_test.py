@@ -56,6 +56,14 @@ class LambdaExpressionsTest(absltest.TestCase):
     obj = lambda_expressions.no_default_ctor_return(100)[0]
     self.assertEqual(obj.get(), 100)
 
+  def test_multiple_returns_with_unique_ptr(self):
+    obj = lambda_expressions.multiple_returns_with_unique_ptr()[0]
+    self.assertEqual(obj.get(), 10)
+
+  def test_multiple_returns_with_nocopy_object(self):
+    obj = lambda_expressions.multiple_returns_with_nocopy_object()[0]
+    self.assertEqual(obj.get(), 20)
+
 
 if __name__ == '__main__':
   absltest.main()

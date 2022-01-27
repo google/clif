@@ -33,6 +33,20 @@ struct Derived: public Abstract {
   }
 };
 
+struct NoCopy {
+  explicit NoCopy(int v) : value(v) {}
+  NoCopy(const NoCopy&) = delete;
+  NoCopy(NoCopy&& other) { value = other.value; }
+
+  NoCopy& operator=(const NoCopy&) = delete;
+  NoCopy& operator=(NoCopy&& other) {
+    value = other.value;
+    return *this;
+  }
+  int value;
+  int get() { return value; }
+};
+
 struct NoCopyNoMove {
   NoCopyNoMove() : value(0) {}
   NoCopyNoMove(const NoCopyNoMove&) = delete;
@@ -85,6 +99,15 @@ struct NoDefaultConstructor {
 inline NoDefaultConstructor no_default_ctor_return(
     int value, int* unused) {
   return NoDefaultConstructor(value);
+}
+
+inline std::unique_ptr<Derived> multiple_returns_with_unique_ptr(
+    int* unused = nullptr) {
+  return std::unique_ptr<Derived>(new Derived(10));
+}
+
+inline NoCopy multiple_returns_with_nocopy_object(int* unused = nullptr) {
+  return NoCopy(20);
 }
 
 }  // namespace clif_testing

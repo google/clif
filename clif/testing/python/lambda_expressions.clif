@@ -22,6 +22,11 @@ from "clif/testing/python/lambda_expressions_clif_aux.h":
       def __init__(self, v: int)
       def get(self) -> int
 
+    class NoCopy:
+      value: int
+      def __init__(self, v: int)
+      def get(self) -> int
+
     class NoCopyNoMove:
       value: int
       def __init__(self)
@@ -48,3 +53,5 @@ from "clif/testing/python/lambda_expressions_clif_aux.h":
       def get(self) -> int
 
     def no_default_ctor_return(value: int) -> (output: NoDefaultConstructor, unused: int)
+    def multiple_returns_with_unique_ptr() -> (output: Derived, unused: int)
+    def multiple_returns_with_nocopy_object() -> (output: NoCopy, unused: int)
