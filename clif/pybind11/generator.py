@@ -76,6 +76,7 @@ class ModuleGenerator(object):
     for decl in ast.decls:
       includes.add(decl.cpp_file)
     yield '#include "third_party/pybind11/include/pybind11/smart_holder.h"'
+    yield '#include "clif/python/postconv.h"'
     for include in includes:
       yield f'#include "{include}"'
     yield ''
