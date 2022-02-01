@@ -155,13 +155,17 @@ def _generate_constructor_overload(
       if p.type.lang_type == 'object':
         has_pyobj = True
     if has_pyobj:
+      function_suffix = function_lib.generate_function_suffixes(
+          func_decl, release_gil=False)
       yield f'{class_name}.def(py::init([]({params_with_types}) {{'
       yield I + (f'return std::unique_ptr<{class_decl.name.cpp_name}>'
                  f'(new {class_decl.name.cpp_name}({params}));')
-      yield f'}}), {function_lib.generate_function_suffixes(func_decl)}'
+      yield f'}}), {function_suffix}'
     else:
-      yield (f'{class_name}.def(py::init<{cpp_types}>(), '
-             f'{function_lib.generate_function_suffixes(func_decl)}')
+      release_gil = bool(cpp_types)
+      function_suffix = function_lib.generate_function_suffixes(
+          func_decl, release_gil=release_gil)
+      yield f'{class_name}.def(py::init<{cpp_types}>(), {function_suffix}'
 
   elif func_decl.constructor:
     yield (f'{class_name}.def_static("{func_decl.name.native}", '

@@ -41,7 +41,10 @@ def generate_lambda(
          f'("{func_name}", []({params_with_type}) {{')
   yield from _generate_lambda_body(
       func_decl, params_list, capsule_types, class_decl)
-  yield f'}}, {function_lib.generate_function_suffixes(func_decl)}'
+  release_gil = not _func_has_py_object_params(func_decl)
+  function_suffix = function_lib.generate_function_suffixes(
+      func_decl, release_gil=release_gil)
+  yield f'}}, {function_suffix}'
 
 
 def needs_lambda(
@@ -107,9 +110,11 @@ def _generate_lambda_body(
     assert '.' in func_decl.postproc
     module_name, method_name = func_decl.postproc.rsplit('.', maxsplit=1)
     # TODO: Port or reuse `clif::ImportFQName`.
+    yield I + 'py::gil_scoped_acquire acquire;'
     yield I + f'auto mod = py::module_::import("{module_name}");'
     yield I + ('py::object result_ = '
                f'mod.attr("{method_name}")({function_call_returns});')
+    yield I + 'py::gil_scoped_release release;'
     yield I + 'return result_;'
   elif len(func_decl.returns) > 1:
     yield I + f'return std::make_tuple({function_call_returns});'

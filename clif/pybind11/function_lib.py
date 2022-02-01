@@ -67,7 +67,8 @@ def num_unknown_default_values(func_decl: ast_pb2.FuncDecl) -> int:
   return num_unknown
 
 
-def generate_function_suffixes(func_decl: ast_pb2.FuncDecl) -> str:
+def generate_function_suffixes(
+    func_decl: ast_pb2.FuncDecl, release_gil: bool = True) -> str:
   """Generates py_args, docstrings and return value policys."""
   py_args = generate_py_args(func_decl)
   suffix = ''
@@ -76,6 +77,8 @@ def generate_function_suffixes(func_decl: ast_pb2.FuncDecl) -> str:
   suffix += f'{generate_return_value_policy(func_decl)}'
   if func_decl.docstring:
     suffix += f', {generate_docstring(func_decl)}'
+  if release_gil and not func_decl.py_keep_gil:
+    suffix += ', py::call_guard<py::gil_scoped_release>()'
   suffix += ');'
   return suffix
 
