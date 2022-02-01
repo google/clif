@@ -16,6 +16,8 @@
 #ifndef THIRD_PARTY_CLIF_TESTING_PYTHON_LAMBDA_EXPRESSIONS_CLIF_AUX_H_
 #define THIRD_PARTY_CLIF_TESTING_PYTHON_LAMBDA_EXPRESSIONS_CLIF_AUX_H_
 
+#include <Python.h>
+
 #include <memory>
 
 #include "clif/testing/lambda_expressions.h"
@@ -27,6 +29,16 @@ inline std::unique_ptr<TestExtendCtor> TestExtendCtor__extend__init__(
     int i, Arg arg = {100}) {
   auto res = std::make_unique<TestExtendCtor>();
   res->value = i + arg.value;
+  return res;
+}
+
+inline std::unique_ptr<ExtendedCtorTakesPyObj>
+ExtendedCtorTakesPyObj__extend__init__(PyObject *obj) {
+  auto res = std::make_unique<ExtendedCtorTakesPyObj>();
+  res->value = PyLong_AsLong(obj);
+  if (res->value == -1 && PyErr_Occurred()) {
+    PyErr_Clear();
+  }
   return res;
 }
 

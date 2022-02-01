@@ -14,10 +14,49 @@
 
 """Common utility functions for pybind11 function code generation."""
 import re
-from typing import Optional
+from typing import AbstractSet, Optional
 
 from clif.protos import ast_pb2
 from clif.pybind11 import utils
+
+
+class Parameter:
+  """Wraps a C++ function parameter."""
+  cpp_type: str  # The actual generated cpp_type in lambda expressions
+  name: str  # cpp_name of this parameter
+  function_argument: str  # How to pass this parameter to functions
+
+  def __init__(self, param: ast_pb2.ParamDecl, capsule_types: AbstractSet[str],
+               allow_implicit_conversion: bool = True):
+    ptype = param.type
+    ctype = ptype.cpp_type
+    self.cpp_type = ctype
+    self.name = param.name.cpp_name
+    self.function_argument = self.name
+
+    if ptype.lang_type == 'object':
+      self.cpp_type = 'py::object'
+      if param.cpp_exact_type == '::PyObject *':
+        self.function_argument = f'{param.name.cpp_name}.ptr()'
+      else:
+        self.function_argument = (
+            f'{param.name.cpp_name}.cast<{param.cpp_exact_type}>()')
+    elif not ptype.cpp_type:  # std::function
+      self.cpp_type = generate_callback_signature(param)
+    # unique_ptr<T>, shared_ptr<T>
+    elif (param.cpp_exact_type.startswith('::std::unique_ptr') or
+          param.cpp_exact_type.startswith('::std::shared_ptr')):
+      self.function_argument = f'std::move({param.name.cpp_name})'
+    # T, [const] T&
+    elif allow_implicit_conversion and not ptype.cpp_raw_pointer and (
+        param.cpp_exact_type.endswith('&') and not ctype.endswith('&')):
+      # CLIF matcher might set param.type.cpp_type to `T` when the function
+      # being wrapped takes `T&`.
+      self.cpp_type = param.cpp_exact_type
+
+    if ptype.lang_type in capsule_types:
+      self.cpp_type = f'clif::CapsuleWrapper<{self.cpp_type}>'
+      self.function_argument = f'{param.name.cpp_name}.ptr'
 
 
 def num_unknown_default_values(func_decl: ast_pb2.FuncDecl) -> int:

@@ -16,6 +16,8 @@
 #ifndef THIRD_PARTY_CLIF_TESTING_LAMBDA_EXPRESSIONS_H_
 #define THIRD_PARTY_CLIF_TESTING_LAMBDA_EXPRESSIONS_H_
 
+#include <Python.h>
+
 #include <string>
 
 namespace clif_testing {
@@ -27,7 +29,7 @@ struct Abstract {
 };
 
 struct Derived: public Abstract {
-  Derived(int v) { value = v; }
+  explicit Derived(int v) { value = v; }
   int get() override {
     return value;
   }
@@ -55,6 +57,20 @@ struct NoCopyNoMove {
   NoCopyNoMove& operator=(const NoCopyNoMove&) = delete;
   NoCopyNoMove& operator=(NoCopyNoMove&&) = delete;
   int value;
+};
+
+struct CtorTakesPyObj {
+  CtorTakesPyObj(PyObject *obj) {
+    value = PyLong_AsLong(obj);
+    if (value == -1 && PyErr_Occurred()) {
+      PyErr_Clear();
+    }
+  }
+  int value;
+};
+
+struct ExtendedCtorTakesPyObj {
+  int value = -99999;
 };
 
 inline std::string abstract_reference_param(Abstract& obj) {

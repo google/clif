@@ -64,6 +64,18 @@ class LambdaExpressionsTest(absltest.TestCase):
     obj = lambda_expressions.multiple_returns_with_nocopy_object()[0]
     self.assertEqual(obj.get(), 20)
 
+  def test_ctor_takes_pyobject(self):
+    obj = lambda_expressions.CtorTakesPyObj(1000)
+    self.assertEqual(obj.value, 1000)
+    obj = lambda_expressions.CtorTakesPyObj('123')
+    self.assertEqual(obj.value, -1)
+
+  def test_extended_ctor_takes_pyobject(self):
+    obj = lambda_expressions.ExtendedCtorTakesPyObj(1001)
+    self.assertEqual(obj.value, 1001)
+    obj = lambda_expressions.ExtendedCtorTakesPyObj('123')
+    self.assertEqual(obj.value, -1)
+
 
 if __name__ == '__main__':
   absltest.main()

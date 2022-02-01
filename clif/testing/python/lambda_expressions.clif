@@ -31,6 +31,15 @@ from "clif/testing/python/lambda_expressions_clif_aux.h":
       value: int
       def __init__(self)
 
+    class CtorTakesPyObj:
+      value: int
+      def __init__(self, obj: object)
+
+    class ExtendedCtorTakesPyObj:
+      value: int
+      @extend
+      def __init__(self, obj: object)
+
     def abstract_reference_param(obj: Abstract) -> bytes
     def abstract_pointer_param(obj: Abstract) -> bytes
     def nocopy_nomove_reference_param(obj: NoCopyNoMove) -> bytes

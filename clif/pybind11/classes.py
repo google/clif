@@ -75,7 +75,8 @@ def generate_from(
       if member.func.constructor:
         if not member.func.params:
           default_constructor_defined = True
-        for s in _generate_constructor(class_name, member.func, class_decl):
+        for s in _generate_constructor(class_name, member.func, class_decl,
+                                       capsule_types):
           yield I + I + s
       else:
         for s in function.generate_from(
@@ -103,7 +104,8 @@ def generate_from(
 
 def _generate_constructor(
     class_name: str, func_decl: ast_pb2.FuncDecl,
-    class_decl: ast_pb2.ClassDecl) -> Generator[str, None, None]:
+    class_decl: ast_pb2.ClassDecl,
+    capsule_types: Set[str]) -> Generator[str, None, None]:
   """Generates pybind11 bindings code for a constructor.
 
   Multiple deinitions will be generated when the constructor contains unknown
@@ -113,6 +115,7 @@ def _generate_constructor(
     class_name: Name of the class that defines the contructor.
     func_decl: Constructor declaration in proto format.
     class_decl: Class declaration in proto format.
+    capsule_types: A set of C++ types that are defined as capsules.
 
   Yields:
     pybind11 function bindings code.
@@ -123,29 +126,42 @@ def _generate_constructor(
   if num_unknown:
     for _ in range(num_unknown):
       yield from _generate_constructor_overload(class_name, temp_func_decl,
-                                                class_decl)
+                                                class_decl, capsule_types)
       del temp_func_decl.params[-1]
   yield from _generate_constructor_overload(class_name, temp_func_decl,
-                                            class_decl)
+                                            class_decl, capsule_types)
 
 
 def _generate_constructor_overload(
     class_name: str, func_decl: ast_pb2.FuncDecl,
-    class_decl: ast_pb2.ClassDecl) -> Generator[str, None, None]:
+    class_decl: ast_pb2.ClassDecl,
+    capsule_types: Set[str]) -> Generator[str, None, None]:
   """Generates pybind11 bindings code for a constructor."""
-  params_with_types = ', '.join(
-      [f'{p.type.cpp_type} {p.name.cpp_name}' for p in func_decl.params])
-  params = ', '.join([f'{p.name.cpp_name}' for p in func_decl.params])
-  cpp_types = ', '.join(
-      [f'{function_lib.generate_param_type(p)}' for p in func_decl.params])
+  params_list = []
+  for param in func_decl.params:
+    params_list.append(function_lib.Parameter(
+        param, capsule_types, allow_implicit_conversion=False))
+  params_with_types = ', '.join([f'{p.cpp_type} {p.name}' for p in params_list])
+  params = ', '.join([p.function_argument for p in params_list])
+  cpp_types = ', '.join([p.cpp_type for p in params_list])
   if func_decl.name.native == '__init__' and func_decl.is_extend_method:
     yield f'{class_name}.def(py::init([]({params_with_types}) {{'
     yield I + f'return {func_decl.name.cpp_name}({params});'
     yield f'}}), {function_lib.generate_function_suffixes(func_decl)}'
 
   elif func_decl.name.native == '__init__':
-    yield (f'{class_name}.def(py::init<{cpp_types}>(), '
-           f'{function_lib.generate_function_suffixes(func_decl)}')
+    has_pyobj = False
+    for p in func_decl.params:
+      if p.type.lang_type == 'object':
+        has_pyobj = True
+    if has_pyobj:
+      yield f'{class_name}.def(py::init([]({params_with_types}) {{'
+      yield I + (f'return std::unique_ptr<{class_decl.name.cpp_name}>'
+                 f'(new {class_decl.name.cpp_name}({params}));')
+      yield f'}}), {function_lib.generate_function_suffixes(func_decl)}'
+    else:
+      yield (f'{class_name}.def(py::init<{cpp_types}>(), '
+             f'{function_lib.generate_function_suffixes(func_decl)}')
 
   elif func_decl.constructor:
     yield (f'{class_name}.def_static("{func_decl.name.native}", '
