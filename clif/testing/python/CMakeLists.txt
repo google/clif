@@ -137,6 +137,8 @@ add_pyclif_library_for_test(iterator iterator.clif)
 
 add_pyclif_library_for_test(implicit_conversion implicit_conversion.clif)
 
+add_pyclif_library_for_test(lambda_expressions lambda_expressions.clif)
+
 add_pyclif_library_for_test(nested_callbacks nested_callbacks.clif)
 
 add_pyclif_library_for_test(nested_fields nested_fields.clif)
@@ -207,7 +209,9 @@ add_pyclif_library_for_test(templates templates.clif)
 
 add_pyclif_library_for_test(top_level_pass top_level_pass.clif)
 
-add_pyclif_library_for_test(type_caster type_caster.clif)
+add_pyclif_library_for_test(type_caster type_caster.clif
+  CLIF_DEPS clif_testing_python_lambda_expressions
+)
 
 add_pyclif_library_for_test(variables variables.clif)
 

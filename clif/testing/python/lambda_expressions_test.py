@@ -62,7 +62,7 @@ class LambdaExpressionsTest(absltest.TestCase):
 
   def test_multiple_returns_with_nocopy_object(self):
     obj = lambda_expressions.multiple_returns_with_nocopy_object()[0]
-    self.assertEqual(obj.get(), 20)
+    self.assertEqual(obj.get(), '20')
 
   def test_ctor_takes_pyobject(self):
     obj = lambda_expressions.CtorTakesPyObj(1000)

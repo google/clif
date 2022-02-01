@@ -36,7 +36,9 @@ struct Derived: public Abstract {
 };
 
 struct NoCopy {
-  explicit NoCopy(int v) : value(v) {}
+  // This constructor is to resolve Github CI failures.
+  NoCopy() : value("Default") { }
+  explicit NoCopy(const std::string &v) : value(v) {}
   NoCopy(const NoCopy&) = delete;
   NoCopy(NoCopy&& other) { value = other.value; }
 
@@ -45,8 +47,8 @@ struct NoCopy {
     value = other.value;
     return *this;
   }
-  int value;
-  int get() { return value; }
+  std::string value;
+  std::string get() { return value; }
 };
 
 struct NoCopyNoMove {
@@ -123,7 +125,7 @@ inline std::unique_ptr<Derived> multiple_returns_with_unique_ptr(
 }
 
 inline NoCopy multiple_returns_with_nocopy_object(int* unused = nullptr) {
-  return NoCopy(20);
+  return NoCopy("20");
 }
 
 }  // namespace clif_testing

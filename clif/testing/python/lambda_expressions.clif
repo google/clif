@@ -23,9 +23,9 @@ from "clif/testing/python/lambda_expressions_clif_aux.h":
       def get(self) -> int
 
     class NoCopy:
-      value: int
-      def __init__(self, v: int)
-      def get(self) -> int
+      value: str
+      def __init__(self, v: str)
+      def get(self) -> str
 
     class NoCopyNoMove:
       value: int
