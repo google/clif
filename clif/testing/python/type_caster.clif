@@ -29,8 +29,13 @@ from "clif/testing/python/type_caster_clif_aux.h":
     def get_value_pyobjas_only(vh: ValueHolderAsOnly) -> int
     def get_value_pybind11_ignore(vh: ValueHolderPybind11Ignore) -> int
 
+    @do_not_release_gil
     def get_refcount_from_raw_ptr() -> int
+    @do_not_release_gil
     def get_refcount_from_unique_ptr() -> int
+    @do_not_release_gil
     def get_refcount_from_rvalue() -> int
+    @do_not_release_gil
     def get_refcount_from_const_ref() -> int
+    @do_not_release_gil
     def get_refcount_from_const_ptr() -> int
