@@ -22,7 +22,8 @@ from clif.pybind11 import utils
 
 I = utils.I
 
-_STATUS_PATTERNS = (r'::absl::Status', r'::absl::StatusOr<(\S)+>')
+_STATUS_PATTERNS = (
+    r'(const )?::absl::Status( &)?', r'(const )?::absl::StatusOr<(\S)+>( &)?')
 
 
 def generate_lambda(
@@ -94,9 +95,14 @@ def _generate_lambda_body(
                  f'clif::ConvertPyObject({function_call}'
                  f'({function_call_params}));')
     elif _is_status_param(ret0):
-      yield (I +
-             f'pybind11::google::PyCLIFStatus<{ret0.cpp_exact_type}> ret0 = '
-             f'{function_call}({function_call_params});')
+      if func_decl.marked_non_raising:
+        yield (I +
+               f'pybind11::google::NoThrowStatus<{ret0.cpp_exact_type}> ret0 = '
+               f'{function_call}({function_call_params});')
+      else:
+        yield (I +
+               f'pybind11::google::PyCLIFStatus<{ret0.cpp_exact_type}> ret0 = '
+               f'{function_call}({function_call_params});')
     else:
       yield I + (f'{ret0.type.cpp_type} ret0 = '
                  f'{function_call}({function_call_params});')
