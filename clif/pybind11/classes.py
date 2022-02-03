@@ -66,24 +66,27 @@ def generate_from(
   yield I + I + definition
 
   default_constructor_defined = False
-  trampoline_generated = False
+  trampoline_generated = (
+      utils.trampoline_name(class_decl) in trampoline_class_names)
   for member in class_decl.members:
     if member.decltype == ast_pb2.Decl.Type.CONST:
       for s in consts.generate_from(class_name, member.const):
         yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.FUNC:
       if member.func.constructor:
-        if not member.func.params:
-          default_constructor_defined = True
-        for s in _generate_constructor(class_name, member.func, class_decl,
-                                       capsule_types):
-          yield I + I + s
+        # Legacy CLIF ignores __init__ for abstract classes.
+        # Potential future cleanup project: generate a user-friendly error
+        # instead.
+        if not class_decl.cpp_abstract or trampoline_generated:
+          if not member.func.params:
+            default_constructor_defined = True
+          for s in _generate_constructor(class_name, member.func, class_decl,
+                                         capsule_types):
+            yield I + I + s
       else:
         for s in function.generate_from(
             class_name, member.func, capsule_types, class_decl):
           yield I + I + s
-      if member.func.virtual:
-        trampoline_generated = True
     elif member.decltype == ast_pb2.Decl.Type.VAR:
       for s in variables.generate_from(class_name, member.var, class_decl):
         yield I + I + s
@@ -139,11 +142,9 @@ def _generate_constructor_overload(
   """Generates pybind11 bindings code for a constructor."""
   params_list = []
   for param in func_decl.params:
-    params_list.append(function_lib.Parameter(
-        param, capsule_types, allow_implicit_conversion=False))
+    params_list.append(function_lib.Parameter(param, capsule_types))
   params_with_types = ', '.join([f'{p.cpp_type} {p.name}' for p in params_list])
   params = ', '.join([p.function_argument for p in params_list])
-  cpp_types = ', '.join([p.cpp_type for p in params_list])
   if func_decl.name.native == '__init__' and func_decl.is_extend_method:
     yield f'{class_name}.def(py::init([]({params_with_types}) {{'
     yield I + f'return {func_decl.name.cpp_name}({params});'
@@ -162,6 +163,8 @@ def _generate_constructor_overload(
                  f'(new {class_decl.name.cpp_name}({params}));')
       yield f'}}), {function_suffix}'
     else:
+      cpp_types = ', '.join(
+          [function_lib.generate_param_type(p) for p in func_decl.params])
       release_gil = bool(cpp_types)
       function_suffix = function_lib.generate_function_suffixes(
           func_decl, release_gil=release_gil)

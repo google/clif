@@ -15,7 +15,7 @@
 from "clif/testing/python/lambda_expressions_clif_aux.h":
   namespace `clif_testing`:
     class Abstract:
-      pass
+      def __init__(self)
 
     class Derived(Abstract):
       value: int
@@ -30,6 +30,13 @@ from "clif/testing/python/lambda_expressions_clif_aux.h":
     class NoCopyNoMove:
       value: int
       def __init__(self)
+
+    class FromNoCopy:
+      value: str
+      def __init__(self, v: str)
+      @add__init__
+      def from_no_copy(self, nc: NoCopy)
+      def get(self) -> str
 
     class CtorTakesPyObj:
       value: int

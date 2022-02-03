@@ -61,6 +61,13 @@ struct NoCopyNoMove {
   int value;
 };
 
+struct FromNoCopy {
+  explicit FromNoCopy(const std::string& v): value(v) { }
+  explicit FromNoCopy(const NoCopy& nc): value(nc.value) { }
+  std::string value;
+  std::string get() { return value; }
+};
+
 struct CtorTakesPyObj {
   CtorTakesPyObj(PyObject *obj) {
     value = PyLong_AsLong(obj);

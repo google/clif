@@ -26,8 +26,7 @@ class Parameter:
   name: str  # cpp_name of this parameter
   function_argument: str  # How to pass this parameter to functions
 
-  def __init__(self, param: ast_pb2.ParamDecl, capsule_types: AbstractSet[str],
-               allow_implicit_conversion: bool = True):
+  def __init__(self, param: ast_pb2.ParamDecl, capsule_types: AbstractSet[str]):
     ptype = param.type
     ctype = ptype.cpp_type
     self.cpp_type = ctype
@@ -48,7 +47,7 @@ class Parameter:
           param.cpp_exact_type.startswith('::std::shared_ptr')):
       self.function_argument = f'std::move({param.name.cpp_name})'
     # T, [const] T&
-    elif allow_implicit_conversion and not ptype.cpp_raw_pointer and (
+    elif not ptype.cpp_raw_pointer and (
         param.cpp_exact_type.endswith('&') and not ctype.endswith('&')):
       # CLIF matcher might set param.type.cpp_type to `T` when the function
       # being wrapped takes `T&`.

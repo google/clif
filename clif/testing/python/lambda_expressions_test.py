@@ -76,6 +76,12 @@ class LambdaExpressionsTest(absltest.TestCase):
     obj = lambda_expressions.ExtendedCtorTakesPyObj('123')
     self.assertEqual(obj.value, -1)
 
+  def test_from_nocopy(self):
+    nc = lambda_expressions.NoCopy('30')
+    self.assertEqual(nc.get(), '30')
+    obj = lambda_expressions.FromNoCopy.from_no_copy(nc)
+    self.assertEqual(obj.get(), '30')
+
 
 if __name__ == '__main__':
   absltest.main()
