@@ -48,6 +48,7 @@ class ModuleGenerator(object):
     self._all_types = set()
     self._namemap = {}
     self._registered_types = set()
+    self._requires_status = False
 
   def preprocess_ast(self) -> None:
     """Preprocess the ast to collect type information."""
@@ -64,6 +65,7 @@ class ModuleGenerator(object):
     ])
     cpp_import_types = type_casters.get_cpp_import_types(
         self._ast, self._include_paths)
+    self._requires_status = 'absl::Status' in cpp_import_types
     python_import_types = set(
         [t.cpp_name for t in self._namemap.values() if t.cpp_name])
     self._registered_types = set([t.cpp_name for t in self._types]).union(
@@ -116,7 +118,9 @@ class ModuleGenerator(object):
     yield from self._generate_import_modules(ast)
     yield I+('m.doc() = "CLIF-generated pybind11-based module for '
              f'{ast.source}";')
-    yield I + 'py::google::ImportStatusModule();'
+    if self._requires_status:
+      yield I + 'py::google::ImportStatusModule();'
+      yield I + 'py::google::PatchStatusBindings();'
     yield I + 'pybind11_protobuf::ImportNativeProtoCasters();'
 
     for decl in ast.decls:

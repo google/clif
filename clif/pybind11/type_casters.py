@@ -39,10 +39,9 @@ def get_cpp_import_types(ast: ast_pb2.AST,
   result = set()
   includes = set(ast.usertype_includes)
   for include in includes:
-    if include.endswith('_clif.h'):
-      clif_uses = _get_clif_uses(include, include_paths)
-      for clif_use in clif_uses:
-        result.add(clif_use.cpp_name)
+    clif_uses = _get_clif_uses(include, include_paths)
+    for clif_use in clif_uses:
+      result.add(clif_use.cpp_name)
   return result
 
 
