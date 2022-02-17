@@ -180,6 +180,9 @@ class ModuleGenerator(object):
     yield ''
     yield '#include "clif/pybind11/runtime.h"'
     yield '#include "clif/pybind11/type_casters.h"'
+
+    yield '// See pybind11_protobuf/proto_caster_impl.h'
+    yield '#define PYBIND11_PROTOBUF_UNSAFE 1'
     yield '#include "third_party/pybind11_protobuf/native_proto_caster.h"'
     yield ''
     for include in includes:
