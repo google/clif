@@ -82,6 +82,12 @@ class LambdaExpressionsTest(absltest.TestCase):
     obj = lambda_expressions.FromNoCopy.from_no_copy(nc)
     self.assertEqual(obj.get(), '30')
 
+  def test_generate_operator_with_high_priority(self):
+    v1 = lambda_expressions.Derived(10)
+    v2 = lambda_expressions.Derived(20)
+    self.assertEqual(v1, v1)
+    self.assertNotEqual(v1, v2)
+
 
 if __name__ == '__main__':
   absltest.main()

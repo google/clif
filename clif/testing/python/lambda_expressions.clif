@@ -21,6 +21,7 @@ from "clif/testing/python/lambda_expressions_clif_aux.h":
       value: int
       def __init__(self, v: int)
       def get(self) -> int
+      def __eq__(self, arg: Derived) -> bool
 
     class NoCopy:
       value: str

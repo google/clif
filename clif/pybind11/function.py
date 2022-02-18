@@ -58,11 +58,11 @@ def _generate_function(
     class_decl: Optional[ast_pb2.ClassDecl] = None,
 ) -> Generator[str, None, None]:
   """Generates pybind11 bindings code for ast_pb2.FuncDecl."""
-  if lambdas.needs_lambda(func_decl, capsule_types, class_decl):
+  if operators.needs_operator_overloading(func_decl):
+    yield from operators.generate_operator(module_name, func_decl)
+  elif lambdas.needs_lambda(func_decl, capsule_types, class_decl):
     yield from lambdas.generate_lambda(
         module_name, func_decl, capsule_types, class_decl)
-  elif operators.needs_operator_overloading(func_decl):
-    yield from operators.generate_operator(module_name, func_decl)
   else:
     yield from _generate_simple_function(module_name, func_decl, class_decl)
 

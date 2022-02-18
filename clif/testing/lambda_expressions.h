@@ -135,6 +135,10 @@ inline NoCopy multiple_returns_with_nocopy_object(int* unused = nullptr) {
   return NoCopy("20");
 }
 
+inline bool operator==(const Derived& lhs, const Derived& rhs) {
+  return lhs.value == rhs.value;
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_LAMBDA_EXPRESSIONS_H_
