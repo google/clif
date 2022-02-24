@@ -33,6 +33,12 @@ I = utils.I
 _IMPORTMODULEPATTERN = r'module_path:(?P<module_path>.*)'
 
 
+# Do a SWIG-like name mangling.
+def _generate_mangled_name_for_module(full_dotted_module_name: str) -> str:
+  """Converts `third_party.py.module` to `third__party_py_module`."""
+  return full_dotted_module_name.replace('_', '__').replace('.', '_')
+
+
 class ModuleGenerator(object):
   """A class that generates pybind11 bindings code from CLIF ast."""
 
@@ -114,7 +120,11 @@ class ModuleGenerator(object):
       yield from self._generate_trampoline_classes(trampoline_class_names, decl)
     yield ''
     yield from type_casters.generate_from(ast, self._include_paths)
-    yield f'PYBIND11_MODULE({self._module_name}, m) {{'
+
+    mangled_module_name = _generate_mangled_name_for_module(
+        self._module_path)
+    yield (f'GOOGLE_PYBIND11_MODULE({self._module_name}, '
+           f'{mangled_module_name}, m) {{')
     yield from self._generate_import_modules(ast)
     yield I+('m.doc() = "CLIF-generated pybind11-based module for '
              f'{ast.source}";')
