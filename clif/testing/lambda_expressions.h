@@ -139,6 +139,10 @@ inline bool operator==(const Derived& lhs, const Derived& rhs) {
   return lhs.value == rhs.value;
 }
 
+inline std::string returns_one(int) {
+  return "1";
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_LAMBDA_EXPRESSIONS_H_

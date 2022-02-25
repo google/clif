@@ -178,7 +178,7 @@ def _generate_lambda_params_with_types(
     params: List[function_lib.Parameter],
     class_decl: Optional[ast_pb2.ClassDecl] = None) -> str:
   """Generates parameters and types in the signatures of lambda expressions."""
-  params_list = [f'{p.cpp_type} {p.name}' for p in params]
+  params_list = [f'{p.cpp_type} {p.gen_name}' for p in params]
   if (class_decl and not func_decl.classmethod and
       not func_decl.is_extend_method):
     params_list = [f'{class_decl.name.cpp_name} &self'] + params_list

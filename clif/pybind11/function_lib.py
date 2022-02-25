@@ -30,22 +30,24 @@ class Parameter:
     ptype = param.type
     ctype = ptype.cpp_type
     self.cpp_type = ctype
-    self.name = param.name.cpp_name
-    self.function_argument = self.name
+    # To avoid reserved keywords in C++
+    # TODO: Append the underscore only for actual keyword
+    self.gen_name = param.name.cpp_name + '_'
+    self.function_argument = self.gen_name
 
     if ptype.lang_type == 'object':
       self.cpp_type = 'py::object'
       if param.cpp_exact_type == '::PyObject *':
-        self.function_argument = f'{param.name.cpp_name}.ptr()'
+        self.function_argument = f'{self.gen_name}.ptr()'
       else:
         self.function_argument = (
-            f'{param.name.cpp_name}.cast<{param.cpp_exact_type}>()')
+            f'{self.gen_name}.cast<{param.cpp_exact_type}>()')
     elif not ptype.cpp_type:  # std::function
       self.cpp_type = generate_callback_signature(param)
     # unique_ptr<T>, shared_ptr<T>
     elif (param.cpp_exact_type.startswith('::std::unique_ptr') or
           param.cpp_exact_type.startswith('::std::shared_ptr')):
-      self.function_argument = f'std::move({param.name.cpp_name})'
+      self.function_argument = f'std::move({self.gen_name})'
     # T, [const] T&
     elif not ptype.cpp_raw_pointer and (
         param.cpp_exact_type.endswith('&') and not ctype.endswith('&')):
@@ -55,7 +57,7 @@ class Parameter:
 
     if ptype.lang_type in capsule_types:
       self.cpp_type = f'clif::CapsuleWrapper<{self.cpp_type}>'
-      self.function_argument = f'{param.name.cpp_name}.ptr'
+      self.function_argument = f'{self.gen_name}.ptr'
 
 
 def num_unknown_default_values(func_decl: ast_pb2.FuncDecl) -> int:

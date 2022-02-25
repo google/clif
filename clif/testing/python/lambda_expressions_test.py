@@ -88,6 +88,9 @@ class LambdaExpressionsTest(absltest.TestCase):
     self.assertEqual(v1, v1)
     self.assertNotEqual(v1, v2)
 
+  def test_no_reserved_keyword_for_variables(self):
+    self.assertEqual(lambda_expressions.returns_one(123), b'1')
+
 
 if __name__ == '__main__':
   absltest.main()

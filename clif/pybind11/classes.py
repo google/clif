@@ -143,7 +143,8 @@ def _generate_constructor_overload(
   params_list = []
   for param in func_decl.params:
     params_list.append(function_lib.Parameter(param, capsule_types))
-  params_with_types = ', '.join([f'{p.cpp_type} {p.name}' for p in params_list])
+  params_with_types = ', '.join(
+      [f'{p.cpp_type} {p.gen_name}' for p in params_list])
   params = ', '.join([p.function_argument for p in params_list])
   if func_decl.name.native == '__init__' and func_decl.is_extend_method:
     yield f'{class_name}.def(py::init([]({params_with_types}) {{'
