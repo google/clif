@@ -43,6 +43,10 @@ class ClassType(BaseType):
   """Wraps a C++ Class."""
 
   cpp_has_public_dtor: bool
+  cpp_copyable: bool
+  cpp_movable: bool
+  cpp_abstract: bool
+
   py_bases: Set[str]
 
   def generate_type_caster(self) -> Generator[str, None, None]:
@@ -51,46 +55,53 @@ class ClassType(BaseType):
   def generate_header(self) -> Generator[str, None, None]:
     yield ''
     yield from self.generate_clif_use()
-    yield f'PyObject* Clif_PyObjFrom({self.cpp_name}*, ::clif::py::PostConv);'
-    yield f'PyObject* Clif_PyObjFrom({self.cpp_name}&&, ::clif::py::PostConv);'
-    yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}&, '
-           '::clif::py::PostConv);')
-    yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}*, '
-           '::clif::py::PostConv);')
-    if self.cpp_has_public_dtor:
-      yield (f'PyObject* Clif_PyObjFrom(std::unique_ptr<{self.cpp_name}>,'
-             '::clif::py::PostConv);')
+    if not self.cpp_abstract:
+      yield f'PyObject* Clif_PyObjFrom({self.cpp_name}*, ::clif::py::PostConv);'
+      if self.cpp_has_public_dtor:
+        yield (f'PyObject* Clif_PyObjFrom(std::unique_ptr<{self.cpp_name}>,'
+               '::clif::py::PostConv);')
+        if self.cpp_movable:
+          yield (f'PyObject* Clif_PyObjFrom({self.cpp_name}&&, '
+                 '::clif::py::PostConv);')
+      if self.cpp_copyable:
+        yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}&, '
+               '::clif::py::PostConv);')
+        yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}*, '
+               '::clif::py::PostConv);')
     yield ''
     yield f'bool Clif_PyObjAs(PyObject* input, {self.cpp_name}** output);'
 
   def generate_converters(self) -> Generator[str, None, None]:
     yield ''
-    yield (f'PyObject* Clif_PyObjFrom({self.cpp_name}* c, '
-           '::clif::py::PostConv) {')
-    yield '  return pybind11::cast(c).release().ptr();'
-    yield '}'
-    yield ''
-    if self.cpp_has_public_dtor:
-      yield (f'PyObject* Clif_PyObjFrom(std::unique_ptr<{self.cpp_name}> c, '
+    if not self.cpp_abstract:
+      yield (f'PyObject* Clif_PyObjFrom({self.cpp_name}* c, '
              '::clif::py::PostConv) {')
-      yield '  return pybind11::cast(std::move(c)).release().ptr();'
+      yield '  return pybind11::cast(c).release().ptr();'
       yield '}'
       yield ''
-    yield (f'PyObject* Clif_PyObjFrom({self.cpp_name}&& c, '
-           '::clif::py::PostConv) {')
-    yield '  return pybind11::cast(std::move(c)).release().ptr();'
-    yield '}'
-    yield ''
-    yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}& c, '
-           '::clif::py::PostConv) {')
-    yield '  return pybind11::cast(c).release().ptr();'
-    yield '}'
-    yield ''
-    yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}* c, '
-           '::clif::py::PostConv) {')
-    yield '  return pybind11::cast(c).release().ptr();'
-    yield '}'
-    yield ''
+      if self.cpp_has_public_dtor:
+        yield (f'PyObject* Clif_PyObjFrom(std::unique_ptr<{self.cpp_name}> c, '
+               '::clif::py::PostConv) {')
+        yield '  return pybind11::cast(std::move(c)).release().ptr();'
+        yield '}'
+        yield ''
+        if self.cpp_movable:
+          yield (f'PyObject* Clif_PyObjFrom({self.cpp_name}&& c, '
+                 '::clif::py::PostConv) {')
+          yield '  return pybind11::cast(std::move(c)).release().ptr();'
+          yield '}'
+          yield ''
+      if self.cpp_copyable:
+        yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}& c, '
+               '::clif::py::PostConv) {')
+        yield '  return pybind11::cast(c).release().ptr();'
+        yield '}'
+        yield ''
+        yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}* c, '
+               '::clif::py::PostConv) {')
+        yield '  return pybind11::cast(c).release().ptr();'
+        yield '}'
+        yield ''
     yield f'bool Clif_PyObjAs(PyObject* input, {self.cpp_name}** output) {{'
     yield (f' *output = pybind11::cast<{self.cpp_name}*>'
            '(pybind11::handle(input));')
@@ -112,9 +123,7 @@ class EnumType(BaseType):
     yield ''
     yield (f'PyObject* Clif_PyObjFrom({self.cpp_name}* c, '
            '::clif::py::PostConv) {')
-    yield '  pybind11::object res = pybind11::cast(c);'
-    yield '  res.inc_ref();'
-    yield '  return res.ptr();'
+    yield '  return pybind11::cast(c).release().ptr();'
     yield '}'
     yield ''
 
