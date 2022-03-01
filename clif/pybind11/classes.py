@@ -141,8 +141,8 @@ def _generate_constructor_overload(
     capsule_types: Set[str]) -> Generator[str, None, None]:
   """Generates pybind11 bindings code for a constructor."""
   params_list = []
-  for param in func_decl.params:
-    params_list.append(function_lib.Parameter(param, capsule_types))
+  for i, param in enumerate(func_decl.params):
+    params_list.append(function_lib.Parameter(param, f'arg{i}', capsule_types))
   params_with_types = ', '.join(
       [f'{p.cpp_type} {p.gen_name}' for p in params_list])
   params = ', '.join([p.function_argument for p in params_list])

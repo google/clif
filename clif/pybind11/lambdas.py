@@ -33,8 +33,8 @@ def generate_lambda(
 ) -> Generator[str, None, None]:
   """Entry point for generation of lambda functions in pybind11."""
   params_list = []
-  for param in func_decl.params:
-    params_list.append(function_lib.Parameter(param, capsule_types))
+  for i, param in enumerate(func_decl.params):
+    params_list.append(function_lib.Parameter(param, f'arg{i}', capsule_types))
   params_with_type = _generate_lambda_params_with_types(
       func_decl, params_list, class_decl)
   func_name = func_decl.name.native.rstrip('#')  # @sequential

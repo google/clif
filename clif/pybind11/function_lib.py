@@ -26,14 +26,13 @@ class Parameter:
   name: str  # cpp_name of this parameter
   function_argument: str  # How to pass this parameter to functions
 
-  def __init__(self, param: ast_pb2.ParamDecl, capsule_types: AbstractSet[str]):
+  def __init__(self, param: ast_pb2.ParamDecl, param_name: str,
+               capsule_types: AbstractSet[str]):
     ptype = param.type
     ctype = ptype.cpp_type
     self.cpp_type = ctype
-    # To avoid reserved keywords in C++
-    # TODO: Append the underscore only for actual keyword
-    self.gen_name = param.name.cpp_name + '_'
-    self.function_argument = self.gen_name
+    self.gen_name = param_name
+    self.function_argument = param_name
 
     if ptype.lang_type == 'object':
       self.cpp_type = 'py::object'
