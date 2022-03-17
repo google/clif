@@ -45,7 +45,7 @@ class ClassType(BaseType):
   cpp_has_public_dtor: bool
   cpp_copyable: bool
   cpp_movable: bool
-  cpp_abstract: bool
+  override_in_python: bool
 
   py_bases: Set[str]
 
@@ -55,8 +55,10 @@ class ClassType(BaseType):
   def generate_header(self) -> Generator[str, None, None]:
     yield ''
     yield from self.generate_clif_use()
-    if not self.cpp_abstract:
+    if not self.override_in_python:
       yield f'PyObject* Clif_PyObjFrom({self.cpp_name}*, ::clif::py::PostConv);'
+      yield (f'PyObject* Clif_PyObjFrom(std::shared_ptr<{self.cpp_name}>,'
+             '::clif::py::PostConv);')
       if self.cpp_has_public_dtor:
         yield (f'PyObject* Clif_PyObjFrom(std::unique_ptr<{self.cpp_name}>,'
                '::clif::py::PostConv);')
@@ -70,13 +72,25 @@ class ClassType(BaseType):
                '::clif::py::PostConv);')
     yield ''
     yield f'bool Clif_PyObjAs(PyObject* input, {self.cpp_name}** output);'
+    yield ('bool Clif_PyObjAs(PyObject* input, '
+           f'std::shared_ptr<{self.cpp_name}>* output);')
+    if self.cpp_has_public_dtor:
+      yield ('bool Clif_PyObjAs(PyObject* input, '
+             f'std::unique_ptr<{self.cpp_name}>* output);')
+    if self.cpp_copyable and not self.override_in_python:
+      yield f'bool Clif_PyObjAs(PyObject* input, {self.cpp_name}* output);'
 
   def generate_converters(self) -> Generator[str, None, None]:
     yield ''
-    if not self.cpp_abstract:
+    if not self.override_in_python:
       yield (f'PyObject* Clif_PyObjFrom({self.cpp_name}* c, '
              '::clif::py::PostConv) {')
       yield '  return pybind11::cast(c).release().ptr();'
+      yield '}'
+      yield ''
+      yield (f'PyObject* Clif_PyObjFrom(std::shared_ptr<{self.cpp_name}> c, '
+             '::clif::py::PostConv) {')
+      yield '  return pybind11::cast(std::move(c)).release().ptr();'
       yield '}'
       yield ''
       if self.cpp_has_public_dtor:
@@ -107,6 +121,25 @@ class ClassType(BaseType):
            '(pybind11::handle(input));')
     yield '  return true;'
     yield '}'
+    yield ('bool Clif_PyObjAs(PyObject* input, '
+           f'std::shared_ptr<{self.cpp_name}>* output) {{')
+    yield (f' *output = pybind11::cast<std::shared_ptr<{self.cpp_name}>>'
+           '(pybind11::handle(input));')
+    yield '  return true;'
+    yield '}'
+    if self.cpp_has_public_dtor:
+      yield ('bool Clif_PyObjAs(PyObject* input, '
+             f'std::unique_ptr<{self.cpp_name}>* output) {{')
+      yield (f' *output = pybind11::cast<std::unique_ptr<{self.cpp_name}>>'
+             '(pybind11::handle(input));')
+      yield '  return true;'
+      yield '}'
+    if self.cpp_copyable and not self.override_in_python:
+      yield f'bool Clif_PyObjAs(PyObject* input, {self.cpp_name}* output) {{'
+      yield (f' *output = pybind11::cast<{self.cpp_name}>'
+             '(pybind11::handle(input));')
+      yield '  return true;'
+      yield '}'
 
 
 @dataclasses.dataclass

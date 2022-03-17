@@ -268,6 +268,9 @@ class ModuleGenerator(object):
     """Register classes and enums defined in the ast."""
     cpp_namespace = decl.namespace_ if decl.namespace_ else cpp_namespace
     if decl.decltype == ast_pb2.Decl.Type.CLASS:
+      override_in_python = any(
+          member.decltype == ast_pb2.Decl.Type.FUNC and member.func.virtual
+          for member in decl.class_.members)
       py_name = decl.class_.name.native
       if parent_py_name:
         py_name = '.'.join([parent_py_name, py_name])
@@ -277,9 +280,11 @@ class ModuleGenerator(object):
           cpp_name=decl.class_.name.cpp_name, py_name=py_name,
           cpp_namespace=cpp_namespace, py_bases=py_bases,
           cpp_has_public_dtor=decl.class_.cpp_has_public_dtor,
-          cpp_copyable=decl.class_.cpp_copyable,
-          cpp_movable=decl.class_.cpp_movable,
-          cpp_abstract=decl.class_.cpp_abstract)
+          cpp_copyable=(decl.class_.cpp_copyable and
+                        not decl.class_.cpp_abstract),
+          cpp_movable=(decl.class_.cpp_movable and
+                       not decl.class_.cpp_abstract),
+          override_in_python=override_in_python)
       self._types.append(class_type)
       if not decl.class_.suppress_upcasts:
         bases = list(decl.class_.bases)
