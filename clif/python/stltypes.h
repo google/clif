@@ -36,6 +36,7 @@ headers are included.
 #include <type_traits>
 #include <typeinfo>
 #include <utility>
+#include <variant>
 
 // Clang and gcc define __EXCEPTIONS when -fexceptions flag passed to them.
 // (see https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html and
@@ -159,6 +160,7 @@ PyObject* Clif_PyObjFrom(const std::set<T, Args...>& c, const py::PostConv& pc);
 
 #ifdef ABSL_HAVE_STD_VARIANT
 // CLIF use `::std::variant` as OneOf
+// CLIF use `::std::monostate` as Monostate
 //
 // For example,
 //
@@ -186,6 +188,22 @@ PyObject* Clif_PyObjFrom(const std::set<T, Args...>& c, const py::PostConv& pc);
 //     Otherwise, continue to the next typename U.
 // If PyObject could not be converted to any type U, then return false.
 // ```
+namespace clif {
+inline PyObject* Clif_PyObjFrom(const ::std::monostate,
+                                const ::clif::py::PostConv& conv) {
+  Py_RETURN_NONE;
+}
+inline bool Clif_PyObjAs(PyObject* py, ::std::monostate* v) {
+  if (Py_None == py) {
+    *v = {};
+    return true;
+  }
+  PyErr_SetString(PyExc_TypeError,
+                  "Only None may be converted to std::monostate");
+  return false;
+}
+
+}  // namespace clif
 namespace clif_std_py_variant {
 // Dummy argument types to resolve conversion priorities.
 template <int N>

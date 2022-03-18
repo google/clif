@@ -18,11 +18,13 @@ from "clif/testing/std_variant.h":
     def `VariantIndex` as index_int_str_list(v: OneOf<int, str, list<int>>) -> int
     def `VariantIndex` as index_int_float(v: OneOf<int, float>) -> int
     def `VariantIndex` as index_float_int(v: OneOf<float, int>) -> int
+    def `VariantIndex` as index_monostate_int_str(v: OneOf<Monostate, int, str>) -> int
 
     def `Identity` as identity_int_str_list(v: OneOf<int, str, list<int>>) -> OneOf<int, str, list<int>>
     def `Identity` as identity_int_float(v: OneOf<int, float>) -> OneOf<int, float>
     def `Identity` as identity_float_int(v: OneOf<float, int>) -> OneOf<float, int>
     def `Identity` as identity_opt_int_float(v: NoneOr<OneOf<int, float>>) -> NoneOr<OneOf<int, float>>
+    def `Identity` as identity_monostate_int_str(v: OneOf<Monostate, int, str>) -> OneOf<Monostate, int, str>
 
     def `GetDirect` as get_direct(v: OneOf<WithDirectConv>) -> int
     def `GetOptional` as get_optional(v: OneOf<WithOptionalConv>) -> int

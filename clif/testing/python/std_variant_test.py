@@ -26,6 +26,9 @@ class VariantClifTest(absltest.TestCase):
     self.assertEqual(std_variant.index_int_str_list(-5), 0)
     self.assertEqual(std_variant.index_int_str_list("abc"), 1)
     self.assertEqual(std_variant.index_int_str_list((0, 1, 2)), 2)
+    self.assertEqual(std_variant.index_monostate_int_str(None), 0)
+    self.assertEqual(std_variant.index_monostate_int_str(1), 1)
+    self.assertEqual(std_variant.index_monostate_int_str("abc"), 2)
 
     self.assertEqual(std_variant.identity_int_str_list(10), 10)
     self.assertEqual(std_variant.identity_int_str_list(-5), -5)
@@ -33,6 +36,9 @@ class VariantClifTest(absltest.TestCase):
     # Tuple is converted to std::vector, then converted back to list, since list
     # is the default CLIF conversion type for std::vector.
     self.assertEqual(std_variant.identity_int_str_list((0, 1, 2)), [0, 1, 2])
+    self.assertIsNone(std_variant.identity_monostate_int_str(None), None)
+    self.assertEqual(std_variant.identity_monostate_int_str(1), 1)
+    self.assertEqual(std_variant.identity_monostate_int_str("abc"), "abc")
 
   def test_ambiguous_conversion(self):
     # First successful conversion is used.
@@ -75,7 +81,6 @@ class VariantClifTest(absltest.TestCase):
 
     with self.assertRaises(TypeError):
       std_variant.get_unique_ptr(-1)
-
 
 if __name__ == "__main__":
   absltest.main()

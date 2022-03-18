@@ -56,6 +56,7 @@ headers are included.
 // std::variant support is implemented in stltypes.h which our generated code
 // #include's directly.  But that file is not parsed for "CLIF" use statements.
 // CLIF use `::std::variant` as OneOf
+// CLIF use `::std::monostate` as Monostate
 
 #include "clif/python/postconv.h"
 // Protobuf type declared here because subincludes are not scanned for types.
