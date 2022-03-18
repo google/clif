@@ -24,23 +24,26 @@ Since Python may define some pre-processor definitions which affect the
 standard headers on some systems, you must include Python.h before any standard
 headers are included.
 */
-#include "Python.h"
-#include <functional>
+#include <Python.h>
+
 #include <deque>
+#include <functional>
 #include <iterator>
 #include <list>
+#include <memory>
 #include <queue>
 #include <stack>
-#include <memory>
 #include <type_traits>
-#include <utility>
 #include <typeinfo>
+#include <utility>
+
 // Clang and gcc define __EXCEPTIONS when -fexceptions flag passed to them.
 // (see https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html and
-// http://llvm.org/releases/3.6.0/tools/clang/docs/ReleaseNotes.html#the-exceptions-macro ) NOLINT(whitespace/line_length)
+// http://llvm.org/releases/3.6.0/tools/clang/docs/ReleaseNotes.html#the-exceptions-macro)
+// NOLINT(whitespace/line_length)
 #ifdef __EXCEPTIONS
 #include <system_error>  // NOLINT(build/c++11)
-#endif  // __EXCEPTIONS
+#endif                   // __EXCEPTIONS
 
 #include "absl/base/config.h"
 #include "absl/types/optional.h"
@@ -294,16 +297,16 @@ bool PyObjAsVariantAt(PyObject* py, ::std::variant<U...>* v) {
 }
 
 template <std::size_t I, typename... U>
-typename std::enable_if<I == sizeof...(U), bool>::type PyObjAsVariantTryAll(
-    PyObject* py, ::std::variant<U...>* v) {
+typename std::enable_if<I == sizeof...(U), bool>::type  //
+PyObjAsVariantTryAll(PyObject* py, ::std::variant<U...>* v) {
   PyErr_SetString(PyExc_TypeError,
                   "Failed to convert to any of std::variant alternatives");
   return false;
 }
 
 template <std::size_t I, typename... U>
-typename std::enable_if<(I < sizeof...(U)), bool>::type PyObjAsVariantTryAll(
-    PyObject* py, ::std::variant<U...>* v) {
+typename std::enable_if<(I < sizeof...(U)), bool>::type  //
+PyObjAsVariantTryAll(PyObject* py, ::std::variant<U...>* v) {
   {
     bool success = PyObjAsVariantAt<I>(py, v);
     DCHECK(success || PyErr_Occurred() != nullptr);
@@ -319,16 +322,17 @@ typename std::enable_if<(I < sizeof...(U)), bool>::type PyObjAsVariantTryAll(
 
 // When exception is disabled, this should be unreachable.
 template <std::size_t I, typename... U>
-typename std::enable_if<I == sizeof...(U), PyObject*>::type PyObjFromHelper(
-    const ::std::variant<U...>& v, const ::clif::py::PostConv&) {
+typename std::enable_if<I == sizeof...(U), PyObject*>::type  //
+PyObjFromHelper(const ::std::variant<U...>& v, const ::clif::py::PostConv&) {
   DCHECK(v.valueless_by_exception());
   PyErr_SetString(PyExc_ValueError, "std::variant is valueless");
   return nullptr;
 }
 
 template <std::size_t I, typename... U>
-typename std::enable_if<(I < sizeof...(U)), PyObject*>::type PyObjFromHelper(
-    const ::std::variant<U...>& v, const ::clif::py::PostConv& conv) {
+typename std::enable_if<(I < sizeof...(U)), PyObject*>::type  //
+PyObjFromHelper(const ::std::variant<U...>& v,
+                const ::clif::py::PostConv& conv) {
   if (v.index() == I) {
     using ::clif::Clif_PyObjFrom;
     return Clif_PyObjFrom(::std::get<I>(v), conv.Get(I));
@@ -360,6 +364,7 @@ class GilLock {
  public:
   GilLock() { threadstate_ = PyGILState_Ensure(); }
   ~GilLock() { PyGILState_Release(threadstate_); }
+
  private:
   PyGILState_STATE threadstate_;
 };
@@ -375,22 +380,25 @@ inline void HandlePyExc() {
 
 // ------------------------------------------------------------------
 
-template<typename Container, typename ContainerIter>
+template <typename Container, typename ContainerIter>
 class Iterator {
  private:  // Have a short type name alias to make it more readable.
   using T = typename ContainerIter::value_type;
 
  public:
   explicit Iterator(std::shared_ptr<Container> obj)
-  : self_(std::move(obj)),
-    // Allow to find custom begin() via ADL.
-    it_([&] { using std::begin; return begin(*self_); }()) {}
+      : self_(std::move(obj)), it_([&] {
+          // Allow to find custom begin() via ADL.
+          using std::begin;
+          return begin(*self_);
+        }()) {}
 
   Iterator(std::shared_ptr<Container> obj, ContainerIter&& start)
-  : self_(std::move(obj)), it_(std::move(start)) {}
+      : self_(std::move(obj)), it_(std::move(start)) {}
 
-  static_assert(std::is_same<T&,
-                typename std::iterator_traits<ContainerIter>::reference>::value,
+  static_assert(
+      std::is_same<
+          T&, typename std::iterator_traits<ContainerIter>::reference>::value,
       "Iterators returning proxy refererence not currently supported.");
   static_assert(
       std::is_base_of_v<
@@ -421,7 +429,7 @@ using std::swap;
 
 inline void ArgIn(PyObject** a, Py_ssize_t idx, const py::PostConv& pc) {}
 
-template<typename T1, typename... T>
+template <typename T1, typename... T>
 void ArgIn(PyObject** a, Py_ssize_t idx, const py::PostConv& pc, T1&& c1,
            T&&... c) {
   if (a && *a) {
@@ -431,11 +439,11 @@ void ArgIn(PyObject** a, Py_ssize_t idx, const py::PostConv& pc, T1&& c1,
     } else {
       PyTuple_SET_ITEM(*a, idx, py);
     }
-    ArgIn(a, idx+1, pc, std::forward<T>(c)...);
+    ArgIn(a, idx + 1, pc, std::forward<T>(c)...);
   }
 }
 
-template<typename R>
+template <typename R>
 class ReturnValue {
  public:
   R FromPyValue(PyObject* result) {
@@ -479,7 +487,7 @@ class ReturnValue<void> {
 
 // Callback wrapper template class.
 
-template<typename R, typename... T>
+template <typename R, typename... T>
 class Func {
  public:
   explicit Func(PyObject* callable, const py::PostConv& pc)
@@ -520,7 +528,7 @@ class Func {
 
 }  // namespace callback
 
-template<typename R, typename... T>
+template <typename R, typename... T>
 PyObject* FunctionCapsule(std::function<R(T...)> cfunction) {
   if (!cfunction) {
     // May be just CHECK() instead of exception?
@@ -542,7 +550,7 @@ PyObject* FunctionCapsule(std::function<R(T...)> cfunction) {
   return f;
 }
 
-template<typename R, typename... T>
+template <typename R, typename... T>
 bool Clif_PyObjAs(PyObject* py, std::function<R(T...)>* c,
                   const py::PostConv& pc) {
   CHECK(c != nullptr);
@@ -558,7 +566,7 @@ bool Clif_PyObjAs(PyObject* py, std::function<R(T...)>* c,
 
 // ------------------------------------------------------------------
 
-template<typename T>
+template <typename T>
 bool Clif_PyObjAs(PyObject* py, std::unique_ptr<T>* c) {
   CHECK(c != nullptr);
   std::unique_ptr<T> pt(new T);
@@ -570,7 +578,7 @@ bool Clif_PyObjAs(PyObject* py, std::unique_ptr<T>* c) {
 // ------------------------------------------------------------------
 
 // pair
-template<typename T, typename U>
+template <typename T, typename U>
 PyObject* Clif_PyObjFrom(const std::pair<T, U>& c, const py::PostConv& pc) {
   PyObject* py = PyTuple_New(2);
   if (py == nullptr) return nullptr;
@@ -588,13 +596,13 @@ PyObject* Clif_PyObjFrom(const std::pair<T, U>& c, const py::PostConv& pc) {
   }
   return py;
 }
-template<typename T, typename U>
+template <typename T, typename U>
 bool Clif_PyObjAs(PyObject* py, std::pair<T, U>* c) {
   Py_ssize_t len = PySequence_Length(py);
   if (len != 2) {
     if (len != -1) {
-      PyErr_Format(PyExc_ValueError, "expected a sequence"
-                   " with len==2, got %zd", len);
+      PyErr_Format(PyExc_ValueError, "expected a sequence with len==2, got %zd",
+                   len);
     }
     return false;
   }
@@ -602,11 +610,17 @@ bool Clif_PyObjAs(PyObject* py, std::pair<T, U>* c) {
   using Val = typename std::remove_const<U>::type;
   Key k;
   PyObject* item = PySequence_ITEM(py, 0);
-  if (!item || !Clif_PyObjAs(item, &k)) { Py_XDECREF(item); return false; }
+  if (!item || !Clif_PyObjAs(item, &k)) {
+    Py_XDECREF(item);
+    return false;
+  }
   Py_DECREF(item);
   Val v;
   item = PySequence_ITEM(py, 1);
-  if (!item || !Clif_PyObjAs(item, &v)) { Py_XDECREF(item); return false; }
+  if (!item || !Clif_PyObjAs(item, &v)) {
+    Py_XDECREF(item);
+    return false;
+  }
   Py_DECREF(item);
   const_cast<Key&>(c->first) = std::move(k);
   const_cast<Val&>(c->second) = std::move(v);
@@ -619,21 +633,23 @@ namespace py {
 
 // Determine the type to use when forwarding an object of type U that is a
 // subobject of a function parameter of type T&&.
-template<typename T, typename U> struct ForwardedType {
-  typedef typename std::remove_reference<U>::type &&type;
+template <typename T, typename U>
+struct ForwardedType {
+  typedef typename std::remove_reference<U>::type&& type;
 };
-template<typename T, typename U> struct ForwardedType<T&, U> {
-  typedef U &type;
+template <typename T, typename U>
+struct ForwardedType<T&, U> {
+  typedef U& type;
 };
 
 // Forward an object of type U that is a subobject of another object of type
 // T (usually passed as T&& to a function template).
-template<typename T, typename U>
-typename ForwardedType<T, U>::type forward_subobject(U &&u) {
+template <typename T, typename U>
+typename ForwardedType<T, U>::type forward_subobject(U&& u) {
   return static_cast<typename ForwardedType<T, U>::type>(u);
 }
 
-template<typename T>
+template <typename T>
 PyObject* ListFromSizableCont(T&& c, const py::PostConv& pc) {
   PyObject* py = PyList_New(c.size());
   if (py == nullptr) return nullptr;
@@ -658,8 +674,9 @@ PyObject* ListFromIterators(T begin, T end, const py::PostConv& pc) {
   PyObject* v;
   Py_ssize_t i = 0;
   for (auto it = begin; it != end; ++it) {
-    if ((v = Clif_PyObjFrom(std::forward<typename std::iterator_traits<T>
-                                         ::value_type>(*it), pct)) == nullptr) {
+    if ((v = Clif_PyObjFrom(
+             std::forward<typename std::iterator_traits<T>::value_type>(*it),
+             pct)) == nullptr) {
       Py_DECREF(py);
       return nullptr;
     }
@@ -668,7 +685,7 @@ PyObject* ListFromIterators(T begin, T end, const py::PostConv& pc) {
   return py;
 }
 
-template<typename T>
+template <typename T>
 PyObject* DictFromCont(T&& c, const py::PostConv& pc) {
   using std::get;
   PyObject* py = PyDict_New();
@@ -691,15 +708,14 @@ PyObject* DictFromCont(T&& c, const py::PostConv& pc) {
   return py;
 }
 
-template<typename T>
+template <typename T>
 PyObject* SetFromCont(const T& c, const py::PostConv& pc) {
   PyObject* py = PySet_New(0);
   if (py == nullptr) return nullptr;
   const py::PostConv& pct = pc.Get(0);
   for (const auto& i : c) {
     PyObject* j = Clif_PyObjFrom(i, pct);
-    if (j == nullptr ||
-        PySet_Add(py, j) < 0) {
+    if (j == nullptr || PySet_Add(py, j) < 0) {
       Py_DECREF(py);
       Py_XDECREF(j);
       return nullptr;
@@ -709,59 +725,63 @@ PyObject* SetFromCont(const T& c, const py::PostConv& pc) {
   return py;
 }
 
-template<size_t I> struct Tuple {
-  template<typename... T>
+template <size_t I>
+struct Tuple {
+  template <typename... T>
   static bool FillFrom(PyObject* pytuple, const std::tuple<T...>& c,
                        const py::PostConv& pc) {
-    PyObject* py = Clif_PyObjFrom(std::get<I-1>(c), pc.Get(I-1));
+    PyObject* py = Clif_PyObjFrom(std::get<I - 1>(c), pc.Get(I - 1));
     if (py == nullptr) {
       Py_XDECREF(py);
       Py_DECREF(pytuple);
       return false;
     }
-    PyTuple_SET_ITEM(pytuple, I-1, py);
-    return Tuple<I-1>::FillFrom(pytuple, c, pc);
+    PyTuple_SET_ITEM(pytuple, I - 1, py);
+    return Tuple<I - 1>::FillFrom(pytuple, c, pc);
   }
 
-  template<typename... T>
+  template <typename... T>
   static bool As(PyObject* pytuple, std::tuple<T...>* c) {
-    if (!Clif_PyObjAs(PyTuple_GET_ITEM(pytuple, I-1), &std::get<I-1>(*c))) {
+    if (!Clif_PyObjAs(PyTuple_GET_ITEM(pytuple, I - 1), &std::get<I - 1>(*c))) {
       return false;
     }
-    return Tuple<I-1>::As(pytuple, c);
+    return Tuple<I - 1>::As(pytuple, c);
   }
 };
 
 // Stop template recursion at index 0.
-template<>struct Tuple<0> {
-  template<typename... T>
+template <>
+struct Tuple<0> {
+  template <typename... T>
   static bool FillFrom(PyObject*, const std::tuple<T...>&, py::PostConv) {
     return true;
   }
-  template<typename... T>
-  static bool As(PyObject*, std::tuple<T...>*) { return true; }
+  template <typename... T>
+  static bool As(PyObject*, std::tuple<T...>*) {
+    return true;
+  }
 };
 }  // namespace py
 
 // tuple
 #define _TUPLE_SIZE(t) \
-    std::tuple_size<typename std::remove_reference<decltype(t)>::type>::value
+  std::tuple_size<typename std::remove_reference<decltype(t)>::type>::value
 
-template<typename... T>
+template <typename... T>
 PyObject* Clif_PyObjFrom(const std::tuple<T...>& c, const py::PostConv& pc) {
   PyObject* py = PyTuple_New(_TUPLE_SIZE(c));
   if (py == nullptr) return nullptr;
   if (!py::Tuple<_TUPLE_SIZE(c)>::FillFrom(py, c, pc)) return nullptr;
   return py;
 }
-template<typename... T>
+template <typename... T>
 bool Clif_PyObjAs(PyObject* py, std::tuple<T...>* c) {
   CHECK(c != nullptr);
   Py_ssize_t len = PyTuple_Size(py);
   if (len != _TUPLE_SIZE(*c)) {
     if (len != -1) {
-      PyErr_Format(PyExc_ValueError, "expected a tuple"
-                   " with len==%zd, got %zd", _TUPLE_SIZE(*c), len);
+      PyErr_Format(PyExc_ValueError, "expected a tuple with len==%zd, got %zd",
+                   _TUPLE_SIZE(*c), len);
     }
     return false;
   }
@@ -797,17 +817,17 @@ bool Clif_PyObjAs(PyObject* py, std::optional<T>* c) {
 #endif  // ABSL_HAVE_STD_OPTIONAL
 
 // list
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(const std::vector<T, Args...>& c,
                          const py::PostConv& pc) {
   return py::ListFromSizableCont(c, pc);
 }
-template<typename... Args>
+template <typename... Args>
 PyObject* Clif_PyObjFrom(const std::vector<bool, Args...>& c,
                          const py::PostConv& pc) {
   return py::ListFromIterators(c.cbegin(), c.cend(), pc);
 }
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(std::vector<T, Args...>&& c, const py::PostConv& pc) {
   return py::ListFromSizableCont(std::move(c), pc);
 }
@@ -816,89 +836,89 @@ PyObject* Clif_PyObjFrom(std::vector<bool, Args...>&& c,
                          const py::PostConv& pc) {
   return py::ListFromIterators(c.cbegin(), c.cend(), pc);
 }
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(const std::list<T, Args...>& c,
                          const py::PostConv& pc) {
   return py::ListFromSizableCont(c, pc);
 }
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(std::list<T, Args...>&& c, const py::PostConv& pc) {
   return py::ListFromSizableCont(std::move(c), pc);
 }
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(const std::queue<T, Args...>& c,
                          const py::PostConv& pc) {
   return py::ListFromSizableCont(c, pc);
 }
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(std::queue<T, Args...>&& c, const py::PostConv& pc) {
   return py::ListFromSizableCont(std::move(c), pc);
 }
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(const std::priority_queue<T, Args...>& c,
                          const py::PostConv& pc) {
   return py::ListFromSizableCont(c, pc);
 }
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(std::priority_queue<T, Args...>&& c,
                          const py::PostConv& pc) {
   return py::ListFromSizableCont(std::move(c), pc);
 }
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(const std::deque<T, Args...>& c,
                          const py::PostConv& pc) {
   return py::ListFromSizableCont(c, pc);
 }
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(std::deque<T, Args...>&& c, const py::PostConv& pc) {
   return py::ListFromSizableCont(std::move(c), pc);
 }
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(const std::stack<T, Args...>& c,
                          const py::PostConv& pc) {
   return py::ListFromSizableCont(c, pc);
 }
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(std::stack<T, Args...>&& c, const py::PostConv& pc) {
   return py::ListFromSizableCont(std::move(c), pc);
 }
-template<typename T, std::size_t N>
+template <typename T, std::size_t N>
 PyObject* Clif_PyObjFrom(const std::array<T, N>& c, const py::PostConv& pc) {
   return py::ListFromSizableCont(c, pc);
 }
-template<typename T, std::size_t N>
+template <typename T, std::size_t N>
 PyObject* Clif_PyObjFrom(std::array<T, N>&& c, const py::PostConv& pc) {
   return py::ListFromSizableCont(std::move(c), pc);
 }
 
 // dict
-template<typename T, typename U, typename... Args>
+template <typename T, typename U, typename... Args>
 PyObject* Clif_PyObjFrom(const std::unordered_map<T, U, Args...>& c,
                          const py::PostConv& pc) {
   return py::DictFromCont(c, pc);
 }
-template<typename T, typename U, typename... Args>
+template <typename T, typename U, typename... Args>
 PyObject* Clif_PyObjFrom(std::unordered_map<T, U, Args...>&& c,
                          const py::PostConv& pc) {
   return py::DictFromCont(std::move(c), pc);
 }
-template<typename T, typename U, typename... Args>
+template <typename T, typename U, typename... Args>
 PyObject* Clif_PyObjFrom(const std::map<T, U, Args...>& c,
                          const py::PostConv& pc) {
   return py::DictFromCont(c, pc);
 }
-template<typename T, typename U, typename... Args>
+template <typename T, typename U, typename... Args>
 PyObject* Clif_PyObjFrom(std::map<T, U, Args...>&& c, const py::PostConv& pc) {
   return py::DictFromCont(std::move(c), pc);
 }
 
 // set
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(const std::unordered_set<T, Args...>& c,
                          const py::PostConv& pc) {
   return py::SetFromCont(c, pc);
 }
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(const std::set<T, Args...>& c,
                          const py::PostConv& pc) {
   return py::SetFromCont(c, pc);
@@ -910,11 +930,11 @@ namespace py {
 
 // Helper function to walk Python iterable and put converted elements to a C++
 // container of T via functor Inserter.
-template<typename T, typename Inserter>
+template <typename T, typename Inserter>
 bool IterToCont(PyObject* py, Inserter add) {
   PyObject* it = PyObject_GetIter(py);
   if (it == nullptr) return false;
-  PyObject *el;
+  PyObject* el;
   while ((el = PyIter_Next(it)) != nullptr) {
     using Item = std::remove_const_t<T>;
     if constexpr (std::is_default_constructible_v<Item>) {
@@ -944,7 +964,7 @@ bool IterToCont(PyObject* py, Inserter add) {
 
 // Helper function to walk Python dict (via items()) and put converted elements
 // to a C++ container via functor add.
-template<typename T, typename U, typename F>
+template <typename T, typename U, typename F>
 bool ItemsToMap(PyObject* py, F add) {
   py = PyObject_CallMethod(py, "items", nullptr);
   if (py == nullptr) return false;
@@ -955,11 +975,11 @@ bool ItemsToMap(PyObject* py, F add) {
 }  // namespace py
 
 // list
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::vector<T, Args...>* c) {
   CHECK(c != nullptr);
   c->clear();
-  return py::IterToCont<T>(py, [&c](T&& i) {  //NOLINT: build/c++11
+  return py::IterToCont<T>(py, [&c](T&& i) {  // NOLINT: build/c++11
     c->push_back(std::move(i));
   });
 }
@@ -983,40 +1003,42 @@ bool Clif_PyObjAs(PyObject* py, std::array<T, N>* c) {
 }
 
 // set
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::unordered_set<T, Args...>* c) {
   CHECK(c != nullptr);
   c->clear();
-  return py::IterToCont<T>(py, [&c](T&& i) {  //NOLINT: build/c++11
+  return py::IterToCont<T>(py, [&c](T&& i) {  // NOLINT: build/c++11
     c->insert(std::move(i));
   });
 }
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::set<T, Args...>* c) {
   CHECK(c != nullptr);
   c->clear();
-  return py::IterToCont<T>(py, [&c](T&& i) {  //NOLINT: build/c++11
+  return py::IterToCont<T>(py, [&c](T&& i) {  // NOLINT: build/c++11
     c->insert(std::move(i));
   });
 }
 
 // dict
-template<typename T, typename U, typename... Args>
+template <typename T, typename U, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::unordered_map<T, U, Args...>* c) {
   CHECK(c != nullptr);
   c->clear();
-  return py::ItemsToMap<T, U>(py, [&c](typename std::pair<T, U>&& i) {  //NOLINT: build/c++11
-    // TODO: Use insert_or_assign since c++17
-    (*c)[i.first] = std::move(i.second);
-  });
+  return py::ItemsToMap<T, U>(
+      py, [&c](typename std::pair<T, U>&& i) {  // NOLINT: build/c++11
+        // TODO: Use insert_or_assign since c++17
+        (*c)[i.first] = std::move(i.second);
+      });
 }
-template<typename T, typename U, typename... Args>
+template <typename T, typename U, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::map<T, U, Args...>* c) {
   CHECK(c != nullptr);
   c->clear();
-  return py::ItemsToMap<T, U>(py, [&c](typename std::pair<T, U>&& i) {  //NOLINT: build/c++11
-    (*c)[i.first] = std::move(i.second);
-  });
+  return py::ItemsToMap<T, U>(
+      py, [&c](typename std::pair<T, U>&& i) {  // NOLINT: build/c++11
+        (*c)[i.first] = std::move(i.second);
+      });
 }
 }  // namespace clif
 

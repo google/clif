@@ -71,7 +71,7 @@ using std::swap;
 //
 
 // CLIF use `PyObject*` as object
-inline PyObject* Clif_PyObjFrom(PyObject* c, const py::PostConv&)  {
+inline PyObject* Clif_PyObjFrom(PyObject* c, const py::PostConv&) {
   // Ignore postconversion for object output.
   if (c == nullptr && !PyErr_Occurred()) {
     PyErr_SetString(PyExc_SystemError,
@@ -82,11 +82,11 @@ inline PyObject* Clif_PyObjFrom(PyObject* c, const py::PostConv&)  {
 
 // int (long)
 // pyport.h should define Py_ssize_t as either int or long
-static_assert(std::is_same<Py_ssize_t, int>::value ||
-              std::is_same<Py_ssize_t, long>::value,  //NOLINT runtime/int
+static_assert((std::is_same<Py_ssize_t, int>::value ||
+               std::is_same<Py_ssize_t, long>::value),  // NOLINT runtime/int
               "The world is strange");
 // CLIF use `int` as int
-inline PyObject* Clif_PyObjFrom(int c, const py::PostConv& pc)  {
+inline PyObject* Clif_PyObjFrom(int c, const py::PostConv& pc) {
   return pc.Apply(PyLong_FromLong(c));
 }
 // CLIF use `unsigned int` as uint
@@ -122,8 +122,7 @@ inline PyObject* Clif_PyObjFrom(unsigned long long c,  // NOLINT runtime/int
 }
 
 // CLIF use `absl::int128` as int128
-inline PyObject* Clif_PyObjFrom(absl::int128 c,
-                                const py::PostConv& pc) {
+inline PyObject* Clif_PyObjFrom(absl::int128 c, const py::PostConv& pc) {
   auto hi = PyNumber_Lshift(PyLong_FromLongLong(absl::Int128High64(c)),
                             PyLong_FromLong(64));
   auto lo = PyLong_FromUnsignedLongLong(absl::Int128Low64(c));
@@ -131,8 +130,7 @@ inline PyObject* Clif_PyObjFrom(absl::int128 c,
 }
 
 // CLIF use `absl::uint128` as uint128
-inline PyObject* Clif_PyObjFrom(absl::uint128 c,
-                                const py::PostConv& pc) {
+inline PyObject* Clif_PyObjFrom(absl::uint128 c, const py::PostConv& pc) {
   auto hi = PyNumber_Lshift(PyLong_FromUnsignedLongLong(absl::Uint128High64(c)),
                             PyLong_FromLong(64));
   auto lo = PyLong_FromUnsignedLongLong(absl::Uint128Low64(c));
@@ -162,9 +160,9 @@ inline PyObject* Clif_PyObjFrom(std::complex<double> c,
 #ifdef CLIF_PY_OBJ_FROM_BOOL_ALLOW_UNSAFE_IMPLICIT_CONVERSIONS
 inline PyObject* Clif_PyObjFrom(bool c, const py::PostConv& pc) {
 #else
-template<typename T,
-         typename std::enable_if<std::is_same<T, bool>::value>::type* = nullptr>
-inline PyObject* Clif_PyObjFrom(T c, const py::PostConv& pc) {
+template <typename T>
+typename std::enable_if<std::is_same<T, bool>::value, PyObject*>::type  //
+    inline Clif_PyObjFrom(T c, const py::PostConv& pc) {
 #endif
   return pc.Apply(PyBool_FromLong(c));
 }
@@ -180,9 +178,9 @@ inline PyObject* Clif_PyObjFrom(const char_ptr c, const py::PostConv& unused) {
 
 // CLIF use `::std::optional` as NoneOr
 #ifdef ABSL_HAVE_STD_OPTIONAL
-template<typename T>
+template <typename T>
 PyObject* Clif_PyObjFrom(const std::optional<T>& opt, const py::PostConv&);
-template<typename T>
+template <typename T>
 bool Clif_PyObjAs(PyObject*, std::optional<T>*);
 #endif
 
@@ -200,18 +198,18 @@ inline bool Clif_PyObjAs(PyObject* py, PyObject** c) {
 // int (long)
 bool Clif_PyObjAs(PyObject*, signed char*);
 bool Clif_PyObjAs(PyObject*, unsigned char*);
-bool Clif_PyObjAs(PyObject*, unsigned short*);      //NOLINT runtime/int
+bool Clif_PyObjAs(PyObject*, unsigned short*);  // NOLINT runtime/int
 bool Clif_PyObjAs(PyObject*, unsigned int*);
-bool Clif_PyObjAs(PyObject*, unsigned long*);       //NOLINT runtime/int
+bool Clif_PyObjAs(PyObject*, unsigned long*);  // NOLINT runtime/int
 #ifdef HAVE_LONG_LONG
-bool Clif_PyObjAs(PyObject*, unsigned long long*);  //NOLINT runtime/int
-bool Clif_PyObjAs(PyObject*, long long*);           //NOLINT runtime/int
+bool Clif_PyObjAs(PyObject*, unsigned long long*);  // NOLINT runtime/int
+bool Clif_PyObjAs(PyObject*, long long*);           // NOLINT runtime/int
 bool Clif_PyObjAs(PyObject*, absl::int128*);        // NOLINT runtime/int
-bool Clif_PyObjAs(PyObject*, absl::uint128*);       //NOLINT runtime/int
+bool Clif_PyObjAs(PyObject*, absl::uint128*);       // NOLINT runtime/int
 #endif
-bool Clif_PyObjAs(PyObject*, short*);               //NOLINT runtime/int
+bool Clif_PyObjAs(PyObject*, short*);  // NOLINT runtime/int
 bool Clif_PyObjAs(PyObject*, int*);
-bool Clif_PyObjAs(PyObject*, long*);                //NOLINT runtime/int // Py_ssize_t on x64
+bool Clif_PyObjAs(PyObject*, long*);  // NOLINT runtime/int // Py_ssize_t on x64
 
 // float (double)
 bool Clif_PyObjAs(PyObject*, double*);
@@ -249,41 +247,40 @@ bool Clif_PyObjAs(PyObject* py, const T** c) {
 // CLIF use `std::deque` as list
 // CLIF use `std::vector` as list
 
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(const std::vector<T, Args...>& c, const py::PostConv&);
-template<typename... Args>
+template <typename... Args>
 PyObject* Clif_PyObjFrom(const std::vector<bool, Args...>& c,
                          const py::PostConv&);
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(std::vector<T, Args...>&& c, const py::PostConv&);
-template<typename... Args>
+template <typename... Args>
 PyObject* Clif_PyObjFrom(std::vector<bool, Args...>&& c, const py::PostConv&);
 
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::vector<T, Args...>* c);
 
 // CLIF use `std::pair` as tuple
-template<typename T, typename U>
+template <typename T, typename U>
 PyObject* Clif_PyObjFrom(const std::pair<T, U>& c, const py::PostConv&);
-template<typename T, typename U>
+template <typename T, typename U>
 bool Clif_PyObjAs(PyObject* py, std::pair<T, U>* c);
-template<typename... T>
+template <typename... T>
 PyObject* Clif_PyObjFrom(const std::tuple<T...>& c, const py::PostConv&);
-template<typename... T>
+template <typename... T>
 bool Clif_PyObjAs(PyObject* py, std::tuple<T...>* c);
-
 
 // CLIF use `std::map` as dict
 // CLIF use `std::unordered_map` as dict
-template<typename T, typename U, typename... Args>
+template <typename T, typename U, typename... Args>
 PyObject* Clif_PyObjFrom(const std::unordered_map<T, U, Args...>& c,
                          const py::PostConv& pc);
-template<typename T, typename U, typename... Args>
+template <typename T, typename U, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::unordered_map<T, U, Args...>* c);
 
-template<typename T, typename U, typename... Args>
+template <typename T, typename U, typename... Args>
 PyObject* Clif_PyObjFrom(const std::map<T, U, Args...>& c, const py::PostConv&);
-template<typename T, typename U, typename... Args>
+template <typename T, typename U, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::map<T, U, Args...>* c);
 
 // CLIF use `std::set` as set
@@ -291,11 +288,11 @@ bool Clif_PyObjAs(PyObject* py, std::map<T, U, Args...>* c);
 template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(const std::unordered_set<T, Args...>& c,
                          const py::PostConv&);
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::unordered_set<T, Args...>* c);
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 PyObject* Clif_PyObjFrom(const std::set<T, Args...>& c, const py::PostConv&);
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::set<T, Args...>* c);
 
 // ---------------------------------------------------------------------
@@ -304,14 +301,15 @@ bool Clif_PyObjAs(PyObject* py, std::set<T, Args...>* c);
 // Just is_copy_assignable<T> is not enough here as From(T*) will engage in
 // T*&& resolution instead of generated (for capsule) const T*, so implement a
 // direct check if From(T) is available.
-template<typename T, typename = decltype(Clif_PyObjFrom(std::declval<T>(), {}))>
+template <typename T,
+          typename = decltype(Clif_PyObjFrom(std::declval<T>(), {}))>
 inline PyObject* Clif_PyObjFrom(T* c, const py::PostConv& pc) {
   if (c) return Clif_PyObjFrom(*c, pc);
   Py_RETURN_NONE;
 }
-template<typename T>
-typename std::enable_if<std::is_copy_assignable<T>::value, PyObject*>::type
-inline Clif_PyObjFrom(const std::unique_ptr<T>& c, const py::PostConv& pc) {
+template <typename T>
+typename std::enable_if<std::is_copy_assignable<T>::value, PyObject*>::type  //
+    inline Clif_PyObjFrom(const std::unique_ptr<T>& c, const py::PostConv& pc) {
   if (c) return Clif_PyObjFrom(*c, pc);
   Py_RETURN_NONE;
 }
@@ -339,7 +337,7 @@ namespace callback {
 // PyErr_Occurred to determine if a Python exception is to be converted to a
 // value of type R. |r| can be equal to nullptr when PyErr_Occurred returns
 // true.
-template<typename R>
+template <typename R>
 class ReturnValue;
 
 }  // namespace callback
