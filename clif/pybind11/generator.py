@@ -101,6 +101,11 @@ class ModuleGenerator(object):
       yield '} ' * (1 + namespace.count('::')) + ' // namespace ' + namespace
     yield ''
     yield f'// CLIF init_module module_path:{self._module_path}'
+    yield ''
+    for m in ast.macros:
+      macro_body = m.definition.decode('utf-8').replace('\n', r'\n')
+      yield ''
+      yield f'// CLIF macro {m.name} {macro_body}'
 
   def generate_from(self, ast: ast_pb2.AST):
     """Generates pybind11 bindings code from CLIF ast.
