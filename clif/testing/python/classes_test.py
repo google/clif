@@ -65,5 +65,10 @@ class ClassesTest(absltest.TestCase):
     k = classes.AddInit()
     self.assertEqual(k.i, 567483)
 
+  def testOverloadedGetterProperty(self):
+    obj = classes.OverloadedGetterProperty(10)
+    self.assertEqual(obj.x, 10)
+
+
 if __name__ == '__main__':
   absltest.main()

@@ -57,6 +57,15 @@ struct AddInit {
   AddInit& operator=(AddInit&&) = default;
 };
 
+class OverloadedGetterProperty {
+ public:
+  explicit OverloadedGetterProperty(int i): i_(i) {}
+  int i() const { return i_; }
+  void i(int value) { i_ = value; }
+ private:
+  int i_;
+};
+
 }  // namespace classes
 }  // namespace clif_testing
 

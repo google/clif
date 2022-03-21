@@ -16,6 +16,7 @@
 from typing import Generator
 
 from clif.protos import ast_pb2
+from clif.pybind11 import function_lib
 from clif.pybind11 import utils
 
 I = utils.I
@@ -29,7 +30,7 @@ def generate_from(
     if var_decl.cpp_get.name.native:
       yield from _generate_unproperty(class_name, var_decl, class_decl)
     else:
-      yield from _generate_property(class_name, var_decl)
+      yield from _generate_property(class_name, var_decl, class_decl)
   else:
     cpp_type = var_decl.type.cpp_type
     # If the wrapped attribute is raw pointer or unique_ptr, we need to do
@@ -61,20 +62,29 @@ def _generate_pointer_attr_property(
 
 
 def _generate_property(
-    class_name: str, var_decl: ast_pb2.VarDecl) -> Generator[str, None, None]:
+    class_name: str, var_decl: ast_pb2.VarDecl, class_decl: ast_pb2.ClassDecl
+) -> Generator[str, None, None]:
   """Generates property for simple attributes."""
-  cpp_get_name = f'&{var_decl.cpp_get.name.cpp_name}'
-  cpp_set_name = f'&{var_decl.cpp_set.name.cpp_name}'
+  cpp_get = f'&{var_decl.cpp_get.name.cpp_name}'
+  cpp_set = f'&{var_decl.cpp_set.name.cpp_name}'
+  if var_decl.cpp_get.is_overloaded:
+    cpp_get_cast = function_lib.generate_cpp_function_cast(
+        var_decl.cpp_get, class_decl)
+    cpp_get = f'{cpp_get_cast}&{var_decl.cpp_get.name.cpp_name}'
+  if var_decl.cpp_set.is_overloaded:
+    cpp_set_cast = function_lib.generate_cpp_function_cast(
+        var_decl.cpp_set, class_decl)
+    cpp_set = f'{cpp_set_cast}&{var_decl.cpp_set.name.cpp_name}'
   if not var_decl.cpp_get.name.cpp_name:
-    cpp_get_name = 'nullptr'
+    cpp_get = 'nullptr'
   if not var_decl.cpp_set.name.cpp_name:
-    cpp_set_name = 'nullptr'
+    cpp_set = 'nullptr'
   if var_decl.HasField('cpp_set'):
-    yield (f'{class_name}.def_property("{var_decl.name.native}", '
-           f'{cpp_get_name}, {cpp_set_name});')
+    yield f'{class_name}.def_property("{var_decl.name.native}", '
+    yield f'{cpp_get}, {cpp_set});'
   else:
     yield (f'{class_name}.def_property_readonly("{var_decl.name.native}", '
-           f'&{var_decl.cpp_get.name.cpp_name});')
+           f'{cpp_get});')
 
 
 def _generate_unproperty(
