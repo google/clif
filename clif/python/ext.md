@@ -20,9 +20,9 @@ Teaching CLIF a new type requires implementing the following:
 2.  Conversion function(s) to pass data from C++ to Python (`Clif_PyObjFrom`).
 3.  Definition of a CLIF name to refer to the C++ type from .clif files.
 
-CLIF uses [ADL](http://en.cppreference.com/w/cpp/language/adl) to find
-the conversion function, so those functions should be placed in the namespace
-where the C++ type we're teaching CLIF about is located.
+CLIF uses [ADL](http://en.cppreference.com/w/cpp/language/adl) to find the
+conversion function, so those functions should be placed in the namespace where
+the C++ type we're teaching CLIF about is located.
 
 The various possible conversions are described below. None of them are required.
 Rather, you should only write the conversions which make sense for your data
@@ -100,6 +100,16 @@ within the `Clif_PyObjAs` implementation.
     }
     ```
 
+    Note that due to a CLIF
+    [limitation](https://b.corp.google.com/issues/79540676), creating a
+    `shared_ptr` conversion requires the existence of a `unique_ptr` conversion
+    as well. You can work around this by defining a deleted `unique_ptr`
+    conversion, like below:
+
+    ```c++
+    bool Clif_PyObjAs(PyObject* py, std::unique_ptr<CppType>*) = delete;
+    ```
+
 4.  To support **borrowing** data from Python to C++, write a function with the
     signature
 
@@ -118,7 +128,8 @@ Conversions of this type are supplied by writing a function named
 `Clif_PyObjFrom`, which returns a **new** `PyObject`. If the conversion fails,
 the function should ensure a Python error is set and return `nullptr`.
 
-You may write one or more of the following forms, depending on the type of conversions which make sense for your data type:
+You may write one or more of the following forms, depending on the type of
+conversions which make sense for your data type:
 
 1.  To support **copying** data from C++ to Python, write a function with the
     signature
@@ -157,8 +168,8 @@ You may write one or more of the following forms, depending on the type of conve
 Sometimes a C++ type is not enough to determine which Python type to convert to.
 For example in Python 3 `std::string` might be converted to `bytes` or `str`.
 That information is provided in the .clif file and passed along in
-`::clif::py::PostConv` argument. To get its definition
-`#include "clif/python/postconv.h"`.
+`::clif::py::PostConv` argument. To get its definition `#include
+"clif/python/postconv.h"`.
 
 Post-conversion processing provides a function pointer to a `PyObject*
 (*)(PyObject*);` C function that needs to be called during conversion to the
@@ -171,18 +182,19 @@ processing for contained types. Take a look at
 
 ## Introducing a CLIF name for the C++ type
 
-Usually you'll need a name to identify the C++ type within .clif files.
-Yes, this name is internal to CLIF and works only inside `.clif` files. For
-convenience CLIF names for standard types made the same as Python names
-(eg. int, set, dict). Python knows nothing about CLIF names.
+Usually you'll need a name to identify the C++ type within .clif files. Yes,
+this name is internal to CLIF and works only inside `.clif` files. For
+convenience CLIF names for standard types made the same as Python names (eg.
+int, set, dict). Python knows nothing about CLIF names.
 
 To add a CLIF name add a structured comment like
 
-``` // CLIF use `::fq::CppType` as ClifName```
+```c++
+// CLIF use `::fq::CppType` as ClifName
+```
 
-to your library header file.
-The `ClifName` must be a valid Python name and be unique to CLIF (otherwise
-you'll silently hide some other type from CLIF).
+to your library header file. The `ClifName` must be a valid Python name and be
+unique to CLIF (otherwise you'll silently hide some other type from CLIF).
 
 ## Using the library
 
