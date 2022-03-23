@@ -129,6 +129,8 @@ def generate_cpp_function_cast(
     return_type = 'void'
   elif func_decl.returns:
     return_type = func_decl.returns[0].cpp_exact_type
+  elif func_decl.name.cpp_name.endswith('operator=') and class_decl:
+    return_type = f'{class_decl.name.cpp_name}&'
   if not return_type:
     return_type = 'void'
 
