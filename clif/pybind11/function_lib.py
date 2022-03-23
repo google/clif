@@ -157,7 +157,14 @@ def generate_callback_signature(param: ast_pb2.ParamDecl) -> str:
     return_type = 'void'
   elif func_decl.returns:
     return_type = func_decl.returns[0].cpp_exact_type
-  return f'::std::function<{return_type}({params_str_types})>'
+  ref_qualifier = ''
+  if param.cpp_exact_type.endswith('&'):
+    ref_qualifier = '&'
+  const_qualifier = ''
+  if param.cpp_exact_type.startswith('const '):
+    const_qualifier = 'const '
+  return (f'{const_qualifier}::std::function<{return_type}({params_str_types})>'
+          f'{ref_qualifier}')
 
 
 def generate_py_args(func_decl: ast_pb2.FuncDecl) -> str:
