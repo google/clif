@@ -37,7 +37,8 @@ def generate_lambda(
     params_list.append(function_lib.Parameter(param, f'arg{i}', capsule_types))
   params_with_type = _generate_lambda_params_with_types(
       func_decl, params_list, class_decl)
-  func_name = func_decl.name.native.rstrip('#')  # @sequential
+  # @sequential, @context_manager
+  func_name = func_decl.name.native.rstrip('#').rstrip('@')
   yield (f'{module_name}.{function_lib.generate_def(func_decl)}'
          f'("{func_name}", []({params_with_type}) {{')
   yield from _generate_lambda_body(
@@ -55,6 +56,7 @@ def needs_lambda(
   if class_decl and _is_inherited_method(class_decl, func_decl):
     return True
   return (bool(func_decl.postproc) or
+          _func_is_context_manager(func_decl) or
           _func_has_capsule_params(func_decl, capsule_types) or
           _func_needs_implicit_conversion(func_decl) or
           _func_has_pointer_params(func_decl) or
@@ -111,6 +113,11 @@ def _generate_lambda_body(
   # Generates returns of the lambda expression
   if func_decl.postproc == '->self':
     yield I + 'return self;'
+  elif func_decl.name.native == '__enter__@':
+    # In case the return value is uncopyable or unmovable
+    yield I + 'return py::cast(self).release();'
+  elif func_decl.name.native == '__exit__@':
+    yield I + 'return py::none();'
   elif func_decl.postproc:
     assert '.' in func_decl.postproc
     module_name, method_name = func_decl.postproc.rsplit('.', maxsplit=1)
@@ -177,6 +184,8 @@ def _generate_lambda_params_with_types(
     params: List[function_lib.Parameter],
     class_decl: Optional[ast_pb2.ClassDecl] = None) -> str:
   """Generates parameters and types in the signatures of lambda expressions."""
+  if func_decl.name.native == '__exit__@' and class_decl:
+    return f'{class_decl.name.cpp_name} &self, py::args'
   params_list = [f'{p.cpp_type} {p.gen_name}' for p in params]
   if (class_decl and not func_decl.classmethod and
       not func_decl.is_extend_method):
@@ -238,6 +247,10 @@ def _func_has_capsule_params(
     if r.type.lang_type in capsule_types:
       return True
   return False
+
+
+def _func_is_context_manager(func_decl: ast_pb2.FuncDecl) -> bool:
+  return func_decl.name.native in ('__enter__@', '__exit__@')
 
 
 def _is_inherited_method(class_decl: ast_pb2.ClassDecl,
