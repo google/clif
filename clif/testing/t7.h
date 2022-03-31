@@ -16,6 +16,7 @@
 #ifndef CLIF_TESTING_T7_H_
 #define CLIF_TESTING_T7_H_
 
+#include <functional>
 #include <memory>
 #include <string>
 
