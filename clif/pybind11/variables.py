@@ -49,16 +49,22 @@ def _generate_pointer_attr_property(
     class_name: str, var_decl: ast_pb2.VarDecl, class_decl: ast_pb2.ClassDecl
 ) -> Generator[str, None, None]:
   """Generates property with customized getter and setter to handle pointers."""
+  if not var_decl.type.cpp_copyable and not var_decl.type.cpp_movable:
+    fget_body = (f'return pybind11::cast(self.{var_decl.name.cpp_name})'
+                 '.release();')
+  else:
+    fget_body = f'return *self.{var_decl.name.cpp_name};'
   fget = (f'[]({class_decl.name.cpp_name} &self){{ '
-          f'return *self.{var_decl.name.cpp_name}; }}')
+          f'{fget_body} }}')
   value = 'v'
   # Takes ownership if the cpp attribute is unique_ptr.
   if var_decl.type.cpp_type.startswith('::std::unique_ptr'):
     value = 'std::move(v)'
   fset = (f'[]({class_decl.name.cpp_name} &self, {var_decl.type.cpp_type} v){{ '
           f'self.{var_decl.name.cpp_name} = {value}; }}')
-  yield (f'{class_name}.def_property("{var_decl.name.native}", {fget}, {fset}, '
-         'py::return_value_policy::reference_internal);')
+  yield f'{class_name}.def_property("{var_decl.name.native}",'
+  yield f'{fget},'
+  yield f'{fset}, py::return_value_policy::reference_internal);'
 
 
 def _generate_property(
