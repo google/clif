@@ -203,6 +203,9 @@ def generate_return_value_policy(func_decl: ast_pb2.FuncDecl) -> str:
     pybind11 return value policy based on the function return value.
   """
   prefix = 'py::return_value_policy::'
+  for r in func_decl.returns:
+    if r.type.lang_type == 'bytes' or '<bytes>' in r.type.lang_type:
+      return prefix + 'return_as_bytes'
   if func_decl.cpp_void_return or not func_decl.returns:
     return prefix + 'automatic'
   return_type = func_decl.returns[0]
