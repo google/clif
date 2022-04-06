@@ -55,6 +55,7 @@ def needs_lambda(
   if class_decl and _is_inherited_method(class_decl, func_decl):
     return True
   return (bool(func_decl.postproc) or
+          func_decl.is_overloaded or
           _func_is_context_manager(func_decl) or
           _func_has_capsule_params(func_decl, capsule_types) or
           _func_needs_implicit_conversion(func_decl) or
