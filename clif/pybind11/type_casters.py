@@ -116,14 +116,14 @@ def _generate_type_caster(
   yield ''
   if generate_load:
     yield I + 'bool load(handle src, bool) {'
-    yield I + I + 'using ::clif::Clif_PyObjAs;'
+    yield I + I + 'using namespace ::clif;'
     yield I + I + 'return Clif_PyObjAs(src.ptr(), &value);'
     yield I + '}'
     yield ''
   if generate_cast:
     yield I + (f'static handle cast({cpp_name} src, return_value_policy, '
                'handle) {')
-    yield I + I + 'using ::clif::Clif_PyObjFrom;'
+    yield I + I + 'using namespace ::clif;'
     yield I + I + 'return Clif_PyObjFrom(src, {});'
     yield I + '}'
   yield '};'
