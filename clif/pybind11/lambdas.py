@@ -22,8 +22,7 @@ from clif.pybind11 import utils
 
 I = utils.I
 
-_STATUS_PATTERNS = (
-    r'(const )?::absl::Status( &)?', r'(const )?::absl::StatusOr<(\S)+>( &)?')
+_STATUS_PATTERNS = (r'Status', r'StatusOr<(\S)+>')
 
 
 def generate_lambda(
@@ -223,7 +222,7 @@ def _func_has_py_object_params(func_decl: ast_pb2.FuncDecl) -> bool:
 
 def _is_status_param(param: ast_pb2.ParamDecl) -> bool:
   for pattern in _STATUS_PATTERNS:
-    if re.match(pattern, param.cpp_exact_type):
+    if re.fullmatch(pattern, param.type.lang_type):
       return True
   return False
 
