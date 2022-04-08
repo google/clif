@@ -44,8 +44,8 @@ class Parameter:
     elif not ptype.cpp_type:  # std::function
       self.cpp_type = generate_callback_signature(param)
     # unique_ptr<T>, shared_ptr<T>
-    elif (param.cpp_exact_type.startswith('::std::unique_ptr') or
-          param.cpp_exact_type.startswith('::std::shared_ptr')):
+    elif (ctype.startswith('::std::unique_ptr') or
+          ctype.startswith('::std::shared_ptr')):
       self.function_argument = f'std::move({self.gen_name})'
     elif not ptype.cpp_raw_pointer:
       # T, [const] T&
@@ -132,7 +132,11 @@ def generate_cpp_function_cast(
   if func_decl.cpp_void_return:
     return_type = 'void'
   elif func_decl.returns:
-    return_type = func_decl.returns[0].cpp_exact_type
+    if (func_decl.returns[0].type.cpp_type.startswith('::std::shared_ptr') or
+        func_decl.returns[0].type.cpp_type.startswith('::std::unique_ptr')):
+      return_type = func_decl.returns[0].type.cpp_type
+    else:
+      return_type = func_decl.returns[0].cpp_exact_type
   elif func_decl.name.cpp_name.endswith('operator=') and class_decl:
     return_type = f'{class_decl.name.cpp_name}&'
   if not return_type:
