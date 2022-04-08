@@ -91,6 +91,10 @@ class LambdaExpressionsTest(absltest.TestCase):
   def test_no_reserved_keyword_for_variables(self):
     self.assertEqual(lambda_expressions.returns_one(123), b'1')
 
+  def test_takes_uncopyable_object(self):
+    d = lambda_expressions.Derived(1)
+    self.assertEqual(lambda_expressions.takes_unique_ptr_vector([d]), b'1')
+
 
 if __name__ == '__main__':
   absltest.main()

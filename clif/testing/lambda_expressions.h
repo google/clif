@@ -18,7 +18,9 @@
 
 #include <Python.h>
 
+#include <memory>
 #include <string>
+#include <vector>
 
 namespace clif_testing {
 
@@ -141,6 +143,11 @@ inline bool operator==(const Derived& lhs, const Derived& rhs) {
 
 inline std::string returns_one(int) {
   return "1";
+}
+
+inline std::string takes_unique_ptr_vector(
+    std::vector<std::unique_ptr<Derived>> vec) {
+  return std::to_string(vec.size());
 }
 
 }  // namespace clif_testing

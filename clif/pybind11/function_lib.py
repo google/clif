@@ -47,12 +47,16 @@ class Parameter:
     elif (param.cpp_exact_type.startswith('::std::unique_ptr') or
           param.cpp_exact_type.startswith('::std::shared_ptr')):
       self.function_argument = f'std::move({self.gen_name})'
-    # T, [const] T&
-    elif not ptype.cpp_raw_pointer and (
-        param.cpp_exact_type.endswith('&') and not ctype.endswith('&')):
-      # CLIF matcher might set param.type.cpp_type to `T` when the function
-      # being wrapped takes `T&`.
-      self.cpp_type = param.cpp_exact_type
+    elif not ptype.cpp_raw_pointer:
+      # T, [const] T&
+      if ptype.cpp_toptr_conversion:
+        self.cpp_type = f'{ctype}*'
+        self.function_argument = f'*{param_name}'
+      elif ptype.cpp_abstract:  # for AbstractType &
+        self.cpp_type = f'std::unique_ptr<{ctype}>'
+        self.function_argument = f'*{param_name}'
+      else:
+        self.function_argument = f'std::move({self.gen_name})'
 
     if ptype.lang_type in capsule_types:
       self.cpp_type = f'clif::CapsuleWrapper<{self.cpp_type}>'

@@ -75,3 +75,5 @@ from "clif/testing/python/lambda_expressions_clif_aux.h":
 
     # Note: the Python variable name is a reserved keyword in C++.
     def returns_one(operator: int) -> bytes
+
+    def takes_unique_ptr_vector(vec: list<Derived>) -> bytes
