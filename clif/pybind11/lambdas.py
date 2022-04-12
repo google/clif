@@ -271,14 +271,7 @@ def _has_bytes_return(func_decl: ast_pb2.FuncDecl) -> bool:
 
 def _func_needs_implicit_conversion(func_decl: ast_pb2.FuncDecl) -> bool:
   """Check if a function contains an implicitly converted parameter."""
-  if len(func_decl.params) == 1:
-    param = func_decl.params[0]
-    if not utils.is_usable_cpp_exact_type(param.cpp_exact_type):
-      # Stop-gap approach. This `if` condition needs to be removed after
-      # resolution of b/118736768. Until then this detection function cannot
-      # work correctly in this situation (but there are no corresponding unit
-      # tests).
-      return False
+  for param in func_decl.params:
     if (_extract_bare_type(param.cpp_exact_type) !=
         _extract_bare_type(param.type.cpp_type) and
         param.type.cpp_toptr_conversion and
