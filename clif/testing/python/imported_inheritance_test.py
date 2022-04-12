@@ -35,6 +35,14 @@ class ImportedInheritanceTest(absltest.TestCase):
     n.i = 100
     self.assertEqual(n.i, 100)
 
+  def testInheritCorrectBases(self):
+    obj = imported_inheritance.InheritImportedBase()
+    obj.i = 100
+    self.assertEqual(obj.i, 100)
+    obj = imported_inheritance.InheritImportedDerived()
+    obj.j = 1000
+    self.assertEqual(obj.j, 1000)
+
 
 if __name__ == '__main__':
   absltest.main()

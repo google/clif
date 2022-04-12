@@ -52,4 +52,12 @@ struct AA {
 inline void ConsumeCC(std::unique_ptr<CC> up) { }
 inline void ConsumeAA(std::unique_ptr<AA> up) { }
 
+struct Base {
+  int i;
+};
+
+struct Derived: public Base {
+  int j;
+};
+
 #endif  // CLIF_TESTING_NESTED_FIELDS_H_

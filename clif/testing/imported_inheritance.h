@@ -21,5 +21,8 @@ namespace clif_testing {
 struct InheritImportedNestedInner : public Nested::Inner {};
 struct InheritImportedNested : public Nested {};
 struct InheritImportedNestedField : public DD {};
+
+struct InheritImportedBase: public Derived {};
+struct InheritImportedDerived: public Derived {};
 }  // namespace clif_testing
 #endif  // CLIF_TESTING_IMPPORTED_INHERITANCE_H_

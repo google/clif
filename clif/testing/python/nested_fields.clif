@@ -36,3 +36,9 @@ from "clif/testing/nested_fields.h":
 
   def ConsumeCC(cc: CC)
   def ConsumeAA(aa: AA)
+
+  class Base:
+    i: int
+
+  class Derived(Base):
+    j: int

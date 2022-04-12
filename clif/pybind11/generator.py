@@ -51,7 +51,6 @@ class ModuleGenerator(object):
     self._include_paths = include_paths
     self._types = []
     self._capsule_types = set()
-    self._all_types = set()
     self._namemap = {}
     self._registered_types = set()
     self._requires_status = False
@@ -292,29 +291,26 @@ class ModuleGenerator(object):
           override_in_python=override_in_python)
       self._types.append(class_type)
       if not decl.class_.suppress_upcasts:
-        bases = list(decl.class_.bases)
-        i = 0
-        while i < len(bases):
-          base = bases[i]
-          # Note: We are using a hack to avoid redefining aliased types. When
-          # a class inherits another class that is already defined in the .clif
-          # file, it is possible that base.cpp_name is an aliased name.
-          # Therefore we might generate duplicated wrapper code for the same
-          # class.
-          if base.native and not base.cpp_name:
-            # The class inherits from another class defined in .clif file. Two
-            # base definitions whose indexes are consecutive exist in the ast
-            # that refers to the same class.
-            assert i + 1 < len(bases), ('Cannot find cpp name for class '
-                                        f'{base.native}')
-            assert bases[i+1].cpp_name, f'Unexpected base class {bases[i+1]}'
-            if base.native in self._namemap:
-              self._namemap[base.native].cpp_name = bases[i+1].cpp_name
-            i += 2
-          else:
-            if base.cpp_name:
-              self._all_types.add(base.cpp_name)
-            i += 1
+        # TODO: Find a stable way to find cpp_name of the imported
+        # base class. See b/225961086#comment22 for details.
+        base_class_python_name = ''
+        base_class_cpp_name = ''
+        for i, base in enumerate(decl.class_.bases):
+          if base.native and not base.cpp_name and base.native in self._namemap:
+            base_class_python_name = base.native
+            assert i + 1 < len(decl.class_.bases), (
+                f'Cannot find cpp name for class "{base.native}"')
+            assert decl.class_.bases[i+1].cpp_name, (
+                f'Unexpected base class {decl.class_.bases[i+1]}')
+            base_class_cpp_name = decl.class_.bases[i + 1].cpp_name
+            break
+        if base_class_python_name:
+          for base in decl.class_.cpp_bases:
+            class_cpp_name = base.name.split('::')[-1]
+            if class_cpp_name == base_class_python_name:
+              base_class_cpp_name = base.name
+              break
+          self._namemap[base_class_python_name].cpp_name = base_class_cpp_name
       for member in decl.class_.members:
         self._register_types(member, py_name, cpp_namespace)
     elif decl.decltype == ast_pb2.Decl.Type.ENUM:
