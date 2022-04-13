@@ -46,6 +46,15 @@ inline std::vector<int> FunctionNewStyleCallbackConstRef(
   return output.second;
 }
 
+// Intentionally create an overload for the function above, so that a lambda
+// expression is generated.
+inline std::vector<int> FunctionNewStyleCallbackConstRef(
+    const std::vector<int>& input,
+    const cliff::testing::NewCallback& callback, int) {
+  auto output = callback(input);
+  return output.second;
+}
+
 inline std::vector<int> Function(const std::vector<int>& input,
                           cliff::testing::OldCallback callback) {
   std::vector<int> output;
@@ -55,6 +64,11 @@ inline std::vector<int> Function(const std::vector<int>& input,
 
 inline std::function<int(int)> FunctionWithCallableReturn(
     std::function<int(int)> callback) {
+  return callback;
+}
+
+inline std::function<int(int)> FunctionWithCallableReturn(
+    std::function<int(int)> callback, int) {
   return callback;
 }
 

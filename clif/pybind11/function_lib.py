@@ -43,6 +43,7 @@ class Parameter:
             f'{self.gen_name}.cast<{param.cpp_exact_type}>()')
     elif not ptype.cpp_type:  # std::function
       self.cpp_type = generate_callback_signature(param)
+      self.function_argument = f'std::move({self.gen_name})'
     # unique_ptr<T>, shared_ptr<T>
     elif (ctype.startswith('::std::unique_ptr') or
           ctype.startswith('::std::shared_ptr')):
@@ -163,18 +164,14 @@ def generate_callback_signature(param: ast_pb2.ParamDecl) -> str:
   for param in func_decl.params:
     params_list_types.append(param.cpp_exact_type)
   params_str_types = ', '.join(params_list_types)
-  if func_decl.cpp_void_return:
+  if func_decl.cpp_void_return or not func_decl.returns:
     return_type = 'void'
-  elif func_decl.returns:
-    return_type = func_decl.returns[0].cpp_exact_type
-  ref_qualifier = ''
-  if param.cpp_exact_type.endswith('&'):
-    ref_qualifier = '&'
-  const_qualifier = ''
-  if param.cpp_exact_type.startswith('const '):
-    const_qualifier = 'const '
-  return (f'{const_qualifier}::std::function<{return_type}({params_str_types})>'
-          f'{ref_qualifier}')
+  else:
+    if not func_decl.returns[0].cpp_exact_type:
+      return_type = func_decl.returns[0].type.cpp_type
+    else:
+      return_type = func_decl.returns[0].cpp_exact_type
+  return f'::std::function<{return_type}({params_str_types})>'
 
 
 def generate_py_args(func_decl: ast_pb2.FuncDecl) -> str:

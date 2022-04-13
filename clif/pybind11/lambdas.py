@@ -104,6 +104,10 @@ def _generate_lambda_body(
         yield (I +
                f'pybind11::google::PyCLIFStatus<{ret0.cpp_exact_type}> ret0 = '
                f'{function_call}({function_call_params});')
+    elif not ret0.type.cpp_type:
+      callback_cpp_type = function_lib.generate_callback_signature(ret0)
+      yield I + (f'{callback_cpp_type} ret0 = '
+                 f'{function_call}({function_call_params});')
     else:
       yield I + (f'{ret0.type.cpp_type} ret0 = '
                  f'{function_call}({function_call_params});')
