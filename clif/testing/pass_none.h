@@ -25,18 +25,25 @@ struct IntHolder {
   int value;
 };
 
-int pass_holder_by_value(IntHolder holder) { return holder.value * 3; }
+inline int pass_holder_by_value(IntHolder holder) { return holder.value * 3; }
 
-int pass_const_ref_holder(const IntHolder& holder) { return holder.value * 5; }
+inline int pass_const_ref_holder(const IntHolder& holder) {
+  return holder.value * 5;
+}
 
-int pass_const_ptr_holder(const IntHolder* holder) {
+// Intentionally create an overload so that a lambda expression is generated.
+inline int pass_const_ref_holder(const IntHolder& holder, int) {
+  return holder.value * 5;
+}
+
+inline int pass_const_ptr_holder(const IntHolder* holder) {
   if (holder == nullptr) {
     return 11;
   }
   return holder->value * 7;
 }
 
-int pass_shared_ptr_holder(std::shared_ptr<IntHolder> holder) {
+inline int pass_shared_ptr_holder(std::shared_ptr<IntHolder> holder) {
   if (holder == nullptr) {
     return 17;
   }

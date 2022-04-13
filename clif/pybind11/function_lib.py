@@ -33,6 +33,7 @@ class Parameter:
     self.cpp_type = ctype
     self.gen_name = param_name
     self.function_argument = param_name
+    self.check_nullptr = False
 
     if ptype.lang_type == 'object':
       self.cpp_type = 'py::object'
@@ -53,6 +54,7 @@ class Parameter:
       if ptype.cpp_toptr_conversion:
         self.cpp_type = f'{ctype}*'
         self.function_argument = f'*{param_name}'
+        self.check_nullptr = True
       elif ptype.cpp_abstract:  # for AbstractType &
         self.cpp_type = f'std::unique_ptr<{ctype}>'
         self.function_argument = f'*{param_name}'

@@ -80,6 +80,15 @@ def _generate_lambda_body(
 
   cpp_void_return = func_decl.cpp_void_return or not func_decl.returns
 
+  # Generates void pointer check for parameters that are converted from non
+  # pointers by code generator.
+  for p in params:
+    if p.check_nullptr:
+      yield I + f'if ({p.gen_name} == nullptr) {{'
+      yield I + I + (f'throw py::type_error("{func_decl.name.native}() '
+                     f'argument {p.gen_name} is not valid.");')
+      yield I +'}'
+
   # Generates declarations of return values
   for i, r in enumerate(func_decl.returns):
     if i or cpp_void_return:
