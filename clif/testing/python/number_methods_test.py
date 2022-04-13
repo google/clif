@@ -24,6 +24,7 @@ class NumberMethodsTest(absltest.TestCase):
     n2 = number_methods.Number(2.0)
     n3 = n1 + n2
     self.assertEqual(n3.value, 3.0)
+    self.assertEqual(n1.fake_plus('fake'), b'1')
 
   def testSubtract(self):
     n1 = number_methods.Number(2.0)

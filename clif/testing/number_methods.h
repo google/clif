@@ -17,6 +17,7 @@
 #define CLIF_TESTING_NUMBER_METHODS_H_
 
 #include <cmath>
+#include <string>
 #include <utility>
 
 namespace clif_testing {
@@ -178,6 +179,10 @@ inline Number operator+(const Number& a, const Number& b) {
   Number number;
   number.value = a.value + b.value;
   return number;
+}
+
+inline std::string operator+(const Number& a, std::string) {
+  return std::to_string(static_cast<int>(a.value));
 }
 
 inline Number operator-(const Number& a, const Number& b) {

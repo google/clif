@@ -201,7 +201,7 @@ def _generate_lambda_params_with_types(
     return f'{class_decl.name.cpp_name} &self, py::args'
   params_list = [f'{p.cpp_type} {p.gen_name}' for p in params]
   if (class_decl and not func_decl.classmethod and
-      not func_decl.is_extend_method):
+      not func_decl.is_extend_method and not func_decl.cpp_opfunction):
     params_list = [f'{class_decl.name.cpp_name} &self'] + params_list
   return ', '.join(params_list)
 
@@ -210,9 +210,8 @@ def _generate_function_call(
     func_decl: ast_pb2.FuncDecl,
     class_decl: Optional[ast_pb2.ClassDecl] = None):
   """Generates the function call underneath the lambda expression."""
-  if func_decl.classmethod or not class_decl:
-    return func_decl.name.cpp_name
-  elif func_decl.is_extend_method:
+  if (func_decl.classmethod or not class_decl or func_decl.is_extend_method or
+      func_decl.cpp_opfunction):
     return func_decl.name.cpp_name
   else:
     method_name = func_decl.name.cpp_name.split('::')[-1]

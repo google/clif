@@ -24,6 +24,7 @@ from "clif/testing/number_methods.h":
       def __init__(self, v: float)
 
       def __add__(self, other: Number) -> Number
+      def `::clif_testing::operator+` as fake_plus(self, other: str) -> bytes
       def __sub__(self, other: Number) -> Number
       # Not exercising def __mul__(self, other: Number) -> Number to keep this
       # test simple. There is no special handling of __mul__ in the parser or
