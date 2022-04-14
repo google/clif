@@ -20,6 +20,7 @@
 
 #include <Python.h>
 
+#include "clif/testing/lambda_expressions.h"
 #include "clif/testing/type_caster.h"
 #include "clif/testing/python/lambda_expressions_clif.h"
 
@@ -67,6 +68,24 @@ inline int get_refcount_from_const_ptr() {
   Py_XDECREF(obj);
   return result;
 }
+
+inline int get_refcount_from_enum() {
+  SomeEnum e = SomeEnum::first;
+  PyObject* obj = Clif_PyObjFrom(e, {});
+  int result = static_cast<int>(Py_REFCNT(obj));
+  Py_XDECREF(obj);
+  return result;
+}
+
+inline bool can_convert_enum_to_concrete(PyObject* obj) {
+  SomeEnum e;
+  if (Clif_PyObjAs(obj, &e)) {
+    return true;
+  }
+  PyErr_Clear();
+  return false;
+}
+
 
 }  // namespace clif_testing
 

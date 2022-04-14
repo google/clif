@@ -14,6 +14,8 @@
 
 from "clif/testing/python/lambda_expressions_clif_aux.h":
   namespace `clif_testing`:
+    enum SomeEnum
+
     class Abstract:
       def __init__(self)
 

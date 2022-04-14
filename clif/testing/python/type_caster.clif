@@ -39,3 +39,7 @@ from "clif/testing/python/type_caster_clif_aux.h":
     def get_refcount_from_const_ref() -> int
     @do_not_release_gil
     def get_refcount_from_const_ptr() -> int
+    @do_not_release_gil
+    def get_refcount_from_enum() -> int
+
+    def can_convert_enum_to_concrete(obj: object) -> bool

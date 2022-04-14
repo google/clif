@@ -173,16 +173,27 @@ class EnumType(BaseType):
   def generate_header(self) -> Generator[str, None, None]:
     yield ''
     yield from self.generate_clif_use()
-    yield f'PyObject* Clif_PyObjFrom({self.cpp_name}*, ::clif::py::PostConv);'
+    yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}&, '
+           '::clif::py::PostConv);')
     yield ''
+    yield f'bool Clif_PyObjAs(PyObject* input, {self.cpp_name}* output);'
 
   def generate_converters(self) -> Generator[str, None, None]:
     yield ''
-    yield (f'PyObject* Clif_PyObjFrom({self.cpp_name}* c, '
+    yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}& c, '
            '::clif::py::PostConv) {')
     yield I + 'return pybind11::cast(c).release().ptr();'
     yield '}'
     yield ''
+    yield f'bool Clif_PyObjAs(PyObject* input, {self.cpp_name}* output) {{'
+    yield I + 'try {'
+    yield I + I + (f'*output = pybind11::cast<{self.cpp_name}>'
+                   '(pybind11::handle(input));')
+    yield I + '} catch (pybind11::cast_error) {'
+    yield I + I + 'return false;'
+    yield I + '}'
+    yield I + 'return true;'
+    yield '}'
 
 
 @dataclasses.dataclass

@@ -24,6 +24,11 @@
 
 namespace clif_testing {
 
+enum SomeEnum {
+  first = 1,
+  second = -1,
+};
+
 struct Abstract {
   virtual int get() = 0;
   virtual ~Abstract() { }

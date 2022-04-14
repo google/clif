@@ -52,10 +52,16 @@ class TypeCasterTest(parameterized.TestCase):
       type_caster.get_refcount_from_unique_ptr,
       type_caster.get_refcount_from_rvalue,
       type_caster.get_refcount_from_const_ref,
-      type_caster.get_refcount_from_const_ptr)
+      type_caster.get_refcount_from_const_ptr,
+      type_caster.get_refcount_from_enum)
   def test_generated_pyobjfrom(self, func):
     res = func()
     self.assertGreater(res, 0)
+
+  def test_convert_python_object_to_cpp(self):
+    e = lambda_expressions.SomeEnum.first
+    self.assertTrue(type_caster.can_convert_enum_to_concrete(e))
+    self.assertFalse(type_caster.can_convert_enum_to_concrete('10'))
 
 
 if __name__ == '__main__':
