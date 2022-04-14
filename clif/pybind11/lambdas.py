@@ -62,7 +62,6 @@ def needs_lambda(
           _func_has_pointer_params(func_decl) or
           _func_has_py_object_params(func_decl) or
           _func_has_status_params(func_decl) or
-          _has_bytes_return(func_decl) or
           func_decl.cpp_num_params != len(func_decl.params))
 
 
@@ -173,10 +172,8 @@ def _generate_function_call_returns(
   all_returns_list = []
   for i, r in enumerate(func_decl.returns):
     if r.type.lang_type == 'bytes':
-      if r.cpp_exact_type in ('::std::string_view', '::absl::string_view'):
-        all_returns_list.append(f'py::bytes(ret{i}.data())')
-      else:
-        all_returns_list.append(f'py::bytes(ret{i})')
+      all_returns_list.append(
+          f'py::cast(ret{i}, py::return_value_policy::return_as_bytes)')
     elif r.type.lang_type in capsule_types:
       all_returns_list.append(
           f'clif::CapsuleWrapper<{r.type.cpp_type}>(ret{i})')
@@ -270,13 +267,6 @@ def _is_inherited_method(class_decl: ast_pb2.ClassDecl,
   if class_decl.cpp_bases and not func_decl.is_extend_method:
     namespaces = func_decl.name.cpp_name.split('::')
     if len(namespaces) > 1 and namespaces[-2] != class_decl.name.cpp_name:
-      return True
-  return False
-
-
-def _has_bytes_return(func_decl: ast_pb2.FuncDecl) -> bool:
-  for r in func_decl.returns:
-    if r.type.lang_type == 'bytes':
       return True
   return False
 
