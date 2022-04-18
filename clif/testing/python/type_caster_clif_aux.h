@@ -77,6 +77,42 @@ inline int get_refcount_from_enum() {
   return result;
 }
 
+inline bool can_convert_to_concrete(PyObject* obj) {
+  Arg arg;
+  if (Clif_PyObjAs(obj, &arg)) {
+    return true;
+  }
+  PyErr_Clear();
+  return false;
+}
+
+inline bool can_convert_to_ptr(PyObject* obj) {
+  Arg* arg = nullptr;
+  if (Clif_PyObjAs(obj, &arg)) {
+    return true;
+  }
+  PyErr_Clear();
+  return false;
+}
+
+inline bool can_convert_to_shared_ptr(PyObject* obj) {
+  std::shared_ptr<Arg> arg;
+  if (Clif_PyObjAs(obj, &arg)) {
+    return true;
+  }
+  PyErr_Clear();
+  return false;
+}
+
+inline bool can_convert_to_unique_ptr(PyObject* obj) {
+  std::unique_ptr<Arg> arg;
+  if (Clif_PyObjAs(obj, &arg)) {
+    return true;
+  }
+  PyErr_Clear();
+  return false;
+}
+
 inline bool can_convert_enum_to_concrete(PyObject* obj) {
   SomeEnum e;
   if (Clif_PyObjAs(obj, &e)) {

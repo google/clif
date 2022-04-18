@@ -62,6 +62,15 @@ class TypeCasterTest(parameterized.TestCase):
     e = lambda_expressions.SomeEnum.first
     self.assertTrue(type_caster.can_convert_enum_to_concrete(e))
     self.assertFalse(type_caster.can_convert_enum_to_concrete('10'))
+    arg = lambda_expressions.Arg()
+    self.assertTrue(type_caster.can_convert_to_concrete(arg))
+    self.assertFalse(type_caster.can_convert_to_concrete('10'))
+    self.assertTrue(type_caster.can_convert_to_ptr(arg))
+    self.assertFalse(type_caster.can_convert_to_ptr(10))
+    self.assertTrue(type_caster.can_convert_to_shared_ptr(arg))
+    self.assertFalse(type_caster.can_convert_to_shared_ptr(['10']))
+    self.assertTrue(type_caster.can_convert_to_unique_ptr(arg))
+    self.assertFalse(type_caster.can_convert_to_unique_ptr({10: '10'}))
 
 
 if __name__ == '__main__':
