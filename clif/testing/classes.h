@@ -16,6 +16,8 @@
 #ifndef THIRD_PARTY_CLIF_TESTING_CLASSES_H_
 #define THIRD_PARTY_CLIF_TESTING_CLASSES_H_
 
+#include <string>
+
 // This comment intentionally includes UTF-8 characters as an IO test.
 //   "Use pytype 🦆✔  - make code maintainers happy!"
 namespace clif_testing {
@@ -64,6 +66,19 @@ class OverloadedGetterProperty {
   void i(int value) { i_ = value; }
  private:
   int i_;
+};
+
+struct BytesAttributes {
+  explicit BytesAttributes(const std::string& str_readonly):
+      str_readonly_(str_readonly) {}
+  std::string str_as_bytes;
+  std::string str_as_str;
+
+  std::string str_readonly_;
+  std::string get_str_readonly() const { return str_readonly_; }
+  std::string str_readwrite_;
+  std::string get_str_readwrite() const { return str_readwrite_; }
+  void set_str_readwrite(const std::string& v) { str_readwrite_ = v; }
 };
 
 }  // namespace classes

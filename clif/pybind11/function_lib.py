@@ -198,6 +198,17 @@ def generate_docstring(func_decl: ast_pb2.FuncDecl) -> str:
   return f'"{docstring}"'
 
 
+def is_bytes_type(pytype: ast_pb2.Type) -> bool:
+  return pytype.lang_type == 'bytes' or '<bytes>' in pytype.lang_type
+
+
+def has_bytes_return(func_decl: ast_pb2.FuncDecl) -> bool:
+  for r in func_decl.returns:
+    if is_bytes_type(r.type):
+      return True
+  return False
+
+
 def generate_return_value_policy(func_decl: ast_pb2.FuncDecl) -> str:
   """Generates pybind11 return value policy based on function return type.
 
@@ -210,9 +221,8 @@ def generate_return_value_policy(func_decl: ast_pb2.FuncDecl) -> str:
     pybind11 return value policy based on the function return value.
   """
   prefix = 'py::return_value_policy::'
-  for r in func_decl.returns:
-    if r.type.lang_type == 'bytes' or '<bytes>' in r.type.lang_type:
-      return prefix + '_return_as_bytes'
+  if has_bytes_return(func_decl):
+    return prefix + '_return_as_bytes'
   if func_decl.cpp_void_return or not func_decl.returns:
     return prefix + 'automatic'
   return_type = func_decl.returns[0]

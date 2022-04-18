@@ -45,3 +45,10 @@ from "clif/testing/classes.h":
     class OverloadedGetterProperty:
       def __init__(self, i: int)
       x: int = property(`i`)
+
+    class BytesAttributes:
+      def __init__(self, v: str)
+      str_as_bytes: bytes
+      str_as_str: str
+      str_readonly: bytes = property(`get_str_readonly`)
+      str_readwrite: bytes = property(`get_str_readwrite`, `set_str_readwrite`)

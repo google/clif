@@ -69,6 +69,20 @@ class ClassesTest(absltest.TestCase):
     obj = classes.OverloadedGetterProperty(10)
     self.assertEqual(obj.x, 10)
 
+  def testBytesAttributes(self):
+    obj = classes.BytesAttributes('str_readonly')
+    obj.str_as_bytes = 'str_as_bytes'
+    self.assertEqual(obj.str_as_bytes, b'str_as_bytes')
+    obj.str_as_bytes = b'str_as_bytes123'
+    self.assertEqual(obj.str_as_bytes, b'str_as_bytes123')
+    obj.str_as_str = 'str_as_str'
+    self.assertEqual(obj.str_as_str, 'str_as_str')
+    obj.str_as_str = b'str_as_str123'
+    self.assertEqual(obj.str_as_str, 'str_as_str123')
+    self.assertEqual(obj.str_readonly, b'str_readonly')
+    obj.str_readwrite = 'str_readwrite'
+    self.assertEqual(obj.str_readwrite, b'str_readwrite')
+
 
 if __name__ == '__main__':
   absltest.main()

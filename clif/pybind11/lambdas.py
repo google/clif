@@ -171,7 +171,7 @@ def _generate_function_call_returns(
   """Generates return values of cpp function."""
   all_returns_list = []
   for i, r in enumerate(func_decl.returns):
-    if r.type.lang_type == 'bytes':
+    if function_lib.is_bytes_type(r.type):
       all_returns_list.append(
           f'py::cast(ret{i}, py::return_value_policy::_return_as_bytes)')
     elif r.type.lang_type in capsule_types:

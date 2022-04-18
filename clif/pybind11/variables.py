@@ -41,8 +41,19 @@ def generate_from(
       yield from _generate_pointer_attr_property(class_name, var_decl,
                                                  class_decl)
     else:
-      yield (f'{class_name}.def_readwrite("{var_decl.name.native}", '
-             f'&{class_decl.name.cpp_name}::{var_decl.name.cpp_name});')
+      if function_lib.is_bytes_type(var_decl.type):
+        cpp_get = (f'py::cpp_function([]({class_decl.name.cpp_name} &self) '
+                   f'{{ return self.{var_decl.name.cpp_name}; }}, '
+                   'py::return_value_policy::_return_as_bytes)')
+        cpp_set = (f'py::cpp_function([]({class_decl.name.cpp_name} &self, '
+                   f'const {var_decl.type.cpp_type}& v) {{'
+                   f'self.{var_decl.name.cpp_name} = v; }})')
+        yield f'{class_name}.def_property("{var_decl.name.native}", '
+        yield I + f'{cpp_get},'
+        yield I + f'{cpp_set});'
+      else:
+        yield (f'{class_name}.def_readwrite("{var_decl.name.native}", '
+               f'&{class_decl.name.cpp_name}::{var_decl.name.cpp_name});')
 
 
 def _generate_pointer_attr_property(
@@ -73,7 +84,11 @@ def _generate_property(
   """Generates property for simple attributes."""
   cpp_get = f'&{var_decl.cpp_get.name.cpp_name}'
   cpp_set = f'&{var_decl.cpp_set.name.cpp_name}'
-  if var_decl.cpp_get.is_overloaded:
+  if function_lib.is_bytes_type(var_decl.type):
+    cpp_get = (f'py::cpp_function([]({class_decl.name.cpp_name} &self) '
+               f'{{ return self.{var_decl.cpp_get.name.cpp_name}(); }}, '
+               'py::return_value_policy::_return_as_bytes)')
+  elif var_decl.cpp_get.is_overloaded:
     cpp_get_cast = function_lib.generate_cpp_function_cast(
         var_decl.cpp_get, class_decl)
     cpp_get = f'{cpp_get_cast}&{var_decl.cpp_get.name.cpp_name}'
@@ -87,7 +102,8 @@ def _generate_property(
     cpp_set = 'nullptr'
   if var_decl.HasField('cpp_set'):
     yield f'{class_name}.def_property("{var_decl.name.native}", '
-    yield f'{cpp_get}, {cpp_set});'
+    yield I + f'{cpp_get},'
+    yield I + f'{cpp_set});'
   else:
     yield (f'{class_name}.def_property_readonly("{var_decl.name.native}", '
            f'{cpp_get});')
