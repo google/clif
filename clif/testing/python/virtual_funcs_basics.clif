@@ -18,6 +18,8 @@ from "clif/testing/virtual_funcs_basics.h":
     c: int
     @virtual
     def set_c(self, v: int)
+    @virtual
+    def get_pair(self) -> tuple<int, int>
     pos_c: int = property(`get_c`, `set_c`)
 
   def Bset(b: B, v: int)

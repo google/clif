@@ -28,6 +28,9 @@ class B(virtual_funcs_basics.B):
   def set_c(self, v):
     self.c = v
 
+  def get_pair(self):
+    return (3, 4)
+
 
 class K(virtual_funcs_basics.K):
 
@@ -87,6 +90,8 @@ class VirtualFuncsTest(absltest.TestCase):
     self.assertEqual(b.c, 2)
     virtual_funcs_basics.Bset(b, 4)
     self.assertEqual(b.c, 4)
+    p = b.get_pair()
+    self.assertCountEqual(p, (3, 4))
 
   def testVirtual(self):
     k = K()

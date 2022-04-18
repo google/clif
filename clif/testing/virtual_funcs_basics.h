@@ -2,11 +2,13 @@
 #define THIRD_PARTY_CLIF_TESTING_VIRTUAL_FUNCS_BASICS_H_
 
 #include <vector>
+#include <utility>
 
 struct B {
   int c;
   int get_c() { return c; }
   virtual void set_c(int i) { c = i; }
+  virtual std::pair<int, int> get_pair() { return {1, 2}; }
   virtual ~B() {}
   B() : c(0) {}
 };

@@ -259,6 +259,10 @@ class ModuleGenerator(object):
     else:
       pybind11_override = 'PYBIND11_OVERRIDE'
 
+    # Characters like ',' may cause the `PYBIND11_OVERRIDE` macro parsing fail
+    if ',' in return_type:
+      yield I + I + f'using {func_decl.name.native}_return = {return_type};'
+      return_type = f'{func_decl.name.native}_return'
     yield I + I + f'{pybind11_override}('
     yield I + I + I + f'{return_type},'
     yield I + I + I + f'{class_name},'
