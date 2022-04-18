@@ -173,7 +173,7 @@ def _generate_function_call_returns(
   for i, r in enumerate(func_decl.returns):
     if r.type.lang_type == 'bytes':
       all_returns_list.append(
-          f'py::cast(ret{i}, py::return_value_policy::return_as_bytes)')
+          f'py::cast(ret{i}, py::return_value_policy::_return_as_bytes)')
     elif r.type.lang_type in capsule_types:
       all_returns_list.append(
           f'clif::CapsuleWrapper<{r.type.cpp_type}>(ret{i})')
