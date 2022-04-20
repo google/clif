@@ -85,6 +85,18 @@ class StdContainersTest(absltest.TestCase):
     self.assertEqual(
         std_containers.LastStringInVector(['hello', 'world']), 'world')
 
+  def testContainerWithSmartPointers(self):
+    v = [1, 2, 3]
+    self.assertCountEqual(v, std_containers.unique_ptr_vector_round_trip(v))
+    m = {1: 2, 3: 4, 5: 6}
+    self.assertDictEqual(
+        m, std_containers.unique_ptr_unordered_map_round_trip(m))
+    s = {1, 2, 3}
+    self.assertCountEqual(
+        s, std_containers.unique_ptr_unordered_set_round_trip(s))
+    p = (1, 2)
+    self.assertCountEqual(p, std_containers.unique_ptr_pair_round_trip(p))
+
 
 if __name__ == '__main__':
   absltest.main()

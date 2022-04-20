@@ -18,8 +18,10 @@
 
 #include <algorithm>
 #include <array>
+#include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -110,6 +112,94 @@ inline void LastStringInVector(const std::vector<std::string>& v,
     *output = v.back();
   else
     output->clear();
+}
+
+inline std::unique_ptr<std::vector<int>> unique_ptr_vector_round_trip(
+    std::unique_ptr<std::vector<int>> v = nullptr) {
+  if (v) {
+    return v;
+  }
+  return nullptr;
+}
+
+// Not supported by Leagcy PyCLIF
+inline std::shared_ptr<std::vector<int>> return_shared_ptr_vector() {
+  auto v = {1, 2, 3};
+  auto result = std::make_shared<std::vector<int>>(v);
+  return result;
+}
+
+// Not supported by Leagcy PyCLIF
+inline int comsume_shared_ptr_vector(std::shared_ptr<std::vector<int>> v) {
+  return v->size();
+}
+
+inline std::unique_ptr<std::unordered_map<int, int>>
+    unique_ptr_unordered_map_round_trip(
+        std::unique_ptr<std::unordered_map<int, int>> m = nullptr) {
+  if (m) {
+    return m;
+  }
+  return nullptr;
+}
+
+// Not supported by Leagcy PyCLIF
+inline std::shared_ptr<std::unordered_map<int, int>>
+    return_shared_ptr_unordered_map() {
+  auto result = std::make_shared<std::unordered_map<int, int>>();
+  result->insert({1, 2});
+  result->insert({3, 4});
+  result->insert({5, 6});
+  return result;
+}
+
+// Not supported by Leagcy PyCLIF
+inline int comsume_shared_ptr_unordered_map(
+    std::shared_ptr<std::unordered_map<int, int>> v) {
+  return v->size();
+}
+
+inline std::unique_ptr<std::unordered_set<int>>
+    unique_ptr_unordered_set_round_trip(
+        std::unique_ptr<std::unordered_set<int>> s = nullptr) {
+  if (s) {
+    return s;
+  }
+  return nullptr;
+}
+
+// Not supported by Leagcy PyCLIF
+inline std::shared_ptr<std::unordered_set<int>>
+    return_shared_ptr_unordered_set() {
+  auto s = {1, 2, 3};
+  auto result = std::make_shared<std::unordered_set<int>>(s);
+  return result;
+}
+
+// Not supported by Leagcy PyCLIF
+inline int consume_shared_ptr_unordered_set(
+    std::shared_ptr<std::unordered_set<int>> v) {
+  return v->size();
+}
+
+inline std::unique_ptr<std::pair<int, int>> unique_ptr_pair_round_trip(
+    std::unique_ptr<std::pair<int, int>> p = nullptr) {
+  if (p) {
+    return p;
+  }
+  return nullptr;
+}
+
+// Not supported by Leagcy PyCLIF
+inline std::shared_ptr<std::pair<int, int>> return_shared_ptr_pair() {
+  auto result = std::make_shared<std::pair<int, int>>(
+      std::pair<int, int>({1, 2}));
+  return result;
+}
+
+// Not supported by Leagcy PyCLIF
+inline int consume_shared_ptr_pair(std::shared_ptr<std::pair<int, int>> p) {
+  return p->first;
 }
 
 #endif  // CLIF_TESTING_STD_CONTAINERS_H_

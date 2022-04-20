@@ -26,3 +26,18 @@ from "clif/testing/std_containers.h":
   def Make2By3() -> `std::tuple` as tuple<`std::tuple` as tuple<int, int, int>, `std::tuple` as tuple<int, int, int>>
   def Flatten2By3(m: `std::tuple` as tuple<`std::tuple` as tuple<int, int, int>, `std::tuple` as tuple<int, int, int>>) -> `std::tuple` as tuple<int, int, int, int, int, int>
   def LastStringInVector(v: list<str>) -> (output: str)
+
+  def unique_ptr_vector_round_trip(v: list<int> = default) -> list<int>
+  def unique_ptr_unordered_map_round_trip(m: dict<int, int> = default) -> dict<int, int>
+  def unique_ptr_unordered_set_round_trip(m: set<int> = default) -> set<int>
+  def unique_ptr_pair_round_trip(t: tuple<int, int> = default) -> tuple<int, int>
+
+  # Not supported by legacy PyCLIF
+  # def comsume_shared_ptr_vector(v: list<int>) -> int
+  # def return_shared_ptr_vector() -> list<int>
+  # def consume_shared_ptr_unordered_map(m: dict<int, int>) -> int
+  # def return_shared_ptr_unordered_map() -> dict<int, int>
+  # def consume_shared_ptr_unordered_set(s: set<int>) -> int
+  # def return_shared_ptr_unordered_set() -> set<int>
+  # def consume_shared_ptr_pair(p: tuple<int, int>) -> int
+  # def return_shared_ptr_pair() -> tuple<int, int>
