@@ -47,9 +47,10 @@ class IteratorTest(absltest.TestCase):
   def test_weakref(self):
     r = iterator.Ring5()
     self.assertIsNotNone(weakref.ref(r)())
-    with self.assertRaises(TypeError) as ctx:
-      weakref.ref(iter(r))
-    self.assertIn('cannot create weak reference', str(ctx.exception))
+    if 'pybind11' not in iterator.__doc__:
+      with self.assertRaises(TypeError) as ctx:
+        weakref.ref(iter(r))
+      self.assertIn('cannot create weak reference', str(ctx.exception))
 
 
 if __name__ == '__main__':

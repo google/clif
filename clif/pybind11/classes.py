@@ -94,15 +94,26 @@ def generate_from(
       for s in enums.generate_from(class_name, member.enum):
         yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.CLASS:
-      for s in generate_from(member.class_, class_name,
-                             trampoline_class_names, capsule_types,
-                             registered_types):
-        yield I + s
+      if member.class_.name.native == '__iter__':
+        yield from _generate_iterator(class_name, class_decl)
+      else:
+        for s in generate_from(member.class_, class_name,
+                               trampoline_class_names, capsule_types,
+                               registered_types):
+          yield I + s
 
   if (not default_constructor_defined and class_decl.cpp_has_def_ctor and
       (not class_decl.cpp_abstract or trampoline_generated)):
     yield I + I + f'{class_name}.def(py::init<>());'
   yield I + '}'
+
+
+def _generate_iterator(
+    class_name: str, class_decl: ast_pb2.ClassDecl
+) -> Generator[str, None, None]:
+  yield (f'{class_name}.def("__iter__", [](const {class_decl.name.cpp_name} &s)'
+         '{ return py::make_iterator(s.begin(), s.end()); }, '
+         'py::keep_alive<0, 1>());')
 
 
 def _generate_constructor(
