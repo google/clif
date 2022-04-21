@@ -791,18 +791,19 @@ can either
 
 CLIF knows some basic types (predefined in `clif/python/types.h`):
 
-Default C++ type | CLIF type[^type]
----------------- | ----------------
-int              | int
-string           | bytes _or_ str
-bool             | bool
-double           | float
-complex<>        | complex
-vector<>         | list<>
-pair<>           | tuple<>
-unordered_set<>  | set<>
-unordered_map<>  | dict<>
-PyObject*        | object[^object]
+Default C++ type         | CLIF type[^type]
+------------------------ | -----------------
+`int`                    | `int`
+`string`                 | `bytes` *or* `str`
+`bool`                   | `bool`
+`double`                 | `float`
+`complex<>`              | `complex`
+`vector<>`               | `list<>`
+`pair<>`                 | `tuple<>`
+`unordered_set<>`        | `set<>`
+`unordered_map<>`        | `dict<>`
+`std::function<R(T, U)>` | `(t: T, u: U) -> R`
+`PyObject*`              | `object`[^object]
 
 [^type]: CLIF types named after the corresponding Python types.
 [^object]: Be careful when you use `object`, CLIF assumes you **know**
