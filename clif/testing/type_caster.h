@@ -17,9 +17,12 @@
 #ifndef THIRD_PARTY_CLIF_TESTING_TYPE_CASTER_H_
 #define THIRD_PARTY_CLIF_TESTING_TYPE_CASTER_H_
 
+#include <Python.h>
+
 #include <memory>
 #include <optional>
 #include <variant>
+#include <vector>
 
 #include "clif/testing/value_holder.h"
 
@@ -64,6 +67,11 @@ inline int get_value_pyobjas_only(const ValueHolderAsOnly& vh) {
 
 inline int get_value_pybind11_ignore(const ValueHolderPybind11Ignore& vh) {
   return vh.value;
+}
+
+inline std::vector<PyObject *> pyobject_round_trip(
+    const std::vector<PyObject*> vec) {
+  return vec;
 }
 
 }  // namespace clif_testing

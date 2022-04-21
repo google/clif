@@ -91,19 +91,12 @@ def _generate_lambda_body(
   # Generates declarations of return values
   for i, r in enumerate(func_decl.returns):
     if i or cpp_void_return:
-      if r.type.lang_type == 'object':
-        yield I + f'py::object ret{i}{{}};'
-      else:
-        yield I + f'{r.type.cpp_type} ret{i}{{}};'
+      yield I + f'{r.type.cpp_type} ret{i}{{}};'
 
   # Generates call to the wrapped function
   if not cpp_void_return:
     ret0 = func_decl.returns[0]
-    if ret0.type.lang_type == 'object':
-      yield I + ('py::object ret0 = '
-                 f'clif::ConvertPyObject({function_call}'
-                 f'({function_call_params}));')
-    elif _is_status_param(ret0):
+    if _is_status_param(ret0):
       if func_decl.marked_non_raising:
         yield (I +
                f'pybind11::google::NoThrowStatus<{ret0.cpp_exact_type}> ret0 = '
@@ -220,12 +213,21 @@ def _func_has_pointer_params(func_decl: ast_pb2.FuncDecl) -> bool:
   return num_returns >= 2 or (num_returns == 1 and func_decl.cpp_void_return)
 
 
+def _type_has_py_object_param(pytype: ast_pb2.Type) -> bool:
+  if pytype.lang_type == 'object':
+    return True
+  for child_type in pytype.params:
+    if _type_has_py_object_param(child_type):
+      return True
+  return False
+
+
 def _func_has_py_object_params(func_decl: ast_pb2.FuncDecl) -> bool:
   for p in func_decl.params:
-    if p.type.lang_type == 'object':
+    if _type_has_py_object_param(p.type):
       return True
   for r in func_decl.returns:
-    if r.type.lang_type == 'object':
+    if _type_has_py_object_param(r.type):
       return True
   return False
 

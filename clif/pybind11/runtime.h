@@ -23,13 +23,6 @@
 
 namespace clif {
 
-inline pybind11::object ConvertPyObject(PyObject* ptr) {
-  if (PyErr_Occurred() || ptr == nullptr) {
-    throw pybind11::error_already_set();
-  }
-  return pybind11::reinterpret_borrow<pybind11::object>(ptr);
-}
-
 template <typename T>
 struct CapsuleWrapper {
   explicit CapsuleWrapper(): ptr(nullptr) { }
@@ -59,6 +52,34 @@ struct type_caster<clif::CapsuleWrapper<T>> {
       clif::CapsuleWrapper<T> src, return_value_policy, handle) {
     return capsule(src.ptr, typeid(T).name()).release();
   }
+};
+
+template <>
+class type_caster<PyObject> {
+ public:
+  static constexpr auto name = const_name("PyObject *");
+
+  // Conversion part 1 (C++ -> Python)
+  static handle cast(PyObject* src, return_value_policy, handle) {
+    return reinterpret_steal<object>(src).release();
+  }
+
+  // Conversion part 2 (Python->C++)
+  bool load(handle src, bool convert) {
+    value = reinterpret_steal<object>(src);
+    return true;
+  }
+
+  template <typename T>
+  using cast_op_type = PyObject *;
+
+  explicit operator PyObject *() {
+    value.inc_ref();
+    return value.ptr();
+  }
+
+ private:
+  object value;
 };
 
 }  // namespace detail

@@ -72,6 +72,12 @@ class TypeCasterTest(parameterized.TestCase):
     self.assertTrue(type_caster.can_convert_to_unique_ptr(arg))
     self.assertFalse(type_caster.can_convert_to_unique_ptr({10: '10'}))
 
+  def test_pyobject_type_caster(self):
+    inp_list = [['1'], ['2'], ['3']]
+    out_list = type_caster.pyobject_round_trip(inp_list)
+    for inp, out in zip(inp_list, out_list):
+      self.assertIs(inp, out)
+
 
 if __name__ == '__main__':
   absltest.main()

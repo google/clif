@@ -35,14 +35,7 @@ class Parameter:
     self.function_argument = param_name
     self.check_nullptr = False
 
-    if ptype.lang_type == 'object':
-      self.cpp_type = 'py::object'
-      if param.cpp_exact_type == '::PyObject *':
-        self.function_argument = f'{self.gen_name}.ptr()'
-      else:
-        self.function_argument = (
-            f'{self.gen_name}.cast<{param.cpp_exact_type}>()')
-    elif not ptype.cpp_type:  # std::function
+    if not ptype.cpp_type:  # std::function
       self.cpp_type = generate_callback_signature(param)
       self.function_argument = f'std::move({self.gen_name})'
     # unique_ptr<T>, shared_ptr<T>

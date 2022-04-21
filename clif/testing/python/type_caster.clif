@@ -47,3 +47,5 @@ from "clif/testing/python/type_caster_clif_aux.h":
     def can_convert_to_ptr(obj: object) -> bool
     def can_convert_to_shared_ptr(obj: object) -> bool
     def can_convert_to_unique_ptr(obj: object) -> bool
+
+    def pyobject_round_trip(vec: list<object>) -> list<object>
