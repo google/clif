@@ -95,7 +95,18 @@ def generate_from(
         yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.CLASS:
       if member.class_.name.native == '__iter__':
-        yield from _generate_iterator(class_name, class_decl)
+        assert len(member.class_.members) == 1, (
+            '__iter__ class must have only one "def", '
+            f'{len(member.class_.members)} members found')
+        d = member.class_.members[0]
+        assert d.decltype == d.FUNC, (
+            f'__iter__ class must have only func_decl members, {d.decltype} '
+            'member found')
+        assert d.func.name.native == '__next__', (
+            '__iter__ class must have only one "def __next__", '
+            f'"def {d.func.name.native}" found')
+        for s in _generate_iterator(class_name, class_decl, d.func):
+          yield I + I + s
       else:
         for s in generate_from(member.class_, class_name,
                                trampoline_class_names, capsule_types,
@@ -109,11 +120,15 @@ def generate_from(
 
 
 def _generate_iterator(
-    class_name: str, class_decl: ast_pb2.ClassDecl
+    class_name: str, class_decl: ast_pb2.ClassDecl, func_decl: ast_pb2.FuncDecl
 ) -> Generator[str, None, None]:
-  yield (f'{class_name}.def("__iter__", [](const {class_decl.name.cpp_name} &s)'
-         '{ return py::make_iterator(s.begin(), s.end()); }, '
-         'py::keep_alive<0, 1>());')
+  template_param = ''
+  if function_lib.has_bytes_return(func_decl):
+    template_param = '<py::return_value_policy::_return_as_bytes>'
+  yield (
+      f'{class_name}.def("__iter__", [](const {class_decl.name.cpp_name} &s)'
+      f'{{ return py::make_iterator{template_param}(s.begin(), s.end()); }}, '
+      'py::keep_alive<0, 1>());')
 
 
 def _generate_constructor(
