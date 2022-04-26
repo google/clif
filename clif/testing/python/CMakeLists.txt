@@ -221,6 +221,4 @@ add_pyclif_library_for_test(virtual_derived_before_base virtual_derived_before_b
 
 add_pyclif_library_for_test(virtual_funcs virtual_funcs.clif)
 
-add_pyclif_library_for_test(virtual_funcs_basics virtual_funcs_basics.clif)
-
 add_pyclif_library_for_test(virtual_py_cpp_mix virtual_py_cpp_mix.clif)
