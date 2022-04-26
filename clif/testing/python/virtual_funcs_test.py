@@ -59,6 +59,9 @@ class AbstractClassNonDefConstImpl(virtual_funcs.AbstractClassNonDefConst):
   def DoSomething(self):
     return self.a * self.b
 
+  def get_a(self):
+    return self.a + 1
+
 
 class ClassNonDefConstImpl(virtual_funcs.ClassNonDefConst):
 
@@ -74,6 +77,10 @@ class ClassNonDefConstImpl(virtual_funcs.ClassNonDefConst):
 
 class VirtualTest(absltest.TestCase):
 
+  @absltest.skipIf(
+      'pybind11' in virtual_funcs.__doc__,
+      'Currently pybind11 does not throw exceptions when initializing abstract'
+      'classes.')
   def testInitAbstract(self):
     self.assertRaises(ValueError, virtual_funcs.K)
     self.assertRaises(ValueError, virtual_funcs.AbstractClassNonDefConst)
@@ -99,6 +106,7 @@ class VirtualTest(absltest.TestCase):
     abc_non_def_impl = AbstractClassNonDefConstImpl(4, 5)
     self.assertEqual(abc_non_def_impl.DoSomething(), 20)
     self.assertEqual(virtual_funcs.DoSomething1(abc_non_def_impl), 20)
+    self.assertEqual(abc_non_def_impl.get_a(), 5)
 
     non_def_impl = ClassNonDefConstImpl(4, 5)
     self.assertEqual(non_def_impl.DoSomething(), 20)

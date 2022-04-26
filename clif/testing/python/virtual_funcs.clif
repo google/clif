@@ -47,6 +47,9 @@ from "clif/testing/virtual_funcs.h":
     @virtual
     def DoSomething(self) -> int
 
+    @virtual
+    def get_a(self) -> int
+
   def `DoSomething` as DoSomething1(a: AbstractClassNonDefConst) -> int
 
   class ClassNonDefConst:

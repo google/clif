@@ -65,6 +65,8 @@ class AbstractClassNonDefConst {
 
   int my_a;
   int my_b;
+ protected:
+  virtual int get_a() { return my_a; }
 };
 
 inline int DoSomething(const AbstractClassNonDefConst& a) {
