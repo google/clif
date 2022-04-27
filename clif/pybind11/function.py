@@ -75,7 +75,9 @@ def _generate_simple_function(
   yield f'{module_name}.{function_lib.generate_def(func_decl)}("{func_name}",'
   yield I + function_lib.generate_cpp_function_cast(func_decl, class_decl)
   yield I + f'&{func_decl.name.cpp_name},'
-  yield I + function_lib.generate_function_suffixes(func_decl)
+  is_member_function = (class_decl is not None)
+  yield I + function_lib.generate_function_suffixes(
+      func_decl, is_member_function=is_member_function)
 
 
 def _generate_overload_for_unknown_default_function(

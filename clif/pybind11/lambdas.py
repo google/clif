@@ -43,8 +43,9 @@ def generate_lambda(
   yield from _generate_lambda_body(
       func_decl, params_list, capsule_types, class_decl)
   release_gil = not _func_has_py_object_params(func_decl)
+  is_member_function = (class_decl is not None)
   function_suffix = function_lib.generate_function_suffixes(
-      func_decl, release_gil=release_gil)
+      func_decl, release_gil=release_gil, is_member_function=is_member_function)
   yield f'}}, {function_suffix}'
 
 

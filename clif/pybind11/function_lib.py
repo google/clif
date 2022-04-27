@@ -68,9 +68,10 @@ def num_unknown_default_values(func_decl: ast_pb2.FuncDecl) -> int:
 
 
 def generate_function_suffixes(
-    func_decl: ast_pb2.FuncDecl, release_gil: bool = True) -> str:
+    func_decl: ast_pb2.FuncDecl, release_gil: bool = True,
+    is_member_function: bool = True) -> str:
   """Generates py_args, docstrings and return value policys."""
-  py_args = generate_py_args(func_decl)
+  py_args = generate_py_args(func_decl, is_member_function)
   suffix = ''
   if py_args:
     suffix += f'{py_args}, '
@@ -169,11 +170,13 @@ def generate_callback_signature(param: ast_pb2.ParamDecl) -> str:
   return f'::std::function<{return_type}({params_str_types})>'
 
 
-def generate_py_args(func_decl: ast_pb2.FuncDecl) -> str:
+def generate_py_args(func_decl: ast_pb2.FuncDecl,
+                     is_member_function: bool = True) -> str:
   """Generates bindings code for function parameter declarations."""
   params_list = []
   for param in func_decl.params:
-    if param.name.native == 'self' or param.name.native == 'cls':
+    if ((param.name.native == 'self' or param.name.native == 'cls') and
+        is_member_function):
       continue
     cpp_name = param.name.cpp_name
     if param.default_value and param.default_value != 'default':
