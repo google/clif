@@ -14,6 +14,9 @@
 
 from "clif/testing/pointer_parameters.h":
   namespace `clif_testing`:
+    class `PointerHolder<std::unique_ptr<int>>` as PointerHolder:
+      def get(self) -> int
+
     class MyClass:
       def no_input(self) -> int
       def pointer_input(self, output: int) -> int
@@ -21,6 +24,7 @@ from "clif/testing/pointer_parameters.h":
       def multiple_inputs(self, input1: int, input2: int, input3: int) -> (output: int)
       def multiple_outputs(self, input1: int, input2: int, input3: int) ->
           (output1: int, output2: int, output3: int)
+      def unique_ptr_return(self, input: int) -> (output: PointerHolder, output1: int)
       @classmethod
       def static_function(cls, input: int) -> int
       def multiple_outputs_and_int_return(self, input1: int, input2: int, input3: int) ->

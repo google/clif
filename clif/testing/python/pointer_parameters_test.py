@@ -56,6 +56,12 @@ class PointerParametersTest(absltest.TestCase):
         m.multiple_outputs_and_int_return(input1=1, input2=10, input3=100),
         (1111, 1001, 1010, 1100))
 
+  def test_unique_ptr_return(self):
+    m = pointer_parameters.MyClass()
+    p, v = m.unique_ptr_return(input=1)
+    self.assertEqual(p.get(), 10)
+    self.assertEqual(v, 1001)
+
 
 if __name__ == '__main__':
   absltest.main()

@@ -16,6 +16,9 @@
 #ifndef THIRD_PARTY_CLIF_TESTING_POINTER_PARAMETERS_H_
 #define THIRD_PARTY_CLIF_TESTING_POINTER_PARAMETERS_H_
 
+#include <memory>
+#include <utility>
+
 namespace clif_testing {
 
 inline void multiple_outputs_free_function(
@@ -25,6 +28,15 @@ inline void multiple_outputs_free_function(
   *output2 = 1000 + input2;
   *output3 = 1000 + input3;
 }
+
+template <typename T>
+class PointerHolder {
+ public:
+  PointerHolder(std::unique_ptr<int> p): ptr(std::move(p)) { }
+  int get() { return *ptr; }
+ private:
+  std::unique_ptr<int> ptr;
+};
 
 class MyClass {
  public:
@@ -53,6 +65,15 @@ class MyClass {
     *output2 = 1000 + input2;
     *output3 = 1000 + input3;
   }
+
+  PointerHolder<std::unique_ptr<int>> unique_ptr_return(
+      int input, int* output1 = nullptr) {
+    *output1 = 1000 + input;
+    auto ptr = std::make_unique<int>(10);
+    PointerHolder<std::unique_ptr<int>> result(std::move(ptr));
+    return result;
+  }
+
 
   static void static_function(int input, int* output = nullptr) {
     *output = 1000 + input;
