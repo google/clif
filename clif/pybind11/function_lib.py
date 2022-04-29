@@ -34,6 +34,7 @@ class Parameter:
     self.gen_name = param_name
     self.function_argument = param_name
     self.check_nullptr = False
+    use_address = False
 
     if not ptype.cpp_type:  # std::function
       self.cpp_type = generate_callback_signature(param)
@@ -48,15 +49,21 @@ class Parameter:
         self.cpp_type = f'{ctype}*'
         self.function_argument = f'*{param_name}'
         self.check_nullptr = True
+        use_address = True
       elif ptype.cpp_abstract:  # for AbstractType &
         self.cpp_type = f'std::unique_ptr<{ctype}>'
         self.function_argument = f'*{param_name}'
+        use_address = True
       else:
         self.function_argument = f'std::move({self.gen_name})'
 
     if ptype.lang_type in capsule_types:
       self.cpp_type = f'clif::CapsuleWrapper<{self.cpp_type}>'
-      self.function_argument = f'{self.gen_name}.ptr'
+      if use_address:
+        self.function_argument = f'*{self.gen_name}.ptr'
+      else:
+        self.function_argument = f'{self.gen_name}.ptr'
+      self.check_nullptr = False
 
 
 def num_unknown_default_values(func_decl: ast_pb2.FuncDecl) -> int:
