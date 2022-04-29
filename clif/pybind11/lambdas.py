@@ -175,8 +175,7 @@ def _generate_function_call_returns(
     # `std::tuple` with those return values. For uncopyable return values, we
     # need `std::move` when constructing the `std::tuple`.
     elif (len(func_decl.returns) > 1 and
-          (r.cpp_exact_type.startswith('::std::unique_ptr') or
-           not r.type.cpp_copyable)):
+          ('std::unique_ptr' in r.cpp_exact_type or not r.type.cpp_copyable)):
       all_returns_list.append(f'std::move(ret{i})')
     else:
       all_returns_list.append(f'ret{i}')
