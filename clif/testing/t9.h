@@ -41,15 +41,17 @@ class Core {
 class Base: public Core {
  public:
   virtual ~Base() {}
-  virtual int Value() { return 1; }
+  virtual int Value() const { return 1; }
 };
 
 class Derived: public Base {
  public:
-  int Value() override { return 2; }
+  int Value() const override { return 2; }
 };
 
 inline bool IsDerived(Base* c) { return c->Value() == 2; }
+
+inline bool IsDerivedConstRef(const Base& c) { return c.Value() == 2; }
 
 inline int CoreValue(Core* c) { return c->CoreValue(); }
 

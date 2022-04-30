@@ -20,9 +20,9 @@ from clif.testing.python import capsule_fqcppname
 class CapsuleFqcppnameTest(absltest.TestCase):
 
   def testUseForeignType(self):
-    self.assertIn(
-        '::clif_testing_capsule_fqcppname::ForeignType *',
-        capsule_fqcppname.UseForeignType.__doc__)
+    self.assertRegex(
+        capsule_fqcppname.UseForeignType.__doc__,
+        r'.*(::)?clif_testing_capsule_fqcppname::ForeignType\s?\*.*')
 
 
 if __name__ == '__main__':

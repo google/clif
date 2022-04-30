@@ -33,6 +33,7 @@ class T9Test(absltest.TestCase):
     d = t9.Derived()
     self.assertEqual(d.Value(), 2)
     self.assertTrue(t9.IsDerived(d))
+    self.assertTrue(t9.IsDerivedConstRef(d))
 
   def testCore(self):
     self.assertEqual(t9.CoreValue(t9.Core()), 12)
