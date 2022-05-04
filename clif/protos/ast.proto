@@ -134,7 +134,20 @@ message FuncDecl {
   optional string mangled_name = 23;
   optional int32 cpp_num_params = 24;  // Number of parameters of C++ func.
   optional bool marked_non_raising = 25;  // Set to true if @non_raising decorator is present.
-  // Next available: 26
+  enum ReturnValuePolicy {
+    // Please keep in sync with `enum class return_value_policy` in
+    // pybind11/detail/common.h
+    AUTOMATIC = 0;
+    AUTOMATIC_REFERENCE = 1;
+    TAKE_OWNERSHIP = 2;
+    COPY = 3;
+    MOVE = 4;
+    REFERENCE = 5;
+    REFERENCE_INTERNAL = 6;
+    RETURN_AS_BYTES = 7;
+  };
+  optional ReturnValuePolicy return_value_policy = 26;
+  // Next available: 27
 };
 
 // ForwardDecl describe a C++ name declaration match (only make sense for

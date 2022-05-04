@@ -228,6 +228,22 @@ def generate_return_value_policy(func_decl: ast_pb2.FuncDecl) -> str:
     return prefix + '_return_as_bytes'
   if func_decl.cpp_void_return or not func_decl.returns:
     return prefix + 'automatic'
+  if func_decl.HasField('return_value_policy'):
+    if func_decl.return_value_policy == ast_pb2.FuncDecl.AUTOMATIC_REFERENCE:
+      return prefix + 'automatic_reference'
+    if func_decl.return_value_policy == ast_pb2.FuncDecl.TAKE_OWNERSHIP:
+      return prefix + 'take_ownership'
+    if func_decl.return_value_policy == ast_pb2.FuncDecl.COPY:
+      return prefix + 'copy'
+    if func_decl.return_value_policy == ast_pb2.FuncDecl.MOVE:
+      return prefix + 'move'
+    if func_decl.return_value_policy == ast_pb2.FuncDecl.REFERENCE:
+      return prefix + 'reference'
+    if func_decl.return_value_policy == ast_pb2.FuncDecl.REFERENCE_INTERNAL:
+      return prefix + 'reference_internal'
+    if func_decl.return_value_policy == ast_pb2.FuncDecl.RETURN_AS_BYTES:
+      return prefix + '_return_as_bytes'
+    return prefix + 'automatic'
   return_type = func_decl.returns[0]
   # For smart pointers, it is unnecessary to specify a return value policy in
   # pybind11.

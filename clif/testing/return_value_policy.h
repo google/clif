@@ -39,8 +39,12 @@ struct Obj {
   }
 };
 
+inline std::string return_string() {
+  return "return_string";
+}
+
 inline Obj return_value() {
-  return Obj{"return_value"};;
+  return Obj{"return_value"};
 }
 
 inline Obj& return_reference() {
@@ -59,6 +63,12 @@ inline Obj* return_pointer() {
   static Obj obj;
   obj.mtxt = "return_pointer";
   return &obj;
+}
+
+inline Obj* return_pointer_unowned() {
+  Obj* obj = new Obj();
+  obj->mtxt = "return_pointer_unowned";
+  return obj;
 }
 
 inline const Obj* return_const_pointer() {
