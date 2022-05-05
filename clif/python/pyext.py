@@ -681,7 +681,8 @@ class Module(object):
         ast.source,
         [
             'PYTHON', 'absl/memory/memory.h',
-            'absl/types/optional.h'
+            'absl/types/optional.h',
+            'clif/python/stltypes_fwd.h'
         ] + more_headers +
         # Container templates calling PyObj* go last.
         [

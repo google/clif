@@ -30,6 +30,7 @@ cc_library(
         "runtime.h",
         "slots.h",
         "stltypes.h",
+        "stltypes_fwd.h",
         "types.h",
     ],
     visibility = ["//visibility:public"],
