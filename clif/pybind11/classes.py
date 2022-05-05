@@ -57,7 +57,7 @@ def generate_from(
   definition += (f'> {class_name}({superclass_name}, '
                  f'"{class_decl.name.native}"')
   if class_decl.HasField('docstring'):
-    definition += f', {_as_cpp_string_literal(class_decl.docstring)}'
+    definition += f', {function_lib.generate_docstring(class_decl.docstring)}'
   if class_decl.enable_instance_dict:
     definition += ', py::dynamic_attr()'
   if class_decl.final:
@@ -207,7 +207,3 @@ def _generate_constructor_overload(
            f'[]({params_with_types}) {{')
     yield I + f'return {class_decl.name.cpp_name}({params});'
     yield f'}}, {function_lib.generate_function_suffixes(func_decl)}'
-
-
-def _as_cpp_string_literal(s: str) -> str:
-  return f'"{repr(s)}"'

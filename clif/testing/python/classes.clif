@@ -24,7 +24,7 @@ from "clif/testing/classes.h":
       i2: int = property(`get2`)
 
     class Derived(Klass):
-      """This class also has a docstring.
+      """This class also has a "docstring".
 
       It spans multiple lines.  Plus trailing whitespace.
 

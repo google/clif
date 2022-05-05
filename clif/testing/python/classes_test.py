@@ -36,7 +36,7 @@ class ClassesTest(absltest.TestCase):
   def testDerivedClassDocstring(self):
     # Nothing special about this being a derived class; that is just the
     # one our test .clif file has a docstring on.
-    self.assertIn('class also has a docstring.\n\n', classes.Derived.__doc__)
+    self.assertIn('class also has a "docstring".\n\n', classes.Derived.__doc__)
     self.assertIn('spans multiple lines', classes.Derived.__doc__)
     self.assertIn(classes.Derived.__doc__, classes.Derived.__doc__.strip())
 

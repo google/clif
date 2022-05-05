@@ -84,7 +84,7 @@ def generate_function_suffixes(
     suffix += f'{py_args}, '
   suffix += f'{generate_return_value_policy(func_decl)}'
   if func_decl.docstring:
-    suffix += f', {generate_docstring(func_decl)}'
+    suffix += f', {generate_docstring(func_decl.docstring)}'
   if release_gil and not func_decl.py_keep_gil:
     suffix += ', py::call_guard<py::gil_scoped_release>()'
   suffix += ');'
@@ -195,9 +195,8 @@ def generate_py_args(func_decl: ast_pb2.FuncDecl,
   return ', '.join(params_list)
 
 
-def generate_docstring(func_decl: ast_pb2.FuncDecl) -> str:
-  docstring = func_decl.docstring.strip().replace('\n', r'\n').replace(
-      '"', r'\"')
+def generate_docstring(docstring: str) -> str:
+  docstring = docstring.strip().replace('\n', r'\n').replace('"', r'\"')
   return f'"{docstring}"'
 
 
