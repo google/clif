@@ -32,6 +32,8 @@ inline void multiple_outputs_free_function(
 template <typename T>
 class PointerHolder {
  public:
+  // This constructor is to resolve Github CI failures.
+  PointerHolder() = default;
   PointerHolder(std::unique_ptr<int> p): ptr(std::move(p)) { }
   int get() { return *ptr; }
  private:
