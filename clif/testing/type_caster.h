@@ -69,6 +69,10 @@ inline int get_value_pybind11_ignore(const ValueHolderPybind11Ignore& vh) {
   return vh.value;
 }
 
+inline int get_value_template(const ValueHolderTemplate<int, int>& vh) {
+  return vh.value;
+}
+
 inline std::vector<PyObject *> pyobject_round_trip(
     const std::vector<PyObject*> vec) {
   return vec;

@@ -30,6 +30,7 @@ _PYOBJAS_ONLY = ', HasPyObjAsOnly'
 _PYBIND11_IGNORE = ', Pybind11Ignore'
 _CLIF_USE = re.compile(
     r'// *CLIF:? +use +`(?P<cpp_name>.+)` +as +(?P<py_name>[\w.]+)'
+    r'(, NumTemplateParameter:(?P<num_template_parameter>\d+))?'
     f'({_PYOBJFROM_ONLY}|{_PYOBJAS_ONLY}|{_PYBIND11_IGNORE}|)')
 
 
@@ -56,8 +57,12 @@ def _get_clif_uses(
         for line in lines:
           use = _CLIF_USE.match(line)
           if use:
+            num_template_parameter = 0
+            if use.group('num_template_parameter'):
+              num_template_parameter = int(use.group('num_template_parameter'))
             results.append(types.SimpleNamespace(
                 cpp_name=use.group('cpp_name'), py_name=use.group('py_name'),
+                num_template_parameter=num_template_parameter,
                 pybind11_ignore=_PYBIND11_IGNORE in use[0],
                 generate_load=_PYOBJFROM_ONLY not in use[0],
                 generate_cast=_PYOBJAS_ONLY not in use[0]))
@@ -101,17 +106,30 @@ def generate_from(ast: ast_pb2.AST,
       if not clif_use.pybind11_ignore:
         yield from _generate_type_caster(clif_use.py_name, clif_use.cpp_name,
                                          clif_use.generate_load,
-                                         clif_use.generate_cast)
+                                         clif_use.generate_cast,
+                                         clif_use.num_template_parameter)
 
 
 def _generate_type_caster(
     py_name: str, cpp_name: str, generate_load: bool,
-    generate_cast: bool) -> Generator[str, None, None]:
+    generate_cast: bool, num_template_parameter: int
+) -> Generator[str, None, None]:
   """Generates pybind11 type caster code."""
+  template_parameters = ', '.join(
+      [f'T{i}' for i in range(num_template_parameter)])
+  template_parameters_with_typename = ', '.join(
+      [f'typename T{i}' for i in range(num_template_parameter)])
+  if template_parameters:
+    cpp_name = f'{cpp_name}<{template_parameters}>'
   yield 'namespace pybind11 {'
   yield 'namespace detail {'
-  yield f'template <> struct type_caster<{cpp_name}> {{'
+  yield (f'template <{template_parameters_with_typename}> struct '
+         f'type_caster<{cpp_name}> {{')
   yield ' public:'
+  # Characters like ',' may cause the `PYBIND11_TYPE_CASTER` macro parsing fail
+  if ',' in cpp_name:
+    yield I + f'using {py_name}_cpp_name = {cpp_name};'
+    cpp_name = f'{py_name}_cpp_name'
   yield I + f'PYBIND11_TYPE_CASTER({cpp_name}, _("{py_name}"));'
   yield ''
   if generate_load:

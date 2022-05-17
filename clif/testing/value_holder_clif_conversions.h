@@ -77,6 +77,19 @@ inline PyObject* Clif_PyObjFrom(const ValueHolderPybind11Ignore& c,
                                 const clif::py::PostConv& pc) {
   return clif::Clif_PyObjFrom(c.value + 1, {});
 }
+
+// NOLINTNEXTLINE
+// CLIF use `::clif_testing::ValueHolderTemplate` as ValueHolderTemplate, NumTemplateParameter:2, HasPyObjAsOnly
+template <typename T, typename R>
+inline bool Clif_PyObjAs(PyObject* obj, ValueHolderTemplate<T, R>* c) {
+  PyObject *tmp = PyNumber_Long(obj);
+  if (!tmp) {
+    return false;
+  }
+  c->value = PyLong_AsLong(tmp) + 4;
+  return true;
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_CLIF_CONVERSION_H_

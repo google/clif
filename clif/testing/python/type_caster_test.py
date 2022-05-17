@@ -47,6 +47,9 @@ class TypeCasterTest(parameterized.TestCase):
     with self.assertRaises(TypeError):
       type_caster.get_value_pybind11_ignore(10)
 
+  def test_template(self):
+    self.assertEqual(type_caster.get_value_template(10), 14)
+
   @parameterized.parameters(
       type_caster.get_refcount_from_raw_ptr,
       type_caster.get_refcount_from_unique_ptr,

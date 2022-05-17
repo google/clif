@@ -57,6 +57,14 @@ class ValueHolderPybind11Ignore {
   int value;
 };
 
+template <typename T, typename R>
+class ValueHolderTemplate {
+ public:
+  ValueHolderTemplate(): value(0) { }
+  ValueHolderTemplate(int v): value(v) { }
+  int value;
+};
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_H_
