@@ -85,6 +85,18 @@ struct CtorTakesPyObj {
   int value;
 };
 
+struct CtorTakesAbstract {
+  CtorTakesAbstract(Abstract* obj): value(obj->value) { }
+  int value;
+};
+
+struct CtorTakesAbstractVirtual {
+  CtorTakesAbstractVirtual(Abstract* obj): value(obj->value) { }
+  virtual int get() = 0;
+  virtual ~CtorTakesAbstractVirtual() { }
+  int value;
+};
+
 struct ExtendedCtorTakesPyObj {
   int value = -99999;
 };

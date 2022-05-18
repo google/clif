@@ -17,6 +17,12 @@ from absl.testing import absltest
 from clif.testing.python import lambda_expressions
 
 
+class CtorTakesAbstractVirtual(lambda_expressions.CtorTakesAbstractVirtual):
+
+  def get(self):
+    return self.value + 1
+
+
 class LambdaExpressionsTest(absltest.TestCase):
 
   def test_abstract_reference_parameter(self):
@@ -75,6 +81,13 @@ class LambdaExpressionsTest(absltest.TestCase):
     self.assertEqual(obj.value, 1001)
     obj = lambda_expressions.ExtendedCtorTakesPyObj('123')
     self.assertEqual(obj.value, -1)
+
+  def test_ctor_takes_abstract(self):
+    derived = lambda_expressions.Derived(10)
+    obj = lambda_expressions.CtorTakesAbstract(derived)
+    self.assertEqual(obj.value, 10)
+    obj = CtorTakesAbstractVirtual(derived)
+    self.assertEqual(obj.get(), 11)
 
   def test_from_nocopy(self):
     nc = lambda_expressions.NoCopy('30')

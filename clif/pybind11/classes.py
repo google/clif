@@ -81,7 +81,7 @@ def generate_from(
           if not member.func.params:
             default_constructor_defined = True
           for s in _generate_constructor(class_name, member.func, class_decl,
-                                         capsule_types):
+                                         capsule_types, trampoline_generated):
             yield I + I + s
       else:
         # This function will be overriden in Python. Do not call it from the
@@ -139,7 +139,8 @@ def _generate_iterator(
 def _generate_constructor(
     class_name: str, func_decl: ast_pb2.FuncDecl,
     class_decl: ast_pb2.ClassDecl,
-    capsule_types: Set[str]) -> Generator[str, None, None]:
+    capsule_types: Set[str],
+    trampoline_generated: bool) -> Generator[str, None, None]:
   """Generates pybind11 bindings code for a constructor.
 
   Multiple deinitions will be generated when the constructor contains unknown
@@ -150,6 +151,7 @@ def _generate_constructor(
     func_decl: Constructor declaration in proto format.
     class_decl: Class declaration in proto format.
     capsule_types: A set of C++ types that are defined as capsules.
+    trampoline_generated: Did we generate a trampoline for this class?
 
   Yields:
     pybind11 function bindings code.
@@ -160,16 +162,19 @@ def _generate_constructor(
   if num_unknown:
     for _ in range(num_unknown):
       yield from _generate_constructor_overload(class_name, temp_func_decl,
-                                                class_decl, capsule_types)
+                                                class_decl, capsule_types,
+                                                trampoline_generated)
       del temp_func_decl.params[-1]
   yield from _generate_constructor_overload(class_name, temp_func_decl,
-                                            class_decl, capsule_types)
+                                            class_decl, capsule_types,
+                                            trampoline_generated)
 
 
 def _generate_constructor_overload(
     class_name: str, func_decl: ast_pb2.FuncDecl,
     class_decl: ast_pb2.ClassDecl,
-    capsule_types: Set[str]) -> Generator[str, None, None]:
+    capsule_types: Set[str],
+    trampoline_generated: bool) -> Generator[str, None, None]:
   """Generates pybind11 bindings code for a constructor."""
   params_list = []
   for i, param in enumerate(func_decl.params):
@@ -183,24 +188,15 @@ def _generate_constructor_overload(
     yield f'}}), {function_lib.generate_function_suffixes(func_decl)}'
 
   elif func_decl.name.native == '__init__':
-    has_pyobj = False
-    for p in func_decl.params:
-      if p.type.lang_type == 'object':
-        has_pyobj = True
-    if has_pyobj:
-      function_suffix = function_lib.generate_function_suffixes(
-          func_decl, release_gil=False)
-      yield f'{class_name}.def(py::init([]({params_with_types}) {{'
-      yield I + (f'return std::unique_ptr<{class_decl.name.cpp_name}>'
-                 f'(new {class_decl.name.cpp_name}({params}));')
-      yield f'}}), {function_suffix}'
-    else:
-      cpp_types = ', '.join(
-          [function_lib.generate_param_type(p) for p in func_decl.params])
-      release_gil = bool(cpp_types)
-      function_suffix = function_lib.generate_function_suffixes(
-          func_decl, release_gil=release_gil)
-      yield f'{class_name}.def(py::init<{cpp_types}>(), {function_suffix}'
+    cpp_name = class_decl.name.cpp_name
+    if trampoline_generated:
+      cpp_name = utils.trampoline_name(class_decl)
+    function_suffix = function_lib.generate_function_suffixes(
+        func_decl, release_gil=False)
+    yield f'{class_name}.def(py::init([]({params_with_types}) {{'
+    yield I + (f'return std::make_unique<{cpp_name}>'
+               f'({params}).release();')
+    yield f'}}), {function_suffix}'
 
   elif func_decl.constructor:
     yield (f'{class_name}.def_static("{func_decl.name.native}", '

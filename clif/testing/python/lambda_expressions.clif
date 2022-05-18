@@ -45,6 +45,16 @@ from "clif/testing/python/lambda_expressions_clif_aux.h":
       value: int
       def __init__(self, obj: object)
 
+    class CtorTakesAbstract:
+      value: int
+      def __init__(self, obj: Abstract)
+
+    class CtorTakesAbstractVirtual:
+      value: int
+      def __init__(self, obj: Abstract)
+      @virtual
+      def get(self) -> int
+
     class ExtendedCtorTakesPyObj:
       value: int
       @extend
