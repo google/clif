@@ -123,14 +123,16 @@ def _generate_type_caster(
     cpp_name = f'{cpp_name}<{template_parameters}>'
   yield 'namespace pybind11 {'
   yield 'namespace detail {'
+  yield ''
   yield (f'template <{template_parameters_with_typename}> struct '
          f'type_caster<{cpp_name}> {{')
   yield ' public:'
   # Characters like ',' may cause the `PYBIND11_TYPE_CASTER` macro parsing fail
+  alias_cpp_name = cpp_name
   if ',' in cpp_name:
     yield I + f'using {py_name}_cpp_name = {cpp_name};'
-    cpp_name = f'{py_name}_cpp_name'
-  yield I + f'PYBIND11_TYPE_CASTER({cpp_name}, _("{py_name}"));'
+    alias_cpp_name = f'{py_name}_cpp_name'
+  yield I + f'PYBIND11_TYPE_CASTER({alias_cpp_name}, _("{py_name}"));'
   yield ''
   if generate_load:
     yield I + 'bool load(handle src, bool) {'
@@ -145,6 +147,33 @@ def _generate_type_caster(
     yield I + I + 'return Clif_PyObjFrom(src, {});'
     yield I + '}'
   yield '};'
+  yield ''
+  yield (f'template <{template_parameters_with_typename}> struct '
+         f'type_caster<std::unique_ptr<{cpp_name}>> {{')
+  yield ' public:'
+  # Characters like ',' may cause the `PYBIND11_TYPE_CASTER` macro parsing fail
+  alias_cpp_name = cpp_name
+  if ',' in cpp_name:
+    yield I + f'using {py_name}_cpp_name = {cpp_name};'
+    alias_cpp_name = f'{py_name}_cpp_name'
+  yield I + (f'PYBIND11_TYPE_CASTER(std::unique_ptr<{alias_cpp_name}>'
+             f', _("{py_name}"));')
+  yield ''
+  if generate_load:
+    yield I + 'bool load(handle src, bool) {'
+    yield I + I + f'value.reset(new {cpp_name});'
+    yield I + I + 'using namespace ::clif;'
+    yield I + I + 'return Clif_PyObjAs(src.ptr(), &(*value));'
+    yield I + '}'
+    yield ''
+  if generate_cast:
+    yield I + (f'static handle cast(std::unique_ptr<{cpp_name}> src, '
+               'return_value_policy, handle) {')
+    yield I + I + 'using namespace ::clif;'
+    yield I + I + 'return Clif_PyObjFrom(*src, {});'
+    yield I + '}'
+  yield '};'
+  yield ''
   yield '}  // namespace detail'
   yield '}  // namespace pybind11'
   yield ''

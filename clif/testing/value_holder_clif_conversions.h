@@ -17,6 +17,8 @@
 #ifndef THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_CLIF_CONVERSION_H_
 #define THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_CLIF_CONVERSION_H_
 
+#include <memory>
+
 #include "clif/python/postconv.h"
 #include "clif/python/types.h"
 #include "clif/testing/value_holder.h"
@@ -31,6 +33,17 @@ inline bool Clif_PyObjAs(PyObject* obj, ValueHolder* c) {
   }
   c->value = PyLong_AsLong(tmp);
   ++(c->value);
+  return true;
+}
+
+inline bool Clif_PyObjAs(PyObject* obj, std::unique_ptr<ValueHolder>* c) {
+  PyObject *tmp = PyNumber_Long(obj);
+  if (!tmp) {
+    return false;
+  }
+  *c = std::make_unique<ValueHolder>();
+  (*c)->value = PyLong_AsLong(tmp);
+  ++((*c)->value);
   return true;
 }
 

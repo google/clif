@@ -78,6 +78,10 @@ inline std::vector<PyObject *> pyobject_round_trip(
   return vec;
 }
 
+inline int consume_unique_ptr(std::unique_ptr<ValueHolder> vh) {
+  return vh->value;
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_TYPE_CASTER_H_

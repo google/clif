@@ -32,6 +32,7 @@ class TypeCasterTest(parameterized.TestCase):
     self.assertEqual(type_caster.return_value(11), 12)
     self.assertCountEqual(
         type_caster.return_value_list([11, 12, 13]), [12, 13, 14])
+    self.assertEqual(type_caster.consume_unique_ptr(10), 11)
 
   def test_pyobjfrom_only(self):
     self.assertEqual(type_caster.return_value_pyobjfrom_only(11), 13)

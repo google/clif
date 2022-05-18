@@ -20,6 +20,7 @@ from "clif/testing/python/type_caster_clif_aux.h":
     def get_value_optional(vh: NoneOr<ValueHolder>) -> int
     def get_value_variant(vh: OneOf<ValueHolder>) -> int
     def return_value(v: int) -> ValueHolder
+    def consume_unique_ptr(vh: ValueHolder) -> int
 
     # Test calling type casters recursively
     def return_value_list(values: list<int>) -> list<ValueHolder>
