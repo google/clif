@@ -45,17 +45,12 @@ class NestedFieldsTest(absltest.TestCase):
     a = nested_fields.AA()
     a.b.c.i = 123
     c = a.b.c
-    if 'pybind11' not in nested_fields.__doc__:
-      with self.assertRaises(ValueError):
-        # Cannot give up |a| as |c| still is alive
-        nested_fields.ConsumeAA(a)
-      del c
-      # Since |c| is now gone, we can give up |a|
+    with self.assertRaises(ValueError):
+      # Cannot give up |a| as |c| still is alive
       nested_fields.ConsumeAA(a)
-    else:
-      # TODO: This disowns |a| even though |c| is still alive. Accessing
-      # |c| beyond this point generates an ASAN heap-use-after-free error.
-      nested_fields.ConsumeAA(a)
+    del c
+    # Since |c| is now gone, we can give up |a|
+    nested_fields.ConsumeAA(a)
 
     a = nested_fields.AA()
     a.b.c.i = 123
