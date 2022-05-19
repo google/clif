@@ -77,7 +77,8 @@ def generate_from(
         # Legacy CLIF ignores __init__ for abstract classes.
         # Potential future cleanup project: generate a user-friendly error
         # instead.
-        if not class_decl.cpp_abstract or trampoline_generated:
+        if (not class_decl.cpp_abstract or trampoline_generated) and (
+            class_decl.cpp_has_def_ctor or member.func.params):
           if not member.func.params:
             default_constructor_defined = True
           for s in _generate_constructor(class_name, member.func, class_decl,

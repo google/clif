@@ -36,6 +36,13 @@ class K {
   int i_;
 };
 
+class NoDefaultConstructor {
+ private:
+  explicit NoDefaultConstructor() {}
+ public:
+  int A() { return 10; }
+};
+
 const int K::C = 1;
 
 class Derived : public K {

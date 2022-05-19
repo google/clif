@@ -83,6 +83,10 @@ class ClassesTest(absltest.TestCase):
     obj.str_readwrite = 'str_readwrite'
     self.assertEqual(obj.str_readwrite, b'str_readwrite')
 
+  def testIgnoreDefaultCtor(self):
+    with self.assertRaises((ValueError, TypeError)):
+      classes.NoDefaultConstructor()
+
 
 if __name__ == '__main__':
   absltest.main()

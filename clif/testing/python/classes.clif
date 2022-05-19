@@ -37,6 +37,13 @@ from "clif/testing/classes.h":
       def Init(self, i: int, j: int)
       def `has` as __contains__(self, k: int) -> bool
 
+    class NoDefaultConstructor:
+      # Currently this __init__ is silently ignored if the default constructor
+      # is not accessible.
+      # TODO: Look into changing the behavior, to fail at build time.
+      def __init__(self)
+      def A(self) -> int
+
     class AddInit:
       i: int
       @add__init__
