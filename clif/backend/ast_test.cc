@@ -14,6 +14,8 @@
 
 #include "clif/backend/ast.h"
 
+#include <string>
+
 #include "gtest/gtest.h"
 
 namespace clif {

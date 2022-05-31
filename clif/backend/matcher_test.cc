@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include "clif/backend/matcher.h"
+
+#include <string>
+
 #include "clif/backend/ast.h"
 #include "clif/backend/code_builder.h"
 #include "clif/backend/strutil.h"
