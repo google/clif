@@ -60,6 +60,7 @@ struct NoCopy {
 
 struct NoCopyNoMove {
   NoCopyNoMove() : value(0) {}
+  explicit NoCopyNoMove(int v) : value(v) {}
   NoCopyNoMove(const NoCopyNoMove&) = delete;
   NoCopyNoMove(NoCopyNoMove&&) = delete;
 

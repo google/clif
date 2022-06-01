@@ -108,6 +108,10 @@ class LambdaExpressionsTest(absltest.TestCase):
     d = lambda_expressions.Derived(1)
     self.assertEqual(lambda_expressions.takes_unique_ptr_vector([d]), b'1')
 
+  def test_nocopy_nomove_object_add_init(self):
+    obj = lambda_expressions.NoCopyNoMove.from_value(10)
+    self.assertEqual(obj.value, 10)
+
 
 if __name__ == '__main__':
   absltest.main()

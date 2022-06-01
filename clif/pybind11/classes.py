@@ -202,5 +202,6 @@ def _generate_constructor_overload(
   elif func_decl.constructor:
     yield (f'{class_name}.def_static("{func_decl.name.native}", '
            f'[]({params_with_types}) {{')
-    yield I + f'return {class_decl.name.cpp_name}({params});'
+    yield I + (f'return std::make_unique<{class_decl.name.cpp_name}>'
+               f'({params}).release();')
     yield f'}}, {function_lib.generate_function_suffixes(func_decl)}'

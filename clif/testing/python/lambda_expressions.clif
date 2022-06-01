@@ -33,6 +33,8 @@ from "clif/testing/python/lambda_expressions_clif_aux.h":
     class NoCopyNoMove:
       value: int
       def __init__(self)
+      @add__init__
+      def from_value(self, v: int)
 
     class FromNoCopy:
       value: str
