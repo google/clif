@@ -56,6 +56,18 @@ class ClassType(BaseType):
 
   def generate_type_caster(self) -> Generator[str, None, None]:
     yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({self.cpp_name})'
+    if not self.cpp_copyable:
+      yield ''
+      yield 'namespace pybind11 {'
+      yield 'namespace detail {'
+      yield ''
+      yield 'template <>'
+      yield (f'struct is_copy_constructible<{self.cpp_name}>: '
+             'std::false_type {};')
+      yield ''
+      yield '}  // namespace detail'
+      yield '}  // namespace pybind11'
+      yield ''
 
   def generate_header(self) -> Generator[str, None, None]:
     yield ''
