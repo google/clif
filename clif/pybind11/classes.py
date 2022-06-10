@@ -29,7 +29,7 @@ I = utils.I
 def generate_from(
     class_decl: ast_pb2.ClassDecl, superclass_name: str,
     trampoline_class_names: Set[str], capsule_types: Set[str],
-    registered_types: Set[str]
+    registered_types: Set[str], requires_status: bool = False,
 ) -> Generator[str, None, None]:
   """Generates a complete py::class_<>.
 
@@ -40,6 +40,7 @@ def generate_from(
       will be overriden in Python.
     capsule_types: A set of C++ types that are defined as capsules.
     registered_types: A set of C++ types that are registered with Pybind11.
+    requires_status: Is type caster of `absl::Status` required?
 
   Yields:
     pybind11 class bindings code.
@@ -82,7 +83,8 @@ def generate_from(
           if not member.func.params:
             default_constructor_defined = True
           for s in _generate_constructor(class_name, member.func, class_decl,
-                                         capsule_types, trampoline_generated):
+                                         capsule_types, trampoline_generated,
+                                         requires_status):
             yield I + I + s
       else:
         # This function will be overriden in Python. Do not call it from the
@@ -91,7 +93,8 @@ def generate_from(
           continue
         else:
           for s in function.generate_from(
-              class_name, member.func, capsule_types, class_decl):
+              class_name, member.func, capsule_types, class_decl,
+              requires_status):
             yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.VAR:
       for s in variables.generate_from(class_name, member.var, class_decl):
@@ -116,7 +119,7 @@ def generate_from(
       else:
         for s in generate_from(member.class_, class_name,
                                trampoline_class_names, capsule_types,
-                               registered_types):
+                               registered_types, requires_status):
           yield I + s
 
   if (not default_constructor_defined and class_decl.cpp_has_def_ctor and
@@ -141,7 +144,8 @@ def _generate_constructor(
     class_name: str, func_decl: ast_pb2.FuncDecl,
     class_decl: ast_pb2.ClassDecl,
     capsule_types: Set[str],
-    trampoline_generated: bool) -> Generator[str, None, None]:
+    trampoline_generated: bool,
+    requires_status: bool) -> Generator[str, None, None]:
   """Generates pybind11 bindings code for a constructor.
 
   Multiple deinitions will be generated when the constructor contains unknown
@@ -153,6 +157,7 @@ def _generate_constructor(
     class_decl: Class declaration in proto format.
     capsule_types: A set of C++ types that are defined as capsules.
     trampoline_generated: Did we generate a trampoline for this class?
+    requires_status: Is type caster of `absl::Status` required?
 
   Yields:
     pybind11 function bindings code.
@@ -164,22 +169,27 @@ def _generate_constructor(
     for _ in range(num_unknown):
       yield from _generate_constructor_overload(class_name, temp_func_decl,
                                                 class_decl, capsule_types,
-                                                trampoline_generated)
+                                                trampoline_generated,
+                                                requires_status)
       del temp_func_decl.params[-1]
   yield from _generate_constructor_overload(class_name, temp_func_decl,
                                             class_decl, capsule_types,
-                                            trampoline_generated)
+                                            trampoline_generated,
+                                            requires_status)
 
 
 def _generate_constructor_overload(
     class_name: str, func_decl: ast_pb2.FuncDecl,
     class_decl: ast_pb2.ClassDecl,
     capsule_types: Set[str],
-    trampoline_generated: bool) -> Generator[str, None, None]:
+    trampoline_generated: bool,
+    requires_status: bool) -> Generator[str, None, None]:
   """Generates pybind11 bindings code for a constructor."""
   params_list = []
   for i, param in enumerate(func_decl.params):
-    params_list.append(function_lib.Parameter(param, f'arg{i}', capsule_types))
+    params_list.append(
+        function_lib.Parameter(
+            param, f'arg{i}', capsule_types, requires_status))
   params_with_types = ', '.join(
       [f'{p.cpp_type} {p.gen_name}' for p in params_list])
   params = ', '.join([p.function_argument for p in params_list])

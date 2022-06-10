@@ -13,7 +13,6 @@
 # limitations under the License.
 """Generates C++ lambda functions inside pybind11 bindings code."""
 
-import re
 from typing import Generator, List, Optional, Set
 
 from clif.protos import ast_pb2
@@ -22,18 +21,19 @@ from clif.pybind11 import utils
 
 I = utils.I
 
-_STATUS_PATTERNS = (r'Status', r'StatusOr<(\S)+>')
-
 
 def generate_lambda(
     module_name: str, func_decl: ast_pb2.FuncDecl,
     capsule_types: Set[str],
-    class_decl: Optional[ast_pb2.ClassDecl] = None
+    class_decl: Optional[ast_pb2.ClassDecl] = None,
+    requires_status: bool = False
 ) -> Generator[str, None, None]:
   """Entry point for generation of lambda functions in pybind11."""
   params_list = []
   for i, param in enumerate(func_decl.params):
-    params_list.append(function_lib.Parameter(param, f'arg{i}', capsule_types))
+    params_list.append(
+        function_lib.Parameter(
+            param, f'arg{i}', capsule_types, requires_status))
   params_with_type = _generate_lambda_params_with_types(
       func_decl, params_list, class_decl)
   # @sequential, @context_manager
@@ -41,7 +41,7 @@ def generate_lambda(
   yield (f'{module_name}.{function_lib.generate_def(func_decl)}'
          f'("{func_name}", []({params_with_type}) {{')
   yield from _generate_lambda_body(
-      func_decl, params_list, capsule_types, class_decl)
+      func_decl, params_list, capsule_types, class_decl, requires_status)
   release_gil = not _func_has_py_object_params(func_decl)
   is_member_function = (class_decl is not None)
   function_suffix = function_lib.generate_function_suffixes(
@@ -52,7 +52,8 @@ def generate_lambda(
 def needs_lambda(
     func_decl: ast_pb2.FuncDecl,
     capsule_types: Set[str],
-    class_decl: Optional[ast_pb2.ClassDecl] = None) -> bool:
+    class_decl: Optional[ast_pb2.ClassDecl] = None,
+    requires_status: bool = False) -> bool:
   if class_decl and _is_inherited_method(class_decl, func_decl):
     return True
   return (bool(func_decl.postproc) or
@@ -62,7 +63,7 @@ def needs_lambda(
           _func_needs_implicit_conversion(func_decl) or
           _func_has_pointer_params(func_decl) or
           _func_has_py_object_params(func_decl) or
-          _func_has_status_params(func_decl) or
+          _func_has_status_params(func_decl, requires_status) or
           func_decl.cpp_num_params != len(func_decl.params))
 
 
@@ -70,7 +71,8 @@ def _generate_lambda_body(
     func_decl: ast_pb2.FuncDecl,
     params: List[function_lib.Parameter],
     capsule_types: Set[str],
-    class_decl: Optional[ast_pb2.ClassDecl] = None
+    class_decl: Optional[ast_pb2.ClassDecl] = None,
+    requires_status: bool = False,
 ) -> Generator[str, None, None]:
   """Generates body of lambda expressions."""
   function_call = _generate_function_call(func_decl, class_decl)
@@ -97,7 +99,7 @@ def _generate_lambda_body(
   # Generates call to the wrapped function
   if not cpp_void_return:
     ret0 = func_decl.returns[0]
-    if _is_status_param(ret0):
+    if function_lib.is_status_param(ret0, requires_status):
       if func_decl.marked_non_raising:
         yield (I +
                f'pybind11::google::NoThrowStatus<{ret0.cpp_exact_type}> ret0 = '
@@ -232,19 +234,13 @@ def _func_has_py_object_params(func_decl: ast_pb2.FuncDecl) -> bool:
   return False
 
 
-def _is_status_param(param: ast_pb2.ParamDecl) -> bool:
-  for pattern in _STATUS_PATTERNS:
-    if re.fullmatch(pattern, param.type.lang_type):
-      return True
-  return False
-
-
-def _func_has_status_params(func_decl: ast_pb2.FuncDecl) -> bool:
+def _func_has_status_params(func_decl: ast_pb2.FuncDecl,
+                            requires_status: bool) -> bool:
   for p in func_decl.params:
-    if _is_status_param(p):
+    if function_lib.is_status_param(p, requires_status):
       return True
   for r in func_decl.returns:
-    if _is_status_param(r):
+    if function_lib.is_status_param(r, requires_status):
       return True
   return False
 

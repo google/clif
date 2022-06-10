@@ -30,6 +30,7 @@ def generate_from(
     module_name: str, func_decl: ast_pb2.FuncDecl,
     capsule_types: Set[str],
     class_decl: Optional[ast_pb2.ClassDecl] = None,
+    requires_status: bool = False
 ) -> Generator[str, None, None]:
   """Generates pybind11 bindings code for functions.
 
@@ -39,6 +40,7 @@ def generate_from(
     capsule_types: A list of C++ types that are defined as capsules.
     class_decl: Outer class declaration in proto format. None if the function is
       not a member of a class.
+    requires_status: Is type caster of `absl::Status` required?
 
   Yields:
     pybind11 function bindings code.
@@ -46,23 +48,26 @@ def generate_from(
   num_unknown = function_lib.num_unknown_default_values(func_decl)
   if num_unknown:
     yield from _generate_overload_for_unknown_default_function(
-        num_unknown, module_name, func_decl, capsule_types, class_decl)
+        num_unknown, module_name, func_decl, capsule_types, class_decl,
+        requires_status)
   else:
     yield from _generate_function(
-        module_name, func_decl, capsule_types, class_decl)
+        module_name, func_decl, capsule_types, class_decl, requires_status)
 
 
 def _generate_function(
     module_name: str, func_decl: ast_pb2.FuncDecl,
     capsule_types: Set[str],
     class_decl: Optional[ast_pb2.ClassDecl] = None,
+    requires_status: bool = False,
 ) -> Generator[str, None, None]:
   """Generates pybind11 bindings code for ast_pb2.FuncDecl."""
   if operators.needs_operator_overloading(func_decl):
     yield from operators.generate_operator(module_name, func_decl)
-  elif lambdas.needs_lambda(func_decl, capsule_types, class_decl):
+  elif lambdas.needs_lambda(
+      func_decl, capsule_types, class_decl, requires_status):
     yield from lambdas.generate_lambda(
-        module_name, func_decl, capsule_types, class_decl)
+        module_name, func_decl, capsule_types, class_decl, requires_status)
   else:
     yield from _generate_simple_function(module_name, func_decl, class_decl)
 
@@ -83,14 +88,15 @@ def _generate_simple_function(
 def _generate_overload_for_unknown_default_function(
     num_unknown: int, module_name: str,
     func_decl: ast_pb2.FuncDecl, capsule_types: Set[str],
-    class_decl: Optional[ast_pb2.ClassDecl] = None
+    class_decl: Optional[ast_pb2.ClassDecl] = None,
+    requires_status: bool = False,
 ) -> Generator[str, None, None]:
   """Generate multiple definitions for functions with unknown default values."""
   temp_func_decl = ast_pb2.FuncDecl()
   temp_func_decl.CopyFrom(func_decl)
   for _ in range(num_unknown):
     yield from _generate_function(
-        module_name, temp_func_decl, capsule_types, class_decl)
+        module_name, temp_func_decl, capsule_types, class_decl, requires_status)
     del temp_func_decl.params[-1]
   yield from _generate_function(
-      module_name, temp_func_decl, capsule_types, class_decl)
+      module_name, temp_func_decl, capsule_types, class_decl, requires_status)

@@ -20,6 +20,9 @@ from clif.protos import ast_pb2
 from clif.pybind11 import utils
 
 
+_STATUS_PATTERNS = (r'Status', r'StatusOr<(\S)+>')
+
+
 class Parameter:
   """Wraps a C++ function parameter."""
   cpp_type: str  # The actual generated cpp_type in lambda expressions
@@ -27,7 +30,7 @@ class Parameter:
   function_argument: str  # How to pass this parameter to functions
 
   def __init__(self, param: ast_pb2.ParamDecl, param_name: str,
-               capsule_types: AbstractSet[str]):
+               capsule_types: AbstractSet[str], requires_status: bool):
     ptype = param.type
     ctype = ptype.cpp_type
     self.cpp_type = ctype
@@ -39,6 +42,9 @@ class Parameter:
     if not ptype.cpp_type:  # std::function
       self.cpp_type = generate_callback_signature(param)
       self.function_argument = f'std::move({self.gen_name})'
+    elif is_status_param(param, requires_status):  # absl::Status
+      self.cpp_type = f'py::google::PyCLIFStatus<{param.cpp_exact_type}>'
+      self.function_argument = f'{self.gen_name}.status'
     # unique_ptr<T>, shared_ptr<T>
     elif (ctype.startswith('::std::unique_ptr') or
           ctype.startswith('::std::shared_ptr')):
@@ -207,6 +213,15 @@ def is_bytes_type(pytype: ast_pb2.Type) -> bool:
 def has_bytes_return(func_decl: ast_pb2.FuncDecl) -> bool:
   for r in func_decl.returns:
     if is_bytes_type(r.type):
+      return True
+  return False
+
+
+def is_status_param(param: ast_pb2.ParamDecl, requires_status: bool) -> bool:
+  if not requires_status:
+    return False
+  for pattern in _STATUS_PATTERNS:
+    if re.fullmatch(pattern, param.type.lang_type):
       return True
   return False
 

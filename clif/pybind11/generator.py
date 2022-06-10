@@ -140,14 +140,14 @@ class ModuleGenerator(object):
     for decl in ast.decls:
       if decl.decltype == ast_pb2.Decl.Type.FUNC:
         for s in function.generate_from(
-            'm', decl.func, self._capsule_types, None):
+            'm', decl.func, self._capsule_types, None, self._requires_status):
           yield I + s
       elif decl.decltype == ast_pb2.Decl.Type.CONST:
         yield from consts.generate_from('m', decl.const)
       elif decl.decltype == ast_pb2.Decl.Type.CLASS:
         yield from classes.generate_from(
             decl.class_, 'm', trampoline_class_names, self._capsule_types,
-            self._registered_types)
+            self._registered_types, self._requires_status)
       elif decl.decltype == ast_pb2.Decl.Type.ENUM:
         yield from enums.generate_from('m', decl.enum)
     yield '}'
