@@ -34,11 +34,20 @@ class SequenceMethodsTest(absltest.TestCase):
 
     svv = sequence_methods.TwoSequence(4, 9)
     self.assertSequenceEqual((svv[0], svv[1]), (4, 9))
-    svv[1] = 6  # sq_ass_item: setitem
+    # sq_ass_item: setitem
+    svv[1] = 6
     self.assertSequenceEqual((svv[0], svv[1]), (4, 6))
+    svv[-1] = 16
+    self.assertSequenceEqual((svv[0], svv[1]), (4, 16))
+    with self.assertRaises(IndexError):
+      svv[-3] = 16
+    with self.assertRaises(IndexError):
+      svv[2] = 16
     del svv[0]  # sq_ass_item: delitem
-    self.assertSequenceEqual((svv[0], svv[1]), (0, 6))
+    self.assertSequenceEqual((svv[0], svv[1]), (0, 16))
     del svv[1]
+    with self.assertRaises(IndexError):
+      del svv[2]
     self.assertEmpty(svv)
 
     self.assertIn(5, s57)  # sq_contains

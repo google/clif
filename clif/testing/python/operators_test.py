@@ -29,7 +29,7 @@ class OperatorsTest(absltest.TestCase):
     self.assertLen(abc, 26)
     self.assertEqual(abc[0], ord('a'))
     self.assertEqual(abc[1], ord('b'))
-    #    self.assertEqual(abc[-1], 'z')
+    self.assertEqual(abc[-1], ord('z'))
     ABC = operators.Abc(ord('A'), ord('Z'))  # pylint: disable=invalid-name
     self.assertNotEqual(abc, ABC)
     self.assertEqual(len(abc), len(ABC))

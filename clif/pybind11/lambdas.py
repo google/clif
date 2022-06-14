@@ -21,6 +21,10 @@ from clif.pybind11 import utils
 
 I = utils.I
 
+_NEEDS_INDEX_CHECK_METHODS = frozenset([
+    '__getitem__#', '__setitem__#', '__delitem__#'
+])
+
 
 def generate_lambda(
     module_name: str, func_decl: ast_pb2.FuncDecl,
@@ -59,6 +63,7 @@ def needs_lambda(
   return (bool(func_decl.postproc) or
           func_decl.is_overloaded or
           _func_is_context_manager(func_decl) or
+          _func_needs_index_check(func_decl) or
           _func_has_capsule_params(func_decl, capsule_types) or
           _func_needs_implicit_conversion(func_decl) or
           _func_has_pointer_params(func_decl) or
@@ -90,6 +95,21 @@ def _generate_lambda_body(
       yield I + I + (f'throw py::type_error("{func_decl.name.native}() '
                      f'argument {p.gen_name} is not valid.");')
       yield I +'}'
+
+  if (func_decl.name.native in _NEEDS_INDEX_CHECK_METHODS and class_decl):
+    for member in class_decl.members:
+      if (member.decltype == ast_pb2.Decl.Type.FUNC and
+          member.func.name.native == '__len__'):
+        assert len(params) >= 1, 'sequential methods need at least one param'
+        p = params[0]
+        length_func_name = member.func.name.cpp_name.split('::')[-1]
+        yield I + (f'Py_ssize_t {p.gen_name}_ = ::clif::item_index('
+                   f'{p.gen_name}, self.{length_func_name}());')
+        yield I + (f'if ({p.gen_name}_ < 0) {{')
+        yield I + I + 'throw py::index_error("index out of range.");'
+        yield I +'}'
+        yield I + f'{p.gen_name} = {p.gen_name}_;'
+        break
 
   # Generates declarations of return values
   for i, r in enumerate(func_decl.returns):
@@ -260,11 +280,16 @@ def _func_is_context_manager(func_decl: ast_pb2.FuncDecl) -> bool:
   return func_decl.name.native in ('__enter__@', '__exit__@')
 
 
+def _func_needs_index_check(func_decl: ast_pb2.FuncDecl) -> bool:
+  return func_decl.name.native in _NEEDS_INDEX_CHECK_METHODS
+
+
 def _is_inherited_method(class_decl: ast_pb2.ClassDecl,
                          func_decl: ast_pb2.FuncDecl) -> bool:
   if class_decl.cpp_bases and not func_decl.is_extend_method:
     namespaces = func_decl.name.cpp_name.split('::')
-    if len(namespaces) > 1 and namespaces[-2] != class_decl.name.cpp_name:
+    if (len(namespaces) > 1 and
+        namespaces[-2] != class_decl.name.cpp_name.strip(':')):
       return True
   return False
 

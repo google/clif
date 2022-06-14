@@ -30,6 +30,13 @@ struct CapsuleWrapper {
   T ptr;
 };
 
+inline Py_ssize_t item_index(Py_ssize_t idx, Py_ssize_t length) {
+  if (idx < -length || idx >= length) {
+    return -1;
+  }
+  return idx < 0 ? idx + length : idx;
+}
+
 }  // namespace clif
 
 namespace pybind11 {
