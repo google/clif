@@ -103,6 +103,24 @@ inline bool Clif_PyObjAs(PyObject* obj, ValueHolderTemplate<T, R>* c) {
   return true;
 }
 
+// NOLINTBEGIN
+// CLIF use `::clif_testing::ValueHolderWithPybind11TypeCaster` as ValueHolderWithPybind11TypeCaster, Pybind11Ignore
+// NOLINTEND
+inline bool Clif_PyObjAs(PyObject* obj, ValueHolderWithPybind11TypeCaster* c) {
+  PyObject *tmp = PyNumber_Long(obj);
+  if (!tmp) {
+    return false;
+  }
+  c->value = PyLong_AsLong(tmp);
+  ++(c->value);
+  return true;
+}
+
+inline PyObject* Clif_PyObjFrom(const ValueHolderWithPybind11TypeCaster& c,
+                                const clif::py::PostConv& pc) {
+  return clif::Clif_PyObjFrom(c.value + 1, {});
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_CLIF_CONVERSION_H_

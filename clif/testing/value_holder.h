@@ -65,6 +65,13 @@ class ValueHolderTemplate {
   int value;
 };
 
+class ValueHolderWithPybind11TypeCaster {
+ public:
+  ValueHolderWithPybind11TypeCaster(): value(0) { }
+  ValueHolderWithPybind11TypeCaster(int v): value(v) { }
+  int value;
+};
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_H_

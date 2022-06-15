@@ -43,7 +43,7 @@ class ModuleGenerator(object):
   """A class that generates pybind11 bindings code from CLIF ast."""
 
   def __init__(self, ast: ast_pb2.AST, module_path: str, header_path: str,
-               include_paths: List[str]):
+               include_paths: List[str], pybind11_only_includes: List[str]):
     self._ast = ast
     self._module_path = module_path
     self._module_name = module_path.split('.')[-1]
@@ -54,6 +54,7 @@ class ModuleGenerator(object):
     self._namemap = {}
     self._registered_types = set()
     self._requires_status = False
+    self._pybind11_only_includes = pybind11_only_includes
 
   def preprocess_ast(self) -> None:
     """Preprocess the ast to collect type information."""
@@ -184,6 +185,8 @@ class ModuleGenerator(object):
     for decl in self._ast.decls:
       includes.add(decl.cpp_file)
     for include in self._ast.usertype_includes:
+      includes.add(include)
+    for include in self._pybind11_only_includes:
       includes.add(include)
     yield '#include "third_party/pybind11/include/pybind11/complex.h"'
     yield '#include "third_party/pybind11/include/pybind11/functional.h"'
