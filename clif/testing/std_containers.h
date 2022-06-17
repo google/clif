@@ -35,6 +35,24 @@ inline std::array<int, 2> Div(std::array<int, 2> v, int m) {
   return {v[0] / m, v[1] / m};
 }
 
+inline std::array<std::array<int, 2>, 3> Transpose(
+    const std::array<std::array<int, 3>, 2>& m) {
+  std::array<std::array<int, 2>, 3> tp;
+  for (int i = 0; i < 2; i++) {
+    for (int j = 0; j < 3; j++) {
+      tp[j][i] = m[i][j];
+    }
+  }
+  return tp;
+}
+
+// Needed as a workaround for parser & matcher limitations, to help wrapping
+// the above.
+template <typename T>
+using std_array_2 = std::array<T, 2>;
+template <typename T>
+using std_array_3 = std::array<T, 3>;
+
 inline std::vector<bool> Even(const std::vector<int>& v) {
   std::vector<bool> e(v.size());
   for (int i=0; i < v.size(); ++i) { if ((v[i] & 1) == 0) { e[i] = true; }}

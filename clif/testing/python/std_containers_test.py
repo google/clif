@@ -24,7 +24,7 @@ class StdContainersTest(absltest.TestCase):
   def testVector(self):
     self.assertEqual(std_containers.Mul([1, 2, 3], 2), [2, 4, 6])
 
-  def testArray(self):
+  def testArrayDiv(self):
     self.assertEqual(std_containers.Div([2, 4], 2), [1, 2])
 
     error = ValueError
@@ -32,6 +32,11 @@ class StdContainersTest(absltest.TestCase):
       error = TypeError
     # Exceed bounds of array.
     self.assertRaises(error, lambda: std_containers.Div([2, 4, 6], 2))
+
+  def testArrayTranspose(self):
+    self.assertEqual(
+        std_containers.Transpose([[1, 2, 3], [4, 5, 6]]),
+        [[1, 4], [2, 5], [3, 6]])
 
   def testVectorBool(self):
     self.assertEqual(std_containers.Odd([1, 2, 3]), [True, False, True])
