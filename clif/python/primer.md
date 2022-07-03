@@ -448,7 +448,7 @@ from "clif/examples/wrapfunc/wrapfunc.h":
     # different flavors; One stores the state in the MyClass argument, the other
     # returns the state in a new MyClass object.
     def `GetState` as Store(a: MyClass)
-    def `GetState` as StoreInNew() -> (a: MyClass)
+    def `GetState` as StoreInNew() -> MyClass
 
 ```
 
