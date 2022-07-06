@@ -14,7 +14,9 @@
 
 #include "clif/backend/matcher.h"
 
+#include <memory>
 #include <string>
+#include <vector>
 
 #include "clif/backend/ast.h"
 #include "clif/backend/code_builder.h"

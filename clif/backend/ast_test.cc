@@ -14,6 +14,7 @@
 
 #include "clif/backend/ast.h"
 
+#include <memory>
 #include <string>
 
 #include "gtest/gtest.h"

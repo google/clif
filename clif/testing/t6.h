@@ -17,6 +17,7 @@
 #define CLIF_TESTING_T6_H_
 
 #include <algorithm>
+#include <iterator>
 #include <list>
 
 typedef std::list<int> list_int;
