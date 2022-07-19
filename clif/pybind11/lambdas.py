@@ -159,7 +159,28 @@ def _generate_lambda_body(
   elif len(func_decl.returns) > 1:
     yield I + f'return std::make_tuple({function_call_returns});'
   else:
-    yield I + f'return {function_call_returns};'
+    gil_required = False
+    for r in func_decl.returns:
+      # Whenever the output is byte, `py::cast(ret, _return_as_bytes)` is
+      # generated. Need to acquire GIL because the type caster might need it.
+      if function_lib.is_bytes_type(r.type):
+        gil_required = True
+        break
+    if function_call_returns:
+      if gil_required:
+        yield I + 'py::gil_scoped_acquire acquire;'
+        if len(func_decl.returns) > 1:
+          yield (I +
+                 f'auto result_ = std::make_tuple({function_call_returns});')
+        else:
+          yield I + f'auto result_ = {function_call_returns};'
+        yield I + 'py::gil_scoped_release release;'
+        yield I + 'return result_;'
+      else:
+        if len(func_decl.returns) > 1:
+          yield I + f'return std::make_tuple({function_call_returns});'
+        else:
+          yield I + f'return {function_call_returns};'
 
 
 def _generate_function_call_params(
