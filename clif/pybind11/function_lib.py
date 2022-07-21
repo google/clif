@@ -14,11 +14,12 @@
 
 """Common utility functions for pybind11 function code generation."""
 import re
-from typing import AbstractSet, Optional
+from typing import AbstractSet, Generator, Optional
 
 from clif.protos import ast_pb2
 from clif.pybind11 import utils
 
+I = utils.I
 
 _STATUS_PATTERNS = (r'Status', r'StatusOr<(\S)+>')
 
@@ -33,6 +34,7 @@ class Parameter:
                capsule_types: AbstractSet[str], requires_status: bool):
     ptype = param.type
     ctype = ptype.cpp_type
+    self.ptype = ptype
     self.cpp_type = ctype
     self.gen_name = param_name
     self.function_argument = param_name
@@ -49,6 +51,10 @@ class Parameter:
     elif (ctype.startswith('::std::unique_ptr') or
           ctype.startswith('::std::shared_ptr')):
       self.function_argument = f'std::move({self.gen_name})'
+    elif (ctype.startswith('::std::vector') and
+          ptype.lang_type.startswith('list')):
+      self.cpp_type = 'py::iterable'
+      self.function_argument = f'std::move({self.gen_name}_)'
     elif not ptype.cpp_raw_pointer:
       # T, [const] T&
       if ptype.cpp_toptr_conversion:
@@ -70,6 +76,15 @@ class Parameter:
       else:
         self.function_argument = f'{self.gen_name}.ptr'
       self.check_nullptr = False
+
+  def preprocess(self) -> Generator[str, None, None]:
+    if (self.ptype.cpp_type.startswith('::std::vector') and
+        self.ptype.lang_type.startswith('list')):
+      yield I + f'py::gil_scoped_acquire {self.gen_name}_acquire;'
+      yield (I +
+             f'auto {self.gen_name}_ = py::list({self.gen_name}).release()'
+             f'.cast<{self.ptype.cpp_type}>();')
+      yield I + f'py::gil_scoped_release {self.gen_name}_release;'
 
 
 def num_unknown_default_values(func_decl: ast_pb2.FuncDecl) -> int:

@@ -205,6 +205,8 @@ def _generate_constructor_overload(
     function_suffix = function_lib.generate_function_suffixes(
         func_decl, release_gil=False)
     yield f'{class_name}.def(py::init([]({params_with_types}) {{'
+    for p in params_list:
+      yield from p.preprocess()
     yield I + (f'return std::make_unique<{cpp_name}>'
                f'({params}).release();')
     yield f'}}), {function_suffix}'
@@ -212,6 +214,8 @@ def _generate_constructor_overload(
   elif func_decl.constructor:
     yield (f'{class_name}.def_static("{func_decl.name.native}", '
            f'[]({params_with_types}) {{')
+    for p in params_list:
+      yield from p.preprocess()
     yield I + (f'return std::make_unique<{class_decl.name.cpp_name}>'
                f'({params}).release();')
     yield f'}}, {function_lib.generate_function_suffixes(func_decl)}'

@@ -62,6 +62,7 @@ def needs_lambda(
     return True
   return (bool(func_decl.postproc) or
           func_decl.is_overloaded or
+          _func_has_vector_param(func_decl) or
           _func_is_context_manager(func_decl) or
           _func_needs_index_check(func_decl) or
           _func_has_capsule_params(func_decl, capsule_types) or
@@ -95,6 +96,7 @@ def _generate_lambda_body(
       yield I + I + (f'throw py::type_error("{func_decl.name.native}() '
                      f'argument {p.gen_name} is not valid.");')
       yield I +'}'
+    yield from p.preprocess()
 
   if (func_decl.name.native in _NEEDS_INDEX_CHECK_METHODS and class_decl):
     for member in class_decl.members:
@@ -322,6 +324,14 @@ def _func_needs_implicit_conversion(func_decl: ast_pb2.FuncDecl) -> bool:
         _extract_bare_type(param.type.cpp_type) and
         param.type.cpp_toptr_conversion and
         param.type.cpp_touniqptr_conversion):
+      return True
+  return False
+
+
+def _func_has_vector_param(func_decl: ast_pb2.FuncDecl) -> bool:
+  for param in func_decl.params:
+    if (param.type.cpp_type.startswith('::std::vector') and
+        param.type.lang_type.startswith('list')):
       return True
   return False
 

@@ -112,6 +112,20 @@ class LambdaExpressionsTest(absltest.TestCase):
     obj = lambda_expressions.NoCopyNoMove.from_value(10)
     self.assertEqual(obj.value, 10)
 
+  def test_accept_iterable_as_vector(self):
+    l = [1, 2, 3]
+    iterable = (i for i in l)
+    self.assertEqual(lambda_expressions.takes_vector(l), 3)
+    self.assertEqual(lambda_expressions.takes_vector(iterable), 3)
+
+  def test_ctor_accept_iterable_as_vector(self):
+    l = [1, 2, 3]
+    iterable = (i for i in l)
+    obj = lambda_expressions.CtorTakesVector(l)
+    self.assertCountEqual(l, obj.value)
+    obj = lambda_expressions.CtorTakesVector(iterable)
+    self.assertCountEqual(l, obj.value)
+
 
 if __name__ == '__main__':
   absltest.main()

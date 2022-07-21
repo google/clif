@@ -98,6 +98,11 @@ struct CtorTakesAbstractVirtual {
   int value;
 };
 
+struct CtorTakesVector {
+  CtorTakesVector(const std::vector<int>& vec): value(vec) { }
+  std::vector<int> value;
+};
+
 struct ExtendedCtorTakesPyObj {
   int value = -99999;
 };
@@ -161,6 +166,10 @@ inline bool operator==(const Derived& lhs, const Derived& rhs) {
 
 inline std::string returns_one(int) {
   return "1";
+}
+
+inline int takes_vector(const std::vector<int>& vec) {
+  return vec.size();
 }
 
 inline std::string takes_unique_ptr_vector(

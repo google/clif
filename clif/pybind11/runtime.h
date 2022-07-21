@@ -68,12 +68,12 @@ class type_caster<PyObject> {
 
   // Conversion part 1 (C++ -> Python)
   static handle cast(PyObject* src, return_value_policy, handle) {
-    return reinterpret_steal<object>(src).release();
+    return reinterpret_borrow<object>(src).release();
   }
 
   // Conversion part 2 (Python->C++)
   bool load(handle src, bool convert) {
-    value = reinterpret_steal<object>(src);
+    value = reinterpret_borrow<object>(src);
     return true;
   }
 
@@ -81,7 +81,6 @@ class type_caster<PyObject> {
   using cast_op_type = PyObject *;
 
   explicit operator PyObject *() {
-    value.inc_ref();
     return value.ptr();
   }
 
