@@ -103,6 +103,10 @@ struct CtorTakesVector {
   std::vector<int> value;
 };
 
+struct ExtendedCtorTakesVector {
+  std::vector<int> value;
+};
+
 struct ExtendedCtorTakesPyObj {
   int value = -99999;
 };
@@ -175,6 +179,11 @@ inline int takes_vector(const std::vector<int>& vec) {
 inline std::string takes_unique_ptr_vector(
     std::vector<std::unique_ptr<Derived>> vec) {
   return std::to_string(vec.size());
+}
+
+inline int consume_pyobject(const std::vector<PyObject*>& vec) {
+  assert(PyGILState_Check());
+  return vec.size();
 }
 
 }  // namespace clif_testing

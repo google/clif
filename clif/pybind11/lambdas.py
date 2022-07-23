@@ -46,7 +46,7 @@ def generate_lambda(
          f'("{func_name}", []({params_with_type}) {{')
   yield from _generate_lambda_body(
       func_decl, params_list, capsule_types, class_decl, requires_status)
-  release_gil = not _func_has_py_object_params(func_decl)
+  release_gil = not function_lib.func_has_py_object_params(func_decl)
   is_member_function = (class_decl is not None)
   function_suffix = function_lib.generate_function_suffixes(
       func_decl, release_gil=release_gil, is_member_function=is_member_function)
@@ -68,7 +68,7 @@ def needs_lambda(
           _func_has_capsule_params(func_decl, capsule_types) or
           _func_needs_implicit_conversion(func_decl) or
           _func_has_pointer_params(func_decl) or
-          _func_has_py_object_params(func_decl) or
+          function_lib.func_has_py_object_params(func_decl) or
           _func_has_status_params(func_decl, requires_status) or
           func_decl.cpp_num_params != len(func_decl.params))
 
@@ -96,7 +96,8 @@ def _generate_lambda_body(
       yield I + I + (f'throw py::type_error("{func_decl.name.native}() '
                      f'argument {p.gen_name} is not valid.");')
       yield I +'}'
-    yield from p.preprocess()
+    yield from p.preprocess(
+        acquire_gil=not function_lib.func_keeps_gil(func_decl))
 
   if (func_decl.name.native in _NEEDS_INDEX_CHECK_METHODS and class_decl):
     for member in class_decl.members:
@@ -256,25 +257,6 @@ def _generate_function_call(
 def _func_has_pointer_params(func_decl: ast_pb2.FuncDecl) -> bool:
   num_returns = len(func_decl.returns)
   return num_returns >= 2 or (num_returns == 1 and func_decl.cpp_void_return)
-
-
-def _type_has_py_object_param(pytype: ast_pb2.Type) -> bool:
-  if pytype.lang_type == 'object':
-    return True
-  for child_type in pytype.params:
-    if _type_has_py_object_param(child_type):
-      return True
-  return False
-
-
-def _func_has_py_object_params(func_decl: ast_pb2.FuncDecl) -> bool:
-  for p in func_decl.params:
-    if _type_has_py_object_param(p.type):
-      return True
-  for r in func_decl.returns:
-    if _type_has_py_object_param(r.type):
-      return True
-  return False
 
 
 def _func_has_status_params(func_decl: ast_pb2.FuncDecl,

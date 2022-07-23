@@ -61,6 +61,11 @@ from "clif/testing/python/lambda_expressions_clif_aux.h":
       value: list<int>
       def __init__(self, vec: list<int>)
 
+    class ExtendedCtorTakesVector:
+      value: list<int>
+      @extend
+      def __init__(self, vec: list<int>)
+
     class ExtendedCtorTakesPyObj:
       value: int
       @extend
@@ -96,3 +101,6 @@ from "clif/testing/python/lambda_expressions_clif_aux.h":
 
     def takes_vector(vec: list<int>) -> int
     def takes_unique_ptr_vector(vec: list<Derived>) -> bytes
+
+    @do_not_release_gil
+    def consume_pyobject(vec: list<object>) -> int

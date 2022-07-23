@@ -126,6 +126,20 @@ class LambdaExpressionsTest(absltest.TestCase):
     obj = lambda_expressions.CtorTakesVector(iterable)
     self.assertCountEqual(l, obj.value)
 
+  def test_extended_ctor_accept_iterable_as_vector(self):
+    l = [1, 2, 3]
+    iterable = (i for i in l)
+    obj = lambda_expressions.ExtendedCtorTakesVector(l)
+    self.assertCountEqual(l, obj.value)
+    obj = lambda_expressions.ExtendedCtorTakesVector(iterable)
+    self.assertCountEqual(l, obj.value)
+
+  def test_gil_acquired_function_accept_iterable_as_vector(self):
+    l = [1, 2, 3]
+    iterable = (i for i in l)
+    self.assertEqual(lambda_expressions.consume_pyobject(l), 3)
+    self.assertEqual(lambda_expressions.consume_pyobject(iterable), 3)
+
 
 if __name__ == '__main__':
   absltest.main()

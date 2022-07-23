@@ -77,14 +77,16 @@ class Parameter:
         self.function_argument = f'{self.gen_name}.ptr'
       self.check_nullptr = False
 
-  def preprocess(self) -> Generator[str, None, None]:
+  def preprocess(self, acquire_gil: bool = True) -> Generator[str, None, None]:
     if (self.ptype.cpp_type.startswith('::std::vector') and
         self.ptype.lang_type.startswith('list')):
-      yield I + f'py::gil_scoped_acquire {self.gen_name}_acquire;'
+      if acquire_gil:
+        yield I + f'py::gil_scoped_acquire {self.gen_name}_acquire;'
       yield (I +
              f'auto {self.gen_name}_ = py::list({self.gen_name}).release()'
              f'.cast<{self.ptype.cpp_type}>();')
-      yield I + f'py::gil_scoped_release {self.gen_name}_release;'
+      if acquire_gil:
+        yield I + f'py::gil_scoped_release {self.gen_name}_release;'
 
 
 def num_unknown_default_values(func_decl: ast_pb2.FuncDecl) -> int:
@@ -238,6 +240,33 @@ def is_status_param(param: ast_pb2.ParamDecl, requires_status: bool) -> bool:
   for pattern in _STATUS_PATTERNS:
     if re.fullmatch(pattern, param.type.lang_type):
       return True
+  return False
+
+
+def type_has_py_object_param(pytype: ast_pb2.Type) -> bool:
+  if pytype.lang_type == 'object':
+    return True
+  for child_type in pytype.params:
+    if type_has_py_object_param(child_type):
+      return True
+  return False
+
+
+def func_has_py_object_params(func_decl: ast_pb2.FuncDecl) -> bool:
+  for p in func_decl.params:
+    if type_has_py_object_param(p.type):
+      return True
+  for r in func_decl.returns:
+    if type_has_py_object_param(r.type):
+      return True
+  return False
+
+
+def func_keeps_gil(func_decl: ast_pb2.FuncDecl) -> bool:
+  if func_has_py_object_params(func_decl):
+    return True
+  if func_decl.py_keep_gil:
+    return True
   return False
 
 

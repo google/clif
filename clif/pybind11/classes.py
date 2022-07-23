@@ -195,6 +195,9 @@ def _generate_constructor_overload(
   params = ', '.join([p.function_argument for p in params_list])
   if func_decl.name.native == '__init__' and func_decl.is_extend_method:
     yield f'{class_name}.def(py::init([]({params_with_types}) {{'
+    for p in params_list:
+      yield from p.preprocess(
+          acquire_gil=not function_lib.func_keeps_gil(func_decl))
     yield I + f'return {func_decl.name.cpp_name}({params});'
     yield f'}}), {function_lib.generate_function_suffixes(func_decl)}'
 
@@ -206,7 +209,8 @@ def _generate_constructor_overload(
         func_decl, release_gil=False)
     yield f'{class_name}.def(py::init([]({params_with_types}) {{'
     for p in params_list:
-      yield from p.preprocess()
+      yield from p.preprocess(
+          acquire_gil=not function_lib.func_keeps_gil(func_decl))
     yield I + (f'return std::make_unique<{cpp_name}>'
                f'({params}).release();')
     yield f'}}), {function_suffix}'
@@ -215,7 +219,8 @@ def _generate_constructor_overload(
     yield (f'{class_name}.def_static("{func_decl.name.native}", '
            f'[]({params_with_types}) {{')
     for p in params_list:
-      yield from p.preprocess()
+      yield from p.preprocess(
+          acquire_gil=not function_lib.func_keeps_gil(func_decl))
     yield I + (f'return std::make_unique<{class_decl.name.cpp_name}>'
                f'({params}).release();')
     yield f'}}, {function_lib.generate_function_suffixes(func_decl)}'

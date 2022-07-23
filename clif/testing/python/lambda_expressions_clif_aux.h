@@ -19,6 +19,7 @@
 #include <Python.h>
 
 #include <memory>
+#include <vector>
 
 #include "clif/testing/lambda_expressions.h"
 
@@ -29,6 +30,13 @@ inline std::unique_ptr<TestExtendCtor> TestExtendCtor__extend__init__(
     int i, Arg arg = {100}) {
   auto res = std::make_unique<TestExtendCtor>();
   res->value = i + arg.value;
+  return res;
+}
+
+inline std::unique_ptr<ExtendedCtorTakesVector>
+ExtendedCtorTakesVector__extend__init__(const std::vector<int>& vec) {
+  auto res = std::make_unique<ExtendedCtorTakesVector>();
+  res->value = vec;
   return res;
 }
 
