@@ -27,14 +27,14 @@ I = utils.I
 
 
 def generate_from(
-    class_decl: ast_pb2.ClassDecl, superclass_name: str,
+    decl: ast_pb2.Decl, superclass_name: str,
     trampoline_class_names: Set[str], capsule_types: Set[str],
     registered_types: Set[str], requires_status: bool = False,
 ) -> Generator[str, None, None]:
   """Generates a complete py::class_<>.
 
   Args:
-    class_decl: Class declaration in proto format.
+    decl: Class declaration in proto format.
     superclass_name: String name of the superclass.
     trampoline_class_names: A Set of class names whose member functions
       will be overriden in Python.
@@ -45,7 +45,13 @@ def generate_from(
   Yields:
     pybind11 class bindings code.
   """
+  class_decl = decl.class_
   yield I + '{'
+  if decl.namespace_:
+    namespaces = decl.namespace_.strip(':').split('::')
+    for i in range(0, len(namespaces)):
+      namespace = '::'.join(namespaces[:i + 1])
+      yield I + I + f'using namespace {namespace};'
   class_name = f'{class_decl.name.native}_class'
   definition = f'py::classh<{class_decl.name.cpp_name}'
   if not class_decl.suppress_upcasts:
@@ -117,7 +123,7 @@ def generate_from(
         for s in _generate_iterator(class_name, class_decl, d.func):
           yield I + I + s
       else:
-        for s in generate_from(member.class_, class_name,
+        for s in generate_from(member, class_name,
                                trampoline_class_names, capsule_types,
                                registered_types, requires_status):
           yield I + s
