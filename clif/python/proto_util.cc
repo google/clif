@@ -108,6 +108,7 @@ void ProtoFileInfo::Index() {
     csd.name = sd->name();
     csd.fqname = sd->full_name();
     csd.srcfile = sd->file()->name();
+    csd.default_invocable_api = sd->options().cc_default_invocable_api();
 
     for (int j = 0; j < sd->method_count(); ++j) {
       const MethodDescriptor* m = sd->method(j);
