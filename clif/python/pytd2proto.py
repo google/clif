@@ -943,7 +943,7 @@ class Postprocessor(object):
         p.default_value = arg[2]
         must_be_optional = True
       elif must_be_optional:
-        raise ValueError('Arg "%s" (and all after) must be optional bacause '
+        raise ValueError('Arg "%s" (and all after) must be optional because '
                          'arg(s) before it marked optional.')
     for t in ast.returns:
       p = pb.returns.add()
