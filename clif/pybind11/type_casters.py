@@ -144,7 +144,7 @@ def _generate_type_caster(
     yield I + (f'static handle cast({cpp_name} src, return_value_policy, '
                'handle) {')
     yield I + I + 'using namespace ::clif;'
-    yield I + I + 'return Clif_PyObjFrom(src, {});'
+    yield I + I + 'return Clif_PyObjFrom(std::move(src), {});'
     yield I + '}'
   yield '};'
   yield ''
