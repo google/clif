@@ -20,6 +20,7 @@
 #include "third_party/pybind11/include/pybind11/pybind11.h"
 #include "third_party/pybind11_abseil/absl_casters.h"
 #include "util/task/python/clif/patch_status_bindings.h"
+#include "util/task/python/clif/status_return_overload.h"
 
 namespace clif {
 
