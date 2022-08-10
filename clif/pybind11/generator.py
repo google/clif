@@ -65,17 +65,22 @@ class ModuleGenerator(object):
     for decl in self._ast.decls:
       self._register_types(decl)
     self._types = sorted(self._types, key=lambda gen_type: gen_type.cpp_name)
+    cpp_import_types = type_casters.get_cpp_import_types(
+        self._ast, self._include_paths)
+    imported_capsule_types = set([
+        t.py_name for t in cpp_import_types
+        if t.python_capsule
+    ])
     self._capsule_types = set([
         t.py_name for t in self._types
         if isinstance(t, gen_type_info.CapsuleType)
-    ])
-    cpp_import_types = type_casters.get_cpp_import_types(
-        self._ast, self._include_paths)
-    self._requires_status = 'absl::Status' in cpp_import_types
+    ]).union(imported_capsule_types)
+    cpp_import_type_cpp_names = set([t.cpp_name for t in cpp_import_types])
+    self._requires_status = 'absl::Status' in cpp_import_type_cpp_names
     python_import_types = set(
         [t.cpp_name for t in self._namemap.values() if t.cpp_name])
     self._registered_types = set([t.cpp_name for t in self._types]).union(
-        cpp_import_types).union(python_import_types)
+        cpp_import_type_cpp_names).union(python_import_types)
 
   def generate_header(self,
                       ast: ast_pb2.AST) -> Generator[str, None, None]:

@@ -18,7 +18,7 @@ import os
 import re
 import types
 
-from typing import Generator, List, Set
+from typing import Generator, List
 
 from clif.protos import ast_pb2
 from clif.pybind11 import utils
@@ -28,21 +28,23 @@ I = utils.I
 _PYOBJFROM_ONLY = ', HasPyObjFromOnly'
 _PYOBJAS_ONLY = ', HasPyObjAsOnly'
 _PYBIND11_IGNORE = ', Pybind11Ignore'
+_PYCAPSULE = ', PythonCapsule'
 _CLIF_USE = re.compile(
     r'// *CLIF:? +use +`(?P<cpp_name>.+)` +as +(?P<py_name>[\w.]+)'
     r'(, NumTemplateParameter:(?P<num_template_parameter>\d+))?'
+    f'({_PYCAPSULE})?'
     f'({_PYOBJFROM_ONLY}|{_PYOBJAS_ONLY}|{_PYBIND11_IGNORE}|)')
 
 
-def get_cpp_import_types(ast: ast_pb2.AST,
-                         include_paths: List[str]) -> Set[str]:
+def get_cpp_import_types(
+    ast: ast_pb2.AST, include_paths: List[str]) -> List[types.SimpleNamespace]:
   """Get cpp types that are imported from other header files."""
-  result = set()
+  result = []
   includes = set(ast.usertype_includes)
   for include in includes:
     clif_uses = _get_clif_uses(include, include_paths)
     for clif_use in clif_uses:
-      result.add(clif_use.cpp_name)
+      result.append(clif_use)
   return result
 
 
@@ -64,6 +66,7 @@ def _get_clif_uses(
                 cpp_name=use.group('cpp_name'), py_name=use.group('py_name'),
                 num_template_parameter=num_template_parameter,
                 pybind11_ignore=_PYBIND11_IGNORE in use[0],
+                python_capsule=_PYCAPSULE in use[0],
                 generate_load=_PYOBJFROM_ONLY not in use[0],
                 generate_cast=_PYOBJAS_ONLY not in use[0]))
       break

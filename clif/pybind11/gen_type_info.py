@@ -211,3 +211,7 @@ class EnumType(BaseType):
 @dataclasses.dataclass
 class CapsuleType(BaseType):
   """Wraps a C++ pointer as Python capsule."""
+
+  def generate_clif_use(self) -> Generator[str, None, None]:
+    yield (f'// CLIF use `{self.cpp_name}` as {self.py_name}, '
+           'PythonCapsule, Pybind11Ignore')

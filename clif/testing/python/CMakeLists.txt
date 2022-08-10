@@ -127,6 +127,10 @@ add_pyclif_library_for_test(extension_type_refcount extension_type_refcount.clif
 add_pyclif_library_for_test(_hidden hidden.clif
   TEST hidden_test.py)
 
+add_pyclif_library_for_test(imported_capsule imported_capsule.clif
+  CLIF_DEPS clif_testing_python_special_classes
+)
+
 add_pyclif_library_for_test(imported_inheritance imported_inheritance.clif
   CLIF_DEPS clif_testing_python_nested_inheritance
 )

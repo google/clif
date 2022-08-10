@@ -14,6 +14,8 @@
 
 from "clif/testing/special_classes.h":
   namespace `clif_testing::special_classes`:
+    capsule ExportedCapsule
+
     class Abstract:
       const KIND: bytes
       def Future(self) -> int

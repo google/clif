@@ -64,6 +64,14 @@ class NoMove {
   int A() { return a_; }
 };
 
+class ExportedCapsule {
+ public:
+  ExportedCapsule(): value_(10) { }
+  int get_value() const { return value_; }
+ private:
+  int value_;
+};
+
 }  // namespace special_classes
 }  // namespace clif_testing
 
