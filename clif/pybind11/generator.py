@@ -264,9 +264,9 @@ class ModuleGenerator(object):
 
     if func_decl.is_pure_virtual:
       if 'absl::StatusOr' in return_type:
-        pybind11_override = 'PYBIND11_OVERLOAD_PURE_STATUSOR_RETURN'
+        pybind11_override = 'PYBIND11_OVERRIDE_PURE_STATUSOR_RETURN'
       elif 'absl::Status' in return_type:
-        pybind11_override = 'PYBIND11_OVERLOAD_PURE_STATUS_RETURN'
+        pybind11_override = 'PYBIND11_OVERRIDE_PURE_STATUS_RETURN'
       else:
         pybind11_override = 'PYBIND11_OVERRIDE_PURE'
     else:
@@ -277,7 +277,7 @@ class ModuleGenerator(object):
       yield I + I + f'using {func_decl.name.native}_return = {return_type};'
       return_type = f'{func_decl.name.native}_return'
     yield I + I + f'{pybind11_override}('
-    if pybind11_override != 'PYBIND11_OVERLOAD_PURE_STATUS_RETURN':
+    if pybind11_override != 'PYBIND11_OVERRIDE_PURE_STATUS_RETURN':
       yield I + I + I + f'{return_type},'
     yield I + I + I + f'{class_name},'
     if params:
