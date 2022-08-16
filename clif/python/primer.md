@@ -4,6 +4,8 @@ This is a user guide for using Python CLIF - The Python extension module
 generator that wraps C++ libraries.
 It tries to be clear and explain all the nuances involved in detail.
 
+.
+
 The organization of this document is such that it starts with illustration of
 the simplest of CLIF wrappings and progressively builds on this information
 in the following sections. Hence, if you are new to CLIF, read these sections in
