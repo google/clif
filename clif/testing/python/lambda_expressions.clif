@@ -104,3 +104,21 @@ from "clif/testing/python/lambda_expressions_clif_aux.h":
 
     @do_not_release_gil
     def consume_pyobject(vec: list<object>) -> int
+
+    class TestCtxMgr:
+      value: int
+      @__enter__
+      def Enter(self)
+
+      @__exit__
+      def Close(self)
+
+    class TestExtendCtxMgr:
+      value: int
+      @__enter__
+      @extend
+      def Enter(self)
+
+      @__exit__
+      @extend
+      def Close(self)

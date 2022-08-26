@@ -186,6 +186,18 @@ inline int consume_pyobject(const std::vector<PyObject*>& vec) {
   return vec.size();
 }
 
+struct TestCtxMgr {
+  int value;
+  void Enter() {
+    this->value = 20;
+  }
+  void Close() { }
+};
+
+struct TestExtendCtxMgr {
+  int value;
+};
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_LAMBDA_EXPRESSIONS_H_

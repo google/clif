@@ -140,6 +140,12 @@ class LambdaExpressionsTest(absltest.TestCase):
     self.assertEqual(lambda_expressions.consume_pyobject(l), 3)
     self.assertEqual(lambda_expressions.consume_pyobject(iterable), 3)
 
+  def test_context_manager(self):
+    with lambda_expressions.TestCtxMgr() as obj:
+      self.assertEqual(obj.value, 20)
+    with lambda_expressions.TestExtendCtxMgr() as obj:
+      self.assertEqual(obj.value, 10)
+
 
 if __name__ == '__main__':
   absltest.main()

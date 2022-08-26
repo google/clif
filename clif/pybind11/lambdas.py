@@ -146,7 +146,10 @@ def _generate_lambda_body(
     yield I + 'return self;'
   elif func_decl.name.native == '__enter__@':
     # In case the return value is uncopyable or unmovable
-    yield I + 'return py::cast(self).release();'
+    self_param = 'self'
+    if func_decl.is_extend_method and len(params):
+      self_param = params[0].gen_name
+    yield I + f'return py::cast({self_param}).release();'
   elif func_decl.name.native == '__exit__@':
     yield I + 'return py::none();'
   elif func_decl.postproc:
@@ -233,12 +236,12 @@ def _generate_lambda_params_with_types(
     params: List[function_lib.Parameter],
     class_decl: Optional[ast_pb2.ClassDecl] = None) -> str:
   """Generates parameters and types in the signatures of lambda expressions."""
-  if func_decl.name.native == '__exit__@' and class_decl:
-    return f'{class_decl.name.cpp_name} &self, py::args'
   params_list = [f'{p.cpp_type} {p.gen_name}' for p in params]
   if (class_decl and not func_decl.classmethod and
       not func_decl.is_extend_method and not func_decl.cpp_opfunction):
     params_list = [f'{class_decl.name.cpp_name} &self'] + params_list
+  if func_decl.name.native == '__exit__@' and class_decl:
+    params_list.append('py::args')
   return ', '.join(params_list)
 
 

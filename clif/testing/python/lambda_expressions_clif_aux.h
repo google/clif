@@ -50,6 +50,12 @@ ExtendedCtorTakesPyObj__extend__init__(PyObject *obj) {
   return res;
 }
 
+inline void Enter(TestExtendCtxMgr& self) {
+  self.value = 10;
+}
+
+inline void Close(TestExtendCtxMgr& self) { }
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_PYTHON_LAMBDA_EXPRESSIONS_CLIF_AUX_H_
