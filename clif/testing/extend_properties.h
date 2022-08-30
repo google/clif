@@ -16,13 +16,18 @@
 #ifndef CLIF_TESTING_EXTEND_PROPERTIES_H_
 #define CLIF_TESTING_EXTEND_PROPERTIES_H_
 
+#include <string>
+
 namespace clif_testing {
 
 struct ValueHolder {
   ValueHolder(int v): value_(v) {}
   int get_value() { return value_; }
   void set_value(int v) { value_ = v; }
+  std::string get_value_str() { return value_str_; }
+  void set_value_str(const std::string& v) { value_str_ = v; }
   int value_;
+  std::string value_str_;
 };
 
 struct PropertyHolder {

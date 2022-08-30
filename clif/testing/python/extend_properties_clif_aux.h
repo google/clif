@@ -16,6 +16,8 @@
 #ifndef CLIF_TESTING_PYTHON_EXTEND_PROPERTIES_CLIF_AUX_H_
 #define CLIF_TESTING_PYTHON_EXTEND_PROPERTIES_CLIF_AUX_H_
 
+#include <string>
+
 #include "clif/testing/extend_properties.h"
 
 namespace clif_testing {
@@ -36,6 +38,16 @@ inline int PropertyHolder__extend__get_value_gs(PropertyHolder& self) {
 inline void PropertyHolder__extend__set_value_gs(
     PropertyHolder& self, int value) {
   self.value_holder_.set_value(value);
+}
+
+inline std::string PropertyHolder__extend__get_value_bytes(
+    PropertyHolder& self) {
+  return self.value_holder_.get_value_str();
+}
+
+inline void PropertyHolder__extend__set_value_bytes(
+    PropertyHolder& self, const std::string& value) {
+  self.value_holder_.set_value_str(value);
 }
 
 inline int NestedPropertyHolder_Inner__extend__get_value(

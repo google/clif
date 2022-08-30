@@ -85,8 +85,13 @@ def _generate_property(
   cpp_get = f'&{var_decl.cpp_get.name.cpp_name}'
   cpp_set = f'&{var_decl.cpp_set.name.cpp_name}'
   if function_lib.is_bytes_type(var_decl.type):
+    if var_decl.is_extend_variable:
+      function_call = f'{var_decl.cpp_get.name.cpp_name}(self)'
+    else:
+      function_name = var_decl.cpp_get.name.cpp_name.split('::')[-1]
+      function_call = f'self.{function_name}()'
     cpp_get = (f'py::cpp_function([]({class_decl.name.cpp_name} &self) '
-               f'{{ return self.{var_decl.cpp_get.name.cpp_name}(); }}, '
+               f'{{ return {function_call}; }}, '
                'py::return_value_policy::_return_as_bytes)')
   elif var_decl.cpp_get.is_overloaded:
     cpp_get_cast = function_lib.generate_cpp_function_cast(
