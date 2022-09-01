@@ -25,6 +25,7 @@ from clif.pybind11 import consts
 from clif.pybind11 import enums
 from clif.pybind11 import function
 from clif.pybind11 import gen_type_info
+from clif.pybind11 import topo_sort
 from clif.pybind11 import type_casters
 from clif.pybind11 import utils
 
@@ -58,6 +59,7 @@ class ModuleGenerator(object):
 
   def preprocess_ast(self) -> None:
     """Preprocess the ast to collect type information."""
+    topo_sort.topo_sort_ast_in_place(self._ast)
     self._namemap = {
         m.name: types.SimpleNamespace(fq_name=m.fq_name, cpp_name='')
         for m in self._ast.namemaps

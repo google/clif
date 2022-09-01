@@ -14,11 +14,11 @@
 
 from "clif/testing/nested_inheritance.h":
  namespace `clif_testing`:
+  class InheritInner(Nested.Inner):
+    pass
+
   class Nested:
     a: int = property(`get_a`, `set_a`)
     class Inner:
       a: int = property(`get_a`, `set_a`)
-
-  class InheritInner(Nested.Inner):
-    pass
 
