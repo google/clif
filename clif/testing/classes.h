@@ -88,6 +88,15 @@ struct BytesAttributes {
   void set_str_readwrite(const std::string& v) { str_readwrite_ = v; }
 };
 
+enum SomeEnum {
+  a = 1,
+  b = -1,
+};
+
+struct ClassTakesEnum {
+  explicit ClassTakesEnum(SomeEnum e = SomeEnum::a) {}
+};
+
 }  // namespace classes
 }  // namespace clif_testing
 

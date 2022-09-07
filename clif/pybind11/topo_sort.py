@@ -97,6 +97,12 @@ def _topo_sort_decls_in_place(decls) -> None:
   for class_name in reversed(resolve_order):
     decls.insert(0, graph[class_name].decl)
 
+  # Move all enum decls to the start of the current scope because class decls
+  # might depend on them, so we need to register the enums first.
+  for decl_index, decl in enumerate(decls):
+    if decl.decltype == ast_pb2.Decl.Type.ENUM:
+      decls.insert(0, decls.pop(decl_index))
+
 
 def _initialize_graph(graph: dict[str, Node], members,
                       parent_class_name: str = '',

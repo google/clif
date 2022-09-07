@@ -59,3 +59,8 @@ from "clif/testing/classes.h":
       str_as_str: str
       str_readonly: bytes = property(`get_str_readonly`)
       str_readwrite: bytes = property(`get_str_readwrite`, `set_str_readwrite`)
+
+    enum SomeEnum
+
+    class ClassTakesEnum:
+      def __init__(self, e: SomeEnum = default)
