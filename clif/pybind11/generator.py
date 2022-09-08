@@ -189,8 +189,6 @@ class ModuleGenerator(object):
   def _generate_headlines(self):
     """Generates #includes and headers."""
     includes = set()
-    for decl in self._ast.decls:
-      includes.add(decl.cpp_file)
     for include in self._ast.usertype_includes:
       includes.add(include)
     for include in self._pybind11_only_includes:
