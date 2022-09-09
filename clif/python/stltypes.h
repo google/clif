@@ -844,6 +844,9 @@ namespace py {
 // container of T via functor Inserter.
 template <typename T, typename Inserter>
 bool IterToCont(PyObject* py, Inserter add) {
+  if (PyBytes_Check(py) || PyUnicode_Check(py)) {
+      return false;
+  }
   PyObject* it = PyObject_GetIter(py);
   if (it == nullptr) return false;
   PyObject* el;
