@@ -247,7 +247,13 @@ class ModuleGenerator(object):
         if v.HasField('cpp_exact_type'):
           return_type = v.cpp_exact_type
 
-    params = ', '.join([f'{p.name.cpp_name}' for p in func_decl.params])
+    params_list = []
+    for p in func_decl.params:
+      if p.type.lang_type == 'bytes':
+        params_list.append(f'py::bytes(std::string({p.name.cpp_name}))')
+      else:
+        params_list.append(p.name.cpp_name)
+    params = ', '.join(params_list)
     params_list_with_types = []
     for p in func_decl.params:
       params_list_with_types.append(
