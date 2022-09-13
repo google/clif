@@ -227,15 +227,18 @@ int F(string*) | def F() -> (code: int, message: str)
 Parameter / Return Value Type | Ownership
 ----------------------------- | -------------
 `std::unique_ptr`             | transferred
+`std::shared_ptr`             | shared
 const T&                      | create a copy
 T&                            | create a copy
 raw pointer                   | borrowed
 
 C++ functions with output parameters or return values of type `std::unique_ptr`
-transfer object ownership to Python, while `const T&` and `T&` are copied.
+transfer object ownership to Python, `std::shared_ptr` shares ownership between
+C++ and Python, while `const T&` and `T&` are copied.
 
 C++ functions with `std::unique_ptr` input parameters transfer ownership to C++,
-while `const T&`, or `T&` are copied.
+`std::shared_ptr` shares ownership between C++ and Python, while `const T&`, or
+`T&` are copied.
 
 Raw pointers are always assumed to be borrowed.
 
