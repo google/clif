@@ -249,8 +249,8 @@ class ModuleGenerator(object):
 
     params_list = []
     for p in func_decl.params:
-      if p.type.lang_type == 'bytes':
-        params_list.append(f'py::bytes(std::string({p.name.cpp_name}))')
+      if p.type.lang_type == 'bytes' and 'std::string' in p.cpp_exact_type:
+        params_list.append(f'py::bytes({p.name.cpp_name})')
       else:
         params_list.append(p.name.cpp_name)
     params = ', '.join(params_list)
