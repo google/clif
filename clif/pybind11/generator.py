@@ -55,6 +55,8 @@ class ModuleGenerator(object):
     self._namemap = {}
     self._registered_types = set()
     self._requires_status = False
+    self._extend_from_python = ast.options.get(
+        'is_extended_from_python', 'False') == 'True'
     self._pybind11_only_includes = pybind11_only_includes
 
   def preprocess_ast(self) -> None:
@@ -106,8 +108,20 @@ class ModuleGenerator(object):
       for t in typedefs:
         yield from t.generate_header()
       yield '} ' * (1 + namespace.count('::')) + ' // namespace ' + namespace
+
+    module_path = self._module_path
+    if self._extend_from_python:
+      flds = module_path.split('.')
+      if not flds[-1].startswith('_'):
+        raise ValueError(
+            'OPTION is_extended_from_python is applicable only to private'
+            ' extensions (i.e. the unqualified name of the extension must'
+            ' start with an underscore). Fully-qualified extension name: %s'
+            % module_path)
+      flds[-1] = flds[-1][1:]
+      module_path = '.'.join(flds)
     yield ''
-    yield f'// CLIF init_module module_path:{self._module_path}'
+    yield f'// CLIF init_module module_path:{module_path}'
     yield ''
     for m in ast.macros:
       macro_body = m.definition.decode('utf-8').replace('\n', r'\n')
