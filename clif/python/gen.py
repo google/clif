@@ -598,7 +598,7 @@ def _CreateInputParameter(func_name, ast_param, arg, args):
     args.append('std::move(%s)' % arg)
     return (False, '%s %s;' % (ctype, arg))
   else:
-    args.append(arg+'.value()')
+    args.append('std::move(%s).value()' % arg)
     return (False, '::absl::optional<%s> %s;' % (ctype, arg))
 
 
