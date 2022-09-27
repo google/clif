@@ -243,6 +243,14 @@ def is_status_param(param: ast_pb2.ParamDecl, requires_status: bool) -> bool:
   return False
 
 
+def generate_status_type(func_decl: ast_pb2.FuncDecl,
+                         param: ast_pb2.ParamDecl) -> str:
+  if func_decl.marked_non_raising:
+    return f'pybind11::google::NoThrowStatus<{param.type.cpp_type}>'
+  else:
+    return f'pybind11::google::PyCLIFStatus<{param.type.cpp_type}>'
+
+
 def type_has_py_object_param(pytype: ast_pb2.Type) -> bool:
   if pytype.lang_type == 'object':
     return True

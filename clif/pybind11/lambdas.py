@@ -123,14 +123,9 @@ def _generate_lambda_body(
   if not cpp_void_return:
     ret0 = func_decl.returns[0]
     if function_lib.is_status_param(ret0, requires_status):
-      if func_decl.marked_non_raising:
-        yield (I +
-               f'pybind11::google::NoThrowStatus<{ret0.cpp_exact_type}> ret0 = '
-               f'{function_call}({function_call_params});')
-      else:
-        yield (I +
-               f'pybind11::google::PyCLIFStatus<{ret0.cpp_exact_type}> ret0 = '
-               f'{function_call}({function_call_params});')
+      status_type = function_lib.generate_status_type(func_decl, ret0)
+      yield (I + f'{status_type} ret0 = {function_call}'
+             f'({function_call_params});')
     elif not ret0.type.cpp_type:
       callback_cpp_type = function_lib.generate_callback_signature(ret0)
       yield I + (f'{callback_cpp_type} ret0 = '
@@ -162,8 +157,6 @@ def _generate_lambda_body(
                f'mod.attr("{method_name}")({function_call_returns});')
     yield I + 'py::gil_scoped_release release;'
     yield I + 'return result_;'
-  elif len(func_decl.returns) > 1:
-    yield I + f'return std::make_tuple({function_call_returns});'
   else:
     gil_required = False
     for r in func_decl.returns:
@@ -210,7 +203,8 @@ def _generate_function_call_params(
 
 
 def _generate_function_call_returns(
-    func_decl: ast_pb2.FuncDecl, capsule_types: Set[str]) -> str:
+    func_decl: ast_pb2.FuncDecl, capsule_types: Set[str],
+    requires_status: bool = True) -> str:
   """Generates return values of cpp function."""
   all_returns_list = []
   for i, r in enumerate(func_decl.returns):
@@ -220,6 +214,9 @@ def _generate_function_call_returns(
     elif r.type.lang_type in capsule_types:
       all_returns_list.append(
           f'clif::CapsuleWrapper<{r.type.cpp_type}>(ret{i})')
+    elif i > 0 and function_lib.is_status_param(r, requires_status):
+      status_type = function_lib.generate_status_type(func_decl, r)
+      all_returns_list.append(f'{status_type}(ret{i})')
     # When the lambda expression returns multiple values, we construct an
     # `std::tuple` with those return values. For uncopyable return values, we
     # need `std::move` when constructing the `std::tuple`.
