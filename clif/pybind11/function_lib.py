@@ -243,6 +243,18 @@ def is_status_param(param: ast_pb2.ParamDecl, requires_status: bool) -> bool:
   return False
 
 
+def is_status_callback(param: ast_pb2.ParamDecl,
+                       requires_status: bool) -> bool:
+  if not requires_status:
+    return False
+  if not param.type.cpp_type and len(param.type.callable.returns):
+    callback_return = param.type.callable.returns[0]
+    for pattern in _STATUS_PATTERNS:
+      if re.fullmatch(pattern, callback_return.type.lang_type):
+        return True
+  return False
+
+
 def generate_status_type(func_decl: ast_pb2.FuncDecl,
                          param: ast_pb2.ParamDecl) -> str:
   if func_decl.marked_non_raising:

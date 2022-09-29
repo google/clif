@@ -70,6 +70,7 @@ def needs_lambda(
           _func_has_pointer_params(func_decl) or
           function_lib.func_has_py_object_params(func_decl) or
           _func_has_status_params(func_decl, requires_status) or
+          _func_has_status_callback(func_decl, requires_status) or
           func_decl.cpp_num_params != len(func_decl.params))
 
 
@@ -126,6 +127,9 @@ def _generate_lambda_body(
       status_type = function_lib.generate_status_type(func_decl, ret0)
       yield (I + f'{status_type} ret0 = {function_call}'
              f'({function_call_params});')
+    elif function_lib.is_status_callback(ret0, requires_status):
+      yield I + (f'auto ret0 = pybind11::google::ToPyCLIFStatus({function_call}'
+                 f'({function_call_params}));')
     elif not ret0.type.cpp_type:
       callback_cpp_type = function_lib.generate_callback_signature(ret0)
       yield I + (f'{callback_cpp_type} ret0 = '
@@ -266,6 +270,14 @@ def _func_has_status_params(func_decl: ast_pb2.FuncDecl,
       return True
   for r in func_decl.returns:
     if function_lib.is_status_param(r, requires_status):
+      return True
+  return False
+
+
+def _func_has_status_callback(func_decl: ast_pb2.FuncDecl,
+                              requires_status: bool) -> bool:
+  for r in func_decl.returns:
+    if function_lib.is_status_callback(r, requires_status):
       return True
   return False
 
