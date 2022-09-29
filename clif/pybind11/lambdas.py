@@ -62,6 +62,7 @@ def needs_lambda(
     return True
   return (bool(func_decl.postproc) or
           func_decl.is_overloaded or
+          _func_is_extend_static_method(func_decl, class_decl) or
           _func_has_vector_param(func_decl) or
           _func_is_context_manager(func_decl) or
           _func_needs_index_check(func_decl) or
@@ -256,6 +257,12 @@ def _generate_function_call(
   else:
     method_name = func_decl.name.cpp_name.split('::')[-1]
     return f'self.{method_name}'
+
+
+def _func_is_extend_static_method(
+    func_decl: ast_pb2.FuncDecl,
+    class_decl: Optional[ast_pb2.ClassDecl] = None) -> bool:
+  return class_decl and func_decl.is_extend_method and func_decl.classmethod
 
 
 def _func_has_pointer_params(func_decl: ast_pb2.FuncDecl) -> bool:
