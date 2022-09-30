@@ -156,7 +156,6 @@ class ModuleGenerator(object):
              f'{ast.source}";')
     if self._requires_status:
       yield I + 'py::google::ImportStatusModule();'
-      yield I + 'py::google::PatchStatusBindings();'
     yield I + 'pybind11_protobuf::ImportNativeProtoCasters();'
 
     for decl in ast.decls:
