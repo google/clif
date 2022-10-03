@@ -155,7 +155,7 @@ class ModuleGenerator(object):
     yield I+('m.doc() = "CLIF-generated pybind11-based module for '
              f'{ast.source}";')
     if self._requires_status:
-      yield I + 'py::google::ImportStatusModule();'
+      yield I + 'pybind11::module_::import("util.task.python.error");'
     yield I + 'pybind11_protobuf::ImportNativeProtoCasters();'
 
     for decl in ast.decls:
