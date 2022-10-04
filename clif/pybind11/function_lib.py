@@ -51,8 +51,10 @@ class Parameter:
     elif (ctype.startswith('::std::unique_ptr') or
           ctype.startswith('::std::shared_ptr')):
       self.function_argument = f'std::move({self.gen_name})'
-    elif (ctype.startswith('::std::vector') and
-          ptype.lang_type.startswith('list')):
+    elif is_cpp_vector(ptype):
+      self.cpp_type = 'py::iterable'
+      self.function_argument = f'std::move({self.gen_name}_)'
+    elif is_cpp_set(ptype):
       self.cpp_type = 'py::iterable'
       self.function_argument = f'std::move({self.gen_name}_)'
     elif not ptype.cpp_raw_pointer:
@@ -78,8 +80,8 @@ class Parameter:
       self.check_nullptr = False
 
   def preprocess(self, acquire_gil: bool = True) -> Generator[str, None, None]:
-    if (self.ptype.cpp_type.startswith('::std::vector') and
-        self.ptype.lang_type.startswith('list')):
+    """Generate necessary preprocess for this parameter."""
+    if is_cpp_vector(self.ptype):
       if acquire_gil:
         yield I + f'py::gil_scoped_acquire {self.gen_name}_acquire;'
       yield (I +
@@ -87,6 +89,25 @@ class Parameter:
              f'.cast<{self.ptype.cpp_type}>();')
       if acquire_gil:
         yield I + f'py::gil_scoped_release {self.gen_name}_release;'
+    elif is_cpp_set(self.ptype):
+      if acquire_gil:
+        yield I + f'py::gil_scoped_acquire {self.gen_name}_acquire;'
+      yield (I +
+             f'auto {self.gen_name}_ = py::set({self.gen_name}).release()'
+             f'.cast<{self.ptype.cpp_type}>();')
+      if acquire_gil:
+        yield I + f'py::gil_scoped_release {self.gen_name}_release;'
+
+
+def is_cpp_vector(param_type: ast_pb2.Type) -> bool:
+  return (param_type.cpp_type.startswith('::std::vector') and
+          param_type.lang_type.startswith('list'))
+
+
+def is_cpp_set(param_type: ast_pb2.Type) -> bool:
+  return ((param_type.cpp_type.startswith('::std::set') or
+           param_type.cpp_type.startswith('::std::unordered_set')) and
+          param_type.lang_type.startswith('set'))
 
 
 def num_unknown_default_values(func_decl: ast_pb2.FuncDecl) -> int:

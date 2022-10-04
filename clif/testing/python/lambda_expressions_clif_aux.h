@@ -19,7 +19,10 @@
 #include <Python.h>
 
 #include <memory>
+#include <set>
 #include <vector>
+#include <unordered_set>
+
 
 #include "clif/testing/lambda_expressions.h"
 
@@ -37,6 +40,21 @@ inline std::unique_ptr<ExtendedCtorTakesVector>
 ExtendedCtorTakesVector__extend__init__(const std::vector<int>& vec) {
   auto res = std::make_unique<ExtendedCtorTakesVector>();
   res->value = vec;
+  return res;
+}
+
+inline std::unique_ptr<ExtendedCtorTakesSet>
+ExtendedCtorTakesSet__extend__init__(const std::set<int>& s) {
+  auto res = std::make_unique<ExtendedCtorTakesSet>();
+  res->value = s;
+  return res;
+}
+
+inline std::unique_ptr<ExtendedCtorTakesUnorderedSet>
+ExtendedCtorTakesUnorderedSet__extend__init__(
+    const std::unordered_set<int>& s) {
+  auto res = std::make_unique<ExtendedCtorTakesUnorderedSet>();
+  res->value = s;
   return res;
 }
 

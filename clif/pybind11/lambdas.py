@@ -64,6 +64,7 @@ def needs_lambda(
           func_decl.is_overloaded or
           _func_is_extend_static_method(func_decl, class_decl) or
           _func_has_vector_param(func_decl) or
+          _func_has_set_param(func_decl) or
           _func_is_context_manager(func_decl) or
           _func_needs_index_check(func_decl) or
           _func_has_capsule_params(func_decl, capsule_types) or
@@ -331,8 +332,14 @@ def _func_needs_implicit_conversion(func_decl: ast_pb2.FuncDecl) -> bool:
 
 def _func_has_vector_param(func_decl: ast_pb2.FuncDecl) -> bool:
   for param in func_decl.params:
-    if (param.type.cpp_type.startswith('::std::vector') and
-        param.type.lang_type.startswith('list')):
+    if function_lib.is_cpp_vector(param.type):
+      return True
+  return False
+
+
+def _func_has_set_param(func_decl: ast_pb2.FuncDecl) -> bool:
+  for param in func_decl.params:
+    if function_lib.is_cpp_set(param.type):
       return True
   return False
 

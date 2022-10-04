@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from absl.testing import absltest
+from absl.testing import parameterized
 
 from clif.testing.python import lambda_expressions
 
@@ -23,7 +24,7 @@ class CtorTakesAbstractVirtual(lambda_expressions.CtorTakesAbstractVirtual):
     return self.value + 1
 
 
-class LambdaExpressionsTest(absltest.TestCase):
+class LambdaExpressionsTest(parameterized.TestCase):
 
   def test_abstract_reference_parameter(self):
     obj = lambda_expressions.Derived(100)
@@ -112,28 +113,6 @@ class LambdaExpressionsTest(absltest.TestCase):
     obj = lambda_expressions.NoCopyNoMove.from_value(10)
     self.assertEqual(obj.value, 10)
 
-  def test_accept_iterable_as_vector(self):
-    l = [1, 2, 3]
-    iterable = (i for i in l)
-    self.assertEqual(lambda_expressions.takes_vector(l), 3)
-    self.assertEqual(lambda_expressions.takes_vector(iterable), 3)
-
-  def test_ctor_accept_iterable_as_vector(self):
-    l = [1, 2, 3]
-    iterable = (i for i in l)
-    obj = lambda_expressions.CtorTakesVector(l)
-    self.assertCountEqual(l, obj.value)
-    obj = lambda_expressions.CtorTakesVector(iterable)
-    self.assertCountEqual(l, obj.value)
-
-  def test_extended_ctor_accept_iterable_as_vector(self):
-    l = [1, 2, 3]
-    iterable = (i for i in l)
-    obj = lambda_expressions.ExtendedCtorTakesVector(l)
-    self.assertCountEqual(l, obj.value)
-    obj = lambda_expressions.ExtendedCtorTakesVector(iterable)
-    self.assertCountEqual(l, obj.value)
-
   def test_gil_acquired_function_accept_iterable_as_vector(self):
     l = [1, 2, 3]
     iterable = (i for i in l)
@@ -145,6 +124,57 @@ class LambdaExpressionsTest(absltest.TestCase):
       self.assertEqual(obj.value, 20)
     with lambda_expressions.TestExtendCtxMgr() as obj:
       self.assertEqual(obj.value, 10)
+
+
+@parameterized.parameters(
+    ([1, 2, 3],),
+    (set([1, 2, 3]),),
+)
+class AcceptIterableTest(parameterized.TestCase):
+
+  def test_accept_iterable_as_vector(self, iterable):
+    self.assertEqual(lambda_expressions.takes_vector(iterable), 3)
+    self.assertEqual(lambda_expressions.takes_vector((i for i in iterable)), 3)
+
+  def test_ctor_accept_iterable_as_vector(self, iterable):
+    obj = lambda_expressions.CtorTakesVector(iterable)
+    self.assertCountEqual(iterable, obj.value)
+    obj = lambda_expressions.CtorTakesVector((i for i in iterable))
+    self.assertCountEqual(iterable, obj.value)
+
+  def test_extended_ctor_accept_iterable_as_vector(self, iterable):
+    obj = lambda_expressions.ExtendedCtorTakesVector(iterable)
+    self.assertCountEqual(iterable, obj.value)
+    obj = lambda_expressions.ExtendedCtorTakesVector((i for i in iterable))
+    self.assertCountEqual(iterable, obj.value)
+
+  def test_accept_iterable_as_set(self, iterable):
+    self.assertEqual(lambda_expressions.takes_set(iterable), 3)
+    self.assertEqual(lambda_expressions.takes_unordered_set(iterable), 3)
+    self.assertEqual(lambda_expressions.takes_set((i for i in iterable)), 3)
+    self.assertEqual(lambda_expressions.takes_unordered_set(
+        (i for i in iterable)), 3)
+
+  def test_ctor_accept_iterable_as_set(self, iterable):
+    obj = lambda_expressions.CtorTakesSet(iterable)
+    self.assertCountEqual(iterable, obj.value)
+    obj = lambda_expressions.CtorTakesUnorderedSet(iterable)
+    self.assertCountEqual(iterable, obj.value)
+    obj = lambda_expressions.CtorTakesSet((i for i in iterable))
+    self.assertCountEqual(iterable, obj.value)
+    obj = lambda_expressions.CtorTakesUnorderedSet((i for i in iterable))
+    self.assertCountEqual(iterable, obj.value)
+
+  def test_extended_ctor_accept_iterable_as_set(self, iterable):
+    obj = lambda_expressions.ExtendedCtorTakesSet(iterable)
+    self.assertCountEqual(iterable, obj.value)
+    obj = lambda_expressions.ExtendedCtorTakesUnorderedSet(iterable)
+    self.assertCountEqual(iterable, obj.value)
+    obj = lambda_expressions.ExtendedCtorTakesSet((i for i in iterable))
+    self.assertCountEqual(iterable, obj.value)
+    obj = lambda_expressions.ExtendedCtorTakesUnorderedSet(
+        (i for i in iterable))
+    self.assertCountEqual(iterable, obj.value)
 
 
 if __name__ == '__main__':

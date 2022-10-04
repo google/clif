@@ -19,8 +19,10 @@
 #include <Python.h>
 
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 namespace clif_testing {
 
@@ -107,6 +109,24 @@ struct ExtendedCtorTakesVector {
   std::vector<int> value;
 };
 
+struct CtorTakesSet {
+  CtorTakesSet(const std::set<int>& s): value(s) { }
+  std::set<int> value;
+};
+
+struct ExtendedCtorTakesSet {
+  std::set<int> value;
+};
+
+struct CtorTakesUnorderedSet {
+  CtorTakesUnorderedSet(const std::unordered_set<int>& s): value(s) { }
+  std::unordered_set<int> value;
+};
+
+struct ExtendedCtorTakesUnorderedSet {
+  std::unordered_set<int> value;
+};
+
 struct ExtendedCtorTakesPyObj {
   int value = -99999;
 };
@@ -174,6 +194,14 @@ inline std::string returns_one(int) {
 
 inline int takes_vector(const std::vector<int>& vec) {
   return vec.size();
+}
+
+inline int takes_set(const std::set<int>& s) {
+  return s.size();
+}
+
+inline int takes_unordered_set(const std::unordered_set<int>& s) {
+  return s.size();
 }
 
 inline std::string takes_unique_ptr_vector(
