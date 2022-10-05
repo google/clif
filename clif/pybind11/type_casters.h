@@ -72,6 +72,10 @@ class smart_pointer_vector_caster {
       ValueAndHolder, const_name("List[") + value_conv::name + const_name("]"));
 
   bool load(handle src, bool convert) {
+    if (isinstance<none>(src)) {
+      value.reset(nullptr);
+      return true;
+    }
     if (!isinstance<sequence>(src) || isinstance<bytes>(src) ||
       isinstance<str>(src)) {
       return false;
@@ -90,6 +94,9 @@ class smart_pointer_vector_caster {
 
   static handle cast(ValueAndHolder src, return_value_policy policy,
                      handle parent) {
+    if (!src) {
+      return none();
+    }
     list l(src->size());
     ssize_t index = 0;
     for (auto &&value : *src) {
@@ -125,6 +132,10 @@ class smart_pointer_map_caster {
       value_conv::name + const_name("]"));
 
   bool load(handle src, bool convert) {
+    if (isinstance<none>(src)) {
+      value.reset(nullptr);
+      return true;
+    }
     if (!isinstance<dict>(src)) {
       return false;
     }
@@ -145,6 +156,9 @@ class smart_pointer_map_caster {
 
   static handle cast(ValueAndHolder src, return_value_policy policy,
                      handle parent) {
+    if (!src) {
+      return none();
+    }
     dict d;
     return_value_policy policy_key = policy;
     return_value_policy policy_value = policy;
@@ -196,6 +210,10 @@ class smart_pointer_set_caster {
       ValueAndHolder, const_name("Set[") + key_conv::name + const_name("]"));
 
   bool load(handle src, bool convert) {
+    if (isinstance<none>(src)) {
+      value.reset(nullptr);
+      return true;
+    }
     if (!isinstance<pybind11::set>(src)) {
       return false;
     }
@@ -213,6 +231,9 @@ class smart_pointer_set_caster {
 
   static handle cast(ValueAndHolder src, return_value_policy policy,
                      handle parent) {
+    if (!src) {
+      return none();
+    }
     pybind11::set s;
     for (auto &&value : *src) {
       auto value_ = reinterpret_steal<object>(

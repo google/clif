@@ -103,6 +103,14 @@ class StdContainersTest(absltest.TestCase):
     # p = (1, 2)
     # self.assertCountEqual(p, std_containers.unique_ptr_pair_round_trip(p))
 
+  @absltest.skipIf(
+      'pybind11' not in std_containers.__doc__,
+      'Legacy PyCLIF does not accept None as smart pointers.')
+  def testAcceptNoneAsSmartPointers(self):
+    self.assertIsNone(std_containers.unique_ptr_vector_round_trip(None))
+    self.assertIsNone(std_containers.unique_ptr_unordered_map_round_trip(None))
+    self.assertIsNone(std_containers.unique_ptr_unordered_set_round_trip(None))
+
 
 if __name__ == '__main__':
   absltest.main()
