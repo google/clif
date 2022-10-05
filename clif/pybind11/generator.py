@@ -51,13 +51,11 @@ class ModuleGenerator(object):
     self._header_path = header_path
     self._include_paths = include_paths
     self._types = []
-    self._capsule_types = set()
     self._namemap = {}
-    self._registered_types = set()
-    self._requires_status = False
     self._extend_from_python = ast.options.get(
         'is_extended_from_python', 'False') == 'True'
     self._pybind11_only_includes = pybind11_only_includes
+    self._codegen_info = None
 
   def preprocess_ast(self) -> None:
     """Preprocess the ast to collect type information."""
@@ -75,16 +73,19 @@ class ModuleGenerator(object):
         t.py_name for t in cpp_import_types
         if t.python_capsule
     ])
-    self._capsule_types = set([
+    capsule_types = set([
         t.py_name for t in self._types
         if isinstance(t, gen_type_info.CapsuleType)
     ]).union(imported_capsule_types)
     cpp_import_type_cpp_names = set([t.cpp_name for t in cpp_import_types])
-    self._requires_status = 'absl::Status' in cpp_import_type_cpp_names
+    requires_status = 'absl::Status' in cpp_import_type_cpp_names
     python_import_types = set(
         [t.cpp_name for t in self._namemap.values() if t.cpp_name])
-    self._registered_types = set([t.cpp_name for t in self._types]).union(
+    registered_types = set([t.cpp_name for t in self._types]).union(
         cpp_import_type_cpp_names).union(python_import_types)
+    self._codegen_info = utils.CodeGenInfo(
+        capsule_types=capsule_types, registered_types=registered_types,
+        requires_status=requires_status)
 
   def generate_header(self,
                       ast: ast_pb2.AST) -> Generator[str, None, None]:
@@ -154,21 +155,20 @@ class ModuleGenerator(object):
     yield from self._generate_import_modules(ast)
     yield I+('m.doc() = "CLIF-generated pybind11-based module for '
              f'{ast.source}";')
-    if self._requires_status:
+    if self._codegen_info.requires_status:
       yield I + 'pybind11::module_::import("util.task.python.error");'
     yield I + 'pybind11_protobuf::ImportNativeProtoCasters();'
 
     for decl in ast.decls:
       if decl.decltype == ast_pb2.Decl.Type.FUNC:
         for s in function.generate_from(
-            'm', decl.func, self._capsule_types, None, self._requires_status):
+            'm', decl.func, self._codegen_info, None):
           yield I + s
       elif decl.decltype == ast_pb2.Decl.Type.CONST:
         yield from consts.generate_from('m', decl.const)
       elif decl.decltype == ast_pb2.Decl.Type.CLASS:
         yield from classes.generate_from(
-            decl, 'm', trampoline_class_names, self._capsule_types,
-            self._registered_types, self._requires_status)
+            decl, 'm', trampoline_class_names, self._codegen_info)
       elif decl.decltype == ast_pb2.Decl.Type.ENUM:
         yield from enums.generate_from('m', decl.enum)
     yield '}'

@@ -13,12 +13,28 @@
 # limitations under the License.
 
 """Utility functions for pybind11 code generator."""
+import dataclasses
+from typing import Set
 
 from clif.protos import ast_pb2
 
 
 # Use two spaces indentation for generated code.
 I = '  '
+
+
+@dataclasses.dataclass
+class CodeGenInfo:
+  """Wrapper of the information needed to generate pybind11 code."""
+
+  # A set of C++ types that are defined as capsules.
+  capsule_types: Set[str]
+
+  # A set of C++ types that are registered to the pybind11 code generator.
+  registered_types: Set[str]
+
+  # Is type caster of `absl::Status` required?
+  requires_status: bool
 
 
 def trampoline_name(class_decl: ast_pb2.ClassDecl) -> str:

@@ -28,16 +28,14 @@ _NEEDS_INDEX_CHECK_METHODS = frozenset([
 
 def generate_lambda(
     module_name: str, func_decl: ast_pb2.FuncDecl,
-    capsule_types: Set[str],
+    codegen_info: utils.CodeGenInfo,
     class_decl: Optional[ast_pb2.ClassDecl] = None,
-    requires_status: bool = False
 ) -> Generator[str, None, None]:
   """Entry point for generation of lambda functions in pybind11."""
   params_list = []
   for i, param in enumerate(func_decl.params):
     params_list.append(
-        function_lib.Parameter(
-            param, f'arg{i}', capsule_types, requires_status))
+        function_lib.Parameter(param, f'arg{i}', codegen_info))
   params_with_type = _generate_lambda_params_with_types(
       func_decl, params_list, class_decl)
   # @sequential, @context_manager
@@ -45,7 +43,7 @@ def generate_lambda(
   yield (f'{module_name}.{function_lib.generate_def(func_decl)}'
          f'("{func_name}", []({params_with_type}) {{')
   yield from _generate_lambda_body(
-      func_decl, params_list, capsule_types, class_decl, requires_status)
+      func_decl, params_list, codegen_info, class_decl)
   release_gil = not function_lib.func_has_py_object_params(func_decl)
   is_member_function = (class_decl is not None)
   function_suffix = function_lib.generate_function_suffixes(
@@ -54,10 +52,8 @@ def generate_lambda(
 
 
 def needs_lambda(
-    func_decl: ast_pb2.FuncDecl,
-    capsule_types: Set[str],
-    class_decl: Optional[ast_pb2.ClassDecl] = None,
-    requires_status: bool = False) -> bool:
+    func_decl: ast_pb2.FuncDecl, codegen_info: utils.CodeGenInfo,
+    class_decl: Optional[ast_pb2.ClassDecl] = None) -> bool:
   if class_decl and _is_inherited_method(class_decl, func_decl):
     return True
   return (bool(func_decl.postproc) or
@@ -67,27 +63,25 @@ def needs_lambda(
           _func_has_set_param(func_decl) or
           _func_is_context_manager(func_decl) or
           _func_needs_index_check(func_decl) or
-          _func_has_capsule_params(func_decl, capsule_types) or
+          _func_has_capsule_params(func_decl, codegen_info.capsule_types) or
           _func_needs_implicit_conversion(func_decl) or
           _func_has_pointer_params(func_decl) or
           function_lib.func_has_py_object_params(func_decl) or
-          _func_has_status_params(func_decl, requires_status) or
-          _func_has_status_callback(func_decl, requires_status) or
+          _func_has_status_params(func_decl, codegen_info.requires_status) or
+          _func_has_status_callback(func_decl, codegen_info.requires_status) or
           func_decl.cpp_num_params != len(func_decl.params))
 
 
 def _generate_lambda_body(
     func_decl: ast_pb2.FuncDecl,
-    params: List[function_lib.Parameter],
-    capsule_types: Set[str],
+    params: List[function_lib.Parameter], codegen_info: utils.CodeGenInfo,
     class_decl: Optional[ast_pb2.ClassDecl] = None,
-    requires_status: bool = False,
 ) -> Generator[str, None, None]:
   """Generates body of lambda expressions."""
   function_call = _generate_function_call(func_decl, class_decl)
   function_call_params = _generate_function_call_params(func_decl, params)
   function_call_returns = _generate_function_call_returns(
-      func_decl, capsule_types)
+      func_decl, codegen_info.capsule_types)
 
   cpp_void_return = func_decl.cpp_void_return or not func_decl.returns
 
@@ -125,11 +119,11 @@ def _generate_lambda_body(
   # Generates call to the wrapped function
   if not cpp_void_return:
     ret0 = func_decl.returns[0]
-    if function_lib.is_status_param(ret0, requires_status):
+    if function_lib.is_status_param(ret0, codegen_info.requires_status):
       status_type = function_lib.generate_status_type(func_decl, ret0)
       yield (I + f'{status_type} ret0 = {function_call}'
              f'({function_call_params});')
-    elif function_lib.is_status_callback(ret0, requires_status):
+    elif function_lib.is_status_callback(ret0, codegen_info.requires_status):
       yield I + (f'auto ret0 = pybind11::google::ToPyCLIFStatus({function_call}'
                  f'({function_call_params}));')
     elif not ret0.type.cpp_type:

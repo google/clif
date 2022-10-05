@@ -14,7 +14,7 @@
 
 """Common utility functions for pybind11 function code generation."""
 import re
-from typing import AbstractSet, Generator, Optional
+from typing import Generator, Optional
 
 from clif.protos import ast_pb2
 from clif.pybind11 import utils
@@ -31,7 +31,7 @@ class Parameter:
   function_argument: str  # How to pass this parameter to functions
 
   def __init__(self, param: ast_pb2.ParamDecl, param_name: str,
-               capsule_types: AbstractSet[str], requires_status: bool):
+               codegen_info: utils.CodeGenInfo):
     ptype = param.type
     ctype = ptype.cpp_type
     self.ptype = ptype
@@ -44,7 +44,7 @@ class Parameter:
     if not ptype.cpp_type:  # std::function
       self.cpp_type = generate_callback_signature(param)
       self.function_argument = f'std::move({self.gen_name})'
-    elif is_status_param(param, requires_status):  # absl::Status
+    elif is_status_param(param, codegen_info.requires_status):  # absl::Status
       self.cpp_type = f'py::google::PyCLIFStatus<{param.cpp_exact_type}>'
       self.function_argument = f'{self.gen_name}.status'
     # unique_ptr<T>, shared_ptr<T>
@@ -71,7 +71,7 @@ class Parameter:
       else:
         self.function_argument = f'std::move({self.gen_name})'
 
-    if ptype.lang_type in capsule_types:
+    if ptype.lang_type in codegen_info.capsule_types:
       self.cpp_type = f'clif::CapsuleWrapper<{self.cpp_type}>'
       if use_address:
         self.function_argument = f'*{self.gen_name}.ptr'

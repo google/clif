@@ -28,8 +28,7 @@ I = utils.I
 
 def generate_from(
     decl: ast_pb2.Decl, superclass_name: str,
-    trampoline_class_names: Set[str], capsule_types: Set[str],
-    registered_types: Set[str], requires_status: bool = False,
+    trampoline_class_names: Set[str], codegen_info: utils.CodeGenInfo,
 ) -> Generator[str, None, None]:
   """Generates a complete py::class_<>.
 
@@ -38,9 +37,7 @@ def generate_from(
     superclass_name: String name of the superclass.
     trampoline_class_names: A Set of class names whose member functions
       will be overriden in Python.
-    capsule_types: A set of C++ types that are defined as capsules.
-    registered_types: A set of C++ types that are registered with Pybind11.
-    requires_status: Is type caster of `absl::Status` required?
+    codegen_info: The information needed to generate pybind11 code.
 
   Yields:
     pybind11 class bindings code.
@@ -56,7 +53,8 @@ def generate_from(
   definition = f'py::classh<{class_decl.name.cpp_name}'
   if not class_decl.suppress_upcasts:
     for base in class_decl.bases:
-      if base.HasField('cpp_name') and base.cpp_name in registered_types:
+      if (base.HasField('cpp_name') and
+          base.cpp_name in codegen_info.registered_types):
         definition += f', {base.cpp_name}'
   trampoline_class_name = utils.trampoline_name(class_decl)
   if trampoline_class_name in trampoline_class_names:
@@ -89,8 +87,7 @@ def generate_from(
           if not member.func.params:
             default_constructor_defined = True
           for s in _generate_constructor(class_name, member.func, class_decl,
-                                         capsule_types, trampoline_generated,
-                                         requires_status):
+                                         trampoline_generated, codegen_info):
             yield I + I + s
       else:
         # This function will be overriden in Python. Do not call it from the
@@ -99,8 +96,7 @@ def generate_from(
           continue
         else:
           for s in function.generate_from(
-              class_name, member.func, capsule_types, class_decl,
-              requires_status):
+              class_name, member.func, codegen_info, class_decl):
             yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.VAR:
       for s in variables.generate_from(class_name, member.var, class_decl):
@@ -124,8 +120,7 @@ def generate_from(
           yield I + I + s
       else:
         for s in generate_from(member, class_name,
-                               trampoline_class_names, capsule_types,
-                               registered_types, requires_status):
+                               trampoline_class_names, codegen_info):
           yield I + s
 
   if (not default_constructor_defined and class_decl.cpp_has_def_ctor and
@@ -148,10 +143,8 @@ def _generate_iterator(
 
 def _generate_constructor(
     class_name: str, func_decl: ast_pb2.FuncDecl,
-    class_decl: ast_pb2.ClassDecl,
-    capsule_types: Set[str],
-    trampoline_generated: bool,
-    requires_status: bool) -> Generator[str, None, None]:
+    class_decl: ast_pb2.ClassDecl, trampoline_generated: bool,
+    codegen_info: utils.CodeGenInfo) -> Generator[str, None, None]:
   """Generates pybind11 bindings code for a constructor.
 
   Multiple deinitions will be generated when the constructor contains unknown
@@ -161,9 +154,8 @@ def _generate_constructor(
     class_name: Name of the class that defines the contructor.
     func_decl: Constructor declaration in proto format.
     class_decl: Class declaration in proto format.
-    capsule_types: A set of C++ types that are defined as capsules.
     trampoline_generated: Did we generate a trampoline for this class?
-    requires_status: Is type caster of `absl::Status` required?
+    codegen_info: The information needed to generate pybind11 code.
 
   Yields:
     pybind11 function bindings code.
@@ -173,29 +165,25 @@ def _generate_constructor(
   temp_func_decl.CopyFrom(func_decl)
   if num_unknown:
     for _ in range(num_unknown):
-      yield from _generate_constructor_overload(class_name, temp_func_decl,
-                                                class_decl, capsule_types,
-                                                trampoline_generated,
-                                                requires_status)
+      yield from _generate_constructor_overload(
+          class_name, temp_func_decl, class_decl, trampoline_generated,
+          codegen_info)
       del temp_func_decl.params[-1]
-  yield from _generate_constructor_overload(class_name, temp_func_decl,
-                                            class_decl, capsule_types,
-                                            trampoline_generated,
-                                            requires_status)
+  yield from _generate_constructor_overload(
+      class_name, temp_func_decl, class_decl, trampoline_generated,
+      codegen_info)
 
 
 def _generate_constructor_overload(
     class_name: str, func_decl: ast_pb2.FuncDecl,
     class_decl: ast_pb2.ClassDecl,
-    capsule_types: Set[str],
-    trampoline_generated: bool,
-    requires_status: bool) -> Generator[str, None, None]:
+    trampoline_generated: bool, codegen_info: utils.CodeGenInfo
+) -> Generator[str, None, None]:
   """Generates pybind11 bindings code for a constructor."""
   params_list = []
   for i, param in enumerate(func_decl.params):
     params_list.append(
-        function_lib.Parameter(
-            param, f'arg{i}', capsule_types, requires_status))
+        function_lib.Parameter(param, f'arg{i}', codegen_info))
   params_with_types = ', '.join(
       [f'{p.cpp_type} {p.gen_name}' for p in params_list])
   params = ', '.join([p.function_argument for p in params_list])
