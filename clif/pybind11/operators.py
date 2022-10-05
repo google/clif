@@ -79,6 +79,12 @@ REFLECTED_OPS = {
     '__ror__': ('operator|', '|'),
 }
 
+FUNDAMENTAL_TYPES = frozenset([
+    'int', 'uint', 'uint32', 'long', 'ulong', 'int64', 'uint64', 'int128',
+    'uint128', 'uint8', 'float', 'complex', 'bool', 'bytes', 'list', 'set',
+    'tuple', 'dict'
+])
+
 SUPPORTED_OPS = {**UNARY_OPS, **BINARY_OPS, **INPLACE_OPS, **REFLECTED_OPS}
 
 
@@ -138,9 +144,9 @@ def _generate_binary_operator(module_name: str,
   assert func_decl.params, f'function {py_name} does not have any parameters'
   operator = BINARY_OPS[func_decl.name.native][1]
   if len(func_decl.params) == 1:
-    param = func_decl.params[0].cpp_exact_type
+    param = func_decl.params[0]
   else:
-    param = func_decl.params[1].cpp_exact_type
+    param = func_decl.params[1]
   right_operand = _convert_param_to_operand(param)
   return f'{module_name}.def(py::self {operator} {right_operand});'
 
@@ -151,7 +157,7 @@ def _generate_inplace_operator(module_name: str,
   assert py_name in INPLACE_OPS, f'unsupported inplace operator: {py_name}'
   assert func_decl.params, f'function {py_name} does not have any parameters'
   operator = INPLACE_OPS[func_decl.name.native][1]
-  operand = _convert_param_to_operand(func_decl.params[0].cpp_exact_type)
+  operand = _convert_param_to_operand(func_decl.params[0])
   return f'{module_name}.def(py::self {operator} {operand});'
 
 
@@ -161,12 +167,12 @@ def _generate_reflected_operator(module_name: str,
   assert py_name in REFLECTED_OPS, f'unsupported reflected operator: {py_name}'
   assert func_decl.params, f'function {py_name} does not have any parameters'
   operator = REFLECTED_OPS[func_decl.name.native][1]
-  left_operand = _convert_param_to_operand(func_decl.params[0].cpp_exact_type)
+  left_operand = _convert_param_to_operand(func_decl.params[0])
   return f'{module_name}.def({left_operand} {operator} py::self);'
 
 
-def _convert_param_to_operand(param: str) -> str:
-  if '::' in param:
-    return 'py::self'
+def _convert_param_to_operand(param: ast_pb2.ParamDecl) -> str:
+  if param.type.lang_type in FUNDAMENTAL_TYPES:
+    return f'({param.type.cpp_type}){{}}'
   else:
-    return f'{param}()'
+    return 'py::self'
