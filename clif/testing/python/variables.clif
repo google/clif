@@ -19,6 +19,7 @@ from "clif/testing/variables.h":
     const kMyConstFloat: float
     const kMyConstDouble: float
     const kMyConstBool: bool
+    const `kMyConstString` as const_bytes: bytes
     const kMyConstComplex: complex
     const kMyConstIntArray: list<int>
     const kMyConstPair: tuple<int, int>

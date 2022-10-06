@@ -31,6 +31,9 @@ class VariablesTest(absltest.TestCase):
   def test_const_bool(self):
     self.assertEqual(variables.kMyConstBool, True)
 
+  def test_const_bytes(self):
+    self.assertEqual(variables.const_bytes, b'12345')
+
   def test_const_complex(self):
     self.assertEqual(variables.kMyConstComplex, complex(1))
 
