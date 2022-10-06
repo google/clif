@@ -21,12 +21,64 @@ from clif.testing.python import default_args
 
 class DefaultArgsTest(absltest.TestCase):
 
+  def testMixKnownAndUnknownDefaultArgs(self):
+    a = default_args.MyClass()
+    b = default_args.MyClass.Arg()
+    b.e = 2
+    c = default_args.MyClass.Arg()
+    c.e = 3
+    self.assertEqual(a.MethodWithMultipleUnknownDefaultArgs(1, b, c), 10)
+    with self.assertRaisesRegex(
+        ValueError, r'MethodWithMultipleUnknownDefaultArgs\(\) argument b '
+        'needs a non-default value'):
+      a.MethodWithMultipleUnknownDefaultArgs(1, c=c, d=4)
+    with self.assertRaisesRegex(
+        ValueError, r'MethodWithMultipleUnknownDefaultArgs\(\) argument c '
+        'needs a non-default value'):
+      a.MethodWithMultipleUnknownDefaultArgs(1, b, d=4)
+    self.assertEqual(a.MethodWithMultipleUnknownDefaultArgs(1, b), 10)
+    with self.assertRaisesRegex(
+        ValueError, r'MethodWithMultipleUnknownDefaultArgs\(\) argument b '
+        'needs a non-default value'):
+      a.MethodWithMultipleUnknownDefaultArgs(1, c=c)
+    with self.assertRaisesRegex(
+        ValueError, r'MethodWithMultipleUnknownDefaultArgs\(\) argument b '
+        'needs a non-default value'):
+      a.MethodWithMultipleUnknownDefaultArgs(1, d=4)
+    self.assertEqual(a.MethodWithMultipleUnknownDefaultArgs(1), 10)
+
+    self.assertEqual(a.MethodWithKnownDefaultArgs(1, 2, c, 4), 10)
+    self.assertEqual(a.MethodWithKnownDefaultArgs(1, 2, c), 10)
+    self.assertEqual(a.MethodWithKnownDefaultArgs(1, c=c, d=4), 10)
+    with self.assertRaisesRegex(
+        ValueError, r'MethodWithKnownDefaultArgs\(\) argument c needs a '
+        'non-default value'):
+      a.MethodWithKnownDefaultArgs(1, 2, d=4)
+    self.assertEqual(a.MethodWithKnownDefaultArgs(1, 2), 10)
+    self.assertEqual(a.MethodWithKnownDefaultArgs(1, c=c), 10)
+    with self.assertRaisesRegex(
+        ValueError, r'MethodWithKnownDefaultArgs\(\) argument c needs a '
+        'non-default value'):
+      a.MethodWithKnownDefaultArgs(1, d=4)
+    self.assertEqual(a.MethodWithKnownDefaultArgs(1), 10)
+
+  def testUniquePtrUnknownDefaultArgs(self):
+    a = default_args.MyClass()
+    self.assertEqual(a.MethodWithUnKnownUniquePtrDefaultArg(1, c=3, d=4), 8)
+    self.assertEqual(a.MethodWithUnKnownUniquePtrDefaultArg(1, c=3), 8)
+    self.assertEqual(a.MethodWithUnKnownUniquePtrDefaultArg(1, d=4), 8)
+    self.assertEqual(a.MethodWithUnKnownUniquePtrDefaultArg(1), 8)
+    b = default_args.MyClass.Arg()
+    b.e = 2
+    self.assertEqual(a.MethodWithUnKnownUniquePtrDefaultArg(1, b, d=4), 10)
+
   def testDefaultArgs(self):
     a = default_args.MyClass()
     arg = default_args.MyClass.Arg()
     arg.e = 100
-    with self.assertRaises(
-        TypeError if 'pybind11' in default_args.__doc__ else ValueError):
+    with self.assertRaisesRegex(
+        ValueError, r'MethodWithDefaultClassArg\(\) argument arg needs a '
+        'non-default value'):
       a.MethodWithDefaultClassArg(i=113)
     self.assertEqual(a.MethodWithDefaultClassArg(arg=arg), 200)
     self.assertEqual(a.MethodWithUnknownDefaultArg(i=100), 110)

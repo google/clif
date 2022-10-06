@@ -30,6 +30,8 @@ def generate_lambda(
     module_name: str, func_decl: ast_pb2.FuncDecl,
     codegen_info: utils.CodeGenInfo,
     class_decl: Optional[ast_pb2.ClassDecl] = None,
+    first_unknown_default_index: int = -1,
+    first_unknown_default_param: Optional[ast_pb2.ParamDecl] = None
 ) -> Generator[str, None, None]:
   """Entry point for generation of lambda functions in pybind11."""
   params_list = []
@@ -42,12 +44,22 @@ def generate_lambda(
   func_name = func_decl.name.native.rstrip('#').rstrip('@')
   yield (f'{module_name}.{function_lib.generate_def(func_decl)}'
          f'("{func_name}", []({params_with_type}) {{')
-  yield from _generate_lambda_body(
-      func_decl, params_list, codegen_info, class_decl)
+
+  # Only throw ValueError when there are parameters with unknown default value
+  # and users do not provide values for it.
+  if (first_unknown_default_index != -1 and first_unknown_default_param and
+      len(params_list) > first_unknown_default_index):
+    yield I + (f'throw py::value_error("{func_decl.name.native}() argument '
+               f'{first_unknown_default_param.name.native} needs a non-default '
+               'value");')
+  else:
+    yield from _generate_lambda_body(
+        func_decl, params_list, codegen_info, class_decl)
   release_gil = not function_lib.func_has_py_object_params(func_decl)
   is_member_function = (class_decl is not None)
   function_suffix = function_lib.generate_function_suffixes(
-      func_decl, release_gil=release_gil, is_member_function=is_member_function)
+      func_decl, release_gil=release_gil, is_member_function=is_member_function,
+      first_unknown_default_index=first_unknown_default_index)
   yield f'}}, {function_suffix}'
 
 

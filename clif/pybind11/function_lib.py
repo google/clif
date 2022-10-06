@@ -13,8 +13,9 @@
 # limitations under the License.
 
 """Common utility functions for pybind11 function code generation."""
+import itertools
 import re
-from typing import Generator, Optional
+from typing import Generator, Optional, Tuple
 
 from clif.protos import ast_pb2
 from clif.pybind11 import utils
@@ -118,11 +119,55 @@ def num_unknown_default_values(func_decl: ast_pb2.FuncDecl) -> int:
   return num_unknown
 
 
+def generate_index_combination_for_unknown_default_func_decl(
+    func_decl: ast_pb2.FuncDecl
+) -> Generator[Tuple[int, ...], None, None]:
+  """Generate combination of the indexes of parameters with unknown default.
+
+  This is used to generate function overloads to handle unknown default values.
+  For example, we have the following C++ function:
+
+  ```
+  int add(int a, Arg b = "some unknown default", int c = 3, int d = 4);
+  ```
+
+  Then the function returns the following combinations:
+      (1,), (1, 2), (1, 3), (1, 2, 3)
+
+  Args:
+    func_decl: Function declaration in proto format.
+
+  Yields:
+    Combination of the indexes of parameters with unknown default.
+  """
+  num_params = len(func_decl.params)
+  unknown_default_indexes = []
+  for i, param in enumerate(func_decl.params):
+    # Do not consider about unique_ptr because we use nullptr as default value
+    # of unique_ptr when it is unknown.
+    if (param.default_value == 'default'
+        and not param.type.cpp_type.startswith('::std::unique_ptr')):
+      unknown_default_indexes.append(i)
+  if unknown_default_indexes:
+    first_unknown_default_index = unknown_default_indexes[0]
+    default_value_indexes = []
+    for i in range(first_unknown_default_index, num_params):
+      default_value_indexes.append(i)
+    for i in range(len(default_value_indexes) + 1):
+      for candidate in itertools.combinations(default_value_indexes, i):
+        # Only yield combinations with at least one index with unknown default
+        # value.
+        if set(unknown_default_indexes).intersection(set(candidate)):
+          yield candidate
+
+
 def generate_function_suffixes(
     func_decl: ast_pb2.FuncDecl, release_gil: bool = True,
-    is_member_function: bool = True) -> str:
+    is_member_function: bool = True, first_unknown_default_index: int = -1
+) -> str:
   """Generates py_args, docstrings and return value policys."""
-  py_args = generate_py_args(func_decl, is_member_function)
+  py_args = generate_py_args(
+      func_decl, is_member_function, first_unknown_default_index)
   suffix = ''
   if py_args:
     suffix += f'{py_args}, '
@@ -222,21 +267,37 @@ def generate_callback_signature(param: ast_pb2.ParamDecl) -> str:
 
 
 def generate_py_args(func_decl: ast_pb2.FuncDecl,
-                     is_member_function: bool = True) -> str:
+                     is_member_function: bool = True,
+                     first_unknown_default_index: int = -1) -> str:
   """Generates bindings code for function parameter declarations."""
   params_list = []
-  for param in func_decl.params:
+  for i, param in enumerate(func_decl.params):
     if ((param.name.native == 'self' or param.name.native == 'cls') and
         is_member_function):
       continue
-    cpp_name = param.name.cpp_name
-    if param.default_value and param.default_value != 'default':
-      params_list.append(
-          f'py::arg("{cpp_name}") = static_cast<{param.type.cpp_type}>'
-          f'({param.default_value})')
+    if first_unknown_default_index == -1:
+      if (param.default_value and param.default_value != 'default'):
+        params_list.append(_generate_py_arg_with_default(param))
+      else:
+        params_list.append(f'py::arg("{param.name.cpp_name}")')
+    elif (i < first_unknown_default_index and param.default_value and
+          param.default_value != 'default'):
+      params_list.append(_generate_py_arg_with_default(param))
     else:
-      params_list.append(f'py::arg("{cpp_name}")')
+      params_list.append(f'py::arg("{param.name.cpp_name}")')
+  # Insert `py::kw_only()` at the index of the first parameter with unknown
+  # default value so that pybind11 is not confused about which overload to use.
+  if first_unknown_default_index != -1 and params_list:
+    params_list.insert(first_unknown_default_index, 'py::kw_only()')
   return ', '.join(params_list)
+
+
+def _generate_py_arg_with_default(param: ast_pb2.ParamDecl) -> str:
+  if param.default_value == 'nullptr':
+    return f'py::arg("{param.name.cpp_name}") = {param.default_value}'
+  else:
+    return (f'py::arg("{param.name.cpp_name}") = '
+            f'static_cast<{param.type.cpp_type}>({param.default_value})')
 
 
 def generate_docstring(docstring: str) -> str:

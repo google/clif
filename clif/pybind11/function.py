@@ -43,13 +43,22 @@ def generate_from(
   Yields:
     pybind11 function bindings code.
   """
+  _fix_unknown_default_value_for_unique_ptr_in_place(func_decl)
   num_unknown = function_lib.num_unknown_default_values(func_decl)
   if num_unknown:
     yield from _generate_overload_for_unknown_default_function(
-        num_unknown, module_name, func_decl, codegen_info, class_decl)
+        module_name, func_decl, codegen_info, class_decl)
   else:
     yield from _generate_function(
         module_name, func_decl, codegen_info, class_decl)
+
+
+def _fix_unknown_default_value_for_unique_ptr_in_place(
+    func_decl: ast_pb2.FuncDecl) -> None:
+  for param in func_decl.params:
+    if (param.type.cpp_type.startswith('::std::unique_ptr') and
+        param.default_value == 'default'):
+      param.default_value = 'nullptr'
 
 
 def _generate_function(
@@ -81,16 +90,65 @@ def _generate_simple_function(
 
 
 def _generate_overload_for_unknown_default_function(
-    num_unknown: int, module_name: str, func_decl: ast_pb2.FuncDecl,
+    module_name: str, func_decl: ast_pb2.FuncDecl,
     codegen_info: utils.CodeGenInfo,
     class_decl: Optional[ast_pb2.ClassDecl] = None,
 ) -> Generator[str, None, None]:
-  """Generate multiple definitions for functions with unknown default values."""
-  temp_func_decl = ast_pb2.FuncDecl()
-  temp_func_decl.CopyFrom(func_decl)
-  for _ in range(num_unknown):
-    yield from _generate_function(
-        module_name, temp_func_decl, codegen_info, class_decl)
-    del temp_func_decl.params[-1]
+  """Generate multiple definitions for functions with unknown default values.
+
+  For example, we have the following C++ function:
+  ```
+  int add(int a, Arg b = "some unknown default", int c = 3);
+  ```
+
+  Then the following overloads are generated:
+  ```
+    m.def("add", [](int a, Arg b, int c) {
+      return add(a, b, c);
+    }, py::arg("a"), py::arg("b"), py::arg("c") = 3);
+    m.def("add", [](int a, int c) {  // -b
+      throw py::value_error("argument b needs a non-default value");
+    }, py::arg("a"), py::kw_only(), py::arg("c"));
+    m.def("add", [](int a) {  // -b, -c
+      return add(a);
+    }, py::arg("a"));
+  ```
+
+  Args:
+    func_decl: Function declaration in proto format.
+
+  Yields:
+    Combination of the indexes of parameters with unknown default.
+
+  Args:
+    module_name: String containing the superclass name.
+    func_decl: Function declaration in proto format.
+    codegen_info: The information needed to generate pybind11 code.
+    class_decl: Outer class declaration in proto format. None if the function is
+      not a member of a class.
+
+  Yields:
+    pybind11 function bindings code.
+  """
+  for unknown_default_indexes in (
+      function_lib.generate_index_combination_for_unknown_default_func_decl(
+          func_decl)):
+    if not unknown_default_indexes:
+      continue
+
+    # Workaround: Using multiple definitions because one or more default values
+    # are unknown to the code generator (due to limitations in the clif
+    # matcher).
+    temp_func_decl = ast_pb2.FuncDecl()
+    temp_func_decl.CopyFrom(func_decl)
+    first_unknown_default_index = unknown_default_indexes[0]
+    first_unknown_default_param = ast_pb2.ParamDecl()
+    first_unknown_default_param.CopyFrom(
+        temp_func_decl.params[first_unknown_default_index])
+    for index in unknown_default_indexes[::-1]:
+      del temp_func_decl.params[index]
+    yield from lambdas.generate_lambda(
+        module_name, temp_func_decl, codegen_info, class_decl,
+        first_unknown_default_index, first_unknown_default_param)
   yield from _generate_function(
-      module_name, temp_func_decl, codegen_info, class_decl)
+      module_name, func_decl, codegen_info, class_decl)

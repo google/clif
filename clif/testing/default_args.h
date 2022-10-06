@@ -47,6 +47,25 @@ class MyClass {
     return arg.e + i;
   }
 
+  int MethodWithMultipleUnknownDefaultArgs(
+      int a, Arg b = {2}, Arg c = {3}, int d = 4) {
+    return a + b.e + c.e + d;
+  }
+
+  int MethodWithKnownDefaultArgs(
+      int a, int b = 2, Arg c = {3}, int d = 4) {
+    return a + b + c.e + d;
+  }
+
+  int MethodWithUnKnownUniquePtrDefaultArg(
+      int a, std::unique_ptr<Arg> b = nullptr, int c = 3, int d = 4) {
+    int b_value = 0;
+    if (b) {
+      b_value = b->e;
+    }
+    return a + b_value + c + d;
+  }
+
   std::string MethodWithUnknownDefaultArgLambdaExpression(
       int i, Arg arg = {10}) {
     return std::to_string(arg.e + i);
