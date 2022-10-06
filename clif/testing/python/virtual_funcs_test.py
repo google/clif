@@ -75,6 +75,12 @@ class ClassNonDefConstImpl(virtual_funcs.ClassNonDefConst):
     return -1 if self.invalidated else self.a * self.b
 
 
+class TestRenameVirtualFunctions(virtual_funcs.TestRenameVirtualFunctions):
+
+  def func(self):
+    return 10
+
+
 class VirtualTest(absltest.TestCase):
 
   @absltest.skipIf(
@@ -84,6 +90,10 @@ class VirtualTest(absltest.TestCase):
   def testInitAbstract(self):
     self.assertRaises(ValueError, virtual_funcs.K)
     self.assertRaises(ValueError, virtual_funcs.AbstractClassNonDefConst)
+
+  def testRenameVirtualFunction(self):
+    obj = TestRenameVirtualFunctions()
+    self.assertEqual(virtual_funcs.CallFunc(obj), 10)
 
   def testInitConcreteClassWithVirtualMethods(self):
     b = virtual_funcs.B()

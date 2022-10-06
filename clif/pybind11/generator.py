@@ -277,8 +277,9 @@ class ModuleGenerator(object):
     if func_decl.cpp_const_method:
       cpp_const = ' const'
 
+    function_name = func_decl.name.cpp_name.split('::')[-1]
     yield I + (f'{return_type} '
-               f'{func_decl.name.native}({params_str_with_types}) '
+               f'{function_name}({params_str_with_types}) '
                f'{cpp_const} override {{')
 
     if func_decl.is_pure_virtual:

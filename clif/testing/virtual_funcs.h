@@ -120,4 +120,13 @@ struct TestReturnsObject {
   }
 };
 
+struct TestRenameVirtualFunctions {
+  virtual int Func() const = 0;
+  virtual ~TestRenameVirtualFunctions() {}
+};
+
+inline int CallFunc(const TestRenameVirtualFunctions& a) {
+  return a.Func();
+}
+
 #endif  // CLIF_TESTING_VIRTUAL_FUNCS_H_

@@ -74,3 +74,9 @@ from "clif/testing/virtual_funcs.h":
     def CreateObject(self) -> object
     @do_not_release_gil
     def GetRefcntOfResult(self) -> int
+
+  class TestRenameVirtualFunctions:
+    @virtual
+    def `Func` as func(self) -> int
+
+  def CallFunc(a: TestRenameVirtualFunctions) -> int
