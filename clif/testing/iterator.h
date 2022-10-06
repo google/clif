@@ -35,10 +35,7 @@ class Ring {
     // CLIF requires both or neither of copy/move constructors and copy/move
     // copy assignment operators.
     const_iterator(const const_iterator&) = default;
-    // Implicitly-declared copy assignment operator is deleted by the compiler
-    // because of the non copy-assignable data member. Thus, "=default" does
-    // not generate a copy assignment operator.
-    const_iterator& operator=(const const_iterator&){}
+    const_iterator& operator=(const const_iterator&) = default;
     const_iterator(const_iterator&&) = default;
     const_iterator& operator=(const_iterator&&) = default;
     const_iterator(): offset_(0), start_(nullptr) {}
