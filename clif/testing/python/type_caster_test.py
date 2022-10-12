@@ -82,6 +82,11 @@ class TypeCasterTest(parameterized.TestCase):
     for inp, out in zip(inp_list, out_list):
       self.assertIs(inp, out)
 
+  def test_abstract_type_type_caster(self):
+    self.assertEqual(type_caster.abstract_raw_ptr_round_trip(10), 12)
+    self.assertEqual(type_caster.abstract_shared_ptr_round_trip(10), 11)
+    self.assertEqual(type_caster.abstract_unique_ptr_round_trip(10), 12)
+
 
 if __name__ == '__main__':
   absltest.main()

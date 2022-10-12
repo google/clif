@@ -107,15 +107,12 @@ def generate_from(ast: ast_pb2.AST,
     clif_uses = _get_clif_uses(include, include_paths)
     for clif_use in clif_uses:
       if not clif_use.pybind11_ignore:
-        yield from _generate_type_caster(clif_use.py_name, clif_use.cpp_name,
-                                         clif_use.generate_load,
-                                         clif_use.generate_cast,
+        yield from _generate_type_caster(clif_use.cpp_name,
                                          clif_use.num_template_parameter)
 
 
 def _generate_type_caster(
-    py_name: str, cpp_name: str, generate_load: bool,
-    generate_cast: bool, num_template_parameter: int
+    cpp_name: str, num_template_parameter: int
 ) -> Generator[str, None, None]:
   """Generates pybind11 type caster code."""
   template_parameters = ', '.join(
@@ -128,54 +125,16 @@ def _generate_type_caster(
   yield 'namespace detail {'
   yield ''
   yield (f'template <{template_parameters_with_typename}> struct '
-         f'type_caster<{cpp_name}> {{')
-  yield ' public:'
-  # Characters like ',' may cause the `PYBIND11_TYPE_CASTER` macro parsing fail
-  alias_cpp_name = cpp_name
-  if ',' in cpp_name:
-    yield I + f'using {py_name}_cpp_name = {cpp_name};'
-    alias_cpp_name = f'{py_name}_cpp_name'
-  yield I + f'PYBIND11_TYPE_CASTER({alias_cpp_name}, _("{py_name}"));'
-  yield ''
-  if generate_load:
-    yield I + 'bool load(handle src, bool) {'
-    yield I + I + 'using namespace ::clif;'
-    yield I + I + 'return Clif_PyObjAs(src.ptr(), &value);'
-    yield I + '}'
-    yield ''
-  if generate_cast:
-    yield I + (f'static handle cast({cpp_name} src, return_value_policy, '
-               'handle) {')
-    yield I + I + 'using namespace ::clif;'
-    yield I + I + 'return Clif_PyObjFrom(std::move(src), {});'
-    yield I + '}'
-  yield '};'
-  yield ''
+         f'type_caster<{cpp_name}> : public clif_type_caster<{cpp_name}>'
+         '{};')
   yield (f'template <{template_parameters_with_typename}> struct '
-         f'type_caster<std::unique_ptr<{cpp_name}>> {{')
-  yield ' public:'
-  # Characters like ',' may cause the `PYBIND11_TYPE_CASTER` macro parsing fail
-  alias_cpp_name = cpp_name
-  if ',' in cpp_name:
-    yield I + f'using {py_name}_cpp_name = {cpp_name};'
-    alias_cpp_name = f'{py_name}_cpp_name'
-  yield I + (f'PYBIND11_TYPE_CASTER(std::unique_ptr<{alias_cpp_name}>'
-             f', _("{py_name}"));')
-  yield ''
-  if generate_load:
-    yield I + 'bool load(handle src, bool) {'
-    yield I + I + f'value.reset(new {cpp_name});'
-    yield I + I + 'using namespace ::clif;'
-    yield I + I + 'return Clif_PyObjAs(src.ptr(), &(*value));'
-    yield I + '}'
-    yield ''
-  if generate_cast:
-    yield I + (f'static handle cast(std::unique_ptr<{cpp_name}> src, '
-               'return_value_policy, handle) {')
-    yield I + I + 'using namespace ::clif;'
-    yield I + I + 'return Clif_PyObjFrom(*src, {});'
-    yield I + '}'
-  yield '};'
+         f'type_caster<std::shared_ptr<{cpp_name}>> : public '
+         f'clif_smart_ptr_type_caster<{cpp_name}, '
+         f'std::shared_ptr<{cpp_name}>> {{}};')
+  yield (f'template <{template_parameters_with_typename}> struct '
+         f'type_caster<std::unique_ptr<{cpp_name}>> : public '
+         f'clif_smart_ptr_type_caster<{cpp_name}, '
+         f'std::unique_ptr<{cpp_name}>> {{}};')
   yield ''
   yield '}  // namespace detail'
   yield '}  // namespace pybind11'

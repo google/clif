@@ -72,6 +72,22 @@ class ValueHolderWithPybind11TypeCaster {
   int value;
 };
 
+class ValueHolderAbstract {
+ public:
+  virtual ~ValueHolderAbstract() = default;
+  virtual int get_value() const = 0;
+  int value;
+};
+
+class ValueHolderConcrete : public ValueHolderAbstract {
+ public:
+  ValueHolderConcrete() { value = 0; }
+  ValueHolderConcrete(int v) { value = v; }
+  int get_value() const override {
+    return value;
+  }
+};
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_H_

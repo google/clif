@@ -53,7 +53,7 @@ inline PyObject* Clif_PyObjFrom(const ValueHolder& c,
 }
 
 // NOLINTBEGIN
-// CLIF use `::clif_testing::ValueHolderFromOnly` as ValueHolderFromOnly, HasPyObjFromOnly
+// CLIF use `::clif_testing::ValueHolderFromOnly` as ValueHolderFromOnly
 // NOLINTEND
 inline PyObject* Clif_PyObjFrom(const ValueHolderFromOnly& c,
                                 const clif::py::PostConv& pc) {
@@ -61,7 +61,7 @@ inline PyObject* Clif_PyObjFrom(const ValueHolderFromOnly& c,
 }
 
 // NOLINTBEGIN
-// CLIF use `::clif_testing::ValueHolderAsOnly` as ValueHolderAsOnly, HasPyObjAsOnly
+// CLIF use `::clif_testing::ValueHolderAsOnly` as ValueHolderAsOnly
 // NOLINTEND
 inline bool Clif_PyObjAs(PyObject* obj, ValueHolderAsOnly* c) {
   PyObject *tmp = PyNumber_Long(obj);
@@ -119,6 +119,46 @@ inline bool Clif_PyObjAs(PyObject* obj, ValueHolderWithPybind11TypeCaster* c) {
 inline PyObject* Clif_PyObjFrom(const ValueHolderWithPybind11TypeCaster& c,
                                 const clif::py::PostConv& pc) {
   return clif::Clif_PyObjFrom(c.value + 1, {});
+}
+
+// NOLINTBEGIN
+// CLIF use `::clif_testing::ValueHolderAbstract` as ValueHolderAbstract
+// NOLINTEND
+inline bool Clif_PyObjAs(
+    PyObject* obj, std::shared_ptr<ValueHolderAbstract>* c) {
+  PyObject *tmp = PyNumber_Long(obj);
+  if (!tmp) {
+    return false;
+  }
+  *c = std::make_shared<ValueHolderConcrete>();
+  (*c)->value = PyLong_AsLong(tmp) + 1;
+  return true;
+}
+
+inline bool Clif_PyObjAs(
+    PyObject* obj, std::unique_ptr<ValueHolderAbstract>* c) {
+  PyObject *tmp = PyNumber_Long(obj);
+  if (!tmp) {
+    return false;
+  }
+  *c = std::make_unique<ValueHolderConcrete>();
+  (*c)->value = PyLong_AsLong(tmp) + 2;
+  return true;
+}
+
+inline PyObject* Clif_PyObjFrom(const ValueHolderAbstract& c,
+                                const clif::py::PostConv& pc) {
+  return clif::Clif_PyObjFrom(c.value, {});
+}
+
+inline PyObject* Clif_PyObjFrom(std::shared_ptr<ValueHolderAbstract> c,
+                                const clif::py::PostConv& pc) {
+  return clif::Clif_PyObjFrom(c->value, {});
+}
+
+inline PyObject* Clif_PyObjFrom(std::unique_ptr<ValueHolderAbstract> c,
+                                const clif::py::PostConv& pc) {
+  return clif::Clif_PyObjFrom(c->value, {});
 }
 
 }  // namespace clif_testing

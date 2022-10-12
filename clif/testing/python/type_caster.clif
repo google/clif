@@ -51,3 +51,7 @@ from "clif/testing/python/type_caster_clif_aux.h":
     def can_convert_to_unique_ptr(obj: object) -> bool
 
     def pyobject_round_trip(vec: list<object>) -> list<object>
+
+    def abstract_raw_ptr_round_trip(vh: ValueHolderAbstract) -> ValueHolderAbstract
+    def abstract_shared_ptr_round_trip(vh: ValueHolderAbstract) -> ValueHolderAbstract
+    def abstract_unique_ptr_round_trip(vh: ValueHolderAbstract) -> ValueHolderAbstract

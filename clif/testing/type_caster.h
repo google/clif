@@ -82,6 +82,21 @@ inline int consume_unique_ptr(std::unique_ptr<ValueHolder> vh) {
   return vh->value;
 }
 
+inline ValueHolderAbstract* abstract_raw_ptr_round_trip(
+    ValueHolderAbstract* vh) {
+  return vh;
+}
+
+inline std::shared_ptr<ValueHolderAbstract> abstract_shared_ptr_round_trip(
+    std::shared_ptr<ValueHolderAbstract> vh) {
+  return std::make_shared<ValueHolderConcrete>(vh->value);
+}
+
+inline std::unique_ptr<ValueHolderAbstract> abstract_unique_ptr_round_trip(
+    std::unique_ptr<ValueHolderAbstract> vh) {
+  return std::make_unique<ValueHolderConcrete>(vh->value);
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_TYPE_CASTER_H_
