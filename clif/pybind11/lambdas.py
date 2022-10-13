@@ -163,11 +163,10 @@ def _generate_lambda_body(
     assert '.' in func_decl.postproc
     module_name, method_name = func_decl.postproc.rsplit('.', maxsplit=1)
     # TODO: Port or reuse `clif::ImportFQName`.
-    yield I + 'py::gil_scoped_acquire acquire;'
+    yield I + 'py::gil_scoped_acquire hold_gil;'
     yield I + f'auto mod = py::module_::import("{module_name}");'
     yield I + ('py::object result_ = '
                f'mod.attr("{method_name}")({function_call_returns});')
-    yield I + 'py::gil_scoped_release release;'
     yield I + 'return result_;'
   else:
     gil_required = False
@@ -179,13 +178,12 @@ def _generate_lambda_body(
         break
     if function_call_returns:
       if gil_required:
-        yield I + 'py::gil_scoped_acquire acquire;'
+        yield I + 'py::gil_scoped_acquire hold_gil;'
         if len(func_decl.returns) > 1:
           yield (I +
                  f'auto result_ = std::make_tuple({function_call_returns});')
         else:
           yield I + f'auto result_ = {function_call_returns};'
-        yield I + 'py::gil_scoped_release release;'
         yield I + 'return result_;'
       else:
         if len(func_decl.returns) > 1:
