@@ -39,7 +39,7 @@ inline Decl::Type decl_type_uniq_in(std::unique_ptr<Decl> t) {
   return t->decltype_();
 }
 inline std::unique_ptr<Decl::Type> decl_type_uniq_out(const Decl& pb) {
-  return absl::make_unique<Decl::Type>(pb.decltype_());
+  return std::make_unique<Decl::Type>(pb.decltype_());
 }
 
 inline long size_any_ref(const ::proto2::Message& pb) {  // NOLINT
@@ -57,7 +57,7 @@ using clif::testing::Outer;
 inline Outer::Inner::Nested nested(const Outer::Inner& pb) { return pb.val(); }
 
 inline std::unique_ptr<Decl> GetUniquePtr(const Decl& pb) {
-  return absl::make_unique<Decl>(pb);
+  return std::make_unique<Decl>(pb);
 }
 inline std::shared_ptr<Decl> GetSharedPtr(const Decl& pb) {
   return std::make_shared<Decl>(pb);

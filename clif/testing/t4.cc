@@ -14,6 +14,8 @@
 
 #include "clif/testing/t4.h"
 
+#include <memory>
+
 namespace clif_testing {
 
 std::vector<AST*> all_ast_borrowed() {
@@ -39,6 +41,6 @@ std::vector<std::unique_ptr<AST>> all_ast_holds() {
 }
 
 std::unique_ptr<std::vector<std::unique_ptr<AST>>> all_ast_holds_p() {
-  return absl::make_unique<std::vector<std::unique_ptr<AST>>>(all_ast_holds());
+  return std::make_unique<std::vector<std::unique_ptr<AST>>>(all_ast_holds());
 }
 }  // namespace clif_testing
