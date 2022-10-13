@@ -128,6 +128,8 @@ class NumberMethodsTest(absltest.TestCase):
   def testFloat(self):
     n1 = number_methods.Number(6)
     self.assertEqual(float(n1), 6.0)
+    n2 = number_methods.Float(10)
+    self.assertEqual(float(n2), 10.0)
 
   def testInplaceAdd(self):
     n1 = number_methods.Number(1.0)
@@ -158,6 +160,9 @@ class NumberMethodsTest(absltest.TestCase):
     n2 = number_methods.Number(3.0)
     n3 = n1 // n2
     self.assertEqual(n3.value, 3.0)
+    n1 = number_methods.Float(8.0)
+    n2 = number_methods.Float(3.0)
+    self.assertEqual(n1 // n2, 2)
 
   def testTrueDivide(self):
     n1 = number_methods.Number(6.0)
@@ -208,6 +213,12 @@ class NumberMethodsTest(absltest.TestCase):
   def testIndex(self):
     n1 = number_methods.Number(6)
     self.assertEqual(n1.__index__(), 6)
+
+  def testOperatorInvolvesTwoClasses(self):
+    n1 = number_methods.AnotherNumber(1.0)
+    n2 = number_methods.Number(2.0)
+    n1 += n2
+    self.assertEqual(n1.value, 3.0)
 
 
 if __name__ == '__main__':

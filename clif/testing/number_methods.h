@@ -77,6 +77,14 @@ class Number {
     return *this;
   }
 
+  Number operator-() const {
+    return Number(-value);
+  }
+
+  Number operator+() const {
+    return Number(value);
+  }
+
   Number negative() const {
     Number number(-value);
     return number;
@@ -208,6 +216,36 @@ inline Number operator%(const Number& a, const Number& b) {
   number.value = remainder(a.value, b.value);
   return number;
 }
+
+class Float {
+ public:
+  explicit Float() = default;
+  explicit Float(float n): value(n) {}
+  explicit Float(double n) = delete;
+  explicit Float(int n) = delete;
+  explicit operator float() const { return value; }
+
+ private:
+  float value;
+  friend int operator/(const Float& a, const Float& b);
+};
+
+inline int operator/(const Float& a, const Float& b) {
+  return floor(a.value / b.value);
+}
+
+class AnotherNumber {
+ public:
+  AnotherNumber() = default;
+  AnotherNumber(float n): value(n) {}
+
+  AnotherNumber& operator+=(const Number& other) {
+    value = value + other.value;
+    return *this;
+  }
+
+  float value;
+};
 
 }  // namespace clif_testing
 

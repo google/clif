@@ -68,7 +68,7 @@ def _generate_function(
 ) -> Generator[str, None, None]:
   """Generates pybind11 bindings code for ast_pb2.FuncDecl."""
   if operators.needs_operator_overloading(func_decl):
-    yield from operators.generate_operator(module_name, func_decl)
+    yield from operators.generate_operator(module_name, func_decl, class_decl)
   elif lambdas.needs_lambda(func_decl, codegen_info, class_decl):
     yield from lambdas.generate_lambda(
         module_name, func_decl, codegen_info, class_decl)

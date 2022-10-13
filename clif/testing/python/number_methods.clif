@@ -39,8 +39,8 @@ from "clif/testing/number_methods.h":
 
       def `divmod` as __divmod__(self, other: Number) -> tuple<Number, Number>
 
-      def `negative` as __neg__(self) -> Number
-      def `positive` as __pos__(self) -> Number
+      def __neg__(self) -> Number
+      def __pos__(self) -> Number
       def `abs` as __abs__(self) -> Number
       def __invert__(self) -> Number
       def __lshift__(self, n: int) -> Number
@@ -71,3 +71,13 @@ from "clif/testing/number_methods.h":
       def __itruediv__(self, b:Number) -> self
 
       def `operator int` as __index__(self) -> int
+
+    class Float:
+      def __init__(self, v: float)
+      def `operator float` as __float__(self) -> float
+      def `operator/` as __floordiv__(self, other: Float) -> int
+
+    class AnotherNumber:
+      value: float
+      def __init__(self, v: float)
+      def __iadd__(self, other: Number) -> self
