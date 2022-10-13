@@ -322,11 +322,14 @@ For example:
 
 ```c++
 struct Key {
-  // If declared as friend here, it must be defined outside the class.
+  // If declared as friend here, it must also be declared outside the class.
   friend bool operator==(const Key &a, const Key &b);
 }
 
-bool operator==(const Key& a, const Key& b) {
+bool operator==(const Key& a, const Key& b);
+
+// Or
+inline bool operator==(const Key& a, const Key& b) {
   // ...
 }
 ```
