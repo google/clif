@@ -325,11 +325,18 @@ For example:
 
 ```c++
 struct Key {
-  // If declared as friend here, it must be defined outside the class.
+  // If declared as friend here, it must also be defined or declared outside
+  // the class.
   friend bool operator==(const Key &a, const Key &b);
 }
 
-bool operator==(const Key& a, const Key& b) {
+// Declaration here (perhaps in a header file).  Definition can appear elsewhere
+// (perhaps in a .cc file).
+bool operator==(const Key& a, const Key& b);
+
+// Or you can provide an inline definition (for example in a header file), but
+// it must be outside the friending class.
+inline bool operator==(const Key& a, const Key& b) {
   // ...
 }
 ```
