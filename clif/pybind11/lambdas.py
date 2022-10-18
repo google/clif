@@ -55,10 +55,9 @@ def generate_lambda(
   else:
     yield from _generate_lambda_body(
         func_decl, params_list, codegen_info, class_decl)
-  release_gil = not function_lib.func_has_py_object_params(func_decl)
   is_member_function = (class_decl is not None)
   function_suffix = function_lib.generate_function_suffixes(
-      func_decl, release_gil=release_gil, is_member_function=is_member_function,
+      func_decl, release_gil=False, is_member_function=is_member_function,
       first_unknown_default_index=first_unknown_default_index)
   yield f'}}, {function_suffix}'
 
@@ -71,8 +70,8 @@ def needs_lambda(
   return (bool(func_decl.postproc) or
           func_decl.is_overloaded or
           _func_is_extend_static_method(func_decl, class_decl) or
-          _func_has_vector_param(func_decl) or
-          _func_has_set_param(func_decl) or
+          function_lib.func_has_vector_param(func_decl) or
+          function_lib.func_has_set_param(func_decl) or
           _func_is_context_manager(func_decl) or
           _func_needs_index_check(func_decl) or
           _func_has_capsule_params(func_decl, codegen_info.capsule_types) or
@@ -105,8 +104,7 @@ def _generate_lambda_body(
       yield I + I + (f'throw py::type_error("{func_decl.name.native}() '
                      f'argument {p.gen_name} is not valid.");')
       yield I +'}'
-    yield from p.preprocess(
-        acquire_gil=not function_lib.func_keeps_gil(func_decl))
+    yield from p.preprocess()
 
   if (func_decl.name.native in _NEEDS_INDEX_CHECK_METHODS and class_decl):
     for member in class_decl.members:
@@ -128,6 +126,10 @@ def _generate_lambda_body(
     if i or cpp_void_return:
       yield I + f'{r.type.cpp_type} ret{i}{{}};'
 
+  if not function_lib.func_keeps_gil(func_decl):
+    yield I + 'PyThreadState* _save;'
+    yield I + 'Py_UNBLOCK_THREADS'
+
   # Generates call to the wrapped function
   if not cpp_void_return:
     ret0 = func_decl.returns[0]
@@ -148,6 +150,9 @@ def _generate_lambda_body(
   else:
     yield I + f'{function_call}({function_call_params});'
 
+  if not function_lib.func_keeps_gil(func_decl):
+    yield I + 'Py_BLOCK_THREADS'
+
   # Generates returns of the lambda expression
   if func_decl.postproc == '->self':
     yield I + 'return self;'
@@ -163,33 +168,15 @@ def _generate_lambda_body(
     assert '.' in func_decl.postproc
     module_name, method_name = func_decl.postproc.rsplit('.', maxsplit=1)
     # TODO: Port or reuse `clif::ImportFQName`.
-    yield I + 'py::gil_scoped_acquire hold_gil;'
     yield I + f'auto mod = py::module_::import("{module_name}");'
     yield I + ('py::object result_ = '
                f'mod.attr("{method_name}")({function_call_returns});')
     yield I + 'return result_;'
-  else:
-    gil_required = False
-    for r in func_decl.returns:
-      # Whenever the output is byte, `py::cast(ret, _return_as_bytes)` is
-      # generated. Need to acquire GIL because the type caster might need it.
-      if function_lib.is_bytes_type(r.type):
-        gil_required = True
-        break
-    if function_call_returns:
-      if gil_required:
-        yield I + 'py::gil_scoped_acquire hold_gil;'
-        if len(func_decl.returns) > 1:
-          yield (I +
-                 f'auto result_ = std::make_tuple({function_call_returns});')
-        else:
-          yield I + f'auto result_ = {function_call_returns};'
-        yield I + 'return result_;'
-      else:
-        if len(func_decl.returns) > 1:
-          yield I + f'return std::make_tuple({function_call_returns});'
-        else:
-          yield I + f'return {function_call_returns};'
+  elif function_call_returns:
+    if len(func_decl.returns) > 1:
+      yield I + f'return std::make_tuple({function_call_returns});'
+    else:
+      yield I + f'return {function_call_returns};'
 
 
 def _generate_function_call_params(
@@ -330,20 +317,6 @@ def _func_needs_implicit_conversion(func_decl: ast_pb2.FuncDecl) -> bool:
         _extract_bare_type(param.type.cpp_type) and
         param.type.cpp_toptr_conversion and
         param.type.cpp_touniqptr_conversion):
-      return True
-  return False
-
-
-def _func_has_vector_param(func_decl: ast_pb2.FuncDecl) -> bool:
-  for param in func_decl.params:
-    if function_lib.is_cpp_vector(param.type):
-      return True
-  return False
-
-
-def _func_has_set_param(func_decl: ast_pb2.FuncDecl) -> bool:
-  for param in func_decl.params:
-    if function_lib.is_cpp_set(param.type):
       return True
   return False
 

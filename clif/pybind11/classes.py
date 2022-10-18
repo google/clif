@@ -187,24 +187,28 @@ def _generate_constructor_overload(
   params_with_types = ', '.join(
       [f'{p.cpp_type} {p.gen_name}' for p in params_list])
   params = ', '.join([p.function_argument for p in params_list])
+  function_suffix = function_lib.generate_function_suffixes(
+      func_decl, release_gil=False)
   if func_decl.name.native == '__init__' and func_decl.is_extend_method:
     yield f'{class_name}.def(py::init([]({params_with_types}) {{'
     for p in params_list:
-      yield from p.preprocess(
-          acquire_gil=not function_lib.func_keeps_gil(func_decl))
+      yield from p.preprocess()
+    func_keeps_gil = function_lib.func_keeps_gil(func_decl)
+    if not func_keeps_gil:
+      yield I + 'py::gil_scoped_release release_gil;'
     yield I + f'return {func_decl.name.cpp_name}({params});'
-    yield f'}}), {function_lib.generate_function_suffixes(func_decl)}'
+    yield f'}}), {function_suffix}'
 
   elif func_decl.name.native == '__init__':
     cpp_name = class_decl.name.cpp_name
     if trampoline_generated:
       cpp_name = utils.trampoline_name(class_decl)
-    function_suffix = function_lib.generate_function_suffixes(
-        func_decl, release_gil=False)
     yield f'{class_name}.def(py::init([]({params_with_types}) {{'
     for p in params_list:
-      yield from p.preprocess(
-          acquire_gil=not function_lib.func_keeps_gil(func_decl))
+      yield from p.preprocess()
+    func_keeps_gil = function_lib.func_keeps_gil(func_decl)
+    if not func_keeps_gil:
+      yield I + 'py::gil_scoped_release release_gil;'
     yield I + (f'return std::make_unique<{cpp_name}>'
                f'({params}).release();')
     yield f'}}), {function_suffix}'
@@ -213,8 +217,10 @@ def _generate_constructor_overload(
     yield (f'{class_name}.def_static("{func_decl.name.native}", '
            f'[]({params_with_types}) {{')
     for p in params_list:
-      yield from p.preprocess(
-          acquire_gil=not function_lib.func_keeps_gil(func_decl))
+      yield from p.preprocess()
+    func_keeps_gil = function_lib.func_keeps_gil(func_decl)
+    if not func_keeps_gil:
+      yield I + 'py::gil_scoped_release release_gil;'
     yield I + (f'return std::make_unique<{class_decl.name.cpp_name}>'
                f'({params}).release();')
-    yield f'}}, {function_lib.generate_function_suffixes(func_decl)}'
+    yield f'}}, {function_suffix}'

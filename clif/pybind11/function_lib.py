@@ -81,24 +81,14 @@ class Parameter:
         self.function_argument = f'{self.gen_name}.ptr'
       self.check_nullptr = False
 
-  def preprocess(self, acquire_gil: bool = True) -> Generator[str, None, None]:
+  def preprocess(self) -> Generator[str, None, None]:
     """Generate necessary preprocess for this parameter."""
     if is_cpp_vector(self.ptype):
-      if acquire_gil:
-        yield I + f'py::gil_scoped_acquire {self.gen_name}_acquire;'
-      yield (I +
-             f'auto {self.gen_name}_ = py::list({self.gen_name}).release()'
-             f'.cast<{self.ptype.cpp_type}>();')
-      if acquire_gil:
-        yield I + f'py::gil_scoped_release {self.gen_name}_release;'
+      yield (I + f'{self.ptype.cpp_type} {self.gen_name}_ = py::list('
+             f'{self.gen_name}).release().cast<{self.ptype.cpp_type}>();')
     elif is_cpp_set(self.ptype):
-      if acquire_gil:
-        yield I + f'py::gil_scoped_acquire {self.gen_name}_acquire;'
-      yield (I +
-             f'auto {self.gen_name}_ = py::set({self.gen_name}).release()'
-             f'.cast<{self.ptype.cpp_type}>();')
-      if acquire_gil:
-        yield I + f'py::gil_scoped_release {self.gen_name}_release;'
+      yield (I + f'{self.ptype.cpp_type} {self.gen_name}_ = py::set('
+             f'{self.gen_name}).release().cast<{self.ptype.cpp_type}>();')
 
 
 def is_cpp_vector(param_type: ast_pb2.Type) -> bool:
@@ -110,6 +100,20 @@ def is_cpp_set(param_type: ast_pb2.Type) -> bool:
   return ((param_type.cpp_type.startswith('::std::set') or
            param_type.cpp_type.startswith('::std::unordered_set')) and
           param_type.lang_type.startswith('set'))
+
+
+def func_has_vector_param(func_decl: ast_pb2.FuncDecl) -> bool:
+  for param in func_decl.params:
+    if is_cpp_vector(param.type):
+      return True
+  return False
+
+
+def func_has_set_param(func_decl: ast_pb2.FuncDecl) -> bool:
+  for param in func_decl.params:
+    if is_cpp_set(param.type):
+      return True
+  return False
 
 
 def num_unknown_default_values(func_decl: ast_pb2.FuncDecl) -> int:

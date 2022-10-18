@@ -295,6 +295,7 @@ class ModuleGenerator(object):
     if ',' in return_type:
       yield I + I + f'using {func_decl.name.native}_return = {return_type};'
       return_type = f'{func_decl.name.native}_return'
+    yield I + 'py::gil_scoped_acquire hold_gil;'
     yield I + I + f'{pybind11_override}('
     if pybind11_override != 'PYBIND11_OVERRIDE_PURE_STATUS_RETURN':
       yield I + I + I + f'{return_type},'
