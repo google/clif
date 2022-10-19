@@ -207,7 +207,7 @@ def _generate_constructor_overload(
     for p in params_list:
       yield from p.preprocess()
     func_keeps_gil = function_lib.func_keeps_gil(func_decl)
-    if not func_keeps_gil:
+    if not func_keeps_gil and params_with_types:
       yield I + 'py::gil_scoped_release release_gil;'
     yield I + (f'return std::make_unique<{cpp_name}>'
                f'({params}).release();')
