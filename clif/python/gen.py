@@ -534,7 +534,7 @@ def TypeObject(ht_qualname, tracked_slot_groups,
     yield '}'
 
 
-def _CreateInputParameter(func_name, ast_param, arg, args):
+def CreateInputParameter(func_name, ast_param, arg, args):
   """Returns tuple of (bool, str) and appends to args."""
   # First return value is bool check_nullptr.
   # Second return value is a string to create C++ stack var named arg.
@@ -654,7 +654,7 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
     yield I+('if (!ensure_no_args_and_kw_args("%s", args, kw)) return nullptr;'
              % pyname)
   if prepend_self:
-    unused_check_nullptr, out = _CreateInputParameter(
+    unused_check_nullptr, out = CreateInputParameter(
         pyname+' line %d' % lineno, prepend_self, 'arg0', params)
     yield I+out
     yield I+'if (!Clif_PyObjAs(self, &arg0)) return nullptr;'
@@ -680,7 +680,7 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
     for i, p in enumerate(func_ast.params):
       n = i+1
       arg = 'arg%d' % n
-      check_nullptr, out = _CreateInputParameter(
+      check_nullptr, out = CreateInputParameter(
           pyname+' line %d' % lineno, p, arg, params)
       yield I+out
       return_arg_err = (

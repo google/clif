@@ -20,6 +20,7 @@ from clif.protos import ast_pb2
 from clif.pybind11 import function_lib
 from clif.pybind11 import lambdas
 from clif.pybind11 import operators
+from clif.pybind11 import unknown_default_value
 from clif.pybind11 import utils
 
 
@@ -46,8 +47,24 @@ def generate_from(
   _fix_unknown_default_value_for_unique_ptr_in_place(func_decl)
   num_unknown = function_lib.num_unknown_default_values(func_decl)
   if num_unknown:
-    yield from _generate_overload_for_unknown_default_function(
-        module_name, func_decl, codegen_info, class_decl)
+    first_unknown_default_index = -1
+    for i, param in enumerate(func_decl.params):
+      if param.default_value == 'default':
+        first_unknown_default_index = i
+        break
+
+    # For functions with unknown default values, we need to generate 2^n
+    # overloaded functions as a workaround (due to limitations in the clif
+    # matcher). This might increase the size of the generated code by a lot.
+    # Therefore when there are more than 5 params with unknown default values
+    # (2^5=32 overloads), we decide to generate Python C API code instead of
+    # overloads to reduce the file size.
+    if len(func_decl.params) - first_unknown_default_index >= 5:
+      yield from unknown_default_value.generate_from(
+          module_name, func_decl, codegen_info, class_decl)
+    else:
+      yield from _generate_overload_for_unknown_default_function(
+          module_name, func_decl, codegen_info, class_decl)
   else:
     yield from _generate_function(
         module_name, func_decl, codegen_info, class_decl)

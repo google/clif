@@ -47,6 +47,16 @@ class MyClass {
     return arg.e + i;
   }
 
+  int MethodWithManyUnknownDefaultArgs(
+      int a, Arg b = {2}, Arg c = {3}, Arg d = {4}, Arg e = {5},
+      std::unique_ptr<Arg> ptr = nullptr, int f = 6) {
+    int ptr_value = 0;
+    if (ptr) {
+      ptr_value = ptr->e;
+    }
+    return a + b.e + c.e + d.e + e.e + f + ptr_value;
+  }
+
   int MethodWithMultipleUnknownDefaultArgs(
       int a, Arg b = {2}, Arg c = {3}, int d = 4) {
     return a + b.e + c.e + d;

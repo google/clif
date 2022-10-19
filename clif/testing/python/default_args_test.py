@@ -100,5 +100,35 @@ class DefaultArgsTest(absltest.TestCase):
     a.MethodWithOutputDefault7(input1=10)
     a.MethodWithOutputDefault8()
 
+  def testManyUnknownDefaultArgs(self):
+    a = default_args.MyClass()
+    b = default_args.MyClass.Arg()
+    b.e = 3
+    c = default_args.MyClass.Arg()
+    c.e = 4
+    d = default_args.MyClass.Arg()
+    d.e = 5
+    e = default_args.MyClass.Arg()
+    e.e = 6
+    ptr = default_args.MyClass.Arg()
+    ptr.e = 7
+    self.assertEqual(a.MethodWithManyUnknownDefaultArgs(1), 21)
+    self.assertEqual(a.MethodWithManyUnknownDefaultArgs(1, b=b), 22)
+    with self.assertRaisesRegex(
+        ValueError, r'MethodWithManyUnknownDefaultArgs\(\) argument b needs '
+        'a non-default value'):
+      a.MethodWithManyUnknownDefaultArgs(1, f=12)
+    with self.assertRaisesRegex(
+        ValueError, r'MethodWithManyUnknownDefaultArgs\(\) argument b needs '
+        'a non-default value'):
+      a.MethodWithManyUnknownDefaultArgs(1, e=e)
+    self.assertEqual(
+        a.MethodWithManyUnknownDefaultArgs(1, b=b, c=c, d=d, e=e, ptr=ptr),
+        32)
+    self.assertEqual(
+        a.MethodWithManyUnknownDefaultArgs(1, b=b, c=c, d=d, e=e, f=6), 25)
+    self.assertEqual(a.MethodWithManyUnknownDefaultArgs(1, b, c, d, e), 25)
+
+
 if __name__ == '__main__':
   absltest.main()

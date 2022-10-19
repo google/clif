@@ -115,6 +115,7 @@ py_library(
         "slots.py",
     ],
     srcs_version = "PY2AND3",
+    visibility = ["//clif/pybind11:__pkg__"],
     deps = [
         ":ast_manipulations_lib",
         "//clif/protos:ast_py_pb2",

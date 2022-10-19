@@ -83,15 +83,49 @@ def needs_lambda(
           func_decl.cpp_num_params != len(func_decl.params))
 
 
+def generate_check_nullptr(
+    func_decl: ast_pb2.FuncDecl, param_name: str) -> Generator[str, None, None]:
+  yield I + f'if ({param_name} == nullptr) {{'
+  yield I + I + (f'throw py::type_error("{func_decl.name.native}() '
+                 f'argument {param_name} is not valid.");')
+  yield I +'}'
+
+
+def generate_cpp_function_return_post_process(
+    func_decl: ast_pb2.FuncDecl, function_call_returns: str, self_param: str,
+) -> Generator[str, None, None]:
+  """Generates post process for returns values of cpp functions."""
+  if func_decl.postproc == '->self':
+    yield I + 'return self;'
+  elif func_decl.name.native == '__enter__@':
+    yield I + f'return py::cast({self_param}).release();'
+  elif func_decl.name.native == '__exit__@':
+    yield I + 'return py::none();'
+  elif func_decl.postproc:
+    assert '.' in func_decl.postproc
+    module_name, method_name = func_decl.postproc.rsplit('.', maxsplit=1)
+    # TODO: Port or reuse `clif::ImportFQName`.
+    yield I + f'auto mod = py::module_::import("{module_name}");'
+    yield I + ('py::object result_ = '
+               f'mod.attr("{method_name}")({function_call_returns});')
+    yield I + 'return result_;'
+  elif function_call_returns:
+    if len(func_decl.returns) > 1:
+      yield I + f'return std::make_tuple({function_call_returns});'
+    else:
+      yield I + f'return {function_call_returns};'
+
+
 def _generate_lambda_body(
     func_decl: ast_pb2.FuncDecl,
     params: List[function_lib.Parameter], codegen_info: utils.CodeGenInfo,
     class_decl: Optional[ast_pb2.ClassDecl] = None,
 ) -> Generator[str, None, None]:
   """Generates body of lambda expressions."""
-  function_call = _generate_function_call(func_decl, class_decl)
-  function_call_params = _generate_function_call_params(func_decl, params)
-  function_call_returns = _generate_function_call_returns(
+  function_call = generate_function_call(func_decl, class_decl)
+  params_str = ', '.join([p.function_argument for p in params])
+  function_call_params = generate_function_call_params(func_decl, params_str)
+  function_call_returns = generate_function_call_returns(
       func_decl, codegen_info.capsule_types)
 
   cpp_void_return = func_decl.cpp_void_return or not func_decl.returns
@@ -100,10 +134,7 @@ def _generate_lambda_body(
   # pointers by code generator.
   for p in params:
     if p.check_nullptr:
-      yield I + f'if ({p.gen_name} == nullptr) {{'
-      yield I + I + (f'throw py::type_error("{func_decl.name.native}() '
-                     f'argument {p.gen_name} is not valid.");')
-      yield I +'}'
+      yield from generate_check_nullptr(func_decl, p.gen_name)
     yield from p.preprocess()
 
   if (func_decl.name.native in _NEEDS_INDEX_CHECK_METHODS and class_decl):
@@ -131,6 +162,7 @@ def _generate_lambda_body(
     yield I + 'Py_UNBLOCK_THREADS'
 
   # Generates call to the wrapped function
+  cpp_void_return = func_decl.cpp_void_return or not func_decl.returns
   if not cpp_void_return:
     ret0 = func_decl.returns[0]
     if function_lib.is_status_param(ret0, codegen_info.requires_status):
@@ -154,35 +186,16 @@ def _generate_lambda_body(
     yield I + 'Py_BLOCK_THREADS'
 
   # Generates returns of the lambda expression
-  if func_decl.postproc == '->self':
-    yield I + 'return self;'
-  elif func_decl.name.native == '__enter__@':
-    # In case the return value is uncopyable or unmovable
-    self_param = 'self'
-    if func_decl.is_extend_method and len(params):
-      self_param = params[0].gen_name
-    yield I + f'return py::cast({self_param}).release();'
-  elif func_decl.name.native == '__exit__@':
-    yield I + 'return py::none();'
-  elif func_decl.postproc:
-    assert '.' in func_decl.postproc
-    module_name, method_name = func_decl.postproc.rsplit('.', maxsplit=1)
-    # TODO: Port or reuse `clif::ImportFQName`.
-    yield I + f'auto mod = py::module_::import("{module_name}");'
-    yield I + ('py::object result_ = '
-               f'mod.attr("{method_name}")({function_call_returns});')
-    yield I + 'return result_;'
-  elif function_call_returns:
-    if len(func_decl.returns) > 1:
-      yield I + f'return std::make_tuple({function_call_returns});'
-    else:
-      yield I + f'return {function_call_returns};'
+  self_param = 'self'
+  if func_decl.is_extend_method and len(params):
+    self_param = params[0].gen_name
+  yield from generate_cpp_function_return_post_process(
+      func_decl, function_call_returns, self_param)
 
 
-def _generate_function_call_params(
-    func_decl: ast_pb2.FuncDecl, params: List[function_lib.Parameter]) -> str:
+def generate_function_call_params(
+    func_decl: ast_pb2.FuncDecl, params_str: str) -> str:
   """Generates the parameters of function calls in lambda expressions."""
-  params = ', '.join([p.function_argument for p in params])
   # Ignore the return value of the function itself when generating pointer
   # parameters.
   stard_idx = 0
@@ -191,15 +204,15 @@ def _generate_function_call_params(
   pointer_params_str = ', '.join(
       [f'&ret{i}' for i in range(stard_idx, len(func_decl.returns))])
 
-  if params and pointer_params_str:
-    return f'{params}, {pointer_params_str}'
+  if params_str and pointer_params_str:
+    return f'{params_str}, {pointer_params_str}'
   elif pointer_params_str:
     return pointer_params_str
   else:
-    return params
+    return params_str
 
 
-def _generate_function_call_returns(
+def generate_function_call_returns(
     func_decl: ast_pb2.FuncDecl, capsule_types: Set[str],
     requires_status: bool = True) -> str:
   """Generates return values of cpp function."""
@@ -239,9 +252,9 @@ def _generate_lambda_params_with_types(
   return ', '.join(params_list)
 
 
-def _generate_function_call(
+def generate_function_call(
     func_decl: ast_pb2.FuncDecl,
-    class_decl: Optional[ast_pb2.ClassDecl] = None):
+    class_decl: Optional[ast_pb2.ClassDecl] = None) -> str:
   """Generates the function call underneath the lambda expression."""
   if (func_decl.classmethod or not class_decl or func_decl.is_extend_method or
       func_decl.cpp_opfunction):
@@ -330,3 +343,19 @@ def _extract_bare_type(cpp_name: str) -> str:
   if t[-1] in {'&', '*'}:  # Minimum viable approach. To be refined as needed.
     t = t[:-1]
   return ' '.join(t)
+
+
+def generate_return_value_cpp_type(
+    func_decl: ast_pb2.FuncDecl, codegen_info: utils.CodeGenInfo) -> str:
+  """Generates type for the return value of the C++ function."""
+  ret0 = func_decl.returns[0]
+  if function_lib.is_status_param(ret0, codegen_info.requires_status):
+    return function_lib.generate_status_type(func_decl, ret0)
+  elif function_lib.is_status_callback(ret0, codegen_info.requires_status):
+    status_type = function_lib.generate_status_type(
+        func_decl, ret0.type.callable.returns[0])
+    return f'pybind11::google::PyCLIFStatus<{status_type}>'
+  elif not ret0.type.cpp_type:
+    return function_lib.generate_callback_signature(ret0)
+  else:
+    return ret0.type.cpp_type

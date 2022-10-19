@@ -22,6 +22,10 @@ from "clif/testing/default_args.h":
     def MethodWithDefaultClassArg(
         self, arg: Arg = default, i: int = default) -> int
     def MethodWithUnknownDefaultArg(self, i: int, arg: Arg = default) -> int
+    def MethodWithManyUnknownDefaultArgs(
+        self, a: int, b: Arg = default, c: Arg = default, d: Arg = default,
+        e: Arg = default, ptr: Arg = default, f: int = default
+    ) -> int
     def MethodWithMultipleUnknownDefaultArgs(
         self, a: int, b: Arg = default, c: Arg = default,
         d: int = default) -> int
