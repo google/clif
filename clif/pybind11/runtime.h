@@ -104,6 +104,21 @@ constexpr bool HasPyObjAs() {
   return HasClifPyObjAs<T>(0);
 }
 
+// `absl::optional` does not work with abstract types. Calling
+// `HasPyObjAs<absl::optional<Abstract>>` results in compilation errors.
+// Use this as a workaround.
+template <typename T,
+          std::enable_if_t<!std::is_abstract_v<T>, int> = 0>
+constexpr bool HasAbslOptionalPyObjAsFalseIfAbstract() {
+  return HasClifPyObjAs<absl::optional<T>>(0);
+}
+
+template <typename T,
+          std::enable_if_t<std::is_abstract_v<T>, int> = 0>
+constexpr bool HasAbslOptionalPyObjAsFalseIfAbstract() {
+  return false;
+}
+
 template <typename T>
 constexpr bool HasPyObjFrom() {
   return HasClifPyObjFrom<T>(0);
@@ -163,7 +178,9 @@ namespace detail {
     return Clif_PyObjFrom(src, {});                                            \
   }                                                                            \
 
-template <typename Type, bool is_type_abstract = std::is_abstract_v<Type>>
+template <typename Type, bool is_type_abstract = std::is_abstract_v<Type>,
+          bool has_customized_optional_conversion = !clif::HasPyObjAs<Type>() &&
+              clif::HasAbslOptionalPyObjAsFalseIfAbstract<Type>()>
 struct clif_type_caster {
  public:
   PYBIND11_TYPE_CASTER(Type, const_name<Type>());
@@ -172,7 +189,6 @@ struct clif_type_caster {
 
   // TODO: Add load function when
   // `Clif_PyObjAs(PyObject*, Type**) or
-  // `Clif_PyObjAs(PyObject*, absl::optional<Type>*) exist.
   template<class T = Type,
            std::enable_if_t<clif::HasPyObjAs<T>(), int> = 0>
   bool load(handle src, bool) {
@@ -182,7 +198,30 @@ struct clif_type_caster {
 };
 
 template <typename Type>
-struct clif_type_caster<Type, true> {
+struct clif_type_caster<Type, false, true> {
+ public:
+  static constexpr auto name = const_name<Type>();
+
+  CLIF_TYPE_CASTER_CAST
+
+  bool load(handle src, bool) {
+    using ::clif::Clif_PyObjAs;
+    return Clif_PyObjAs(src.ptr(), &value);
+  }
+
+  template <typename T_>
+  using cast_op_type = movable_cast_op_type<T_>;
+
+  operator Type *() { return &(value.value()); }
+  operator Type &() { return value.value(); }
+  operator Type &&() && { return std::move(value.value()); }
+
+ private:
+  absl::optional<Type> value;
+};
+
+template <typename Type>
+struct clif_type_caster<Type, true, false> {
  public:
   static constexpr auto name = const_name<Type>();
 

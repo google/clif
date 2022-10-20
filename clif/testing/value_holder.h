@@ -88,6 +88,17 @@ class ValueHolderConcrete : public ValueHolderAbstract {
   }
 };
 
+class ValueHolderNoCopyNoMove {
+ public:
+  explicit ValueHolderNoCopyNoMove(int v) : value(v) {}
+  ValueHolderNoCopyNoMove(const ValueHolderNoCopyNoMove&) = delete;
+  ValueHolderNoCopyNoMove(ValueHolderNoCopyNoMove&&) = delete;
+
+  ValueHolderNoCopyNoMove& operator=(const ValueHolderNoCopyNoMove&) = delete;
+  ValueHolderNoCopyNoMove& operator=(ValueHolderNoCopyNoMove&&) = delete;
+  int value;
+};
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_H_

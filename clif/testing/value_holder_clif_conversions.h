@@ -161,6 +161,23 @@ inline PyObject* Clif_PyObjFrom(std::unique_ptr<ValueHolderAbstract> c,
   return clif::Clif_PyObjFrom(c->value, {});
 }
 
+// NOLINTNEXTLINE
+// CLIF use `::clif_testing::ValueHolderNoCopyNoMove` as ValueHolderNoCopyNoMove
+inline bool Clif_PyObjAs(
+    PyObject* obj, absl::optional<ValueHolderNoCopyNoMove>* c) {
+  PyObject *tmp = PyNumber_Long(obj);
+  if (!tmp) {
+    return false;
+  }
+  c->emplace(PyLong_AsLong(tmp));
+  return true;
+}
+
+inline PyObject* Clif_PyObjFrom(const ValueHolderNoCopyNoMove& c,
+                                const clif::py::PostConv& pc) {
+  return clif::Clif_PyObjFrom(c.value, {});
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_CLIF_CONVERSION_H_

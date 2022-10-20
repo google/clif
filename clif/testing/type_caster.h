@@ -97,6 +97,11 @@ inline std::unique_ptr<ValueHolderAbstract> abstract_unique_ptr_round_trip(
   return std::make_unique<ValueHolderConcrete>(vh->value);
 }
 
+inline int consume_nocopy_nomove(const ValueHolderNoCopyNoMove& vh) {
+  return vh.value;
+}
+
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_TYPE_CASTER_H_

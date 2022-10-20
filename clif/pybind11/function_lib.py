@@ -70,8 +70,11 @@ class Parameter:
         self.cpp_type = f'std::unique_ptr<{ctype}>'
         self.function_argument = f'*{param_name}'
         use_address = True
-      else:
+      elif ptype.cpp_copyable or ptype.cpp_movable:
         self.function_argument = f'std::move({self.gen_name})'
+      else:  # Convering uncopyable and unmovable types to pointers
+        self.cpp_type = f'{ctype}*'
+        self.function_argument = f'*{param_name}'
 
     if ptype.lang_type in codegen_info.capsule_types:
       self.cpp_type = f'clif::CapsuleWrapper<{self.cpp_type}>'

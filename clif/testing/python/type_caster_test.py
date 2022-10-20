@@ -87,6 +87,9 @@ class TypeCasterTest(parameterized.TestCase):
     self.assertEqual(type_caster.abstract_shared_ptr_round_trip(10), 11)
     self.assertEqual(type_caster.abstract_unique_ptr_round_trip(10), 12)
 
+  def test_nocopy_nomove(self):
+    self.assertEqual(type_caster.consume_nocopy_nomove(10), 10)
+
 
 if __name__ == '__main__':
   absltest.main()
