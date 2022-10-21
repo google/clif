@@ -281,30 +281,40 @@ class ModuleGenerator(object):
                f'{function_name}({params_str_with_types}) '
                f'{cpp_const} override {{')
 
+    status_return = False
     if func_decl.is_pure_virtual:
       if 'absl::StatusOr' in return_type:
+        status_return = True
         pybind11_override = 'PYBIND11_OVERRIDE_PURE_STATUSOR_RETURN'
       elif 'absl::Status' in return_type:
+        status_return = True
         pybind11_override = 'PYBIND11_OVERRIDE_PURE_STATUS_RETURN'
       else:
-        pybind11_override = 'PYBIND11_OVERRIDE_PURE'
+        pybind11_override = 'PYBIND11_OVERRIDE_PURE_NAME'
     else:
-      pybind11_override = 'PYBIND11_OVERRIDE'
+      pybind11_override = 'PYBIND11_OVERRIDE_NAME'
 
-    # Characters like ',' may cause the `PYBIND11_OVERRIDE` macro parsing fail
+    # Characters like ',' may cause the `PYBIND11_OVERRIDE_NAME` macro parsing
+    # fail
     if ',' in return_type:
       yield I + I + f'using {func_decl.name.native}_return = {return_type};'
       return_type = f'{func_decl.name.native}_return'
-    yield I + 'py::gil_scoped_acquire hold_gil;'
+    yield I + I + 'py::gil_scoped_acquire hold_gil;'
     yield I + I + f'{pybind11_override}('
     if pybind11_override != 'PYBIND11_OVERRIDE_PURE_STATUS_RETURN':
       yield I + I + I + f'{return_type},'
     yield I + I + I + f'{class_name},'
     if params:
-      yield I + I + I + f'{func_decl.name.native},'
+      yield I + I + I + f'"{func_decl.name.native}",'
+      if not status_return:
+        yield I + I + I + f'{function_name},'
       yield I + I + I + f'{params}'
     else:
-      yield I + I + I + f'{func_decl.name.native}'
+      if not status_return:
+        yield I + I + I + f'"{func_decl.name.native}",'
+        yield I + I + I + f'{function_name}'
+      else:
+        yield I + I + I + f'"{func_decl.name.native}"'
     yield I + I + ');'
     yield I + '}'
 
