@@ -12,17 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from "clif/testing/default_args.h":
+from "clif/testing/python/default_args_clif_aux.h":
+  class Arg:
+    e: int
+
   class MyClass:
     enum Enum
-    enum Flag
 
-    class Arg:
-      e: Enum
     def MethodWithDefaultClassArg(
         self, arg: Arg = default, i: int = default) -> int
     def MethodWithUnknownDefaultArg(self, i: int, arg: Arg = default) -> int
     def MethodWithManyUnknownDefaultArgs(
+        self, a: int, b: Arg = default, c: Arg = default, d: Arg = default,
+        e: Arg = default, ptr: Arg = default, f: int = default
+    ) -> int
+    @extend
+    def MethodWithManyUnknownDefaultArgsExtend(
         self, a: int, b: Arg = default, c: Arg = default, d: Arg = default,
         e: Arg = default, ptr: Arg = default, f: int = default
     ) -> int
@@ -55,3 +60,8 @@ from "clif/testing/default_args.h":
     def `MethodWithOutputDefault` as MethodWithOutputDefault6(self, input1: int = default)
     def `MethodWithOutputDefault` as MethodWithOutputDefault7(self, input1: int)
     def `MethodWithOutputDefault` as MethodWithOutputDefault8(self)
+
+  def MethodWithManyUnknownDefaultArgsFree(
+      a: int, b: Arg = default, c: Arg = default, d: Arg = default,
+      e: Arg = default, ptr: Arg = default, f: int = default
+  ) -> int

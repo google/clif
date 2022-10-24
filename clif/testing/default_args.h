@@ -20,6 +20,10 @@
 #include <string>
 #include <vector>
 
+struct Arg {
+  int e;
+};
+
 class MyClass {
  public:
   enum Enum {
@@ -33,10 +37,6 @@ class MyClass {
     F2 = 2,
     F3 = 4,
     F5 = 8
-  };
-
-  struct Arg {
-    int e;
   };
 
   int MethodWithDefaultClassArg(Arg arg = {10}, int i = 100) {

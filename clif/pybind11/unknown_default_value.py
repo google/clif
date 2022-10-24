@@ -38,11 +38,14 @@ def generate_from(
   yield (f'{module_name}.{function_lib.generate_def(func_decl)}'
          f'("{func_name}", []({params_with_type}) {{')
 
-  nargs = len(func_decl.params)
-  minargs = sum(1 for p in func_decl.params if not p.default_value)
-  yield I + f'PyObject* a[{len(func_decl.params)}]{{}};'
+  all_params = (
+      func_decl.params if not (func_decl.is_extend_method and class_decl) else
+      func_decl.params[1:])
+  nargs = len(all_params)
+  minargs = sum(1 for p in all_params if not p.default_value)
+  yield I + f'PyObject* a[{nargs}]{{}};'
   yield I + 'const char* names[] = {'
-  for param in func_decl.params:
+  for param in all_params:
     yield I + I + f'"{param.name.native}",'
   yield I + I + 'nullptr'
   yield I + '};'
@@ -63,7 +66,7 @@ def generate_from(
     yield I + '}'
 
   params = []
-  for i, p in enumerate(func_decl.params):
+  for i, p in enumerate(all_params):
     n = i + 1
     arg = f'arg{n}'
     check_nullptr, arg_declaration = gen.CreateInputParameter(
@@ -128,6 +131,8 @@ def generate_from(
   for n in range(minargs, nargs+1):
     yield I + I + f'case {n}:'
     params_str = ', '.join(params[:n])
+    if func_decl.is_extend_method and class_decl:
+      params_str = 'self, ' + params_str
     function_call_params = lambdas.generate_function_call_params(
         func_decl, params_str)
     cpp_function_call = f'{function_call}({function_call_params})'
@@ -146,9 +151,6 @@ def generate_from(
     yield I + 'Py_BLOCK_THREADS'
 
   # Generates post process for the return values.
-  self_param = 'self'
-  if func_decl.is_extend_method and len(params):
-    self_param = params[0].gen_name
   yield from lambdas.generate_cpp_function_return_post_process(
-      func_decl, function_call_returns, self_param)
+      func_decl, function_call_returns, 'self')
   yield '});'

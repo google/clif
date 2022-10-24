@@ -23,9 +23,9 @@ class DefaultArgsTest(absltest.TestCase):
 
   def testMixKnownAndUnknownDefaultArgs(self):
     a = default_args.MyClass()
-    b = default_args.MyClass.Arg()
+    b = default_args.Arg()
     b.e = 2
-    c = default_args.MyClass.Arg()
+    c = default_args.Arg()
     c.e = 3
     self.assertEqual(a.MethodWithMultipleUnknownDefaultArgs(1, b, c), 10)
     with self.assertRaisesRegex(
@@ -68,13 +68,13 @@ class DefaultArgsTest(absltest.TestCase):
     self.assertEqual(a.MethodWithUnKnownUniquePtrDefaultArg(1, c=3), 8)
     self.assertEqual(a.MethodWithUnKnownUniquePtrDefaultArg(1, d=4), 8)
     self.assertEqual(a.MethodWithUnKnownUniquePtrDefaultArg(1), 8)
-    b = default_args.MyClass.Arg()
+    b = default_args.Arg()
     b.e = 2
     self.assertEqual(a.MethodWithUnKnownUniquePtrDefaultArg(1, b, d=4), 10)
 
   def testDefaultArgs(self):
     a = default_args.MyClass()
-    arg = default_args.MyClass.Arg()
+    arg = default_args.Arg()
     arg.e = 100
     with self.assertRaisesRegex(
         ValueError, r'MethodWithDefaultClassArg\(\) argument arg needs a '
@@ -102,15 +102,15 @@ class DefaultArgsTest(absltest.TestCase):
 
   def testManyUnknownDefaultArgs(self):
     a = default_args.MyClass()
-    b = default_args.MyClass.Arg()
+    b = default_args.Arg()
     b.e = 3
-    c = default_args.MyClass.Arg()
+    c = default_args.Arg()
     c.e = 4
-    d = default_args.MyClass.Arg()
+    d = default_args.Arg()
     d.e = 5
-    e = default_args.MyClass.Arg()
+    e = default_args.Arg()
     e.e = 6
-    ptr = default_args.MyClass.Arg()
+    ptr = default_args.Arg()
     ptr.e = 7
     self.assertEqual(a.MethodWithManyUnknownDefaultArgs(1), 21)
     self.assertEqual(a.MethodWithManyUnknownDefaultArgs(1, b=b), 22)
@@ -128,6 +128,8 @@ class DefaultArgsTest(absltest.TestCase):
     self.assertEqual(
         a.MethodWithManyUnknownDefaultArgs(1, b=b, c=c, d=d, e=e, f=6), 25)
     self.assertEqual(a.MethodWithManyUnknownDefaultArgs(1, b, c, d, e), 25)
+    self.assertEqual(a.MethodWithManyUnknownDefaultArgsExtend(1), 21)
+    self.assertEqual(default_args.MethodWithManyUnknownDefaultArgsFree(1), 21)
 
 
 if __name__ == '__main__':
