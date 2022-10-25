@@ -57,6 +57,12 @@ class MyClass {
     return a + b.e + c.e + d.e + e.e + f + ptr_value;
   }
 
+  int MethodWithManyUnknownAndEnumDefaultArgs(
+      int a, Arg b = {2}, Arg c = {3}, Arg d = {4}, Enum e = kMyEnum,
+      int f = 6) {
+    return a + b.e + c.e + d.e + e + f;
+  }
+
   int MethodWithMultipleUnknownDefaultArgs(
       int a, Arg b = {2}, Arg c = {3}, int d = 4) {
     return a + b.e + c.e + d;

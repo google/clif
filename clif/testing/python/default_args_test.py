@@ -130,6 +130,9 @@ class DefaultArgsTest(absltest.TestCase):
     self.assertEqual(a.MethodWithManyUnknownDefaultArgs(1, b, c, d, e), 25)
     self.assertEqual(a.MethodWithManyUnknownDefaultArgsExtend(1), 21)
     self.assertEqual(default_args.MethodWithManyUnknownDefaultArgsFree(1), 21)
+    self.assertEqual(a.MethodWithManyUnknownAndEnumDefaultArgs(1), 448)
+    self.assertEqual(a.MethodWithManyUnknownAndEnumDefaultArgs(
+        1, b, c, d, e=default_args.MyClass.Enum.E3, f=6), 562)
 
 
 if __name__ == '__main__':

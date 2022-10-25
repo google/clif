@@ -100,7 +100,8 @@ def generate_from(
           for line in lambdas.generate_check_nullptr(func_decl, arg):
             yield I + line
       else:
-        yield I + I + f'if (!a[{i}]) {arg} = {p.default_value};'
+        yield I + I + (f'if (!a[{i}]) {arg} = ({p.type.cpp_type})'
+                       f'{p.default_value};')
         yield I + I + (f'else {arg} = py::cast<{arg_cpp_type}>'
                        f'(py::handle(a[{i}]));')
         if check_nullptr:

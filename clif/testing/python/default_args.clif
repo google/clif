@@ -26,6 +26,9 @@ from "clif/testing/python/default_args_clif_aux.h":
         self, a: int, b: Arg = default, c: Arg = default, d: Arg = default,
         e: Arg = default, ptr: Arg = default, f: int = default
     ) -> int
+    def MethodWithManyUnknownAndEnumDefaultArgs(
+        self, a: int, b: Arg = default, c: Arg = default, d: Arg = default,
+        e: Enum = default, f: int = default) -> int
     @extend
     def MethodWithManyUnknownDefaultArgsExtend(
         self, a: int, b: Arg = default, c: Arg = default, d: Arg = default,
