@@ -40,6 +40,10 @@ inline Py_ssize_t item_index(Py_ssize_t idx, Py_ssize_t length) {
   return idx < 0 ? idx + length : idx;
 }
 
+}  // namespace clif
+
+namespace clif_pybind11 {
+
 // The implementation of these `HasClifPyObjAs` functions are identical with the
 // `HasClifConversion` defined in clif/python/stltypes.h. I have to
 // copy them here because at the time these functions are defined, the
@@ -124,14 +128,14 @@ constexpr bool HasPyObjFrom() {
   return HasClifPyObjFrom<T>(0);
 }
 
-}  // namespace clif
+}  // namespace clif_pybind11
 
 namespace pybind11 {
 namespace detail {
 
 #define CLIF_TYPE_CASTER_CAST                                                  \
   template<class T = Type,                                                     \
-           std::enable_if_t<clif::HasPyObjFrom<T>(), int> = 0>                 \
+           std::enable_if_t<clif_pybind11::HasPyObjFrom<T>(), int> = 0>        \
   static handle cast(Type& src, return_value_policy /* policy */,              \
                      handle /* parent */) {                                    \
     using ::clif::Clif_PyObjFrom;                                              \
@@ -139,7 +143,7 @@ namespace detail {
   }                                                                            \
                                                                                \
   template<class T = Type,                                                     \
-           std::enable_if_t<clif::HasPyObjFrom<T>(), int> = 0>                 \
+           std::enable_if_t<clif_pybind11::HasPyObjFrom<T>(), int> = 0>        \
   static handle cast(const Type& src, return_value_policy /* policy */,        \
                      handle /* parent */) {                                    \
     using ::clif::Clif_PyObjFrom;                                              \
@@ -147,7 +151,7 @@ namespace detail {
   }                                                                            \
                                                                                \
   template<class T = Type,                                                     \
-           std::enable_if_t<clif::HasPyObjFrom<T>(), int> = 0>                 \
+           std::enable_if_t<clif_pybind11::HasPyObjFrom<T>(), int> = 0>        \
   static handle cast(Type&& src, return_value_policy /* policy */,             \
                      handle /* parent */) {                                    \
     using ::clif::Clif_PyObjFrom;                                              \
@@ -155,7 +159,7 @@ namespace detail {
   }                                                                            \
                                                                                \
   template<typename T = Type,                                                  \
-           std::enable_if_t<clif::HasPyObjFrom<T*>(), int> = 0>                \
+           std::enable_if_t<clif_pybind11::HasPyObjFrom<T*>(), int> = 0>       \
   static handle cast(Type* src, return_value_policy /* policy */,              \
                      handle /* parent */) {                                    \
     using ::clif::Clif_PyObjFrom;                                              \
@@ -163,7 +167,7 @@ namespace detail {
   }                                                                            \
                                                                                \
   template<typename T = Type,                                                  \
-           std::enable_if_t<clif::HasPyObjFrom<T*>(), int> = 0>                \
+           std::enable_if_t<clif_pybind11::HasPyObjFrom<T*>(), int> = 0>       \
   static handle cast(const Type* src, return_value_policy /* policy */,        \
                      handle /* parent */) {                                    \
     using ::clif::Clif_PyObjFrom;                                              \
@@ -171,7 +175,7 @@ namespace detail {
   }                                                                            \
                                                                                \
   template<typename T = Type,                                                  \
-           std::enable_if_t<clif::HasPyObjFrom<T**>(), int> = 0>               \
+           std::enable_if_t<clif_pybind11::HasPyObjFrom<T**>(), int> = 0>      \
   static handle cast(Type** src, return_value_policy /* policy */,             \
                      handle /* parent */) {                                    \
     using ::clif::Clif_PyObjFrom;                                              \
@@ -179,8 +183,9 @@ namespace detail {
   }                                                                            \
 
 template <typename Type, bool is_type_abstract = std::is_abstract_v<Type>,
-          bool has_customized_optional_conversion = !clif::HasPyObjAs<Type>() &&
-              clif::HasAbslOptionalPyObjAsFalseIfAbstract<Type>()>
+          bool has_customized_optional_conversion =
+              !clif_pybind11::HasPyObjAs<Type>() &&
+                  clif_pybind11::HasAbslOptionalPyObjAsFalseIfAbstract<Type>()>
 struct clif_type_caster {
  public:
   PYBIND11_TYPE_CASTER(Type, const_name<Type>());
@@ -190,7 +195,7 @@ struct clif_type_caster {
   // TODO: Add load function when
   // `Clif_PyObjAs(PyObject*, Type**) or
   template<class T = Type,
-           std::enable_if_t<clif::HasPyObjAs<T>(), int> = 0>
+           std::enable_if_t<clif_pybind11::HasPyObjAs<T>(), int> = 0>
   bool load(handle src, bool) {
     using ::clif::Clif_PyObjAs;
     return Clif_PyObjAs(src.ptr(), &value);
@@ -234,7 +239,7 @@ struct clif_type_caster<Type, true, false> {
   // `Clif_PyObjAs(PyObject*, AbstractType**) exist.
   template<class T = Type,
            std::enable_if_t<
-              clif::HasPyObjAs<std::unique_ptr<T>>(), int> = 0>
+              clif_pybind11::HasPyObjAs<std::unique_ptr<T>>(), int> = 0>
   bool load(handle src, bool) {
     // TODO: Test with two passes in pybind11 dispatcher.
     std::unique_ptr<Type> res;
@@ -263,14 +268,14 @@ struct clif_smart_ptr_type_caster {
   PYBIND11_TYPE_CASTER(HolderType, const_name<Type>());
 
   template<typename T = HolderType,
-           std::enable_if_t<clif::HasPyObjAs<T>(), int> = 0>
+           std::enable_if_t<clif_pybind11::HasPyObjAs<T>(), int> = 0>
   bool load(handle src, bool) {
     using ::clif::Clif_PyObjAs;
     return Clif_PyObjAs(src.ptr(), &value);
   }
 
   template<typename T = HolderType,
-           std::enable_if_t<clif::HasPyObjFrom<T>(), int> = 0>
+           std::enable_if_t<clif_pybind11::HasPyObjFrom<T>(), int> = 0>
   static handle cast(T src, return_value_policy /* policy */,
                      handle /* parent */) {
     using ::clif::Clif_PyObjFrom;
