@@ -314,7 +314,7 @@ clang::ClassTemplateDecl* TranslationUnitAST::GetQualTypeTemplateDecl(
     templ = llvm::dyn_cast<clang::ClassTemplateDecl>(
         special->getTemplateName().getAsTemplateDecl());
     if (args) {
-      *args = special->getArgs();
+      *args = special->template_arguments().data();
     }
   }
   return templ->getCanonicalDecl();

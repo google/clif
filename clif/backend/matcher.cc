@@ -1409,8 +1409,8 @@ ClifErrorCode ClifMatcher::MatchAndSetContainerHelper(
     }
   } else if (auto clang_decl =
                  clang_qual_type->getAs<clang::TemplateSpecializationType>()) {
-    clang_args = clang_decl->getArgs();
-    num_clang_args = clang_decl->getNumArgs();
+    clang_args = clang_decl->template_arguments().data();
+    num_clang_args = clang_decl->template_arguments().size();
     clang_template_decl =
         clang_decl->getTemplateName().getAsTemplateDecl()->getCanonicalDecl();
   }
