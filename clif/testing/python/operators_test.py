@@ -47,7 +47,6 @@ class OperatorsTest(absltest.TestCase):
     self.assertEqual(n%1, 1)
     self.assertEqual(2%n, 2)
     self.assertEqual(n+2, 2)
-    self.assertEqual(n*2, 3)
     with self.assertRaises(TypeError):
       _ = 2+n  # The lack of __radd__ makes this fail.
     self.assertEqual(3-n, 3)
