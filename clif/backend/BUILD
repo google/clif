@@ -119,9 +119,9 @@ cc_test(
         ":strutil",
         "//clif/protos:ast_cc_proto",
         "//devtools/build/runtime:get_runfiles_dir",
+        "//net/proto2/public:proto2",
         "@com_google_absl//absl/flags:flag",
         "@com_google_googletest//:gtest_main",
-        "@com_google_protobuf//:protobuf_headers",
         "@llvm-project//llvm:Support",
     ],
 )

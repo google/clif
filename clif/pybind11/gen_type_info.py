@@ -169,8 +169,9 @@ class ClassType(BaseType):
     if self.cpp_copyable and not self.override_in_python:
       yield f'bool Clif_PyObjAs(PyObject* input, {self.cpp_name}* output) {{'
       yield I + 'try {'
-      yield I + I + (f'*output = pybind11::cast<{self.cpp_name}>'
-                     '(pybind11::handle(input));')
+      yield I + I + (f'{self.cpp_name} output_ = pybind11::cast<'
+                     f'{self.cpp_name}>(pybind11::handle(input));')
+      yield I + I + '*output = output_;'
       yield I + '} catch (pybind11::cast_error) {'
       yield I + I + 'return false;'
       yield I + '}'

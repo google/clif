@@ -24,8 +24,8 @@ headers are included.
 #include "clif/python/pyproto.h"
 #include "clif/python/runtime.h"
 #include "google/protobuf/io/coded_stream.h"
-#include "google/protobuf/descriptor.h"
-#include "google/protobuf/dynamic_message.h"
+#include "net/proto2/public/descriptor.h"
+#include "net/proto2/public/dynamic_message.h"
 
 namespace {
 

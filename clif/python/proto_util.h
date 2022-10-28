@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-#include "google/protobuf/descriptor.h"
+#include "net/proto2/public/descriptor.h"
 
 namespace proto2 = google::protobuf;
 using std::string;

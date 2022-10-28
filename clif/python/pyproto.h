@@ -19,7 +19,7 @@
 #include <memory>
 
 #include "glog/logging.h"
-#include "google/protobuf/message.h"
+#include "net/proto2/public/message.h"
 
 namespace proto2 = google::protobuf;
 struct _object; typedef _object PyObject;
