@@ -14,7 +14,7 @@
 
 """Utility functions for pybind11 code generator."""
 import dataclasses
-from typing import Set
+from typing import Dict, Set
 
 from clif.protos import ast_pb2
 
@@ -35,6 +35,9 @@ class CodeGenInfo:
 
   # Is type caster of `absl::Status` required?
   requires_status: bool
+
+  # Map of { python_name: cpp_name }
+  typemap: Dict[str, str]
 
 
 def trampoline_name(class_decl: ast_pb2.ClassDecl) -> str:
