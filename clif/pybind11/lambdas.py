@@ -137,20 +137,26 @@ def _generate_lambda_body(
       yield from generate_check_nullptr(func_decl, p.gen_name)
     yield from p.preprocess()
 
-  if (func_decl.name.native in _NEEDS_INDEX_CHECK_METHODS and class_decl):
-    for member in class_decl.members:
-      if (member.decltype == ast_pb2.Decl.Type.FUNC and
-          member.func.name.native == '__len__'):
-        assert len(params) >= 1, 'sequential methods need at least one param'
-        p = params[0]
-        length_func_name = member.func.name.cpp_name.split('::')[-1]
-        yield I + (f'Py_ssize_t {p.gen_name}_ = ::clif::item_index('
-                   f'{p.gen_name}, self.{length_func_name}());')
-        yield I + (f'if ({p.gen_name}_ < 0) {{')
-        yield I + I + 'throw py::index_error("index out of range.");'
-        yield I +'}'
-        yield I + f'{p.gen_name} = {p.gen_name}_;'
-        break
+  if func_decl.name.native in _NEEDS_INDEX_CHECK_METHODS and class_decl:
+    start_idx = 1 if func_decl.is_extend_method else 0
+    assert len(params) >= start_idx + 1, ('sequential methods need at least '
+                                          'one param')
+    index = params[start_idx]
+    self_param = (
+        params[0].gen_name if func_decl.is_extend_method else 'self')
+    yield I + (f'py::object length_function_ = py::cast({self_param})'
+               '.attr("__len__");')
+    yield I + 'if (length_function_.is_none()) {'
+    yield I + I + (f'throw py::attribute_error("class {class_decl.name.native} '
+                   f'defined {func_decl.name.native}, but does not define '
+                   '`__len__` function.");')
+    yield I +'}'
+    yield I + (f'Py_ssize_t {index.gen_name}_ = ::clif::item_index('
+               f'{index.gen_name}, py::cast<int>(length_function_()));')
+    yield I + (f'if ({index.gen_name}_ < 0) {{')
+    yield I + I + 'throw py::index_error("index out of range.");'
+    yield I +'}'
+    yield I + f'{index.gen_name} = {index.gen_name}_;'
 
   # Generates declarations of return values
   for i, r in enumerate(func_decl.returns):

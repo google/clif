@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from "clif/testing/operators.h":
+from "clif/testing/python/operators_clif_aux.h":
   namespace `clif_ops_test`:
     class Abc:
       def __init__(self, s: int, e: int)
@@ -30,6 +30,21 @@ from "clif/testing/operators.h":
       @sequential
       def __getitem__(self, i: int) -> int
       def `clif_ops_test::Abc_has` as __contains__(self, k: int) -> bool
+
+    class WithExtendGetItem:
+      def __init__(self, data: list<int>)
+      def `length` as __len__(self) -> int
+      @extend
+      @sequential
+      def `WithExtendGetItem_getitem` as __getitem__(self, i: int) -> int
+
+    class WithExtendGetItemAndExtendLen:
+      def __init__(self, data: list<int>)
+      @extend
+      def `WithExtendGetItemAndExtendLen_len` as __len__(self) -> int
+      @extend
+      @sequential
+      def `WithExtendGetItemAndExtendLen_getitem` as __getitem__(self, i: int) -> int
 
     class Num:
       def __add__(self, other: int) -> int

@@ -51,6 +51,18 @@ class OperatorsTest(absltest.TestCase):
       _ = 2+n  # The lack of __radd__ makes this fail.
     self.assertEqual(3-n, 3)
 
+  def testExtendGetItem(self):
+    obj = operators.WithExtendGetItem([1, 2, 3])
+    self.assertEqual(obj[0], 1)
+    self.assertEqual(obj[-1], 3)
+    with self.assertRaises(IndexError):
+      _ = obj[4]
+    obj = operators.WithExtendGetItemAndExtendLen([1, 2, 3])
+    self.assertEqual(obj[0], 1)
+    self.assertEqual(obj[-1], 3)
+    with self.assertRaises(IndexError):
+      _ = obj[4]
+
 
 if __name__ == '__main__':
   absltest.main()

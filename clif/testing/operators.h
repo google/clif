@@ -17,6 +17,7 @@
 #define CLIF_TESTING_OPERATORS_H_
 #include <stdint.h>
 #include <stdlib.h>
+#include <vector>
 
 namespace clif_ops_test {
 
@@ -83,6 +84,18 @@ struct Num {
 inline int operator%(const Num& a, int) { return 1; }
 inline int operator%(int, const Num& a) { return 2; }
 inline int operator-(int, const Num& a) { return 3; }
+
+struct WithExtendGetItem {
+  explicit WithExtendGetItem(const std::vector<int>& d): data(d) { }
+  int length() { return data.size(); }
+  std::vector<int> data;
+};
+
+struct WithExtendGetItemAndExtendLen {
+  explicit WithExtendGetItemAndExtendLen(const std::vector<int>& d)
+      : data(d) { }
+  std::vector<int> data;
+};
 
 }  // namespace clif_ops_test
 
