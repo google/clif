@@ -35,18 +35,17 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//net/proto2/io/public:io_lite",
-        "//net/proto2/public:proto2",
+        "//third_party/protobuf/io",
         "@com_github_google_glog//:glog",
         "@com_google_absl//absl/base:config",
         "@com_google_absl//absl/container:flat_hash_map",
-        "@com_google_absl//absl/memory",
         "@com_google_absl//absl/numeric:int128",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:cord",
         "@com_google_absl//absl/types:optional",
         "@com_google_absl//absl/types:variant",
         "@com_google_protobuf//:proto_api",
+        "@com_google_protobuf//:protobuf_headers",
         "@python_runtime//:python_headers",
     ],
 )
@@ -90,9 +89,8 @@ cc_library(
         "//clif/python/clif:__pkg__",
     ],
     deps = [
-        "//net/proto2/compiler/public:importer",
-        "//net/proto2/public:proto2",
-        "@com_github_google_glog//:glog",
+        "@com_google_protobuf//:protobuf",
+        "@com_google_protobuf//:protobuf_headers",
     ],
 )
 
