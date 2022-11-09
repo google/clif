@@ -35,11 +35,15 @@ class Derived : public Base {
 
 struct Outer {
  public:
-  struct NestedBase {};
+  struct NestedBase {
+    virtual int Get() const { return 10; }
+    virtual ~NestedBase() = default;
+  };
   struct NestedDerived: public NestedBase {};
 };
 
 struct DerivedFromNestedBase : public Outer::NestedBase {};
+
 }  // namespace clif_testing
 
 #endif  // CLIF_TESTING_VIRTUAL_DERIVED_BEFORE_BASE_H_

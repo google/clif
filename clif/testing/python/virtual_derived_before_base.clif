@@ -21,8 +21,11 @@ from "clif/testing/virtual_derived_before_base.h":
     class Base:
       def Get(self) -> int
 
+    class DerivedFromNestedBase(Outer.NestedBase):
+      pass
+
     class Outer:
       class NestedDerived(Outer.NestedBase):
         pass
       class NestedBase:
-        pass
+        def Get(self) -> int
