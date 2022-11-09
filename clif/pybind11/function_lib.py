@@ -46,9 +46,6 @@ class Parameter:
     if not ptype.cpp_type:  # std::function
       self.cpp_type = generate_callback_signature(param)
       self.function_argument = f'std::move({self.gen_name})'
-    elif is_status_param(param, codegen_info.requires_status):  # absl::Status
-      self.cpp_type = f'py::google::PyCLIFStatus<{param.cpp_exact_type}>'
-      self.function_argument = f'{self.gen_name}.status'
     # unique_ptr<T>, shared_ptr<T>
     elif (ctype.startswith('::std::unique_ptr') or
           ctype.startswith('::std::shared_ptr')):
@@ -352,7 +349,7 @@ def generate_status_type(func_decl: ast_pb2.FuncDecl,
   if func_decl.marked_non_raising:
     return f'pybind11::google::NoThrowStatus<{param.type.cpp_type}>'
   else:
-    return f'pybind11::google::PyCLIFStatus<{param.type.cpp_type}>'
+    return param.type.cpp_type
 
 
 def type_has_py_object_param(pytype: ast_pb2.Type) -> bool:

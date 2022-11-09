@@ -15,6 +15,10 @@
 #ifndef THIRD_PARTY_CLIF_PYBIND11_TYPE_CASTERS_H_
 #define THIRD_PARTY_CLIF_PYBIND11_TYPE_CASTERS_H_
 
+// pybind11 includes have to be at the very top, even before Python.h
+#include <pybind11/smart_holder.h>
+
+// Must be after pybind11 include.
 #include <Python.h>
 
 #include <map>
@@ -23,12 +27,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include "third_party/pybind11/include/pybind11/smart_holder.h"
-
 #include "clif/python/types.h"
-// TODO: Avoid util/task/python/clif dependency.
-#include "util/task/python/clif/status_casters.h"
-
+#include "third_party/pybind11_abseil/status_caster.h"
+#include "third_party/pybind11_abseil/statusor_caster.h"
 
 namespace pybind11 {
 namespace detail {

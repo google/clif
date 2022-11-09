@@ -138,12 +138,7 @@ def generate_from(
         func_decl, params_str)
     cpp_function_call = f'{function_call}({function_call_params})'
     if not cpp_void_return:
-      ret0 = func_decl.returns[0]
-      if function_lib.is_status_callback(ret0, codegen_info.requires_status):
-        yield I + I + I + (f'ret0 = pybind11::google::ToPyCLIFStatus('
-                           f'{cpp_function_call});')
-      else:
-        yield I + I + I + f'ret0 = {cpp_function_call};'
+      yield I + I + I + f'ret0 = {cpp_function_call};'
     else:
       yield I + I + I + f'{cpp_function_call};'
     yield I + I + I + 'break;'

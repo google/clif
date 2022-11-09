@@ -175,9 +175,6 @@ def _generate_lambda_body(
       status_type = function_lib.generate_status_type(func_decl, ret0)
       yield (I + f'{status_type} ret0 = {function_call}'
              f'({function_call_params});')
-    elif function_lib.is_status_callback(ret0, codegen_info.requires_status):
-      yield I + (f'auto ret0 = pybind11::google::ToPyCLIFStatus({function_call}'
-                 f'({function_call_params}));')
     elif not ret0.type.cpp_type:
       callback_cpp_type = function_lib.generate_callback_signature(ret0)
       yield I + (f'{callback_cpp_type} ret0 = '
@@ -358,9 +355,8 @@ def generate_return_value_cpp_type(
   if function_lib.is_status_param(ret0, codegen_info.requires_status):
     return function_lib.generate_status_type(func_decl, ret0)
   elif function_lib.is_status_callback(ret0, codegen_info.requires_status):
-    status_type = function_lib.generate_status_type(
-        func_decl, ret0.type.callable.returns[0])
-    return f'pybind11::google::PyCLIFStatus<{status_type}>'
+    return function_lib.generate_status_type(func_decl,
+                                             ret0.type.callable.returns[0])
   elif not ret0.type.cpp_type:
     return function_lib.generate_callback_signature(ret0)
   else:
