@@ -52,19 +52,10 @@ def generate_from(
   class_name = f'{class_decl.name.native}_class'
   definition = f'py::classh<{class_decl.name.cpp_name}'
   if not class_decl.suppress_upcasts:
-    inheritance_generated = False
-    py_base = ''
     for base in class_decl.bases:
       if (base.HasField('cpp_name') and
           base.cpp_name in codegen_info.registered_types):
         definition += f', {base.cpp_name}'
-        inheritance_generated = True
-      elif base.native:
-        py_base = base.native
-    # Workaround for https://b.corp.google.com/issues/225961086#comment137
-    if py_base and not inheritance_generated:
-      assert py_base in codegen_info.typemap
-      definition += f', {codegen_info.typemap[py_base]}'
   trampoline_class_name = utils.trampoline_name(class_decl)
   if trampoline_class_name in trampoline_class_names:
     definition += f', {trampoline_class_name}'

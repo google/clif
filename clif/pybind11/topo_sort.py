@@ -70,9 +70,9 @@ def _topo_sort_decls_in_place(decls) -> None:
   # Topological sort all class decls in this scope, but do not reorder nested
   # classes.
   dfs = collections.deque()
-  for py_name, node in graph.items():
+  for cpp_name, node in graph.items():
     if not node.requires:
-      dfs.append(py_name)
+      dfs.append(cpp_name)
   resolve_order = []
   while dfs:
     current = dfs.pop()
@@ -110,13 +110,13 @@ def _initialize_graph(graph: dict[str, Node], members,
   """Initialize the graph with class nesting information."""
   for decl in members:
     if decl.decltype == ast_pb2.Decl.Type.CLASS:
-      if decl.class_.name.native not in graph:
-        graph[decl.class_.name.native] = Node(decl, is_nested=is_nested)
+      if decl.class_.name.cpp_name not in graph:
+        graph[decl.class_.name.cpp_name] = Node(decl, is_nested=is_nested)
         if parent_class_name:
-          graph[decl.class_.name.native].requires.add(parent_class_name)
-          graph[parent_class_name].required_by.add(decl.class_.name.native)
+          graph[decl.class_.name.cpp_name].requires.add(parent_class_name)
+          graph[parent_class_name].required_by.add(decl.class_.name.cpp_name)
       _initialize_graph(graph, decl.class_.members,
-                        parent_class_name=decl.class_.name.native,
+                        parent_class_name=decl.class_.name.cpp_name,
                         is_nested=True)
 
 
@@ -125,7 +125,7 @@ def _build_graph(graph: dict[str, Node], members) -> None:
   for decl in members:
     if decl.decltype == ast_pb2.Decl.Type.CLASS:
       for base in decl.class_.bases:
-        if base.native and base.native in graph:
-          graph[decl.class_.name.native].requires.add(base.native)
-          graph[base.native].required_by.add(decl.class_.name.native)
+        if base.cpp_name and base.cpp_name in graph:
+          graph[decl.class_.name.cpp_name].requires.add(base.cpp_name)
+          graph[base.cpp_name].required_by.add(decl.class_.name.cpp_name)
       _build_graph(graph, decl.class_.members)

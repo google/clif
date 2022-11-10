@@ -83,12 +83,9 @@ class ModuleGenerator(object):
         [t.cpp_name for t in self._namemap.values() if t.cpp_name])
     registered_types = set([t.cpp_name for t in self._types]).union(
         cpp_import_type_cpp_names).union(python_import_types)
-    typemap = {
-        t.py_name: t.cpp_name for t in self._types
-    }
     self._codegen_info = utils.CodeGenInfo(
         capsule_types=capsule_types, registered_types=registered_types,
-        requires_status=requires_status, typemap=typemap)
+        requires_status=requires_status)
 
   def generate_header(self,
                       ast: ast_pb2.AST) -> Generator[str, None, None]:
