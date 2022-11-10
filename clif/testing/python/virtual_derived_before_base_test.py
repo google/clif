@@ -23,12 +23,6 @@ class VirtualDerivedBeforeBaseTest(absltest.TestCase):
     d = virtual_derived_before_base.Derived(12345)
     self.assertEqual(d.Get(), 12345)
 
-  def testDerivedFromNestedBase(self):
-    d = virtual_derived_before_base.DerivedFromNestedBase()
-    self.assertEqual(d.Get(), 10)
-    d = virtual_derived_before_base.Outer.NestedDerived()
-    self.assertEqual(d.Get(), 10)
-
 
 if __name__ == '__main__':
   absltest.main()

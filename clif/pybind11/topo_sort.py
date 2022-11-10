@@ -16,7 +16,6 @@
 import collections
 
 from clif.protos import ast_pb2
-from clif.pybind11 import utils
 
 
 class Node:
@@ -54,26 +53,23 @@ class Node:
     return f'requires: {requires}, required_by: {required_by}'
 
 
-def topo_sort_ast_in_place(ast: ast_pb2.AST,
-                           codegen_info: utils.CodeGenInfo) -> None:
-  _topo_sort_decls_in_place(ast.decls, '', codegen_info)
+def topo_sort_ast_in_place(ast: ast_pb2.AST) -> None:
+  _topo_sort_decls_in_place(ast.decls)
 
 
-def _topo_sort_decls_in_place(decls, current_scope: str,
-                              codegen_info: utils.CodeGenInfo) -> None:
+def _topo_sort_decls_in_place(decls) -> None:
   """Topological sort all class decls in the same scope."""
   graph = {}
 
   # We split the graph construction into two functions because when initializing
   # the graph, we might not have seen all class definitions, therefore the
   # dependency information is incomplete.
-  _initialize_graph(graph, decls, current_scope, False)
-  _build_graph(graph, decls, current_scope, codegen_info)
+  _initialize_graph(graph, decls)
+  _build_graph(graph, decls)
 
   # Topological sort all class decls in this scope, but do not reorder nested
   # classes.
   dfs = collections.deque()
-
   for py_name, node in graph.items():
     if not node.requires:
       dfs.append(py_name)
@@ -89,8 +85,7 @@ def _topo_sort_decls_in_place(decls, current_scope: str,
 
   # Topological sort and reorder nested classes if exist
   for class_name in resolve_order:
-    _topo_sort_decls_in_place(
-        graph[class_name].class_decl.members, class_name, codegen_info)
+    _topo_sort_decls_in_place(graph[class_name].class_decl.members)
 
   # Reorder the class decls in current scope
   class_decl_delete_indices = []
@@ -109,32 +104,28 @@ def _topo_sort_decls_in_place(decls, current_scope: str,
       decls.insert(0, decls.pop(decl_index))
 
 
-def _initialize_graph(graph: dict[str, Node], members, current_scope: str,
-                      is_nested: bool) -> None:
+def _initialize_graph(graph: dict[str, Node], members,
+                      parent_class_name: str = '',
+                      is_nested: bool = False) -> None:
   """Initialize the graph with class nesting information."""
   for decl in members:
     if decl.decltype == ast_pb2.Decl.Type.CLASS:
-      fq_class_name = (
-          f'{current_scope}.{decl.class_.name.native}'
-          if current_scope else decl.class_.name.native)
-      if fq_class_name not in graph:
-        graph[fq_class_name] = Node(decl, is_nested=is_nested)
-        if current_scope and current_scope in graph:
-          graph[fq_class_name].requires.add(current_scope)
-          graph[current_scope].required_by.add(fq_class_name)
-      _initialize_graph(graph, decl.class_.members, fq_class_name, True)
+      if decl.class_.name.native not in graph:
+        graph[decl.class_.name.native] = Node(decl, is_nested=is_nested)
+        if parent_class_name:
+          graph[decl.class_.name.native].requires.add(parent_class_name)
+          graph[parent_class_name].required_by.add(decl.class_.name.native)
+      _initialize_graph(graph, decl.class_.members,
+                        parent_class_name=decl.class_.name.native,
+                        is_nested=True)
 
 
-def _build_graph(graph: dict[str, Node], members, current_scope: str,
-                 codegen_info: utils.CodeGenInfo) -> None:
+def _build_graph(graph: dict[str, Node], members) -> None:
   """Construct the graph with class inheritance information."""
   for decl in members:
     if decl.decltype == ast_pb2.Decl.Type.CLASS:
-      fq_class_name = (
-          f'{current_scope}.{decl.class_.name.native}'
-          if current_scope else decl.class_.name.native)
       for base in decl.class_.bases:
         if base.native and base.native in graph:
-          graph[fq_class_name].requires.add(base.native)
-          graph[base.native].required_by.add(fq_class_name)
-      _build_graph(graph, decl.class_.members, fq_class_name, codegen_info)
+          graph[decl.class_.name.native].requires.add(base.native)
+          graph[base.native].required_by.add(decl.class_.name.native)
+      _build_graph(graph, decl.class_.members)

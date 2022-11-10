@@ -59,6 +59,7 @@ class ModuleGenerator(object):
 
   def preprocess_ast(self) -> None:
     """Preprocess the ast to collect type information."""
+    topo_sort.topo_sort_ast_in_place(self._ast)
     self._namemap = {
         m.name: types.SimpleNamespace(fq_name=m.fq_name, cpp_name='')
         for m in self._ast.namemaps
@@ -88,7 +89,6 @@ class ModuleGenerator(object):
     self._codegen_info = utils.CodeGenInfo(
         capsule_types=capsule_types, registered_types=registered_types,
         requires_status=requires_status, typemap=typemap)
-    topo_sort.topo_sort_ast_in_place(self._ast, self._codegen_info)
 
   def generate_header(self,
                       ast: ast_pb2.AST) -> Generator[str, None, None]:
