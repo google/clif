@@ -132,7 +132,7 @@ _clif_wrap_cc = rule(
         "_clif": attr.label(
             default = Label(CLIF_PYCLIF),
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
         # Hidden attribute: The label to the C++ CLIF header files.
         "_cliflib": attr.label(
@@ -143,7 +143,7 @@ _clif_wrap_cc = rule(
         "_clif_matcher": attr.label(
             default = Label(CLIF_MATCHER),
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
         # Hidden attribute: The label to the C++ CLIF types header file.
         "_clif_types": attr.label(
