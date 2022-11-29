@@ -171,11 +171,7 @@ def _generate_lambda_body(
   cpp_void_return = func_decl.cpp_void_return or not func_decl.returns
   if not cpp_void_return:
     ret0 = func_decl.returns[0]
-    if function_lib.is_status_param(ret0, codegen_info.requires_status):
-      status_type = function_lib.generate_status_type(func_decl, ret0)
-      yield (I + f'{status_type} ret0 = {function_call}'
-             f'({function_call_params});')
-    elif not ret0.type.cpp_type:
+    if not ret0.type.cpp_type:
       callback_cpp_type = function_lib.generate_callback_signature(ret0)
       yield I + (f'{callback_cpp_type} ret0 = '
                  f'{function_call}({function_call_params});')
@@ -227,9 +223,10 @@ def generate_function_call_returns(
     elif r.type.lang_type in capsule_types:
       all_returns_list.append(
           f'clif::CapsuleWrapper<{r.type.cpp_type}>(ret{i})')
-    elif i > 0 and function_lib.is_status_param(r, requires_status):
+    elif function_lib.is_status_param(r, requires_status):
       status_type = function_lib.generate_status_type(func_decl, r)
-      all_returns_list.append(f'{status_type}(ret{i})')
+      all_returns_list.append(f'py::cast({status_type}(std::move(ret{i})), '
+                              'py::return_value_policy::_clif_automatic)')
     # When the lambda expression returns multiple values, we construct an
     # `std::tuple` with those return values. For uncopyable return values, we
     # need `std::move` when constructing the `std::tuple`.
