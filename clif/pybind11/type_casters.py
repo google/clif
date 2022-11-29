@@ -29,9 +29,11 @@ _PYOBJFROM_ONLY = ', HasPyObjFromOnly'
 _PYOBJAS_ONLY = ', HasPyObjAsOnly'
 _PYBIND11_IGNORE = ', Pybind11Ignore'
 _PYCAPSULE = ', PythonCapsule'
+_HASTEMPLATE_PARAM = ', HasTemplateParameter'
 _CLIF_USE = re.compile(
     r'// *CLIF:? +use +`(?P<cpp_name>.+)` +as +(?P<py_name>[\w.]+)'
     r'(, NumTemplateParameter:(?P<num_template_parameter>\d+))?'
+    f'({_HASTEMPLATE_PARAM})?'
     f'({_PYCAPSULE})?'
     f'({_PYOBJFROM_ONLY}|{_PYOBJAS_ONLY}|{_PYBIND11_IGNORE}|)')
 
@@ -62,9 +64,11 @@ def _get_clif_uses(
             num_template_parameter = 0
             if use.group('num_template_parameter'):
               num_template_parameter = int(use.group('num_template_parameter'))
+            has_template_parameter = (
+                _HASTEMPLATE_PARAM in use[0] or num_template_parameter)
             results.append(types.SimpleNamespace(
                 cpp_name=use.group('cpp_name'), py_name=use.group('py_name'),
-                num_template_parameter=num_template_parameter,
+                has_template_parameter=has_template_parameter,
                 pybind11_ignore=_PYBIND11_IGNORE in use[0],
                 python_capsule=_PYCAPSULE in use[0],
                 generate_load=_PYOBJFROM_ONLY not in use[0],
@@ -108,17 +112,16 @@ def generate_from(ast: ast_pb2.AST,
     for clif_use in clif_uses:
       if not clif_use.pybind11_ignore:
         yield from _generate_type_caster(clif_use.cpp_name,
-                                         clif_use.num_template_parameter)
+                                         clif_use.has_template_parameter)
 
 
 def _generate_type_caster(
-    cpp_name: str, num_template_parameter: int
+    cpp_name: str, has_template_parameter: bool
 ) -> Generator[str, None, None]:
   """Generates pybind11 type caster code."""
-  template_parameters = ', '.join(
-      [f'T{i}' for i in range(num_template_parameter)])
-  template_parameters_with_typename = ', '.join(
-      [f'typename T{i}' for i in range(num_template_parameter)])
+  template_parameters = 'T...' if has_template_parameter else ''
+  template_parameters_with_typename = (
+      'typename... T' if has_template_parameter else '')
   if template_parameters:
     cpp_name = f'{cpp_name}<{template_parameters}>'
   yield 'namespace pybind11 {'

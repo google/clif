@@ -57,7 +57,7 @@ class ValueHolderPybind11Ignore {
   int value;
 };
 
-template <typename T, typename R>
+template <typename... T>
 class ValueHolderTemplate {
  public:
   ValueHolderTemplate(): value(0) { }
