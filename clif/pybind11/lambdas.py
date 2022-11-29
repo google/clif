@@ -225,7 +225,7 @@ def generate_function_call_returns(
           f'clif::CapsuleWrapper<{r.type.cpp_type}>(ret{i})')
     elif function_lib.is_status_param(r, requires_status):
       status_type = function_lib.generate_status_type(func_decl, r)
-      all_returns_list.append(f'py::cast({status_type}(std::move(ret{i})), '
+      all_returns_list.append(f'py::cast(({status_type})(std::move(ret{i})), '
                               'py::return_value_policy::_clif_automatic)')
     # When the lambda expression returns multiple values, we construct an
     # `std::tuple` with those return values. For uncopyable return values, we
