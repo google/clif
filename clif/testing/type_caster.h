@@ -83,6 +83,14 @@ inline std::vector<PyObject *> pyobject_round_trip(
   return vec;
 }
 
+inline PyObject* return_pyobject_throw_python_exception(int value) {
+  if (value < 0) {
+    PyErr_Format(PyExc_ValueError, "Value < 0");
+    return nullptr;
+  }
+  return PyLong_FromLong(value);
+}
+
 inline int consume_unique_ptr(std::unique_ptr<ValueHolder> vh) {
   return vh->value;
 }

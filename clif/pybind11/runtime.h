@@ -309,6 +309,9 @@ class type_caster<PyObject> {
 
   // Conversion part 1 (C++ -> Python)
   static handle cast(PyObject* src, return_value_policy, handle) {
+    if (PyErr_Occurred() || src == nullptr) {
+      throw error_already_set();
+    }
     return reinterpret_borrow<object>(src).release();
   }
 

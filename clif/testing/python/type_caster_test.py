@@ -91,6 +91,11 @@ class TypeCasterTest(parameterized.TestCase):
   def test_nocopy_nomove(self):
     self.assertEqual(type_caster.consume_nocopy_nomove(10), 10)
 
+  def test_function_throw_python_exception(self):
+    self.assertEqual(type_caster.return_pyobject_throw_python_exception(10), 10)
+    with self.assertRaisesRegex(ValueError, r'Value < 0'):
+      type_caster.return_pyobject_throw_python_exception(-1)
+
 
 if __name__ == '__main__':
   absltest.main()
