@@ -87,6 +87,17 @@ class ModuleGenerator(object):
         capsule_types=capsule_types, registered_types=registered_types,
         requires_status=requires_status)
 
+  def generate_pyinit(self) -> Generator[str, None, None]:
+    yield '#include <Python.h>'
+    yield ''
+    mangled_module_name = _generate_mangled_name_for_module(
+        self._module_path)
+    yield f'extern "C" PyObject* GooglePyInit_{mangled_module_name}();'
+    yield ''
+    yield f'extern "C" PyObject* PyInit_{self._module_name}() {{'
+    yield I + f'return GooglePyInit_{mangled_module_name}();'
+    yield '}'
+
   def generate_header(self,
                       ast: ast_pb2.AST) -> Generator[str, None, None]:
     """Generates pybind11 bindings code from CLIF ast."""
@@ -148,31 +159,55 @@ class ModuleGenerator(object):
     yield ''
     yield from type_casters.generate_from(ast, self._include_paths)
 
-    mangled_module_name = _generate_mangled_name_for_module(
-        self._module_path)
-    yield (f'GOOGLE_PYBIND11_MODULE({self._module_name}, '
-           f'{mangled_module_name}, m) {{')
-    yield from self._generate_import_modules(ast)
-    yield I+('m.doc() = "CLIF-generated pybind11-based module for '
-             f'{ast.source}";')
+    yield 'namespace {'
+    yield ''
+    yield 'PyObject * this_module_init() noexcept {'
+    yield I + 'PYBIND11_CHECK_PYTHON_VERSION'
+    yield I + 'PYBIND11_ENSURE_INTERNALS_READY'
+    yield I + ('static pybind11::module_::module_def '
+               f'module_def_{self._module_name};')
+    yield I + ('auto m = pybind11::module_::create_extension_module('
+               f'"{self._module_name}", nullptr, '
+               f'&module_def_{self._module_name});')
+    yield I + 'try {'
+    for s in self._generate_import_modules(ast):
+      yield I + s
+    yield I + I + ('m.doc() = "CLIF-generated pybind11-based module for '
+                   f'{ast.source}";')
     if self._codegen_info.requires_status:
-      yield I + 'pybind11::module_::import("util.task.python.error");'
-    yield I + 'pybind11_protobuf::ImportNativeProtoCasters();'
+      yield I + I + ('pybind11::module_::import('
+                     '"util.task.python.error");')
+    yield I + I + 'pybind11_protobuf::ImportNativeProtoCasters();'
 
     for decl in ast.decls:
       if decl.decltype == ast_pb2.Decl.Type.FUNC:
         for s in function.generate_from(
             'm', decl.func, self._codegen_info, None):
-          yield I + s
+          yield I + I + s
       elif decl.decltype == ast_pb2.Decl.Type.CONST:
-        yield from consts.generate_from('m', decl.const)
+        for s in consts.generate_from('m', decl.const):
+          yield I + s
       elif decl.decltype == ast_pb2.Decl.Type.CLASS:
-        yield from classes.generate_from(
-            decl, 'm', trampoline_class_names, self._codegen_info)
+        for s in classes.generate_from(
+            decl, 'm', trampoline_class_names, self._codegen_info):
+          yield I + s
       elif decl.decltype == ast_pb2.Decl.Type.ENUM:
-        yield from enums.generate_from('m', decl.enum)
+        for s in enums.generate_from('m', decl.enum):
+          yield I + s
+    yield I + I + 'return m.ptr();'
+    yield I + '}'
+    yield I + 'PYBIND11_CATCH_INIT_EXCEPTIONS'
     yield '}'
     yield ''
+    yield '}  // namespace'
+    yield ''
+    mangled_module_name = _generate_mangled_name_for_module(
+        self._module_path)
+    yield f'extern "C" PyObject* GooglePyInit_{mangled_module_name}() {{'
+    yield I + 'return this_module_init();'
+    yield '}'
+    yield ''
+
     for namespace, typedefs in itertools.groupby(
         self._types, lambda gen_type: gen_type.cpp_namespace):
       namespace = namespace.strip(':') or 'clif'

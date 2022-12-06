@@ -335,37 +335,4 @@ class type_caster<PyObject> {
 }  // namespace detail
 }  // namespace pybind11
 
-
-// These two macros are nearly the same with the macros defined in
-// third_party/pybind11, but with the module init function name changed from
-// `PyInit_<modulename>` to `GooglePyInit_<modulename>`. This is to allow the
-// static importer (/devtools/python/launcher/static_metaimporter.cc) to find
-// and statically link the generated extension module. See
-// https://g3doc.corp.google.com/devtools/python/g3doc/python-extensions.md
-// for more information.
-#define GOOGLE_PYBIND11_PLUGIN_IMPL(symbol)                                   \
-    extern "C" PYBIND11_MAYBE_UNUSED PYBIND11_EXPORT PyObject                 \
-        *GooglePyInit_##symbol(void);                                         \
-    extern "C" PYBIND11_EXPORT PyObject *GooglePyInit_##symbol(void)
-
-#define GOOGLE_PYBIND11_MODULE(name, symbol, variable)                        \
-    static ::pybind11::module_::module_def PYBIND11_CONCAT(                   \
-        pybind11_module_def_, name) PYBIND11_MAYBE_UNUSED;                    \
-    PYBIND11_MAYBE_UNUSED                                                     \
-    static void PYBIND11_CONCAT(pybind11_init_, name)(::pybind11::module_ &); \
-    GOOGLE_PYBIND11_PLUGIN_IMPL(symbol) {                                     \
-        PYBIND11_CHECK_PYTHON_VERSION                                         \
-        PYBIND11_ENSURE_INTERNALS_READY                                       \
-        auto m = ::pybind11::module_::create_extension_module(                \
-            PYBIND11_TOSTRING(name), nullptr, &PYBIND11_CONCAT(               \
-                pybind11_module_def_, name));                                 \
-        try {                                                                 \
-            PYBIND11_CONCAT(pybind11_init_, name)(m);                         \
-            return m.ptr();                                                   \
-        }                                                                     \
-        PYBIND11_CATCH_INIT_EXCEPTIONS                                        \
-    }                                                                         \
-    void PYBIND11_CONCAT(pybind11_init_, name)(::pybind11::module_ & (variable))
-
-
 #endif  // THIRD_PARTY_CLIF_PYBIND11_RUNTIME_H_
