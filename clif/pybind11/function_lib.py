@@ -411,29 +411,4 @@ def generate_return_value_policy(func_decl: ast_pb2.FuncDecl) -> str:
     if func_decl.return_value_policy == ast_pb2.FuncDecl.RETURN_AS_BYTES:
       return prefix + '_return_as_bytes'
     return prefix + 'automatic'
-  return_type = func_decl.returns[0]
-  # For smart pointers, it is unnecessary to specify a return value policy in
-  # pybind11.
-  if re.match('::std::unique_ptr<.*>', return_type.cpp_exact_type):
-    return prefix + 'automatic'
-  elif re.match('::std::shared_ptr<.*>', return_type.cpp_exact_type):
-    return prefix + 'automatic'
-  elif return_type.type.cpp_raw_pointer:
-    # Const pointers to uncopyable object are not supported by PyCLIF.
-    if return_type.cpp_exact_type.startswith('const '):
-      return prefix + 'copy'
-    else:
-      return prefix + 'reference'
-  elif return_type.cpp_exact_type.endswith('&'):
-    if return_type.cpp_exact_type.startswith('const '):
-      return prefix + 'copy'
-    elif return_type.type.cpp_movable:
-      return prefix + 'move'
-    else:
-      return prefix + 'automatic'
-  else:  # Function returns objects directly.
-    if return_type.type.cpp_movable:
-      return prefix + 'move'
-    elif return_type.type.cpp_copyable:
-      return prefix + 'copy'
-  return prefix + 'automatic'
+  return prefix + '_clif_automatic'
