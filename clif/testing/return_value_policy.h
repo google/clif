@@ -65,14 +65,6 @@ inline Obj* return_pointer() {
   return &obj;
 }
 
-// Not deallocating the object to test `take_ownership` return value policy of
-// pybind11
-inline Obj* return_pointer_unowned() {
-  Obj* obj = new Obj();
-  obj->mtxt = "return_pointer_unowned";
-  return obj;
-}
-
 inline const Obj* return_const_pointer() {
   static Obj obj;
   obj.mtxt = "return_const_pointer";

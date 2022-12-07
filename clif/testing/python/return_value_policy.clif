@@ -18,18 +18,6 @@ from "clif/testing/return_value_policy.h":
       mtxt: str
 
     def return_value() -> Obj
-    @return_value_policy_copy
-    def `return_pointer` as return_value_policy_copy() -> Obj
-    @return_value_policy_move
-    def `return_pointer` as return_value_policy_move() -> Obj
-    @return_value_policy_reference
-    def `return_pointer` as return_value_policy_reference() -> Obj
-    @return_value_policy_take_ownership
-    def `return_pointer_unowned` as return_value_policy_take_ownership() -> Obj
-    @return_value_policy_automatic
-    def `return_pointer_unowned` as return_value_policy_automatic() -> Obj
-    @return_value_policy_return_as_bytes
-    def return_string() -> str
     def return_reference() -> Obj
     def return_const_reference() -> Obj
     def return_pointer() -> Obj

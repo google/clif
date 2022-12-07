@@ -102,20 +102,6 @@ def is_cpp_set(param_type: ast_pb2.Type) -> bool:
           param_type.lang_type.startswith('set'))
 
 
-def func_has_vector_param(func_decl: ast_pb2.FuncDecl) -> bool:
-  for param in func_decl.params:
-    if is_cpp_vector(param.type):
-      return True
-  return False
-
-
-def func_has_set_param(func_decl: ast_pb2.FuncDecl) -> bool:
-  for param in func_decl.params:
-    if is_cpp_set(param.type):
-      return True
-  return False
-
-
 def num_unknown_default_values(func_decl: ast_pb2.FuncDecl) -> int:
   num_unknown = 0
   for param in func_decl.params:
@@ -176,7 +162,7 @@ def generate_function_suffixes(
   suffix = ''
   if py_args:
     suffix += f'{py_args}, '
-  suffix += f'{generate_return_value_policy(func_decl)}'
+  suffix += 'py::return_value_policy::_clif_automatic'
   if func_decl.docstring:
     suffix += f', {generate_docstring(func_decl.docstring)}'
   if release_gil and not func_decl.py_keep_gil:
@@ -377,38 +363,3 @@ def func_keeps_gil(func_decl: ast_pb2.FuncDecl) -> bool:
   if func_decl.py_keep_gil:
     return True
   return False
-
-
-def generate_return_value_policy(func_decl: ast_pb2.FuncDecl) -> str:
-  """Generates pybind11 return value policy based on function return type.
-
-  Emulates the behavior of the generated Python C API code.
-
-  Args:
-    func_decl: The function declaration that needs to be processed.
-
-  Returns:
-    pybind11 return value policy based on the function return value.
-  """
-  prefix = 'py::return_value_policy::'
-  if has_bytes_return(func_decl):
-    return prefix + '_return_as_bytes'
-  if func_decl.cpp_void_return or not func_decl.returns:
-    return prefix + 'automatic'
-  if func_decl.HasField('return_value_policy'):
-    if func_decl.return_value_policy == ast_pb2.FuncDecl.AUTOMATIC_REFERENCE:
-      return prefix + 'automatic_reference'
-    if func_decl.return_value_policy == ast_pb2.FuncDecl.TAKE_OWNERSHIP:
-      return prefix + 'take_ownership'
-    if func_decl.return_value_policy == ast_pb2.FuncDecl.COPY:
-      return prefix + 'copy'
-    if func_decl.return_value_policy == ast_pb2.FuncDecl.MOVE:
-      return prefix + 'move'
-    if func_decl.return_value_policy == ast_pb2.FuncDecl.REFERENCE:
-      return prefix + 'reference'
-    if func_decl.return_value_policy == ast_pb2.FuncDecl.REFERENCE_INTERNAL:
-      return prefix + 'reference_internal'
-    if func_decl.return_value_policy == ast_pb2.FuncDecl.RETURN_AS_BYTES:
-      return prefix + '_return_as_bytes'
-    return prefix + 'automatic'
-  return prefix + '_clif_automatic'

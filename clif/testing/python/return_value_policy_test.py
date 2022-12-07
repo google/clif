@@ -25,9 +25,6 @@ class ReturnValuePolicyTestCase(parameterized.TestCase):
       ('return_reference', r'^return_reference(_CpCtor)*(_MvCtor)*$'),
       ('return_const_reference', '^return_const_reference_CpCtor(_MvCtor)*$'),
       ('return_pointer', '^return_pointer$'),
-      ('return_value_policy_copy', '^return_pointer(_CpCtor)*$'),
-      ('return_value_policy_move', '^return_pointer(_MvCtor)*$'),
-      ('return_value_policy_reference', '^return_pointer$'),
       ('return_const_pointer', '^return_const_pointer_CpCtor$'),
       ('return_shared_pointer', '^return_shared_pointer$'),
       ('return_unique_pointer', '^return_unique_pointer$'),
@@ -51,24 +48,6 @@ class ReturnValuePolicyTestCase(parameterized.TestCase):
        '^return_unique_pointer_nocopy_nomove$')
   )
   def testReturnValue(self, return_function, expected):
-    ret = getattr(return_value_policy, return_function)()
-    self.assertRegex(ret.mtxt, expected)
-
-  @absltest.skipIf(
-      'pybind11' not in return_value_policy.__doc__,
-      'Legacy PyCLIF does not use return value policy')
-  def testReturnAsBytes(self):
-    ret = return_value_policy.return_string()
-    self.assertEqual(ret, b'return_string')
-
-  @absltest.skipIf(
-      'pybind11' not in return_value_policy.__doc__,
-      'These return value policies cause memory leak of legacy PyCLIF')
-  @parameterized.parameters(
-      ('return_value_policy_take_ownership', '^return_pointer_unowned$'),
-      ('return_value_policy_automatic', '^return_pointer_unowned$'),
-  )
-  def testTakeOwnership(self, return_function, expected):
     ret = getattr(return_value_policy, return_function)()
     self.assertRegex(ret.mtxt, expected)
 

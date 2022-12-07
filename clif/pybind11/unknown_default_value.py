@@ -127,7 +127,7 @@ def generate_from(
   # Generates call to the C++ function
   function_call = lambdas.generate_function_call(func_decl, class_decl)
   function_call_returns = lambdas.generate_function_call_returns(
-      func_decl, codegen_info.capsule_types)
+      func_decl, codegen_info)
   yield I + 'switch (nargs) {'
   for n in range(minargs, nargs+1):
     yield I + I + f'case {n}:'

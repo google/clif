@@ -13,7 +13,7 @@
 # limitations under the License.
 """Generates C++ lambda functions inside pybind11 bindings code."""
 
-from typing import Generator, List, Optional, Set
+from typing import Generator, List, Optional
 
 from clif.protos import ast_pb2
 from clif.pybind11 import function_lib
@@ -62,27 +62,6 @@ def generate_lambda(
   yield f'}}, {function_suffix}'
 
 
-def needs_lambda(
-    func_decl: ast_pb2.FuncDecl, codegen_info: utils.CodeGenInfo,
-    class_decl: Optional[ast_pb2.ClassDecl] = None) -> bool:
-  if class_decl and _is_inherited_method(class_decl, func_decl):
-    return True
-  return (bool(func_decl.postproc) or
-          func_decl.is_overloaded or
-          _func_is_extend_static_method(func_decl, class_decl) or
-          function_lib.func_has_vector_param(func_decl) or
-          function_lib.func_has_set_param(func_decl) or
-          _func_is_context_manager(func_decl) or
-          _func_needs_index_check(func_decl) or
-          _func_has_capsule_params(func_decl, codegen_info.capsule_types) or
-          _func_needs_implicit_conversion(func_decl) or
-          _func_has_pointer_params(func_decl) or
-          function_lib.func_has_py_object_params(func_decl) or
-          _func_has_status_params(func_decl, codegen_info.requires_status) or
-          _func_has_status_callback(func_decl, codegen_info.requires_status) or
-          func_decl.cpp_num_params != len(func_decl.params))
-
-
 def generate_check_nullptr(
     func_decl: ast_pb2.FuncDecl, param_name: str) -> Generator[str, None, None]:
   yield I + f'if ({param_name} == nullptr) {{'
@@ -125,9 +104,6 @@ def _generate_lambda_body(
   function_call = generate_function_call(func_decl, class_decl)
   params_str = ', '.join([p.function_argument for p in params])
   function_call_params = generate_function_call_params(func_decl, params_str)
-  function_call_returns = generate_function_call_returns(
-      func_decl, codegen_info.capsule_types)
-
   cpp_void_return = func_decl.cpp_void_return or not func_decl.returns
 
   # Generates void pointer check for parameters that are converted from non
@@ -158,32 +134,42 @@ def _generate_lambda_body(
     yield I +'}'
     yield I + f'{index.gen_name} = {index.gen_name}_;'
 
-  # Generates declarations of return values
+  if not cpp_void_return:
+    yield I + 'py::object ret0;'
+
+  # Generates declarations of pointer return values outside of scope
   for i, r in enumerate(func_decl.returns):
     if i or cpp_void_return:
       yield I + f'{r.type.cpp_type} ret{i}{{}};'
 
+  yield I + '{'
   if not function_lib.func_keeps_gil(func_decl):
-    yield I + 'PyThreadState* _save;'
-    yield I + 'Py_UNBLOCK_THREADS'
+    yield I + I + 'py::gil_scoped_release gil_release;'
 
   # Generates call to the wrapped function
   cpp_void_return = func_decl.cpp_void_return or not func_decl.returns
+  ret0_with_py_cast = ''
   if not cpp_void_return:
     ret0 = func_decl.returns[0]
     if not ret0.type.cpp_type:
       callback_cpp_type = function_lib.generate_callback_signature(ret0)
-      yield I + (f'{callback_cpp_type} ret0 = '
-                 f'{function_call}({function_call_params});')
+      yield I + I + (f'{callback_cpp_type} ret0_ = '
+                     f'{function_call}({function_call_params});')
     else:
-      yield I + (f'{ret0.type.cpp_type} ret0 = '
-                 f'{function_call}({function_call_params});')
+      yield I + I + (f'{ret0.type.cpp_type} ret0_ = '
+                     f'{function_call}({function_call_params});')
+    ret0_with_py_cast = generate_function_call_return(
+        func_decl, ret0, 'ret0_', codegen_info)
+    yield I + I + '{'
+    yield I + I + I + 'py::gil_scoped_acquire gil_acquire;'
+    yield I + I + I + f'ret0 = {ret0_with_py_cast};'
+    yield I + I + '}'
   else:
-    yield I + f'{function_call}({function_call_params});'
+    yield I + I + f'{function_call}({function_call_params});'
+  yield I + '}'
 
-  if not function_lib.func_keeps_gil(func_decl):
-    yield I + 'Py_BLOCK_THREADS'
-
+  function_call_returns = generate_function_call_returns(
+      func_decl, codegen_info)
   # Generates returns of the lambda expression
   self_param = 'self'
   if func_decl.is_extend_method and len(params):
@@ -212,30 +198,33 @@ def generate_function_call_params(
 
 
 def generate_function_call_returns(
-    func_decl: ast_pb2.FuncDecl, capsule_types: Set[str],
-    requires_status: bool = True) -> str:
+    func_decl: ast_pb2.FuncDecl, codegen_info: utils.CodeGenInfo) -> str:
   """Generates return values of cpp function."""
   all_returns_list = []
   for i, r in enumerate(func_decl.returns):
-    if function_lib.is_bytes_type(r.type):
-      all_returns_list.append(
-          f'py::cast(ret{i}, py::return_value_policy::_return_as_bytes)')
-    elif r.type.lang_type in capsule_types:
-      all_returns_list.append(
-          f'clif::CapsuleWrapper<{r.type.cpp_type}>(ret{i})')
-    elif function_lib.is_status_param(r, requires_status):
-      status_type = function_lib.generate_status_type(func_decl, r)
-      all_returns_list.append(f'py::cast(({status_type})(std::move(ret{i})), '
-                              'py::return_value_policy::_clif_automatic)')
-    # When the lambda expression returns multiple values, we construct an
-    # `std::tuple` with those return values. For uncopyable return values, we
-    # need `std::move` when constructing the `std::tuple`.
-    elif (len(func_decl.returns) > 1 and
-          ('std::unique_ptr' in r.cpp_exact_type or not r.type.cpp_copyable)):
-      all_returns_list.append(f'std::move(ret{i})')
+    if i == 0 and not func_decl.cpp_void_return:
+      all_returns_list.append('ret0')
     else:
-      all_returns_list.append(f'ret{i}')
+      ret = generate_function_call_return(func_decl, r, f'ret{i}', codegen_info)
+      all_returns_list.append(ret)
   return ', '.join(all_returns_list)
+
+
+def generate_function_call_return(
+    func_decl: ast_pb2.FuncDecl, return_value: ast_pb2.ParamDecl,
+    return_value_name: str, codegen_info: utils.CodeGenInfo) -> str:
+  """Generates return values of cpp function."""
+  ret = f'std::move({return_value_name})'
+  return_value_policy = 'py::return_value_policy::_clif_automatic'
+  if function_lib.is_bytes_type(return_value.type):
+    return_value_policy = 'py::return_value_policy::_return_as_bytes'
+  elif return_value.type.lang_type in codegen_info.capsule_types:
+    ret = (f'clif::CapsuleWrapper<{return_value.type.cpp_type}>'
+           f'({return_value_name})')
+  elif function_lib.is_status_param(return_value, codegen_info.requires_status):
+    status_type = function_lib.generate_status_type(func_decl, return_value)
+    ret = f'({status_type})(std::move({return_value_name}))'
+  return f'py::cast({ret}, {return_value_policy})'
 
 
 def _generate_lambda_params_with_types(
@@ -262,87 +251,6 @@ def generate_function_call(
   else:
     method_name = func_decl.name.cpp_name.split('::')[-1]
     return f'self.{method_name}'
-
-
-def _func_is_extend_static_method(
-    func_decl: ast_pb2.FuncDecl,
-    class_decl: Optional[ast_pb2.ClassDecl] = None) -> bool:
-  return class_decl and func_decl.is_extend_method and func_decl.classmethod
-
-
-def _func_has_pointer_params(func_decl: ast_pb2.FuncDecl) -> bool:
-  num_returns = len(func_decl.returns)
-  return num_returns >= 2 or (num_returns == 1 and func_decl.cpp_void_return)
-
-
-def _func_has_status_params(func_decl: ast_pb2.FuncDecl,
-                            requires_status: bool) -> bool:
-  for p in func_decl.params:
-    if function_lib.is_status_param(p, requires_status):
-      return True
-  for r in func_decl.returns:
-    if function_lib.is_status_param(r, requires_status):
-      return True
-  return False
-
-
-def _func_has_status_callback(func_decl: ast_pb2.FuncDecl,
-                              requires_status: bool) -> bool:
-  for r in func_decl.returns:
-    if function_lib.is_status_callback(r, requires_status):
-      return True
-  return False
-
-
-def _func_has_capsule_params(
-    func_decl: ast_pb2.FuncDecl, capsule_types: Set[str]) -> bool:
-  for p in func_decl.params:
-    if p.type.lang_type in capsule_types:
-      return True
-  for r in func_decl.returns:
-    if r.type.lang_type in capsule_types:
-      return True
-  return False
-
-
-def _func_is_context_manager(func_decl: ast_pb2.FuncDecl) -> bool:
-  return func_decl.name.native in ('__enter__@', '__exit__@')
-
-
-def _func_needs_index_check(func_decl: ast_pb2.FuncDecl) -> bool:
-  return func_decl.name.native in _NEEDS_INDEX_CHECK_METHODS
-
-
-def _is_inherited_method(class_decl: ast_pb2.ClassDecl,
-                         func_decl: ast_pb2.FuncDecl) -> bool:
-  if class_decl.cpp_bases and not func_decl.is_extend_method:
-    namespaces = func_decl.name.cpp_name.split('::')
-    if (len(namespaces) > 1 and
-        namespaces[-2] != class_decl.name.cpp_name.strip(':')):
-      return True
-  return False
-
-
-def _func_needs_implicit_conversion(func_decl: ast_pb2.FuncDecl) -> bool:
-  """Check if a function contains an implicitly converted parameter."""
-  for param in func_decl.params:
-    if (_extract_bare_type(param.cpp_exact_type) !=
-        _extract_bare_type(param.type.cpp_type) and
-        param.type.cpp_toptr_conversion and
-        param.type.cpp_touniqptr_conversion):
-      return True
-  return False
-
-
-def _extract_bare_type(cpp_name: str) -> str:
-  # This helper function is not general and only meant
-  # to be used in _func_needs_implicit_conversion.
-  t = cpp_name.split(' ')
-  if t[0] == 'const':
-    t = t[1:]
-  if t[-1] in {'&', '*'}:  # Minimum viable approach. To be refined as needed.
-    t = t[:-1]
-  return ' '.join(t)
 
 
 def generate_return_value_cpp_type(
