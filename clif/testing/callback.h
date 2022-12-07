@@ -16,6 +16,8 @@
 #ifndef CLIF_TESTING_CALLBACK_H_
 #define CLIF_TESTING_CALLBACK_H_
 
+#include <Python.h>
+
 #include <functional>
 #include <string>
 #include <vector>
@@ -81,5 +83,7 @@ struct SelfCallback {
 inline std::string LambdaCallback(std::function<std::string()> f) {
   return f();
 }
+
+inline PyObject* PyObjectCallback(std::function<PyObject*()> f) { return f(); }
 
 #endif  // CLIF_TESTING_CALLBACK_H_

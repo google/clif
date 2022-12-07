@@ -31,3 +31,5 @@ from "clif/testing/callback.h":
 
   # Testing pybind11 code generator generating lambda expressions with callbacks
   def LambdaCallback(cb: () -> str) -> bytes
+
+  def PyObjectCallback(cb: () -> object) -> object

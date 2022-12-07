@@ -39,6 +39,10 @@ def StringCallback():
   return 'abcd'
 
 
+def RaisingCallback():
+  raise ValueError('raised a value error')
+
+
 class CallbackTest(absltest.TestCase):
 
   def CallbackMethod(self, data):
@@ -89,6 +93,15 @@ class CallbackTest(absltest.TestCase):
     res = callback.LambdaCallback(StringCallback)
     self.assertIsInstance(res, bytes)
     self.assertEqual(res, b'abcd')
+
+  def testPyObjectCallback(self):
+    res = callback.PyObjectCallback(StringCallback)
+    self.assertIsInstance(res, str)
+    self.assertEqual(res, 'abcd')
+
+  def testPyObjectCallbackRaises(self):
+    with self.assertRaisesWithLiteralMatch(ValueError, 'raised a value error'):
+      callback.PyObjectCallback(RaisingCallback)
 
 
 if __name__ == '__main__':

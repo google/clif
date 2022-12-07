@@ -379,9 +379,7 @@ template <>
 class ReturnValue<PyObject*> {
  public:
   PyObject* FromPyValue(PyObject* result) {
-    if (PyErr_Occurred()) {
-      HandlePyExc();
-    }
+    // Return as-is and offload exception handling to the caller.
     return result;
   }
 };
