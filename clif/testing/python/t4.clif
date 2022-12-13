@@ -18,7 +18,6 @@ from "clif/testing/t4.h":
   def `walk_ast` as Walk(pb: AST) -> int
   def `size_ast` as Size(pb: AST) -> int
   def `decl_type` as DeclType(pb: Decl) -> Decl.Type
-  def `decl_type_uniq_out` as DeclTypeUO(pb: Decl) -> Decl.Type
   def `decl_type_uniq_in` as DeclTypeUI(pb: Decl) -> Decl.Type
   def all_ast_borrowed() -> list<AST>
   def all_ast_holds() -> list<AST>

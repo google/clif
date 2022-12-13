@@ -34,7 +34,6 @@ class T4Test(absltest.TestCase):
     pb.decltype = pb.FUNC
     self.assertEqual(t4.DeclType(pb), pb.FUNC)
     self.assertEqual(t4.DeclTypeUI(pb), pb.FUNC)
-    self.assertEqual(t4.DeclTypeUO(pb), pb.FUNC)
 
   def testProtoNestedMessage(self):
     pb = nested_pb2.Outer.Inner()

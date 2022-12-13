@@ -38,9 +38,6 @@ inline Decl::Type decl_type(const Decl& pb) { return pb.decltype_(); }
 inline Decl::Type decl_type_uniq_in(std::unique_ptr<Decl> t) {
   return t->decltype_();
 }
-inline std::unique_ptr<Decl::Type> decl_type_uniq_out(const Decl& pb) {
-  return std::make_unique<Decl::Type>(pb.decltype_());
-}
 
 inline long size_any_ref(const ::proto2::Message& pb) {  // NOLINT
   return pb.ByteSizeLong();
