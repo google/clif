@@ -216,3 +216,87 @@ class CapsuleType(BaseType):
   def generate_clif_use(self) -> Generator[str, None, None]:
     yield (f'// CLIF use `{self.cpp_name}` as {self.py_name}, '
            'PythonCapsule, Pybind11Ignore')
+
+
+@dataclasses.dataclass
+class ProtoType(BaseType):
+  """Wraps a C++ proto Message."""
+
+  def generate_header(self) -> Generator[str, None, None]:
+    yield ''
+    yield from self.generate_clif_use()
+    yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}&, '
+           '::clif::py::PostConv);')
+    yield (f'PyObject* Clif_PyObjFrom(std::shared_ptr<const {self.cpp_name}>,'
+           '::clif::py::PostConv);')
+    yield (f'PyObject* Clif_PyObjFrom(std::unique_ptr<const {self.cpp_name}>,'
+           '::clif::py::PostConv);')
+    yield ''
+    yield f'bool Clif_PyObjAs(PyObject* input, {self.cpp_name}* output);'
+    yield ('bool Clif_PyObjAs(PyObject* input, '
+           f'std::unique_ptr<{self.cpp_name}>* output);')
+
+  def generate_converters(self) -> Generator[str, None, None]:
+    yield ''
+    yield (f'PyObject* Clif_PyObjFrom(const {self.cpp_name}& c, '
+           '::clif::py::PostConv) {')
+    yield I + 'return pybind11::cast(c).release().ptr();'
+    yield '}'
+    yield (f'PyObject* Clif_PyObjFrom(std::shared_ptr<const {self.cpp_name}> c'
+           ', ::clif::py::PostConv) {')
+    yield I + 'return pybind11::cast(std::move(c)).release().ptr();'
+    yield '}'
+    yield ''
+    yield (f'PyObject* Clif_PyObjFrom(std::unique_ptr<const {self.cpp_name}> c'
+           ', ::clif::py::PostConv) {')
+    yield I + 'return pybind11::cast(std::move(c)).release().ptr();'
+    yield '}'
+    yield ''
+    yield f'bool Clif_PyObjAs(PyObject* input, {self.cpp_name}* output) {{'
+    yield I + 'try {'
+    yield I + I + (f'*output = pybind11::cast<{self.cpp_name}>'
+                   '(pybind11::handle(input));')
+    yield I + '} catch (pybind11::cast_error) {'
+    yield I + I + 'return false;'
+    yield I + '}'
+    yield I + 'return true;'
+    yield '}'
+    yield ''
+    yield ('bool Clif_PyObjAs(PyObject* input, '
+           f'std::unique_ptr<{self.cpp_name}>* output) {{')
+    yield I + 'try {'
+    yield I + I + ('*output = pybind11::cast<std::unique_ptr'
+                   f'<{self.cpp_name}>>(pybind11::handle(input));')
+    yield I + '} catch (pybind11::cast_error) {'
+    yield I + I + 'return false;'
+    yield I + '}'
+    yield I + 'return true;'
+    yield '}'
+    yield ''
+
+
+@dataclasses.dataclass
+class ProtoEnumType(BaseType):
+  """Wraps a C++ proto Enum."""
+
+  def generate_header(self) -> Generator[str, None, None]:
+    yield ''
+    yield from self.generate_clif_use()
+    yield f'PyObject* Clif_PyObjFrom({self.cpp_name}, ::clif::py::PostConv);'
+    yield f'bool Clif_PyObjAs(PyObject* input, {self.cpp_name}* output);'
+
+  def generate_converters(self) -> Generator[str, None, None]:
+    yield ''
+    yield (f'PyObject* Clif_PyObjFrom({self.cpp_name} c, '
+           '::clif::py::PostConv) {')
+    yield I + 'return pybind11::cast(c).release().ptr();'
+    yield '}'
+    yield f'bool Clif_PyObjAs(PyObject* input, {self.cpp_name}* output) {{'
+    yield I + 'try {'
+    yield I + I + (f'*output = pybind11::cast<{self.cpp_name}>'
+                   '(pybind11::handle(input));')
+    yield I + '} catch (pybind11::cast_error) {'
+    yield I + I + 'return false;'
+    yield I + '}'
+    yield I + 'return true;'
+    yield '}'

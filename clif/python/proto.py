@@ -24,6 +24,7 @@ reads NAME.proto and generates C++ CCNAME source and HNAME header files.
 import argparse
 import itertools
 import sys
+from clif.pybind11 import gen_type_info
 from clif.python import gen
 from clif.python import clif_types as types
 from clif.python.utils import proto_util
@@ -94,17 +95,56 @@ def CreatePyTypeInfo(desc, path,
   return messages
 
 
-def GenerateForPybind11(messages, proto_hdr):
+def GenerateForPybind11(messages, clif_hdr, proto_hdr):
   """Generate no-op header files to bypass the checks of PyCLIF."""
+  proto_types = []
+  for m in messages:
+    ctor = None
+    if isinstance(m, types.ProtoType):
+      ctor = gen_type_info.ProtoType
+    elif isinstance(m, types.CapsuleType):
+      ctor = gen_type_info.CapsuleType
+    elif isinstance(m, types.ProtoEnumType):
+      ctor = gen_type_info.ProtoEnumType
+    if not ctor:
+      raise _ParseError('Unsupported proto type.')
+    proto_type = ctor(
+        cpp_name=m.cname, py_name=m.pyname,
+        cpp_namespace=m.namespace)
+    proto_types.append(proto_type)
+  proto_types = sorted(proto_types, key=lambda gen_type: gen_type.cpp_name)
   with open(FLAGS.header_out, 'w') as hout:
-    hout.write(f'#include "{proto_hdr}"')
-    hout.write('\n')
-    for m in messages:
-      hout.write(f'// CLIF use `{m.cname}` as {m.pyname}, Pybind11Ignore')
-      hout.write('\n')
+    gen.WriteTo(
+        hout,
+        [f'#include "{proto_hdr}"',
+         '#include "clif/python/postconv.h"',
+         '#include "third_party/pybind11/include/pybind11/smart_holder.h"',
+         '#include "third_party/pybind11_protobuf/native_proto_caster.h"'])
+    for namespace, typedefs in itertools.groupby(
+        proto_types, lambda gen_type: gen_type.cpp_namespace):
+      namespace = namespace.strip(':') or 'clif'
+      gen.WriteTo(
+          hout,
+          [' '.join('namespace %s {' % ns for ns in namespace.split('::'))])
+      for t in typedefs:
+        gen.WriteTo(hout, t.generate_header())
+      gen.WriteTo(
+          hout,
+          ['} ' * (1 + namespace.count('::')) + ' // namespace ' + namespace])
 
   with open(FLAGS.ccdeps_out, 'w') as cout:
-    cout.write('')
+    gen.WriteTo(cout, [f'#include "{clif_hdr}"'])
+    for namespace, typedefs in itertools.groupby(
+        proto_types, lambda gen_type: gen_type.cpp_namespace):
+      namespace = namespace.strip(':') or 'clif'
+      gen.WriteTo(
+          cout,
+          [' '.join('namespace %s {' % ns for ns in namespace.split('::'))])
+      for t in typedefs:
+        gen.WriteTo(cout, t.generate_converters())
+      gen.WriteTo(
+          cout,
+          ['} ' * (1 + namespace.count('::')) + ' // namespace ' + namespace])
 
 
 def GenerateFrom(messages, proto_filename, clif_hdr, proto_hdr):
@@ -167,7 +207,7 @@ def main(_):
   if FLAGS.pyclif_codegen_mode == 'c_api':
     GenerateFrom(messages, name, hdr, pypath+'.pb.h')
   else:
-    GenerateForPybind11(messages, pypath+'.pb.h')
+    GenerateForPybind11(messages, hdr, pypath+'.pb.h')
 
 
 def ParseFlags():
