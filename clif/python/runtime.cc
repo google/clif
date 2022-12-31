@@ -157,7 +157,7 @@ PyObject* ImportFQName(const std::string& full_class_name,
 
 // py.__class__.__name__
 const char* ClassName(PyObject* py) {
-  if (Py_TYPE(py) == &PyType_Type) {
+  if (PyType_Check(py)) {
     return reinterpret_cast<PyTypeObject*>(py)->tp_name;
   }
   return Py_TYPE(py)->tp_name;
@@ -165,7 +165,7 @@ const char* ClassName(PyObject* py) {
 
 // type(py) renamed from {classobj, instance, type, class X}
 const char* ClassType(PyObject* py) {
-  if (Py_TYPE(py) == &PyType_Type) {
+  if (PyType_Check(py)) {
     return "class";
   }
   return "instance";
