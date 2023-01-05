@@ -24,7 +24,6 @@ reads NAME.proto and generates C++ CCNAME source and HNAME header files.
 import argparse
 import itertools
 import sys
-from clif.pybind11 import gen_type_info
 from clif.python import gen
 from clif.python import clif_types as types
 from clif.python.utils import proto_util
@@ -206,8 +205,6 @@ def main(_):
   messages = CreatePyTypeInfo(desc, pypath, not FLAGS.allow_empty_package)
   if FLAGS.pyclif_codegen_mode == 'c_api':
     GenerateFrom(messages, name, hdr, pypath+'.pb.h')
-  else:
-    GenerateForPybind11(messages, hdr, pypath+'.pb.h')
 
 
 def ParseFlags():
