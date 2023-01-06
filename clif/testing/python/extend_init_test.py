@@ -78,6 +78,9 @@ class ExtendInitTest(absltest.TestCase):
     self.assertIsInstance(
         extend_init.TestPyErrFromConstructor(0),
         extend_init.TestPyErrFromConstructor)
+    if 'pybind11' in extend_init.__doc__:
+      self.skipTest(
+          'Pybind11 does not allow factory functions to return nullptr.')
     with self.assertRaises(ValueError) as ctx:
       extend_init.TestPyErrFromConstructor(1)
     self.assertEqual(str(ctx.exception), 'RaisedFromExtendInit')
