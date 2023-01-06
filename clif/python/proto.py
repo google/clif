@@ -205,6 +205,9 @@ def main(_):
   messages = CreatePyTypeInfo(desc, pypath, not FLAGS.allow_empty_package)
   if FLAGS.pyclif_codegen_mode == 'c_api':
     GenerateFrom(messages, name, hdr, pypath+'.pb.h')
+  else:
+    raise RuntimeError("Pybind11 code generator does not work with "
+                       "opensource CLIF")
 
 
 def ParseFlags():
