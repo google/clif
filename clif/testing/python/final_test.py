@@ -9,8 +9,7 @@ class FinalTest(absltest.TestCase):
     swig_object = final.SwigFinal()
     capsule = swig_object.as_clif_testing_final_Final()
     self.assertEqual(type(capsule).__name__, 'PyCapsule')
-    # TODO: Enable in cl/500703504.
-    # final.TakesFinal(swig_object)
+    final.TakesFinal(swig_object)
 
 
 if __name__ == '__main__':

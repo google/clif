@@ -1475,7 +1475,8 @@ class ClassTest(unittest.TestCase):
     """))
 
   def testFinalStructProperty(self):
-    self.assertClassEqual("""
+    self.assertClassEqual(
+        """
       name {
         native: "Struct"
         cpp_name: "StructTy"
@@ -1650,6 +1651,20 @@ class ClassTest(unittest.TestCase):
         if (Py_TYPE(py) == wrapper_Type) {
           return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
         }
+        PyObject* base = PyObject_CallMethod(py, "as_StructTy", nullptr);
+        if (base == nullptr) {
+          PyErr_Clear();
+        } else {
+          if (PyCapsule_CheckExact(base)) {
+            void* p = PyCapsule_GetPointer(base, "StructTy");
+            if (!PyErr_Occurred()) {
+              StructTy* c = static_cast<StructTy*>(p);
+              Py_DECREF(base);
+              return c;
+            }
+          }
+          Py_DECREF(base);
+        }
         PyErr_Format(PyExc_TypeError, "expecting %%s instance, got %%s %%s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
         return nullptr;
       }
@@ -1690,7 +1705,8 @@ class ClassTest(unittest.TestCase):
     """))
 
   def testFinalStruct(self):
-    self.assertClassEqual("""
+    self.assertClassEqual(
+        """
       name {
         native: "Struct"
         cpp_name: "StructCpp"
@@ -1800,6 +1816,20 @@ class ClassTest(unittest.TestCase):
       static StructCpp* ThisPtr(PyObject* py) {
         if (Py_TYPE(py) == wrapper_Type) {
           return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
+        }
+        PyObject* base = PyObject_CallMethod(py, "as_StructCpp", nullptr);
+        if (base == nullptr) {
+          PyErr_Clear();
+        } else {
+          if (PyCapsule_CheckExact(base)) {
+            void* p = PyCapsule_GetPointer(base, "StructCpp");
+            if (!PyErr_Occurred()) {
+              StructCpp* c = static_cast<StructCpp*>(p);
+              Py_DECREF(base);
+              return c;
+            }
+          }
+          Py_DECREF(base);
         }
         PyErr_Format(PyExc_TypeError, "expecting %%s instance, got %%s %%s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
         return nullptr;

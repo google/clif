@@ -484,12 +484,12 @@ def GenThisPointerFunc(cname, w='wrapper', final=False):
   yield I+'if (Py_TYPE(py) == %s) {' % t
   yield I+I+return_this_cpp
   yield I+'}'
+  # self.as_Base(), where Base is this class.
+  for s in _GenBaseCapsule(cname, retptr=True):
+    yield s
   if final:
     _I=''  # pylint: disable=bad-whitespace,invalid-name
   else:
-    # self is derived, try self.as_Base(), where Base is this class.
-    for s in _GenBaseCapsule(cname, retptr=True):
-      yield s
     # as_Base returned an error / wrong capsule
     yield I+'if (PyObject_IsInstance(py, %s)) {' % AsPyObj(t)
     yield I+I+'if (!base) {'  # base set in _GenBaseCapsule
