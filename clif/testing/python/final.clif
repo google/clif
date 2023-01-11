@@ -1,0 +1,10 @@
+from "clif/testing/final.h":
+  namespace `clif_testing_final`:
+    class SwigFinal:
+      def as_clif_testing_final_Final(self) -> object
+
+    @final
+    class Final:
+      pass
+
+    def TakesFinal(final: Final)
