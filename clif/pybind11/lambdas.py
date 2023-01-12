@@ -135,7 +135,11 @@ def _generate_lambda_body(
     yield I + f'{index.gen_name} = {index.gen_name}_;'
 
   if not cpp_void_return:
-    yield I + 'py::object ret0;'
+    ret0 = func_decl.returns[0]
+    if not ret0.type.cpp_type:
+      yield I + 'py::cpp_function ret0;'
+    else:
+      yield I + 'py::object ret0;'
 
   # Generates declarations of pointer return values outside of scope
   for i, r in enumerate(func_decl.returns):
@@ -153,17 +157,29 @@ def _generate_lambda_body(
     ret0 = func_decl.returns[0]
     if not ret0.type.cpp_type:
       callback_cpp_type = function_lib.generate_callback_signature(ret0)
+      callback_params_list = [
+          f'py::arg("{param.name.native}")'
+          for param in ret0.type.callable.params]
+      callback_params_str = ', '.join(callback_params_list)
       yield I + I + (f'{callback_cpp_type} ret0_ = '
                      f'{function_call}({function_call_params});')
+      yield I + I + '{'
+      yield I + I + I + 'py::gil_scoped_acquire gil_acquire;'
+      if callback_params_str:
+        yield I + I + I + ('ret0 = py::cpp_function(ret0_, '
+                           f'{callback_params_str});')
+      else:
+        yield I + I + I + 'ret0 = py::cpp_function(ret0_);'
+      yield I + I + '}'
     else:
       yield I + I + (f'{ret0.type.cpp_type} ret0_ = '
                      f'{function_call}({function_call_params});')
-    ret0_with_py_cast = generate_function_call_return(
-        func_decl, ret0, 'ret0_', codegen_info)
-    yield I + I + '{'
-    yield I + I + I + 'py::gil_scoped_acquire gil_acquire;'
-    yield I + I + I + f'ret0 = {ret0_with_py_cast};'
-    yield I + I + '}'
+      ret0_with_py_cast = generate_function_call_return(
+          func_decl, ret0, 'ret0_', codegen_info)
+      yield I + I + '{'
+      yield I + I + I + 'py::gil_scoped_acquire gil_acquire;'
+      yield I + I + I + f'ret0 = {ret0_with_py_cast};'
+      yield I + I + '}'
   else:
     yield I + I + f'{function_call}({function_call_params});'
   yield I + '}'
