@@ -49,8 +49,8 @@ headers are included.
 #include "absl/base/config.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "clif/python/types.h"
 #include "clif/python/stltypes_fwd.h"
+#include "clif/python/types.h"
 
 #ifdef ABSL_HAVE_STD_VARIANT
 // CLIF use `::std::variant` as OneOf
@@ -718,9 +718,17 @@ bool Clif_PyObjAs(PyObject* py, std::optional<T>* c) {
   }
   // Initialized case.
   using ::clif::Clif_PyObjAs;
-  if (!Clif_PyObjAs(py, &c->emplace())) {
-    c->reset();
-    return false;
+  if constexpr (std::is_default_constructible_v<T>) {
+    if (!Clif_PyObjAs(py, &c->emplace())) {
+      c->reset();
+      return false;
+    }
+  } else {
+    T* v;
+    if (!Clif_PyObjAs(py, &v)) {
+      return false;
+    }
+    c->emplace(*v);
   }
   return true;
 }
@@ -843,7 +851,7 @@ namespace py {
 template <typename T, typename Inserter>
 bool IterToCont(PyObject* py, Inserter add) {
   if (PyBytes_Check(py) || PyUnicode_Check(py)) {
-      return false;
+    return false;
   }
   PyObject* it = PyObject_GetIter(py);
   if (it == nullptr) return false;
