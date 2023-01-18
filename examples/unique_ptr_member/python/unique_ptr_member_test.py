@@ -26,7 +26,7 @@ class UniquePtrMemberTest(unittest.TestCase):
     with self.assertRaises(ValueError) as ctx:
       obj.get_int()
     self.assertTrue(
-        str(ctx.exception).startswith('Missing value for wrapped C++ type '))
+        str(ctx.exception).startswith('Missing value for wrapped C++ type'))
 
   def testCppPattern(self):
     res = unique_ptr_member.cpp_pattern()
