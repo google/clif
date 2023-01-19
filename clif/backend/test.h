@@ -809,4 +809,12 @@ class StatusOr {
 
 absl::StatusOr<int> StatusOrIntReturn();
 
+template<int N>
+struct Primary { };
+
+template<int N>
+using AliasForPrimary = Primary<N>;
+
+struct AliasForPrimary5 : AliasForPrimary<5> { };
+
 #endif  // CLIF_BACKEND_TEST_H_

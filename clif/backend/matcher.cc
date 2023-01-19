@@ -941,7 +941,9 @@ bool ClifMatcher::CalculateBaseClassesHelper(
       const std::string base_type_name = GetQualTypeClifName(base_type);
       // The proto fields "bases" and "cpp_bases" are separate for
       // historical reasons.
-      clif_decl->add_bases()->set_cpp_name(base_type_name);
+      auto* mutable_base = clif_decl->add_bases();
+      mutable_base->set_cpp_name(base_type_name);
+      mutable_base->set_cpp_canonical_type(GetCanonicalType(base_type));
       ClassDecl::Base* cpp_base = clif_decl->add_cpp_bases();
       cpp_base->set_name(base_type_name);
       cpp_base->set_filename(ast_->GetSourceFile(*base_clang_decl));
@@ -1065,10 +1067,13 @@ bool ClifMatcher::MatchAndSetClass(ClassDecl* class_decl) {
   // Use the qualtype to retrieve the name instead of the decl,
   // because that contains template parameters and fully qualified
   // subtypes.
-  class_decl->mutable_name()->set_cpp_name(
-      GetQualTypeClifName(
-          clif_type->second.qual_type.getSingleStepDesugaredType(
-              ast_->GetASTContext())));
+  auto* mut_name = class_decl->mutable_name();
+  mut_name->set_cpp_name(GetQualTypeClifName(
+      clif_type->second.qual_type.getSingleStepDesugaredType(
+          ast_->GetASTContext())));
+  mut_name->set_cpp_canonical_type(
+      GetCanonicalType(clif_type->second.qual_type));
+
   class_decl->set_is_cpp_polymorphic(record_decl->isPolymorphic());
   return num_unmatched == 0;
 }
@@ -2805,6 +2810,13 @@ std::string ClifMatcher::GetMangledName(const clang::NamedDecl* clang_decl) {
     mangler->mangleName(clang_decl, buf_stream);
   }
   return buf_stream.str();
+}
+
+std::string ClifMatcher::GetCanonicalType(
+    const clang::QualType& clang_type) const {
+  const auto& canonical_type =
+      ast_->GetASTContext().getCanonicalType(clang_type);
+  return GetQualTypeClifName(canonical_type);
 }
 
 // Both Clif and Clang typically treat the "this" pointer in a class

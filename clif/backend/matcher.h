@@ -364,6 +364,7 @@ class ClifMatcher {
                              Type* clif_type);
 
   std::string GetMangledName(const clang::NamedDecl* clang_decl);
+  std::string GetCanonicalType(const clang::QualType& clang_type) const;
 
   // Helper for MatchAndSetType which handles the complicated
   // clif-callable children of Type.

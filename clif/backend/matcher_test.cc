@@ -3873,4 +3873,14 @@ TEST_F(ClifMatcherTest, TestPolymorphicClass) {
   EXPECT_FALSE(decl.class_().is_cpp_polymorphic());
 }
 
+TEST_F(ClifMatcherTest, TestCppCanonicalType) {
+  protos::Decl decl;
+  TestMatch("decltype: CLASS class_ { name { cpp_name: 'AliasForPrimary5' } } ",
+            &decl);
+  EXPECT_EQ(decl.class_().bases(0).cpp_name(), "::AliasForPrimary<5>");
+  EXPECT_EQ(decl.class_().bases(0).cpp_canonical_type(), "::Primary<5>");
+  EXPECT_EQ(decl.class_().name().cpp_name(), "::AliasForPrimary5");
+  EXPECT_EQ(decl.class_().name().cpp_canonical_type(), "::AliasForPrimary5");
+}
+
 }  // namespace clif

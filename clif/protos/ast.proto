@@ -160,6 +160,8 @@ message ForwardDecl {
 message Name {
   optional string native = 1;  // Target language name.
   optional string cpp_name = 2;
+  // An unique identifier used by pybind11 code generator to do topological sort.
+  optional string cpp_canonical_type = 3;
 };
 
 // Type describe a C++ type match.
