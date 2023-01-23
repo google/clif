@@ -363,3 +363,28 @@ def func_keeps_gil(func_decl: ast_pb2.FuncDecl) -> bool:
   if func_decl.py_keep_gil:
     return True
   return False
+
+
+# The pair of setstate_workaround_* functions below is to sidestep this
+# special-case code in pybind11:
+# https://github.com/pybind/pybind11/blob/a500f439d06d220ee2c680cdd2c8828eac8e7dfc/include/pybind11/pybind11.h#L370
+# For easy reference, the code there is:
+#        rec->is_constructor = (std::strcmp(rec->name, "__init__") == 0)
+#                              || (std::strcmp(rec->name, "__setstate__") == 0);
+# In the context of PyCLIF-pybind11, __setstate__ needs to be a normal method,
+# not an alternative constructor. To not have to modify the pybind11 sources,
+# class_::def() is passed a temporary name. After the member function is bound
+# to the temporary name as a normal function, it is reassigned to the
+# __setstate__ attribute, and the temporary attribute is deleted.
+def setstate_workaround_temp_name(func_name):
+  if func_name != '__setstate__':
+    return func_name
+  return '__setstate_clif_pybind11__'
+
+
+def setstate_workaround_move_attr(class_name, func_name):
+  if func_name == '__setstate__':
+    yield (
+        f'{class_name}.attr("__setstate__")' +
+        f' = {class_name}.attr("__setstate_clif_pybind11__");')
+    yield f'py::delattr({class_name}, "__setstate_clif_pybind11__");'

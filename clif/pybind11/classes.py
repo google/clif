@@ -71,6 +71,7 @@ def generate_from(
   yield I + I + definition
 
   default_constructor_defined = False
+  reduce_or_reduce_ex_defined = False
   trampoline_generated = (
       utils.trampoline_name(class_decl) in trampoline_class_names)
   for member in class_decl.members:
@@ -78,6 +79,8 @@ def generate_from(
       for s in consts.generate_from(class_name, member.const):
         yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.FUNC:
+      if member.func.name.native in ('__reduce__', '__reduce_ex__'):
+        reduce_or_reduce_ex_defined = True
       if member.func.constructor:
         # Legacy CLIF ignores __init__ for abstract classes.
         # Potential future cleanup project: generate a user-friendly error
@@ -97,6 +100,9 @@ def generate_from(
         else:
           for s in function.generate_from(
               class_name, member.func, codegen_info, class_decl):
+            yield I + I + s
+          for s in function_lib.setstate_workaround_move_attr(
+              class_name, member.func.name.native):
             yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.VAR:
       for s in variables.generate_from(class_name, member.var, class_decl):
@@ -126,6 +132,11 @@ def generate_from(
   if (not default_constructor_defined and class_decl.cpp_has_def_ctor and
       (not class_decl.cpp_abstract or trampoline_generated)):
     yield I + I + f'{class_name}.def(py::init<>());'
+
+  if not reduce_or_reduce_ex_defined:
+    yield I + I + (f'{class_name}.def("__reduce_ex__",' +
+                   ' ::clif_pybind11::ReduceExImpl, py::arg("protocol")=-1);')
+
   yield I + '}'
 
 

@@ -33,12 +33,7 @@ struct CapsuleWrapper {
   T ptr;
 };
 
-inline Py_ssize_t item_index(Py_ssize_t idx, Py_ssize_t length) {
-  if (idx < -length || idx >= length) {
-    return -1;
-  }
-  return idx < 0 ? idx + length : idx;
-}
+Py_ssize_t item_index(Py_ssize_t idx, Py_ssize_t length);
 
 }  // namespace clif
 
@@ -127,6 +122,8 @@ template <typename T>
 constexpr bool HasPyObjFrom() {
   return HasClifPyObjFrom<T>(0);
 }
+
+pybind11::object ReduceExImpl(pybind11::handle self, int protocol);
 
 }  // namespace clif_pybind11
 

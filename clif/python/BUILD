@@ -15,6 +15,16 @@ exports_files([
 ])
 
 cc_library(
+    name = "pickle_support_lib",
+    srcs = ["pickle_support.cc"],
+    hdrs = ["pickle_support.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@python_runtime//:python_headers",
+    ],
+)
+
+cc_library(
     name = "clif",
     srcs = [
         "instance.h",
@@ -35,6 +45,7 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        ":pickle_support_lib",
         "//third_party/protobuf/io",
         "@com_github_google_glog//:glog",
         "@com_google_absl//absl/base:config",

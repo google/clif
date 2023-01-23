@@ -42,6 +42,8 @@ def generate_lambda(
       func_decl, params_list, class_decl)
   # @sequential, @context_manager
   func_name = func_decl.name.native.rstrip('#').rstrip('@')
+  if class_decl is not None:
+    func_name = function_lib.setstate_workaround_temp_name(func_name)
   yield (f'{module_name}.{function_lib.generate_def(func_decl)}'
          f'("{func_name}", []({params_with_type}) {{')
 
