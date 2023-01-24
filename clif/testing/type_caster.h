@@ -114,6 +114,10 @@ inline int consume_nocopy_nomove(const ValueHolderNoCopyNoMove& vh) {
   return vh.value;
 }
 
+inline int consume_value_holder_absl_optional_conversion(
+    const ValueHolderHasOptionalConversion& vh) {
+  return vh.value;
+}
 
 }  // namespace clif_testing
 

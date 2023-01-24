@@ -99,6 +99,12 @@ class ValueHolderNoCopyNoMove {
   int value;
 };
 
+class ValueHolderHasOptionalConversion {
+ public:
+  explicit ValueHolderHasOptionalConversion(int v) : value(v) {}
+  int value;
+};
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_H_

@@ -43,10 +43,8 @@ class VariantClifTest(absltest.TestCase):
   def test_ambiguous_conversion(self):
     # First successful conversion is used.
     self.assertEqual(std_variant.index_int_float(0), 0)
-    self.assertEqual(std_variant.index_float_int(0), 0)
 
     self.assertIsInstance(std_variant.identity_int_float(0), int)
-    self.assertIsInstance(std_variant.identity_float_int(0), float)
     self.assertIsInstance(std_variant.identity_opt_int_float(0), int)
 
     # Argument 0.0 is not ambiguous.
@@ -58,6 +56,11 @@ class VariantClifTest(absltest.TestCase):
     self.assertIsInstance(std_variant.identity_opt_int_float(0.0), float)
 
     self.assertIsNone(std_variant.identity_opt_int_float(None))
+
+  @absltest.skip("pybind11 does not accept Python integers as C++ float.")
+  def test_ambiguous_conversion_accept_int_as_float(self):
+    self.assertEqual(std_variant.index_float_int(0), 0)
+    self.assertIsInstance(std_variant.identity_float_int(0), float)
 
   def test_custom_conversions(self):
     # Conversion values are +1 to ensure that custom conversions are used rather

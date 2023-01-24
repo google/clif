@@ -91,6 +91,10 @@ class TypeCasterTest(parameterized.TestCase):
   def test_nocopy_nomove(self):
     self.assertEqual(type_caster.consume_nocopy_nomove(10), 10)
 
+  def test_has_absl_optional_conversion(self):
+    self.assertEqual(
+        type_caster.consume_value_holder_absl_optional_conversion(10), 10)
+
   def test_function_throw_python_exception(self):
     self.assertEqual(type_caster.return_pyobject_throw_python_exception(10), 10)
     with self.assertRaisesRegex(ValueError, r'Value < 0'):

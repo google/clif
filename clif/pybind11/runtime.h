@@ -109,7 +109,7 @@ constexpr bool HasPyObjAs() {
 template <typename T,
           std::enable_if_t<!std::is_abstract_v<T>, int> = 0>
 constexpr bool HasAbslOptionalPyObjAsFalseIfAbstract() {
-  return HasClifPyObjAs<absl::optional<T>>(0);
+  return HasNonClifPyObjAs<absl::optional<T>>(0);
 }
 
 template <typename T,
@@ -181,8 +181,7 @@ namespace detail {
 
 template <typename Type, bool is_type_abstract = std::is_abstract_v<Type>,
           bool has_customized_optional_conversion =
-              !clif_pybind11::HasPyObjAs<Type>() &&
-                  clif_pybind11::HasAbslOptionalPyObjAsFalseIfAbstract<Type>()>
+              clif_pybind11::HasAbslOptionalPyObjAsFalseIfAbstract<Type>()>
 struct clif_type_caster {
  public:
   PYBIND11_TYPE_CASTER(Type, const_name<Type>());
@@ -196,6 +195,20 @@ struct clif_type_caster {
   bool load(handle src, bool) {
     using ::clif::Clif_PyObjAs;
     return Clif_PyObjAs(src.ptr(), &value);
+  }
+
+  template<class T = Type,
+           std::enable_if_t<
+              !clif_pybind11::HasPyObjAs<T>() &&
+              clif_pybind11::HasNonClifPyObjAs<std::unique_ptr<T>>(0), int> = 0>
+  bool load(handle src, bool) {
+    std::unique_ptr<Type> res;
+    using ::clif::Clif_PyObjAs;
+    if (!Clif_PyObjAs(src.ptr(), &res)) {
+      return false;
+    }
+    value = std::move(*res);
+    return true;
   }
 };
 
