@@ -88,20 +88,30 @@ class ValueHolderConcrete : public ValueHolderAbstract {
   }
 };
 
-class ValueHolderNoCopyNoMove {
+class ValueHolderOnlyOptionalConversion {
  public:
-  explicit ValueHolderNoCopyNoMove(int v) : value(v) {}
-  ValueHolderNoCopyNoMove(const ValueHolderNoCopyNoMove&) = delete;
-  ValueHolderNoCopyNoMove(ValueHolderNoCopyNoMove&&) = delete;
+  explicit ValueHolderOnlyOptionalConversion(int v) : value(v) {}
+  ValueHolderOnlyOptionalConversion(
+      const ValueHolderOnlyOptionalConversion&) = delete;
+  ValueHolderOnlyOptionalConversion(
+      ValueHolderOnlyOptionalConversion&&) = delete;
 
-  ValueHolderNoCopyNoMove& operator=(const ValueHolderNoCopyNoMove&) = delete;
-  ValueHolderNoCopyNoMove& operator=(ValueHolderNoCopyNoMove&&) = delete;
+  ValueHolderOnlyOptionalConversion& operator=(
+      const ValueHolderOnlyOptionalConversion&) = delete;
+  ValueHolderOnlyOptionalConversion& operator=(
+      ValueHolderOnlyOptionalConversion&&) = delete;
   int value;
 };
 
-class ValueHolderHasOptionalConversion {
+class ValueHolderOnlyPtrToPtrConversion {
  public:
-  explicit ValueHolderHasOptionalConversion(int v) : value(v) {}
+  explicit ValueHolderOnlyPtrToPtrConversion(int v) : value(v) {}
+  int value;
+};
+
+class ValueHolderMultipleConversions {
+ public:
+  explicit ValueHolderMultipleConversions(int v) : value(v) {}
   int value;
 };
 

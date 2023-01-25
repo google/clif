@@ -110,12 +110,18 @@ inline std::unique_ptr<ValueHolderAbstract> abstract_unique_ptr_round_trip(
   return std::make_unique<ValueHolderConcrete>(vh->value);
 }
 
-inline int consume_nocopy_nomove(const ValueHolderNoCopyNoMove& vh) {
+inline int consume_only_optional_conversion(
+    const ValueHolderOnlyOptionalConversion& vh) {
   return vh.value;
 }
 
-inline int consume_value_holder_absl_optional_conversion(
-    const ValueHolderHasOptionalConversion& vh) {
+inline int consume_only_ptr_to_ptr_conversion(
+    const ValueHolderOnlyPtrToPtrConversion& vh) {
+  return vh.value;
+}
+
+inline int consume_multiple_conversions(
+    const ValueHolderMultipleConversions& vh) {
   return vh.value;
 }
 

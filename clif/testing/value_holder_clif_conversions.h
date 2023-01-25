@@ -162,35 +162,53 @@ inline PyObject* Clif_PyObjFrom(std::unique_ptr<ValueHolderAbstract> c,
 }
 
 // NOLINTNEXTLINE
-// CLIF use `::clif_testing::ValueHolderNoCopyNoMove` as ValueHolderNoCopyNoMove
+// CLIF use `::clif_testing::ValueHolderOnlyOptionalConversion` as ValueHolderOnlyOptionalConversion
 inline bool Clif_PyObjAs(
-    PyObject* obj, absl::optional<ValueHolderNoCopyNoMove>* c) {
+    PyObject* obj, absl::optional<ValueHolderOnlyOptionalConversion>* c) {
   PyObject *tmp = PyNumber_Long(obj);
   if (!tmp) {
     return false;
   }
-  c->emplace(PyLong_AsLong(tmp));
+  c->emplace(PyLong_AsLong(tmp) + 10);
   return true;
 }
 
-inline PyObject* Clif_PyObjFrom(const ValueHolderNoCopyNoMove& c,
+inline PyObject* Clif_PyObjFrom(const ValueHolderOnlyOptionalConversion& c,
                                 const clif::py::PostConv& pc) {
   return clif::Clif_PyObjFrom(c.value, {});
 }
 
 // NOLINTNEXTLINE
-// CLIF use `::clif_testing::ValueHolderHasOptionalConversion` as ValueHolderHasOptionalConversion
-inline bool Clif_PyObjAs(
-    PyObject* obj, absl::optional<ValueHolderHasOptionalConversion>* c) {
+// CLIF use `::clif_testing::ValueHolderOnlyPtrToPtrConversion` as ValueHolderOnlyPtrToPtrConversion
+inline bool Clif_PyObjAs(PyObject* obj, ValueHolderOnlyPtrToPtrConversion** c) {
+  static ValueHolderOnlyPtrToPtrConversion result(0);
   PyObject *tmp = PyNumber_Long(obj);
   if (!tmp) {
     return false;
   }
-  c->emplace(PyLong_AsLong(tmp));
+  result.value = PyLong_AsLong(tmp) + 100;
+  *c = &result;
   return true;
 }
 
-inline bool Clif_PyObjAs(PyObject* obj, ValueHolderHasOptionalConversion* c) {
+inline PyObject* Clif_PyObjFrom(const ValueHolderOnlyPtrToPtrConversion& c,
+                                const clif::py::PostConv& pc) {
+  return clif::Clif_PyObjFrom(c.value, {});
+}
+
+// NOLINTNEXTLINE
+// CLIF use `::clif_testing::ValueHolderMultipleConversions` as ValueHolderMultipleConversions
+inline bool Clif_PyObjAs(
+    PyObject* obj, absl::optional<ValueHolderMultipleConversions>* c) {
+  PyObject *tmp = PyNumber_Long(obj);
+  if (!tmp) {
+    return false;
+  }
+  c->emplace(PyLong_AsLong(tmp) + 1000);
+  return true;
+}
+
+inline bool Clif_PyObjAs(PyObject* obj, ValueHolderMultipleConversions* c) {
   PyObject *tmp = PyNumber_Long(obj);
   if (!tmp) {
     return false;
@@ -199,7 +217,7 @@ inline bool Clif_PyObjAs(PyObject* obj, ValueHolderHasOptionalConversion* c) {
   return true;
 }
 
-inline PyObject* Clif_PyObjFrom(const ValueHolderHasOptionalConversion& c,
+inline PyObject* Clif_PyObjFrom(const ValueHolderMultipleConversions& c,
                                 const clif::py::PostConv& pc) {
   return clif::Clif_PyObjFrom(c.value, {});
 }

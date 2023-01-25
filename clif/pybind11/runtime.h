@@ -179,8 +179,15 @@ namespace detail {
     return Clif_PyObjFrom(src, {});                                            \
   }                                                                            \
 
-template <typename Type, bool is_type_abstract = std::is_abstract_v<Type>,
+template <typename Type,
+          bool has_customized_unique_ptr_conversion =
+              clif_pybind11::HasNonClifPyObjAs<std::unique_ptr<Type>>(0),
+          bool has_customized_pointer_to_pointer_conversion =
+              !has_customized_unique_ptr_conversion &&
+              clif_pybind11::HasPyObjAs<Type*>(),
           bool has_customized_optional_conversion =
+              !has_customized_unique_ptr_conversion &&
+              !has_customized_pointer_to_pointer_conversion &&
               clif_pybind11::HasAbslOptionalPyObjAsFalseIfAbstract<Type>()>
 struct clif_type_caster {
  public:
@@ -188,8 +195,6 @@ struct clif_type_caster {
 
   CLIF_TYPE_CASTER_CAST
 
-  // TODO: Add load function when
-  // `Clif_PyObjAs(PyObject*, Type**) or
   template<class T = Type,
            std::enable_if_t<clif_pybind11::HasPyObjAs<T>(), int> = 0>
   bool load(handle src, bool) {
@@ -213,43 +218,15 @@ struct clif_type_caster {
 };
 
 template <typename Type>
-struct clif_type_caster<Type, false, true> {
+struct clif_type_caster<Type, true, false, false> {
  public:
   static constexpr auto name = const_name<Type>();
 
   CLIF_TYPE_CASTER_CAST
 
-  bool load(handle src, bool) {
-    using ::clif::Clif_PyObjAs;
-    return Clif_PyObjAs(src.ptr(), &value);
-  }
-
-  template <typename T_>
-  using cast_op_type = movable_cast_op_type<T_>;
-
-  operator Type *() { return &(value.value()); }
-  operator Type &() { return value.value(); }
-  operator Type &&() && { return std::move(value.value()); }
-
- private:
-  absl::optional<Type> value;
-};
-
-template <typename Type>
-struct clif_type_caster<Type, true, false> {
- public:
-  static constexpr auto name = const_name<Type>();
-
-  CLIF_TYPE_CASTER_CAST
-
-  // For abstract types, legacy PyCLIF expects either
-  // `Clif_PyObjAs(PyObject*, std::unique_ptr<AbstractType>*)` or
-  // `Clif_PyObjAs(PyObject*, AbstractType**)` to exist.
-  // TODO: Add load function when only
-  // `Clif_PyObjAs(PyObject*, AbstractType**) exist.
   template<class T = Type,
            std::enable_if_t<
-              clif_pybind11::HasPyObjAs<std::unique_ptr<T>>(), int> = 0>
+              clif_pybind11::HasNonClifPyObjAs<std::unique_ptr<T>>(0), int> = 0>
   bool load(handle src, bool) {
     // TODO: Test with two passes in pybind11 dispatcher.
     std::unique_ptr<Type> res;
@@ -270,6 +247,57 @@ struct clif_type_caster<Type, true, false> {
 
  private:
   std::unique_ptr<Type> value;
+};
+
+template <typename Type>
+struct clif_type_caster<Type, false, true, false> {
+ public:
+  static constexpr auto name = const_name<Type>();
+
+  CLIF_TYPE_CASTER_CAST
+
+  template<class T = Type,
+           std::enable_if_t<clif_pybind11::HasPyObjAs<T*>(), int> = 0>
+  bool load(handle src, bool) {
+    using ::clif::Clif_PyObjAs;
+    if (!Clif_PyObjAs(src.ptr(), &value)) {
+      return false;
+    }
+    return true;
+  }
+
+  template <typename T_>
+  using cast_op_type = movable_cast_op_type<T_>;
+
+  operator Type *() { return value; }
+  operator Type &() { return *value; }
+  operator Type &&() && { return std::move(*value); }
+
+ private:
+  Type* value;
+};
+
+template <typename Type>
+struct clif_type_caster<Type, false, false, true> {
+ public:
+  static constexpr auto name = const_name<Type>();
+
+  CLIF_TYPE_CASTER_CAST
+
+  bool load(handle src, bool) {
+    using ::clif::Clif_PyObjAs;
+    return Clif_PyObjAs(src.ptr(), &value);
+  }
+
+  template <typename T_>
+  using cast_op_type = movable_cast_op_type<T_>;
+
+  operator Type *() { return &(value.value()); }
+  operator Type &() { return value.value(); }
+  operator Type &&() && { return std::move(value.value()); }
+
+ private:
+  absl::optional<Type> value;
 };
 
 template <typename Type, typename HolderType>
