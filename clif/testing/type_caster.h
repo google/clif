@@ -125,6 +125,11 @@ inline int consume_multiple_conversions(
   return vh.value;
 }
 
+inline int consume_ptr_in_clif_use_comment(
+    const ValueHolderPtrInCLIFUseComment* vh) {
+  return vh->value;
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_TYPE_CASTER_H_

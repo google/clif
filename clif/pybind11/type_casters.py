@@ -122,6 +122,9 @@ def _generate_type_caster(
   template_parameters = 'T...' if has_template_parameter else ''
   template_parameters_with_typename = (
       'typename... T' if has_template_parameter else '')
+  # It does not make much sense to generate `type_caster<Type*>` instead of
+  # `type_caster<Type>.` Conversion to `Type*`` will be done by the type caster.
+  cpp_name = cpp_name.rstrip('*')
   if template_parameters:
     cpp_name = f'{cpp_name}<{template_parameters}>'
   yield 'namespace pybind11 {'

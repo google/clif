@@ -97,6 +97,9 @@ class TypeCasterTest(parameterized.TestCase):
   def test_multiple_conversions_type_caster(self):
     self.assertEqual(type_caster.consume_multiple_conversions(10), 1010)
 
+  def test_ptr_in_clif_use_comment(self):
+    self.assertEqual(type_caster.consume_ptr_in_clif_use_comment(10), 10010)
+
   def test_function_throw_python_exception(self):
     self.assertEqual(type_caster.return_pyobject_throw_python_exception(10), 10)
     with self.assertRaisesRegex(ValueError, r'Value < 0'):

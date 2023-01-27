@@ -197,6 +197,24 @@ inline PyObject* Clif_PyObjFrom(const ValueHolderOnlyPtrToPtrConversion& c,
 }
 
 // NOLINTNEXTLINE
+// CLIF use `::clif_testing::ValueHolderPtrInCLIFUseComment*` as ValueHolderPtrInCLIFUseComment
+inline bool Clif_PyObjAs(PyObject* obj, ValueHolderPtrInCLIFUseComment** c) {
+  static ValueHolderPtrInCLIFUseComment result(0);
+  PyObject *tmp = PyNumber_Long(obj);
+  if (!tmp) {
+    return false;
+  }
+  result.value = PyLong_AsLong(tmp) + 10000;
+  *c = &result;
+  return true;
+}
+
+inline PyObject* Clif_PyObjFrom(const ValueHolderPtrInCLIFUseComment& c,
+                                const clif::py::PostConv& pc) {
+  return clif::Clif_PyObjFrom(c.value, {});
+}
+
+// NOLINTNEXTLINE
 // CLIF use `::clif_testing::ValueHolderMultipleConversions` as ValueHolderMultipleConversions
 inline bool Clif_PyObjAs(
     PyObject* obj, absl::optional<ValueHolderMultipleConversions>* c) {

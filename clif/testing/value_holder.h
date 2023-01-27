@@ -109,6 +109,12 @@ class ValueHolderOnlyPtrToPtrConversion {
   int value;
 };
 
+class ValueHolderPtrInCLIFUseComment {
+ public:
+  explicit ValueHolderPtrInCLIFUseComment(int v) : value(v) {}
+  int value;
+};
+
 class ValueHolderMultipleConversions {
  public:
   explicit ValueHolderMultipleConversions(int v) : value(v) {}
