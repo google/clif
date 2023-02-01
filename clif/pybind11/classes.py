@@ -53,9 +53,9 @@ def generate_from(
   definition = f'py::classh<{class_decl.name.cpp_name}'
   if not class_decl.suppress_upcasts:
     for base in class_decl.bases:
-      if (base.HasField('cpp_name') and
-          base.cpp_name in codegen_info.registered_types):
-        definition += f', {base.cpp_name}'
+      if (base.HasField('cpp_canonical_type') and
+          base.cpp_canonical_type in codegen_info.registered_types):
+        definition += f', {base.cpp_canonical_type}'
   trampoline_class_name = utils.trampoline_name(class_decl)
   if trampoline_class_name in trampoline_class_names:
     definition += f', {trampoline_class_name}'

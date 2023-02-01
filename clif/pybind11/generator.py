@@ -366,9 +366,10 @@ class ModuleGenerator(object):
       if parent_py_name:
         py_name = '.'.join([parent_py_name, py_name])
       py_bases = set(
-          [b.native for b in decl.class_.bases if b.native and not b.cpp_name])
+          [b.native for b in decl.class_.bases if b.native and
+           not b.cpp_canonical_type])
       class_type = gen_type_info.ClassType(
-          cpp_name=decl.class_.name.cpp_name, py_name=py_name,
+          cpp_name=decl.class_.name.cpp_canonical_type, py_name=py_name,
           cpp_namespace=cpp_namespace, py_bases=py_bases,
           cpp_has_public_dtor=decl.class_.cpp_has_public_dtor,
           cpp_copyable=(decl.class_.cpp_copyable and
@@ -389,7 +390,7 @@ class ModuleGenerator(object):
                 f'Cannot find cpp name for class "{base.native}"')
             assert decl.class_.bases[i+1].cpp_name, (
                 f'Unexpected base class {decl.class_.bases[i+1]}')
-            base_class_cpp_name = decl.class_.bases[i + 1].cpp_name
+            base_class_cpp_name = decl.class_.bases[i + 1].cpp_canonical_type
             break
         if base_class_python_name:
           for base in decl.class_.cpp_bases:

@@ -19,6 +19,10 @@ from absl.testing import absltest
 from clif.testing.python import slots
 
 
+def expected_exception():
+  return AttributeError if 'pybind11' in slots.__doc__ else NotImplementedError
+
+
 class SlotsTest(absltest.TestCase):
 
   def testObjectMethods(self):
@@ -26,20 +30,16 @@ class SlotsTest(absltest.TestCase):
     self.assertEqual(hash(a), 0)
 
   def testRO(self):
-    if 'pybind11' in slots.__doc__:  # b/184390527
-      self.skipTest('pybind11 generates a segfault when calling list(a)')
     a = slots.I5()
     self.assertLen(a, 5)
     self.assertEqual(list(a), [0]*5)
     a[1] = 1
     self.assertEqual(a[1], 1)
     self.assertEqual(list(a), [0, 1, 0, 0, 0])
-    with self.assertRaises(NotImplementedError):
+    with self.assertRaises(expected_exception()):
       del a[1]
 
   def testRW(self):
-    if 'pybind11' in slots.__doc__:  # b/184390527
-      self.skipTest('pybind11 generates a segfault when calling list(a)')
     a = slots.Z5()
     self.assertLen(a, 5)
     self.assertEqual(list(a), [0]*5)
