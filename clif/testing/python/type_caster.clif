@@ -59,6 +59,7 @@ from "clif/testing/python/type_caster_clif_aux.h":
     def abstract_unique_ptr_round_trip(vh: ValueHolderAbstract) -> ValueHolderAbstract
     def consume_only_optional_conversion(vh: ValueHolderOnlyOptionalConversion) -> int
     def consume_only_ptr_to_ptr_conversion(vh: ValueHolderOnlyPtrToPtrConversion) -> int
+    def consume_only_shared_ptr_conversion(vh: ValueHolderOnlySharedPtrConversion) -> int
     def consume_multiple_conversions(vh: ValueHolderMultipleConversions) -> int
 
     def consume_ptr_in_clif_use_comment(vh: ValueHolderPtrInCLIFUseComment) -> int

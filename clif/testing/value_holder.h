@@ -105,19 +105,29 @@ class ValueHolderOnlyOptionalConversion {
 
 class ValueHolderOnlyPtrToPtrConversion {
  public:
-  explicit ValueHolderOnlyPtrToPtrConversion(int v) : value(v) {}
+  explicit ValueHolderOnlyPtrToPtrConversion(): value(0) { }
+  ValueHolderOnlyPtrToPtrConversion(int v): value(v) { }
+  int value;
+};
+
+class ValueHolderOnlySharedPtrConversion {
+ public:
+  explicit ValueHolderOnlySharedPtrConversion(): value(0) { }
+  ValueHolderOnlySharedPtrConversion(int v): value(v) { }
   int value;
 };
 
 class ValueHolderPtrInCLIFUseComment {
  public:
-  explicit ValueHolderPtrInCLIFUseComment(int v) : value(v) {}
+  explicit ValueHolderPtrInCLIFUseComment(): value(0) { }
+  ValueHolderPtrInCLIFUseComment(int v): value(v) { }
   int value;
 };
 
 class ValueHolderMultipleConversions {
  public:
-  explicit ValueHolderMultipleConversions(int v) : value(v) {}
+  explicit ValueHolderMultipleConversions(): value(0) { }
+  ValueHolderMultipleConversions(int v): value(v) { }
   int value;
 };
 

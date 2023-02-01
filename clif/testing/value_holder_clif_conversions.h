@@ -231,11 +231,34 @@ inline bool Clif_PyObjAs(PyObject* obj, ValueHolderMultipleConversions* c) {
   if (!tmp) {
     return false;
   }
-  c->value = PyLong_AsLong(tmp);
+  c->value = PyLong_AsLong(tmp) + 1000;
   return true;
 }
 
 inline PyObject* Clif_PyObjFrom(const ValueHolderMultipleConversions& c,
+                                const clif::py::PostConv& pc) {
+  return clif::Clif_PyObjFrom(c.value, {});
+}
+
+// NOLINTBEGIN
+// CLIF use `::clif_testing::ValueHolderOnlySharedPtrConversion` as ValueHolderOnlySharedPtrConversion
+// NOLINTEND
+inline bool Clif_PyObjAs(
+    PyObject* obj, std::shared_ptr<ValueHolderOnlySharedPtrConversion>* c) {
+  PyObject *tmp = PyNumber_Long(obj);
+  if (!tmp) {
+    return false;
+  }
+  *c = std::make_shared<ValueHolderOnlySharedPtrConversion>(0);
+  (*c)->value = PyLong_AsLong(tmp);
+  return true;
+}
+
+inline bool Clif_PyObjAs(
+    PyObject* obj,
+    std::unique_ptr<ValueHolderOnlySharedPtrConversion>* c) = delete;
+
+inline PyObject* Clif_PyObjFrom(const ValueHolderOnlySharedPtrConversion& c,
                                 const clif::py::PostConv& pc) {
   return clif::Clif_PyObjFrom(c.value, {});
 }

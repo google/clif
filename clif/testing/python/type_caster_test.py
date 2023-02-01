@@ -94,6 +94,9 @@ class TypeCasterTest(parameterized.TestCase):
   def test_only_ptr_to_ptr_conversion_type_caster(self):
     self.assertEqual(type_caster.consume_only_ptr_to_ptr_conversion(10), 110)
 
+  def test_only_shared_ptr_conversion_type_caster(self):
+    self.assertEqual(type_caster.consume_only_shared_ptr_conversion(10), 10)
+
   def test_multiple_conversions_type_caster(self):
     self.assertEqual(type_caster.consume_multiple_conversions(10), 1010)
 

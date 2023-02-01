@@ -120,6 +120,11 @@ inline int consume_only_ptr_to_ptr_conversion(
   return vh.value;
 }
 
+inline int consume_only_shared_ptr_conversion(
+    std::shared_ptr<ValueHolderOnlySharedPtrConversion> vh) {
+  return vh->value;
+}
+
 inline int consume_multiple_conversions(
     const ValueHolderMultipleConversions& vh) {
   return vh.value;
