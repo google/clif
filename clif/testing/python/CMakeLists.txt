@@ -201,6 +201,7 @@ add_pyclif_library_for_test(static_methods static_methods.clif)
 add_pyclif_library_for_test(std_complex std_complex.clif)
 
 add_pyclif_library_for_test(std_containers std_containers.clif)
+add_pyclif_library_for_test(std_containers_str_bytes std_containers_str_bytes.clif)
 
 add_pyclif_library_for_test(std_variant std_variant.clif
   CC_DEPS clif_testing_std_variant)

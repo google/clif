@@ -1,0 +1,85 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from "clif/testing/std_containers_str_bytes.h":
+  namespace `clif_testing_std_containers_str_bytes`:
+    def `ReturnVectorString` as ReturnListStr(return_bytes: bool) -> list<str>
+    def `ReturnVectorString` as ReturnListBytes(return_bytes: bool) -> list<bytes>
+    def `PassVectorString` as PassListStr(v: list<str>) -> int
+    def `PassVectorString` as PassListBytes(v: list<bytes>) -> int
+    def `PassCallbackPassVectorString` as PassCallbackPassListStr(cb: (v: list<str>) -> bool) -> bool
+    def `PassCallbackPassVectorString` as PassCallbackPassListBytes(cb: (v: list<bytes>) -> bool) -> bool
+    def `PassCallbackReturnVectorString` as PassCallbackReturnListStr(cb: () -> list<str>) -> int
+    def `PassCallbackReturnVectorString` as PassCallbackReturnListBytes(cb: () -> list<bytes>) -> int
+    class VirtualBaseVectorString:
+      @virtual
+      def PassListStr(self, v: list<str>) -> bool
+      @virtual
+      def PassListBytes(self, v: list<bytes>) -> bool
+      @virtual
+      def ReturnListStr(self) -> list<str>
+      @virtual
+      def ReturnListBytes(self) -> list<bytes>
+    def CallVirtualPassList(vb: VirtualBaseVectorString, fname: str) -> bool
+    def CallVirtualReturnList(vb: VirtualBaseVectorString, fname: str) -> int
+
+    def `ReturnPairString` as ReturnTupleStrStr() -> tuple<str, str>
+    def `ReturnPairString` as ReturnTupleBytesBytes() -> tuple<bytes, bytes>
+    def `ReturnPairString` as ReturnTupleStrBytes() -> tuple<str, bytes>
+    def `ReturnPairString` as ReturnTupleBytesStr() -> tuple<bytes, str>
+    def `PassPairString` as PassTupleStrStr(p: tuple<str, str>) -> int
+    def `PassPairString` as PassTupleBytesBytes(p: tuple<bytes, bytes>) -> int
+    def `PassPairString` as PassTupleStrBytes(p: tuple<str, bytes>) -> int
+    def `PassPairString` as PassTupleBytesStr(p: tuple<bytes, str>) -> int
+    def `PassCallbackPassPairString` as PassCallbackPassTupleStrStr(cb: (p: tuple<str, str>) -> bool) -> bool
+    def `PassCallbackPassPairString` as PassCallbackPassTupleBytesBytes(cb: (p: tuple<bytes, bytes>) -> bool) -> bool
+    def `PassCallbackPassPairString` as PassCallbackPassTupleStrBytes(cb: (p: tuple<str, bytes>) -> bool) -> bool
+    def `PassCallbackPassPairString` as PassCallbackPassTupleBytesStr(cb: (p: tuple<bytes, str>) -> bool) -> bool
+    def `PassCallbackReturnPairString` as PassCallbackReturnTupleStrStr(cb: () -> tuple<str, str>) -> int
+    def `PassCallbackReturnPairString` as PassCallbackReturnTupleBytesBytes(cb: () -> tuple<bytes, bytes>) -> int
+    def `PassCallbackReturnPairString` as PassCallbackReturnTupleStrBytes(cb: () -> tuple<str, bytes>) -> int
+    def `PassCallbackReturnPairString` as PassCallbackReturnTupleBytesStr(cb: () -> tuple<bytes, str>) -> int
+    class VirtualBasePairString:
+      @virtual
+      def PassTupleStrStr(self, p: tuple<str, str>) -> bool
+      @virtual
+      def PassTupleBytesBytes(self, p: tuple<bytes, bytes>) -> bool
+      @virtual
+      def PassTupleStrBytes(self, p: tuple<str, bytes>) -> bool
+      @virtual
+      def PassTupleBytesStr(self, p: tuple<bytes, str>) -> bool
+      @virtual
+      def ReturnTupleStrStr(self) -> tuple<str, str>
+      @virtual
+      def ReturnTupleBytesBytes(self) -> tuple<bytes, bytes>
+      @virtual
+      def ReturnTupleStrBytes(self) -> tuple<str, bytes>
+      @virtual
+      def ReturnTupleBytesStr(self) -> tuple<bytes, str>
+    def CallVirtualPassTuple(vb: VirtualBasePairString, fname: str) -> bool
+    def CallVirtualReturnTuple(vb: VirtualBasePairString, fname: str) -> int
+
+    def `ReturnNestedPairString` as ReturnNestedTupleStrBytesBytesStr() -> tuple<tuple<str, bytes>, tuple<bytes, str>>
+    def `PassNestedPairString` as PassNestedTupleBytesStrStrBytes(np: tuple<tuple<bytes, str>, tuple<str, bytes>>) -> int
+    def `PassCallbackPassNestedPairString` as PassCallbackPassNestedTupleStrBytesStrBytes(
+        cb: (np: tuple<tuple<str, bytes>, tuple<str, bytes>>) -> bool) -> bool
+    def `PassCallbackReturnNestedPairString` as PassCallbackReturnNestedTupleBytesStrBytesStr(
+        cb: () -> tuple<tuple<bytes, str>, tuple<bytes, str>>) -> int
+    class VirtualBaseNestedPairString:
+      @virtual
+      def PassNestedTuple(self, np: tuple<tuple<str, str>, tuple<bytes, bytes>>) -> bool
+      @virtual
+      def ReturnNestedTuple(self) -> tuple<tuple<bytes, bytes>, tuple<str, str>>
+    def CallVirtualPassNestedTuple(vb: VirtualBaseNestedPairString) -> bool
+    def CallVirtualReturnNestedTuple(vb: VirtualBaseNestedPairString) -> int
