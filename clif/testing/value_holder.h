@@ -88,6 +88,22 @@ class ValueHolderConcrete : public ValueHolderAbstract {
   }
 };
 
+class ValueHolderAbstractNoPyObjAs {
+ public:
+  virtual ~ValueHolderAbstractNoPyObjAs() = default;
+  virtual int get_value() const = 0;
+  int value;
+};
+
+class ValueHolderConcreteNoPyObjAs : public ValueHolderAbstractNoPyObjAs {
+ public:
+  ValueHolderConcreteNoPyObjAs() { value = 0; }
+  ValueHolderConcreteNoPyObjAs(int v) { value = v; }
+  int get_value() const override {
+    return value;
+  }
+};
+
 class ValueHolderOnlyOptionalConversion {
  public:
   explicit ValueHolderOnlyOptionalConversion(int v) : value(v) {}

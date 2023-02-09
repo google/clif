@@ -193,7 +193,13 @@ template <typename Type,
               !has_customized_optional_conversion &&
               !has_customized_pointer_to_pointer_conversion &&
               !has_customized_unique_ptr_conversion &&
-              clif_pybind11::HasPyObjAs<std::shared_ptr<Type>>()>
+              clif_pybind11::HasPyObjAs<std::shared_ptr<Type>>(),
+          bool is_type_abstract =
+              !has_customized_optional_conversion &&
+              !has_customized_pointer_to_pointer_conversion &&
+              !has_customized_unique_ptr_conversion &&
+              !has_customized_shared_ptr_conversion &&
+              std::is_abstract_v<Type>>
 struct clif_type_caster {
  public:
   PYBIND11_TYPE_CASTER(Type, const_name<Type>());
@@ -209,7 +215,7 @@ struct clif_type_caster {
 };
 
 template <typename Type>
-struct clif_type_caster<Type, true, false, false, false> {
+struct clif_type_caster<Type, true, false, false, false, false> {
  public:
   static constexpr auto name = const_name<Type>();
 
@@ -232,7 +238,7 @@ struct clif_type_caster<Type, true, false, false, false> {
 };
 
 template <typename Type>
-struct clif_type_caster<Type, false, true, false, false> {
+struct clif_type_caster<Type, false, true, false, false, false> {
  public:
   static constexpr auto name = const_name<Type>();
 
@@ -260,7 +266,7 @@ struct clif_type_caster<Type, false, true, false, false> {
 };
 
 template <typename Type>
-struct clif_type_caster<Type, false, false, true, false> {
+struct clif_type_caster<Type, false, false, true, false, false> {
  public:
   static constexpr auto name = const_name<Type>();
 
@@ -292,7 +298,7 @@ struct clif_type_caster<Type, false, false, true, false> {
 };
 
 template <typename Type>
-struct clif_type_caster<Type, false, false, false, true> {
+struct clif_type_caster<Type, false, false, false, true, false> {
  public:
   static constexpr auto name = const_name<Type>();
 
@@ -320,6 +326,38 @@ struct clif_type_caster<Type, false, false, false, true> {
 
  private:
   std::shared_ptr<Type> value;
+};
+
+
+template <typename Type>
+struct clif_type_caster<Type, false, false, false, false, true> {
+ public:
+  static constexpr auto name = const_name<Type>();
+
+  CLIF_TYPE_CASTER_CAST
+
+  template<class T = Type,
+           std::enable_if_t<
+              clif_pybind11::HasPyObjAs<std::unique_ptr<T>>(), int> = 0>
+  bool load(handle src, bool) {
+    std::unique_ptr<Type> res;
+    using ::clif::Clif_PyObjAs;
+    if (!Clif_PyObjAs(src.ptr(), &res)) {
+      return false;
+    }
+    value = std::move(res);
+    return true;
+  }
+
+  template <typename T_>
+  using cast_op_type = movable_cast_op_type<T_>;
+
+  operator Type *() { return value.get(); }
+  operator Type &() { return *value; }
+  operator Type &&() && { return std::move(*value); }
+
+ private:
+  std::unique_ptr<Type> value;
 };
 
 template <typename Type, typename HolderType>

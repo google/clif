@@ -161,6 +161,14 @@ inline PyObject* Clif_PyObjFrom(std::unique_ptr<ValueHolderAbstract> c,
   return clif::Clif_PyObjFrom(c->value, {});
 }
 
+// NOLINTBEGIN
+// CLIF use `::clif_testing::ValueHolderAbstractNoPyObjAs` as ValueHolderAbstractNoPyObjAs
+// NOLINTEND
+inline PyObject* Clif_PyObjFrom(std::shared_ptr<ValueHolderAbstractNoPyObjAs> c,
+                                const clif::py::PostConv& pc) {
+  return clif::Clif_PyObjFrom(c->value, {});
+}
+
 // NOLINTNEXTLINE
 // CLIF use `::clif_testing::ValueHolderOnlyOptionalConversion` as ValueHolderOnlyOptionalConversion
 inline bool Clif_PyObjAs(

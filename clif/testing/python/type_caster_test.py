@@ -87,6 +87,7 @@ class TypeCasterTest(parameterized.TestCase):
     self.assertEqual(type_caster.abstract_raw_ptr_round_trip(10), 12)
     self.assertEqual(type_caster.abstract_shared_ptr_round_trip(10), 11)
     self.assertEqual(type_caster.abstract_unique_ptr_round_trip(10), 12)
+    self.assertEqual(type_caster.return_abstract_no_pyobjas(10), 10)
 
   def test_only_optional_conversion_type_caster(self):
     self.assertEqual(type_caster.consume_only_optional_conversion(10), 20)

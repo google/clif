@@ -110,6 +110,11 @@ inline std::unique_ptr<ValueHolderAbstract> abstract_unique_ptr_round_trip(
   return std::make_unique<ValueHolderConcrete>(vh->value);
 }
 
+inline std::shared_ptr<ValueHolderAbstractNoPyObjAs> return_abstract_no_pyobjas(
+    int value) {
+  return std::make_shared<ValueHolderConcreteNoPyObjAs>(value);
+}
+
 inline int consume_only_optional_conversion(
     const ValueHolderOnlyOptionalConversion& vh) {
   return vh.value;
