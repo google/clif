@@ -80,6 +80,8 @@ inline bool Abc_has(Abc const& abc, uint8_t c) {
 
 struct Num {
   int operator+(int) const { return 2; }
+  // Not marking the member function as `const` for test purposes.
+  int operator*(int) { return 4; }
 };
 inline int operator%(const Num& a, int) { return 1; }
 inline int operator%(int, const Num& a) { return 2; }

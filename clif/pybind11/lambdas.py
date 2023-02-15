@@ -17,6 +17,7 @@ from typing import Generator, List, Optional
 
 from clif.protos import ast_pb2
 from clif.pybind11 import function_lib
+from clif.pybind11 import operators
 from clif.pybind11 import utils
 
 I = utils.I
@@ -254,6 +255,11 @@ def _generate_lambda_params_with_types(
   if (class_decl and not func_decl.classmethod and
       not func_decl.is_extend_method and not func_decl.cpp_opfunction):
     params_list = [f'{class_decl.name.cpp_name} &self'] + params_list
+  # For reflected operations, we need to generate (const Type& self, int lhs)
+  # instead of (int lhs, const Type& self). So swapping the two function
+  # parameters.
+  if func_decl.name.native in operators.REFLECTED_OPS and len(params_list) == 2:
+    params_list.reverse()
   if func_decl.name.native == '__exit__@' and class_decl:
     params_list.append('py::args')
   return ', '.join(params_list)

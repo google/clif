@@ -50,6 +50,7 @@ class OperatorsTest(absltest.TestCase):
     with self.assertRaises(TypeError):
       _ = 2+n  # The lack of __radd__ makes this fail.
     self.assertEqual(3-n, 3)
+    self.assertEqual(n*4, 4)
 
   def testExtendGetItem(self):
     obj = operators.WithExtendGetItem([1, 2, 3])

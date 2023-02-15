@@ -19,7 +19,6 @@ from typing import Generator, Optional
 from clif.protos import ast_pb2
 from clif.pybind11 import function_lib
 from clif.pybind11 import lambdas
-from clif.pybind11 import operators
 from clif.pybind11 import unknown_default_value
 from clif.pybind11 import utils
 
@@ -84,11 +83,8 @@ def _generate_function(
     class_decl: Optional[ast_pb2.ClassDecl] = None,
 ) -> Generator[str, None, None]:
   """Generates pybind11 bindings code for ast_pb2.FuncDecl."""
-  if operators.needs_operator_overloading(func_decl):
-    yield from operators.generate_operator(module_name, func_decl, class_decl)
-  else:
-    yield from lambdas.generate_lambda(
-        module_name, func_decl, codegen_info, class_decl)
+  yield from lambdas.generate_lambda(
+      module_name, func_decl, codegen_info, class_decl)
 
 
 def _generate_overload_for_unknown_default_function(

@@ -280,7 +280,7 @@ def generate_py_args(func_decl: ast_pb2.FuncDecl,
   # default value so that pybind11 is not confused about which overload to use.
   if first_unknown_default_index != -1 and params_list:
     params_list.insert(first_unknown_default_index, 'py::kw_only()')
-  operators.fix_py_args_for_unsupported_operators_in_place(
+  operators.fix_py_args_for_operators_in_place(
       func_decl, params_list)
   return ', '.join(params_list)
 
