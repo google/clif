@@ -67,8 +67,11 @@ target_link_libraries(pyClifRuntime PRIVATE
   "${GOOGLE_GLOG_LIBRARIES}"
   pickle_support_lib
 
+  absl::absl_check
+  absl::absl_log
   absl::memory
   absl::optional
+  absl::strings
 )
 
 add_custom_target(runPyClifUnitTests
