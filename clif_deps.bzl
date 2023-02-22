@@ -44,9 +44,9 @@ def clif_deps():
     if not native.existing_rule("com_google_absl"):
         http_archive(
             name = "com_google_absl",
-            sha256 = "59b862f50e710277f8ede96f083a5bb8d7c9595376146838b9580be90374ee1f",
-            strip_prefix = "abseil-cpp-20210324.2",
-            urls = ["https://github.com/abseil/abseil-cpp/archive/20210324.2.tar.gz"],
+            sha256 = "81311c17599b3712069ded20cca09a62ab0bf2a89dfa16993786c8782b7ed145",
+            strip_prefix = "abseil-cpp-20230125.1",
+            urls = ["https://github.com/abseil/abseil-cpp/archive/20230125.1.tar.gz"],
         )
 
     if not native.existing_rule("com_google_googletest"):
