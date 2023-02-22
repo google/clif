@@ -23,6 +23,23 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/__init__.py"
 add_protobuf_include_directories()
 add_protobuf_library_directories()
 
+add_library(pickle_support_lib SHARED
+  pickle_support.h
+  pickle_support.cc
+)
+
+target_include_directories(pickle_support_lib
+  PUBLIC
+  ${CLIF_SRC_DIR}
+  ${CLIF_BIN_DIR}
+  ${PYTHON_INCLUDE_DIRS}
+)
+
+target_link_libraries(pickle_support_lib PRIVATE
+  ${PYTHON_LIBRARIES}
+)
+add_target_protobuf_link_libraries(pickle_support_lib)
+
 add_library(pyClifRuntime SHARED
   postconv.h
   pyproto.h
@@ -48,6 +65,7 @@ add_target_protobuf_link_libraries(pyClifRuntime)
 target_link_libraries(pyClifRuntime PRIVATE
   "${PYTHON_LIBRARIES}"
   "${GOOGLE_GLOG_LIBRARIES}"
+  pickle_support_lib
 
   absl::memory
   absl::optional

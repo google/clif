@@ -56,7 +56,8 @@ _CLIF_INCLUDE_DIRS = [
 
 _CLIF_SOURCES = [
     os.path.join(_CLIF_DIR, 'python', relpath)
-    for relpath in ['pyproto.cc', 'runtime.cc', 'slots.cc', 'types.cc']
+    for relpath in ['pyproto.cc', 'runtime.cc', 'slots.cc', 'types.cc',
+                    'pickle_support.cc']
 ]
 
 

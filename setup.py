@@ -53,6 +53,7 @@ setuptools.setup(
                 'clif/python/utils/proto_util.cc',
                 'clif/python/utils/proto_util.init.cc',
                 # CLIF runtime
+                'clif/python/pickle_support.cc',
                 'clif/python/pyproto.cc',
                 'clif/python/runtime.cc',
                 'clif/python/slots.cc',
