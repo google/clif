@@ -33,11 +33,11 @@ def clif_deps():
     if not native.existing_rule("com_google_protobuf"):
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "bf0e5070b4b99240183b29df78155eee335885e53a8af8683964579c214ad301",
-            strip_prefix = "protobuf-3.14.0",
+            sha256 = "b2adf500a67a5e2e30ef78bce63d0c30ad250505d31b9e727685f0b1222593d4",
+            strip_prefix = "protobuf-4.22.0",
             urls = [
-                "https://storage.googleapis.com/mirror.tensorflow.org/github.com/protocolbuffers/protobuf/archive/v3.14.0.zip",
-                "https://github.com/protocolbuffers/protobuf/archive/v3.14.0.zip",
+                "https://storage.googleapis.com/mirror.tensorflow.org/github.com/protocolbuffers/protobuf/archive/v4.22.0.zip",
+                "https://github.com/protocolbuffers/protobuf/archive/v4.22.0.zip",
             ],
         )
 
