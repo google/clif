@@ -48,6 +48,7 @@ set(CLIF_BACKEND_LINK_LIBRARIES
   clifMatcher
   clifAstProto
 
+  absl::absl_log
   absl::strings
 
   # Clang libraries

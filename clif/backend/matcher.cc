@@ -22,6 +22,7 @@
 #include <memory>
 
 #include "absl/container/btree_map.h"
+#include "absl/log/log.h"
 #include "clif/backend/strutil.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/Mangle.h"
@@ -73,6 +74,7 @@ const std::string GetDeclNativeName(const Decl& decl) {
     case Decl::TYPE:     return decl.fdecl().name().cpp_name();
     case Decl::UNKNOWN:  return unknown_name;
   }
+  LOG(FATAL) << "Unknown decl.decltype_(): " << decl.decltype_();
 }
 
 std::string GetGloballyQualifiedName(const NamedDecl* decl) {
@@ -159,6 +161,7 @@ static std::string GetErrorCodeString(ClifErrorCode code) {
     case kMustUseResultIgnored:
       return ("Clif can not ignore ABSL_MUST_USE_RESULT return values.");
   }
+  LOG(FATAL) << "Unknown ClifErrorCode: " << code;
 }
 
 static void ReportMultimatchError(
