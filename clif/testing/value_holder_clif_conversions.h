@@ -172,7 +172,7 @@ inline PyObject* Clif_PyObjFrom(std::shared_ptr<ValueHolderAbstractNoPyObjAs> c,
 // NOLINTNEXTLINE
 // CLIF use `::clif_testing::ValueHolderOnlyOptionalConversion` as ValueHolderOnlyOptionalConversion
 inline bool Clif_PyObjAs(
-    PyObject* obj, absl::optional<ValueHolderOnlyOptionalConversion>* c) {
+    PyObject* obj, std::optional<ValueHolderOnlyOptionalConversion>* c) {
   PyObject *tmp = PyNumber_Long(obj);
   if (!tmp) {
     return false;
@@ -225,7 +225,7 @@ inline PyObject* Clif_PyObjFrom(const ValueHolderPtrInCLIFUseComment& c,
 // NOLINTNEXTLINE
 // CLIF use `::clif_testing::ValueHolderMultipleConversions` as ValueHolderMultipleConversions
 inline bool Clif_PyObjAs(
-    PyObject* obj, absl::optional<ValueHolderMultipleConversions>* c) {
+    PyObject* obj, std::optional<ValueHolderMultipleConversions>* c) {
   PyObject *tmp = PyNumber_Long(obj);
   if (!tmp) {
     return false;

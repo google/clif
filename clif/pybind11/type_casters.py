@@ -105,7 +105,7 @@ def generate_from(ast: ast_pb2.AST,
     if (include.startswith('clif/python') or
         # Excluding absl::Status and absl::StatusOr
         include.startswith('util/task/python') or
-        # Excluding absl::Time, absl::optional, etc..
+        # Excluding absl::Time, etc..
         include.startswith('absl/python')):
       continue
     clif_uses = _get_clif_uses(include, include_paths)
