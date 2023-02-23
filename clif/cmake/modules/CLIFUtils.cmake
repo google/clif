@@ -247,11 +247,8 @@ function(add_pyclif_library name pyclif_file)
     pyClifRuntime
     ${PYTHON_LIBRARIES}
 
-    absl::absl_check
-    absl::absl_log
     absl::memory
     absl::optional
-    absl::strings
   )
 endfunction(add_pyclif_library)
 
