@@ -55,7 +55,7 @@ within the `Clif_PyObjAs` implementation.
     construct the C++ object yourself, use the signature
 
     ```c++
-    bool Clif_PyObjAs(PyObject*, absl::optional<CppType>*);
+    bool Clif_PyObjAs(PyObject*, std::optional<CppType>*);
     ```
 
 2.  To support **moving** data from Python to C++, write a function with the

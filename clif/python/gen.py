@@ -573,7 +573,7 @@ def CreateInputParameter(func_name, ast_param, arg, args):
           return (False, '%s %s;' % (t, arg))
         else:
           args.append('&%s.value()' % arg)
-          return (False, '::absl::optional<%s> %s;' % (t, arg))
+          return (False, '::std::optional<%s> %s;' % (t, arg))
     raise TypeError("Can't convert %s to %s" % (ptype.lang_type, ctype))
   if ((smartptr or ptype.cpp_abstract) and
       not ptype.cpp_touniqptr_conversion and
@@ -599,7 +599,7 @@ def CreateInputParameter(func_name, ast_param, arg, args):
     return (False, '%s %s;' % (ctype, arg))
   else:
     args.append('std::move(%s).value()' % arg)
-    return (False, '::absl::optional<%s> %s;' % (ctype, arg))
+    return (False, '::std::optional<%s> %s;' % (ctype, arg))
 
 
 def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
@@ -775,7 +775,7 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
     else:
       # Using optional<> requires T be have T(x) and T::op=(x) available.
       # While we need only t=x, implementing it will be a pain we skip for now.
-      yield I+'::absl::optional<%s> ret0;' % return_type
+      yield I + '::std::optional<%s> ret0;' % return_type
       optional_ret0 = True
   if catch:
     for s in _GenExceptionTry():

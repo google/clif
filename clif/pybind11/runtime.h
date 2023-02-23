@@ -103,13 +103,13 @@ constexpr bool HasPyObjAs() {
   return HasClifPyObjAs<T>(0);
 }
 
-// `absl::optional` does not work with abstract types. Calling
-// `HasPyObjAs<absl::optional<Abstract>>` results in compilation errors.
+// `std::optional` does not work with abstract types. Calling
+// `HasPyObjAs<std::optional<Abstract>>` results in compilation errors.
 // Use this as a workaround.
 template <typename T,
           std::enable_if_t<!std::is_abstract_v<T>, int> = 0>
 constexpr bool HasAbslOptionalPyObjAsFalseIfAbstract() {
-  return HasNonClifPyObjAs<absl::optional<T>>(0);
+  return HasNonClifPyObjAs<std::optional<T>>(0);
 }
 
 template <typename T,
@@ -234,7 +234,7 @@ struct clif_type_caster<Type, true, false, false, false, false> {
   operator Type &&() && { return std::move(value.value()); }
 
  private:
-  absl::optional<Type> value;
+  std::optional<Type> value;
 };
 
 template <typename Type>
