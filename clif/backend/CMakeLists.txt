@@ -48,7 +48,13 @@ set(CLIF_BACKEND_LINK_LIBRARIES
   clifMatcher
   clifAstProto
 
+  utf8_validity
+
+  absl::absl_check
   absl::absl_log
+  absl::cord
+  absl::flat_hash_map
+  absl::flat_hash_set
   absl::strings
 
   # Clang libraries
