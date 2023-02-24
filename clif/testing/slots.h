@@ -16,9 +16,9 @@
 #ifndef CLIF_TESTING_SLOTS_H_
 #define CLIF_TESTING_SLOTS_H_
 
-#import <array>
-#import <numeric>
-#import <vector>
+#include <array>
+#include <numeric>
+#include <vector>
 
 namespace clif_test_slots {
 
@@ -30,7 +30,7 @@ class Array {
   T const& Get(int index) { return v_[index]; }
   void Put(int index, T const& value) { v_[index] = value; }
   std::size_t Hash() const {
-    if (v_[0] == 999) { // Magic value to trigger special case.
+    if (v_[0] == 999) {  // Magic value to trigger special case.
       return std::numeric_limits<std::size_t>::max();
     }
     return std::accumulate(v_.begin(), v_.end(), T(0));
