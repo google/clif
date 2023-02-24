@@ -28,8 +28,6 @@
 # the protoc compiler binary in the non-standard location.
 include(FindPkgConfig)
 # Lookup include and library directories using pkg-config.
-pkg_check_modules(GOOGLE_PROTOBUF REQUIRED protobuf)
-
 pkg_check_modules(GOOGLE_GLOG REQUIRED libglog)
 
 find_package(absl REQUIRED)
@@ -37,30 +35,6 @@ find_package(Clang REQUIRED)
 find_package(LLVM 11.1.0 REQUIRED)
 find_package(GTest REQUIRED)
 find_package(protobuf REQUIRED)
-
-function(add_protobuf_include_directories)
-  if(GOOGLE_PROTOBUF_INCLUDE_DIRS)
-    include_directories(${GOOGLE_PROTOBUF_INCLUDE_DIRS})
-  endif(GOOGLE_PROTOBUF_INCLUDE_DIRS)
-endfunction(add_protobuf_include_directories)
-
-function(add_target_protobuf_include_directories target)
-  if(GOOGLE_PROTOBUF_INCLUDE_DIRS)
-    target_include_directories(${target} PUBLIC ${GOOGLE_PROTOBUF_INCLUDE_DIRS})
-  endif(GOOGLE_PROTOBUF_INCLUDE_DIRS)
-endfunction(add_target_protobuf_include_directories target)
-
-function(add_protobuf_library_directories)
-  if(GOOGLE_PROTOBUF_LIBRARY_DIRS)
-    link_directories(${GOOGLE_PROTOBUF_LIBRARY_DIRS})
-  endif(GOOGLE_PROTOBUF_LIBRARY_DIRS)
-endfunction(add_protobuf_library_directories)
-
-function(add_target_protobuf_link_libraries target)
-  if(GOOGLE_PROTOBUF_LIBRARIES)
-    target_link_libraries(${target} PUBLIC ${GOOGLE_PROTOBUF_LIBRARIES})
-  endif(GOOGLE_PROTOBUF_LIBRARIES)
-endfunction(add_target_protobuf_link_libraries target)
 
 include(CMakeParseArguments)
 
@@ -100,27 +74,27 @@ if(PROTOC-NOTFOUND)
 endif(PROTOC-NOTFOUND)
 
 function(add_proto_library name proto_srcfile)
-  string(REPLACE ".proto" ".pb.cc" gen_cc "${proto_srcfile}")
-  string(REPLACE ".proto" ".pb.h" gen_h "${proto_srcfile}")
-  string(REPLACE ".proto" "_pb2.py" gen_pb2 "${proto_srcfile}")
-
-  add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${gen_cc}
-           ${CMAKE_CURRENT_BINARY_DIR}/${gen_h}
-           ${CMAKE_CURRENT_BINARY_DIR}/${gen_pb2}
-    COMMAND ${PROTOC}
-            -I${CMAKE_CURRENT_SOURCE_DIR}
-            ${CMAKE_CURRENT_SOURCE_DIR}/${proto_srcfile}
-            --cpp_out=${CMAKE_CURRENT_BINARY_DIR}
-            --python_out=${CMAKE_CURRENT_BINARY_DIR}
-  )
+  protobuf_generate(
+      PROTOS "${CMAKE_CURRENT_SOURCE_DIR}/${proto_srcfile}"
+      OUT_VAR PROTO_GENERATED_CC_FILES
+      IMPORT_DIRS "${CMAKE_CURRENT_LIST_DIR}"
+      PROTOC_OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+      LANGUAGE cpp)
+  protobuf_generate(
+      PROTOS "${CMAKE_CURRENT_SOURCE_DIR}/${proto_srcfile}"
+      OUT_VAR PROTO_GENERATED_PY_FILES
+      IMPORT_DIRS "${CMAKE_CURRENT_LIST_DIR}"
+      PROTOC_OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+      LANGUAGE python)
 
   add_library(${name} STATIC
-    ${CMAKE_CURRENT_BINARY_DIR}/${gen_cc}
-    ${CMAKE_CURRENT_BINARY_DIR}/${gen_h}
+    ${PROTO_GENERATED_CC_FILES}
   )
-
-  target_include_directories(${name} PUBLIC "${GOOGLE_PROTOBUF_INCLUDE_DIRS}")
+  target_link_libraries(
+    ${name}
+    PRIVATE
+      protobuf::libprotobuf
+    )
 endfunction(add_proto_library)
 
 # We need the Python libraries for building the CLIF runtime and the CLIF
@@ -208,8 +182,6 @@ function(add_pyclif_library name pyclif_file)
 
   clif_target_name(${name} lib_target_name)
 
-  add_protobuf_library_directories()
-
   add_library(${lib_target_name} SHARED
     EXCLUDE_FROM_ALL
     ${gen_cc}
@@ -225,7 +197,6 @@ function(add_pyclif_library name pyclif_file)
       PREFIX ""
   )
 
-  add_target_protobuf_include_directories(${lib_target_name})
   target_include_directories(${lib_target_name}
     PRIVATE
       ${CLIF_SRC_DIR}
@@ -233,8 +204,6 @@ function(add_pyclif_library name pyclif_file)
       ${GOOGLE_GLOG_INCLUDE_DIRS}
       ${PYTHON_INCLUDE_DIRS}
   )
-
-  add_target_protobuf_link_libraries(${lib_target_name})
 
   # Specify the keyword for target_link_libraries because add_llvm_executable
   # uses keyword target_link_libraries signature.
@@ -250,6 +219,7 @@ function(add_pyclif_library name pyclif_file)
 
     absl::memory
     absl::optional
+    protobuf::libprotobuf
   )
 endfunction(add_pyclif_library)
 

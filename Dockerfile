@@ -91,7 +91,7 @@ RUN wget "https://github.com/abseil/abseil-cpp/archive/$ABSL_VERSION.tar.gz" && 
     tar -xf "$ABSL_VERSION.tar.gz" && \
     mkdir "abseil-cpp-$ABSL_VERSION/build" && \
     cd "abseil-cpp-$ABSL_VERSION/build" && \
-    cmake .. -DCMAKE_POSITION_INDEPENDENT_CODE=true && \
+    cmake .. -DCMAKE_POSITION_INDEPENDENT_CODE=ON && \
     make install && \
     rm -rf "/abseil-cpp-$ABSL_VERSION" "/$ABSL_VERSION.tar.gz"
 
@@ -99,7 +99,7 @@ RUN wget "https://github.com/abseil/abseil-cpp/archive/$ABSL_VERSION.tar.gz" && 
 RUN wget "https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOBUF_VERSION/protobuf-$PROTOBUF_VERSION.tar.gz" && \
     tar -xf "protobuf-$PROTOBUF_VERSION.tar.gz" && \
     cd "protobuf-$PROTOBUF_VERSION" && \
-    cmake . -DCMAKE_CXX_STANDARD=17 -Dprotobuf_BUILD_TESTS=OFF -Dprotobuf_ABSL_PROVIDER=package && \
+    cmake . -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_CXX_STANDARD=17 -Dprotobuf_BUILD_TESTS=OFF -Dprotobuf_ABSL_PROVIDER=package && \
     make -j$(nproc) && \
     make install && \
     ldconfig && \
