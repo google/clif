@@ -34,13 +34,13 @@
 #  PROTOBUF_VERSION: one of protocolbuffers/protobuf Github releases
 #  PYTHON_VERSION: python version to use (>= 3.6)
 
-ARG UBUNTU_VERSION=18.04
+ARG UBUNTU_VERSION=20.04
 
 FROM ubuntu:${UBUNTU_VERSION}
 
 ARG ABSL_VERSION=20230125.1
 ARG PROTOBUF_VERSION=3.13.0
-ARG PYTHON_VERSION=3.7
+ARG PYTHON_VERSION=3.9
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -94,6 +94,7 @@ RUN wget "https://github.com/abseil/abseil-cpp/archive/$ABSL_VERSION.tar.gz" && 
     mkdir "abseil-cpp-$ABSL_VERSION/build" && \
     cd "abseil-cpp-$ABSL_VERSION/build" && \
     cmake .. -DCMAKE_POSITION_INDEPENDENT_CODE=true && \
+    make -j$(nproc) && \
     make install && \
     rm -rf "/abseil-cpp-$ABSL_VERSION" "/$ABSL_VERSION.tar.gz"
 
@@ -112,6 +113,7 @@ RUN wget "https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOB
 # Install googletest
 RUN cd /usr/src/googletest && \
     cmake . && \
+    make -j$(nproc) && \
     make install
 
 # Install python runtime and test dependencies
