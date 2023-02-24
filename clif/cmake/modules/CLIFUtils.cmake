@@ -36,6 +36,7 @@ find_package(absl REQUIRED)
 find_package(Clang REQUIRED)
 find_package(LLVM 11.1.0 REQUIRED)
 find_package(GTest REQUIRED)
+find_package(protobuf REQUIRED)
 
 function(add_protobuf_include_directories)
   if(GOOGLE_PROTOBUF_INCLUDE_DIRS)
