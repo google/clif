@@ -74,22 +74,26 @@ if(PROTOC-NOTFOUND)
 endif(PROTOC-NOTFOUND)
 
 function(add_proto_library name proto_srcfile)
-  protobuf_generate(
-      PROTOS "${CMAKE_CURRENT_SOURCE_DIR}/${proto_srcfile}"
-      OUT_VAR PROTO_GENERATED_CC_FILES
-      IMPORT_DIRS "${CMAKE_CURRENT_LIST_DIR}"
-      PROTOC_OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}"
-      LANGUAGE cpp)
-  protobuf_generate(
-      PROTOS "${CMAKE_CURRENT_SOURCE_DIR}/${proto_srcfile}"
-      OUT_VAR PROTO_GENERATED_PY_FILES
-      IMPORT_DIRS "${CMAKE_CURRENT_LIST_DIR}"
-      PROTOC_OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}"
-      LANGUAGE python)
+  string(REPLACE ".proto" ".pb.cc" gen_cc "${proto_srcfile}")
+  string(REPLACE ".proto" ".pb.h" gen_h "${proto_srcfile}")
+  string(REPLACE ".proto" "_pb2.py" gen_pb2 "${proto_srcfile}")
+
+  add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${gen_cc}
+           ${CMAKE_CURRENT_BINARY_DIR}/${gen_h}
+           ${CMAKE_CURRENT_BINARY_DIR}/${gen_pb2}
+    COMMAND ${PROTOC}
+            -I${CMAKE_CURRENT_SOURCE_DIR}
+            ${CMAKE_CURRENT_SOURCE_DIR}/${proto_srcfile}
+            --cpp_out=${CMAKE_CURRENT_BINARY_DIR}
+            --python_out=${CMAKE_CURRENT_BINARY_DIR}
+  )
 
   add_library(${name} STATIC
-    ${PROTO_GENERATED_CC_FILES}
+    ${CMAKE_CURRENT_BINARY_DIR}/${gen_cc}
+    ${CMAKE_CURRENT_BINARY_DIR}/${gen_h}
   )
+
   target_link_libraries(
     ${name}
     PRIVATE
