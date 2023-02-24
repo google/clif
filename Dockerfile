@@ -1,4 +1,4 @@
-# Copyright 2020 Google LLC
+# Copyright 2020-2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 # and test CLIF preinstalled. Example workflow using this image:
 #
 #  // Build docker image
-#  docker build $CLIF_DIR --tag clif --build-arg=UBUNTU_VERSION=18.04 ...
+#  docker build $CLIF_DIR --tag clif --build-arg=UBUNTU_VERSION=20.04 ...
 #
 #  // Configure build
 #  docker run --volume $CLIF_DIR:/clif --workdir /clif/build clif cmake ..
@@ -34,19 +34,17 @@
 #  PROTOBUF_VERSION: one of protocolbuffers/protobuf Github releases
 #  PYTHON_VERSION: python version to use (>= 3.6)
 
-ARG UBUNTU_VERSION=18.04
+ARG UBUNTU_VERSION=20.04
 
 FROM ubuntu:${UBUNTU_VERSION}
 
 ARG ABSL_VERSION=20230125.1
-ARG PROTOBUF_VERSION=3.13.0
-ARG PYTHON_VERSION=3.7
+ARG PROTOBUF_VERSION=22.0
+ARG PYTHON_VERSION=3.9
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    autoconf \
-    automake \
     cmake \
     curl \
     gpg-agent \
@@ -98,16 +96,14 @@ RUN wget "https://github.com/abseil/abseil-cpp/archive/$ABSL_VERSION.tar.gz" && 
     rm -rf "/abseil-cpp-$ABSL_VERSION" "/$ABSL_VERSION.tar.gz"
 
 # Compile and install protobuf from source
-RUN wget "https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOBUF_VERSION/protobuf-cpp-$PROTOBUF_VERSION.tar.gz" && \
-    tar -xf "protobuf-cpp-$PROTOBUF_VERSION.tar.gz" && \
+RUN wget "https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOBUF_VERSION/protobuf-$PROTOBUF_VERSION.tar.gz" && \
+    tar -xf "protobuf-$PROTOBUF_VERSION.tar.gz" && \
     cd "protobuf-$PROTOBUF_VERSION" && \
-    # Configure and install C++ libraries
-    ./autogen.sh && \
-    ./configure && \
+    cmake . -DCMAKE_CXX_STANDARD=17 -Dprotobuf_BUILD_TESTS=OFF -Dprotobuf_ABSL_PROVIDER=package && \
     make -j$(nproc) && \
     make install && \
     ldconfig && \
-    rm -rf "/protobuf-$PROTOBUF_VERSION" "/protobuf-cpp-$PROTOBUF_VERSION.tar.gz"
+    rm -rf "/protobuf-$PROTOBUF_VERSION" "/protobuf-$PROTOBUF_VERSION.tar.gz"
 
 # Install googletest
 RUN cd /usr/src/googletest && \
@@ -118,5 +114,5 @@ RUN cd /usr/src/googletest && \
 RUN "python$PYTHON_VERSION" -m pip install \
     absl-py \
     parameterized \
-    protobuf=="$PROTOBUF_VERSION" \
+    protobuf=="4.$PROTOBUF_VERSION" \
     pyparsing==2.2.0
