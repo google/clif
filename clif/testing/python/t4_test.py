@@ -60,8 +60,8 @@ class T4Test(absltest.TestCase):
     ast = pbs[0]
     self.assertIsInstance(ast, ast_pb2.AST)
     self.assertEqual(ast.DESCRIPTOR.full_name, 'clif.protos.AST')
-    # self.assertEqual(t4.ByteSize_R(ast), 3)
-    # self.assertEqual(t4.ByteSize_P(ast), 3)
+    self.assertEqual(t4.ByteSize_R(ast), 3)
+    self.assertEqual(t4.ByteSize_P(ast), 3)
 
   def testWrongMessageType(self):
     with self.assertRaises(TypeError):
