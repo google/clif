@@ -66,6 +66,9 @@ setuptools.setup(
                 './',
             ],
             extra_compile_args=['-std=c++17'],
+            library_dirs = [
+                sysconfig.get_python_lib()
+            ],
             libraries=[
                 'absl_bad_optional_access',
                 'absl_raw_logging_internal',
