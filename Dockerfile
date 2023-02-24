@@ -92,6 +92,7 @@ RUN wget "https://github.com/abseil/abseil-cpp/archive/$ABSL_VERSION.tar.gz" && 
     mkdir "abseil-cpp-$ABSL_VERSION/build" && \
     cd "abseil-cpp-$ABSL_VERSION/build" && \
     cmake .. -DCMAKE_POSITION_INDEPENDENT_CODE=ON && \
+    make -j$(nproc) && \
     make install && \
     rm -rf "/abseil-cpp-$ABSL_VERSION" "/$ABSL_VERSION.tar.gz"
 
@@ -108,6 +109,7 @@ RUN wget "https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOB
 # Install googletest
 RUN cd /usr/src/googletest && \
     cmake . && \
+    make -j$(nproc) && \
     make install
 
 # Install python runtime and test dependencies
