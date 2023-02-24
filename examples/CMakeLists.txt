@@ -18,10 +18,7 @@ set(CMAKE_CXX_STANDARD 17)
 # We need the Python libraries for generating PyCLIF wrappers.
 find_package(PythonInterp REQUIRED)
 find_package(PythonLibs REQUIRED)
-
-include(FindPkgConfig)
-# Lookup include and library directories using pkg-config.
-pkg_check_modules(GOOGLE_PROTOBUF REQUIRED protobuf)
+find_package(protobuf REQUIRED)
 
 find_program(PROTOC "protoc")
 if(PROTOC-NOTFOUND)
