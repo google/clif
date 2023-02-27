@@ -22,9 +22,6 @@ link_directories(
   ${LLVM_LIBRARY_DIR}
 )
 
-add_protobuf_include_directories()
-add_protobuf_library_directories()
-
 add_definitions(
   # Disable RTTI in the protobuf runtime library as the LLVM build
   # uses -fno-rtti
@@ -67,7 +64,6 @@ set(CLIF_BACKEND_LINK_LIBRARIES
 target_link_libraries(clif-matcher PRIVATE
   ${CLIF_BACKEND_LINK_LIBRARIES}
 )
-add_target_protobuf_link_libraries(clif-matcher)
 
 function(add_clif_backend_unittest name cc_file)
   clif_target_name(${name} test_target_name)
@@ -87,7 +83,6 @@ function(add_clif_backend_unittest name cc_file)
     gtest_main
     pthread
   )
-  add_target_protobuf_link_libraries(${test_target_name})
 
   gtest_discover_tests(${test_target_name})
 endfunction(add_clif_backend_unittest)

@@ -20,9 +20,6 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/__init__.py"
   "import pkgutil; __path__ = pkgutil.extend_path(__path__, __name__)"
 )
 
-add_protobuf_include_directories()
-add_protobuf_library_directories()
-
 add_library(pickle_support_lib SHARED
   pickle_support.h
   pickle_support.cc
@@ -37,8 +34,8 @@ target_include_directories(pickle_support_lib
 
 target_link_libraries(pickle_support_lib PRIVATE
   ${PYTHON_LIBRARIES}
+  protobuf::libprotobuf
 )
-add_target_protobuf_link_libraries(pickle_support_lib)
 
 add_library(pyClifRuntime SHARED
   postconv.h
@@ -61,7 +58,6 @@ target_include_directories(pyClifRuntime PUBLIC
   "${GOOGLE_GLOG_INCLUDE_DIRS}"
 )
 
-add_target_protobuf_link_libraries(pyClifRuntime)
 target_link_libraries(pyClifRuntime PRIVATE
   "${PYTHON_LIBRARIES}"
   "${GOOGLE_GLOG_LIBRARIES}"
@@ -69,6 +65,7 @@ target_link_libraries(pyClifRuntime PRIVATE
 
   absl::memory
   absl::optional
+  protobuf::libprotobuf
 )
 
 add_custom_target(runPyClifUnitTests
@@ -92,9 +89,9 @@ target_include_directories(proto_util_cc
 
 target_link_libraries(proto_util_cc PRIVATE
   pyClifRuntime
+  protobuf::libprotobuf
   ${PYTHON_LIBRARIES}
 )
-add_target_protobuf_link_libraries(proto_util_cc)
 
 add_py_library(type_customization type_customization.py)
 add_py_library(postproc postproc.py)
@@ -115,8 +112,8 @@ function(add_clif_python_unittest name cc_file)
     gtest
     gtest_main
     pthread
+    protobuf::libprotobuf
   )
-  add_target_protobuf_link_libraries(${test_target_name})
 
   gtest_discover_tests(${test_target_name})
 endfunction(add_clif_python_unittest)
