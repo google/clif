@@ -98,7 +98,9 @@ def is_cpp_vector(param_type: ast_pb2.Type) -> bool:
 
 def is_cpp_set(param_type: ast_pb2.Type) -> bool:
   return ((param_type.cpp_type.startswith('::std::set') or
-           param_type.cpp_type.startswith('::std::unordered_set')) and
+           param_type.cpp_type.startswith('::std::unordered_set') or
+           param_type.cpp_type.startswith('::absl::flat_hash_set') or
+           param_type.cpp_type.startswith('::absl::node_hash_set')) and
           param_type.lang_type.startswith('set'))
 
 
