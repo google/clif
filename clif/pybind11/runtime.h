@@ -15,7 +15,7 @@
 #ifndef THIRD_PARTY_CLIF_PYBIND11_RUNTIME_H_
 #define THIRD_PARTY_CLIF_PYBIND11_RUNTIME_H_
 
-#include "third_party/pybind11/include/pybind11/pybind11.h"
+#include "third_party/pybind11/include/pybind11/smart_holder.h"
 
 // NOLINTNEXTLINE
 #include <type_traits>
@@ -389,6 +389,13 @@ struct type_caster<clif::CapsuleWrapper<T>> {
   bool load(handle src, bool convert) {
     if (isinstance<capsule>(src)) {
       value = clif::CapsuleWrapper<T>(reinterpret_borrow<capsule>(src.ptr()));
+      return true;
+    }
+    void* void_ptr_from_void_ptr_capsule
+        = try_as_void_ptr_capsule_get_pointer(src, typeid(T).name());
+    if (void_ptr_from_void_ptr_capsule) {
+      value = clif::CapsuleWrapper<T>(
+        static_cast<T>(void_ptr_from_void_ptr_capsule));
       return true;
     }
     return false;
