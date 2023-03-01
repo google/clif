@@ -316,4 +316,12 @@ bool Clif_PyObjAs(PyObject* p, std::string* c) {
   return py::ObjToStr(p,
       [c](const char* data, size_t length) { c->assign(data, length); });
 }
+
+bool Clif_PyObjAs(PyObject* p, std::shared_ptr<std::string>* c) {
+  CHECK(c != nullptr);
+  std::shared_ptr<std::string> pt(new std::string);
+  if (!Clif_PyObjAs(p, pt.get())) return false;
+  *c = std::move(pt);
+  return true;
+}
 }  // namespace clif

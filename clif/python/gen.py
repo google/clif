@@ -24,6 +24,10 @@ from clif.python import slots
 VERSION = '0.3'   # CLIF generated API version. Pure informative.
 I = '  '
 
+_BUILTIN_TYPES_WITH_SHARED_PTR_CONVERSION = frozenset([
+    'str', 'bytes'
+])
+
 
 def TopologicalSortSimple(ideps):
   """Simple topological sort working on sequence of integer indices."""
@@ -578,7 +582,9 @@ def CreateInputParameter(func_name, ast_param, arg, args):
   if ((smartptr or ptype.cpp_abstract) and
       not ptype.cpp_touniqptr_conversion and
       not (ctype.startswith('::std::unique_ptr') and
-           ast_param.default_value == 'default')):
+           ast_param.default_value == 'default') and
+      not (ctype.startswith('::std::shared_ptr') and
+           ptype.lang_type in _BUILTIN_TYPES_WITH_SHARED_PTR_CONVERSION)):
     raise TypeError('Can\'t create "%s" variable (C++ type %s) in function %s'
                     ', no valid conversion defined'
                     % (ast_param.name.native, ctype, func_name))

@@ -221,6 +221,12 @@ template< typename T > class shared_ptr;
 std::shared_ptr<const Class> FuncReturnsSmartPtrOfConstClass();
 std::shared_ptr<const int> FuncReturnsSmartPtrOfConstInt();
 
+using SharedPtrClass = std::shared_ptr<const Class>;
+
+void ConsumeConstRefToSharedPtrToConstType(const SharedPtrClass& ref) { }
+void ConsumeConstRefToSharedPtrToConstBuiltinType(
+    const std::shared_ptr<const int>& ref) { }
+
 // tests for parameter counts
 void FuncOneParam(int x);
 void FuncTwoParams(int x, int y);

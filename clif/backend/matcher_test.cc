@@ -3883,4 +3883,29 @@ TEST_F(ClifMatcherTest, TestCppCanonicalType) {
   EXPECT_EQ(decl.class_().name().cpp_canonical_type(), "::AliasForPrimary5");
 }
 
+TEST_F(ClifMatcherTest, TestConsumeSharedPtrToConstType) {
+  protos::Decl decl;
+  TestMatch("decltype: FUNC func { "
+            "name { cpp_name: 'ConsumeConstRefToSharedPtrToConstType' } "
+            "params { "
+            "  type { lang_type: 'SharedPtrClass' "
+            "         cpp_type: 'SharedPtrClass' } } }",
+            &decl);
+  EXPECT_EQ(decl.func().params(0).type().cpp_type(),
+            "::std::shared_ptr<const ::Class>");
+  TestMatch("decltype: FUNC func { "
+            "name { cpp_name: 'ConsumeConstRefToSharedPtrToConstType' } "
+            "params { "
+            "  type { lang_type: 'Class' cpp_type: 'Class' } } }",
+            &decl);
+  EXPECT_EQ(decl.func().params(0).type().cpp_type(),
+            "::std::shared_ptr<::Class>");
+  TestMatch("decltype: FUNC func { "
+            "name { cpp_name: 'ConsumeConstRefToSharedPtrToConstBuiltinType' } "
+            "params { "
+            "  type { lang_type: 'Class' cpp_type: 'int' } } }",
+            &decl);
+  EXPECT_EQ(decl.func().params(0).type().cpp_type(), "::std::shared_ptr<int>");
+}
+
 }  // namespace clif

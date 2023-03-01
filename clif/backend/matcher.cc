@@ -1821,6 +1821,9 @@ ClifErrorCode ClifMatcher::MatchAndSetTypeTop(const QualType& clang_type,
 ClifErrorCode ClifMatcher::MatchAndSetType(const QualType& clang_type,
                                            Type* clif_type,
                                            unsigned int flags) {
+  // This only matches "Foo" with "smart_ptr<Foo>".
+  // Matching of "Foo" with "const smart_ptr<Foo>&" will be handled at the end
+  // of this method.
   if (ast_->IsStdSmartPtr(clang_type)) {
     return MatchAndSetStdSmartPtr(clang_type, clif_type, flags);
   }
@@ -1951,6 +1954,33 @@ ClifErrorCode ClifMatcher::MatchAndSetType(const QualType& clang_type,
                  &type_selected)) {
     SetUnqualifiedCppType(type_selected, clif_type);
     return kOK;
+  }
+
+  // Try again with const or reference to smart pointers. This needs to be at
+  // the end of the method. Assume we have the following C++ library:
+  //
+  // struct Foo {};
+  //
+  // using Bar = std::shared_ptr<const Foo>;
+  //
+  // void ConsumeBar(const Bar& bar) {}
+  //
+  // CLIF:
+  //   class Foo:
+  //     pass
+  //   class Bar:
+  //     pass
+  //   def ConsumeBar(bar: Bar)
+  //
+  // This should be a match. But if we move the following to the front, because
+  // C++ type "Bar" is a smart pointer to "Foo", it would go through
+  // "MatchAndSetStdSmartPtr", and try matching CLIF type "Bar" with
+  // "const Foo*", which would generate a matcher error.
+  auto unqualified_non_reference_type =
+      clang_type.getNonReferenceType().getUnqualifiedType();
+  if (ast_->IsStdSmartPtr(unqualified_non_reference_type)) {
+    return MatchAndSetStdSmartPtr(unqualified_non_reference_type, clif_type,
+                                  flags);
   }
   // Case 7
   RecordIncompatibleTypes(clang_type, *clif_type);
