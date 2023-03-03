@@ -233,5 +233,5 @@ def _generate_constructor_overload(
     if not func_keeps_gil:
       yield I + 'py::gil_scoped_release release_gil;'
     yield I + (f'return std::make_unique<{class_decl.name.cpp_name}>'
-               f'({params}).release();')
+               f'({params});')
     yield f'}}, {function_suffix}'
