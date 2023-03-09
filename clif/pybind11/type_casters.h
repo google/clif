@@ -27,6 +27,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "clif/python/types.h"
 #include "third_party/pybind11_abseil/status_caster.h"
 #include "third_party/pybind11_abseil/statusor_caster.h"
@@ -74,7 +76,7 @@ class smart_pointer_vector_caster {
 
   bool load(handle src, bool convert) {
     if (isinstance<none>(src)) {
-      value.reset(nullptr);
+      value.reset();
       return true;
     }
     if (!isinstance<sequence>(src) || isinstance<bytes>(src) ||
@@ -134,7 +136,7 @@ class smart_pointer_map_caster {
 
   bool load(handle src, bool convert) {
     if (isinstance<none>(src)) {
-      value.reset(nullptr);
+      value.reset();
       return true;
     }
     if (!isinstance<dict>(src)) {
@@ -202,6 +204,22 @@ class type_caster<std::shared_ptr<std::unordered_map<Key, Value>>>
         std::shared_ptr<std::unordered_map<Key, Value>>,
         std::unordered_map<Key, Value>, Key, Value> {};
 
+template <typename Key, typename Value, typename Hash, typename Equal,
+          typename Alloc>
+struct type_caster<std::unique_ptr<
+                      absl::flat_hash_map<Key, Value, Hash, Equal, Alloc>>>
+    : public smart_pointer_map_caster<
+        std::unique_ptr<absl::flat_hash_map<Key, Value, Hash, Equal, Alloc>>,
+        absl::flat_hash_map<Key, Value, Hash, Equal, Alloc>, Key, Value> {};
+
+template <typename Key, typename Value, typename Hash, typename Equal,
+          typename Alloc>
+struct type_caster<std::shared_ptr<
+                      absl::flat_hash_map<Key, Value, Hash, Equal, Alloc>>>
+    : public smart_pointer_map_caster<
+        std::shared_ptr<absl::flat_hash_map<Key, Value, Hash, Equal, Alloc>>,
+        absl::flat_hash_map<Key, Value, Hash, Equal, Alloc>, Key, Value> {};
+
 template <typename ValueAndHolder, typename Type, typename Key>
 class smart_pointer_set_caster {
   using key_conv = make_caster<Key>;
@@ -212,7 +230,7 @@ class smart_pointer_set_caster {
 
   bool load(handle src, bool convert) {
     if (isinstance<none>(src)) {
-      value.reset(nullptr);
+      value.reset();
       return true;
     }
     if (!isinstance<pybind11::set>(src)) {
@@ -266,6 +284,20 @@ template <typename Key>
 class type_caster<std::shared_ptr<std::unordered_set<Key>>>
     : public smart_pointer_set_caster<std::shared_ptr<std::unordered_set<Key>>,
                                       std::unordered_set<Key>, Key> {};
+
+template <typename Key, typename Hash, typename Equal, typename Alloc>
+struct type_caster<std::unique_ptr<
+                      absl::flat_hash_set<Key, Hash, Equal, Alloc>>>
+    : public smart_pointer_set_caster<
+        std::unique_ptr<absl::flat_hash_set<Key, Hash, Equal, Alloc>>,
+        absl::flat_hash_set<Key, Hash, Equal, Alloc>, Key> {};
+
+template <typename Key, typename Hash, typename Equal, typename Alloc>
+struct type_caster<std::shared_ptr<
+                      absl::flat_hash_set<Key, Hash, Equal, Alloc>>>
+    : public smart_pointer_set_caster<
+        std::shared_ptr<absl::flat_hash_set<Key, Hash, Equal, Alloc>>,
+        absl::flat_hash_set<Key, Hash, Equal, Alloc>, Key> {};
 
 }  // namespace detail
 }  // namespace pybind11
