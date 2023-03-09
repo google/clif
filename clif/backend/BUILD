@@ -1,4 +1,5 @@
 package(
+    default_applicable_licenses = ["//third_party/clif:license"],
     default_visibility = ["//clif:__subpackages__"],
 )
 

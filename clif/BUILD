@@ -1,4 +1,7 @@
-package(default_visibility = [":__subpackages__"])
+package(
+    default_applicable_licenses = ["//third_party/clif:license"],
+    default_visibility = [":__subpackages__"],
+)
 
 licenses(["notice"])
 

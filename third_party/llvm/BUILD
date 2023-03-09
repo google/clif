@@ -1,6 +1,9 @@
 licenses(["restricted"])
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_applicable_licenses = ["//third_party/clif:license"],
+    default_visibility = ["//visibility:public"],
+)
 
 # cc rule for LLVM builtin headers is not yet available in llvm-bazel
 # since cc_embed_data is not yet supported
