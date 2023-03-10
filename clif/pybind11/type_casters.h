@@ -299,6 +299,37 @@ struct type_caster<std::shared_ptr<
         std::shared_ptr<absl::flat_hash_set<Key, Hash, Equal, Alloc>>,
         absl::flat_hash_set<Key, Hash, Equal, Alloc>, Key> {};
 
+template <typename ValueAndHolder>
+class smart_pointer_string_caster {
+  using StringCaster = make_caster<std::string>;
+  StringCaster str_caster;
+
+ public:
+  PYBIND11_TYPE_CASTER(ValueAndHolder, const_name("str"));
+
+  bool load(handle src, bool convert) {
+    if (!str_caster.load(src, convert)) {
+      return false;
+    }
+    value.reset(
+        new std::string(cast_op<std::string &&>(std::move(str_caster))));
+    return true;
+  }
+
+  static handle cast(ValueAndHolder src, return_value_policy policy,
+                     handle parent) {
+    return StringCaster::cast(*src, policy, parent);
+  }
+};
+
+template <>
+struct type_caster<std::unique_ptr<std::string>>
+    : public smart_pointer_string_caster<std::unique_ptr<std::string>> {};
+
+template <>
+struct type_caster<std::shared_ptr<std::string>>
+    : public smart_pointer_string_caster<std::shared_ptr<std::string>> {};
+
 }  // namespace detail
 }  // namespace pybind11
 
