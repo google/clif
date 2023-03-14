@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <array>
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -218,6 +219,45 @@ inline std::shared_ptr<std::pair<int, int>> return_shared_ptr_pair() {
 // Not supported by Leagcy PyCLIF
 inline int consume_shared_ptr_pair(std::shared_ptr<std::pair<int, int>> p) {
   return p->first;
+}
+
+struct IntHash {
+  size_t operator()(const int source) const {
+    return std::hash<int>{}(source);
+  }
+};
+
+using MyUnorderedMap = std::unordered_map<int, int, IntHash>;
+using MyUnorderedSet = std::unordered_set<int, IntHash>;
+
+inline std::unique_ptr<MyUnorderedMap> create_unordered_map_customized_hash() {
+  auto result = std::make_unique<MyUnorderedMap>();
+  result->insert({1, 2});
+  result->insert({3, 4});
+  return result;
+}
+
+inline int consume_unordered_map_customized_hash(
+    std::unique_ptr<MyUnorderedMap> ptr = nullptr) {
+  if (!ptr) {
+    return 0;
+  }
+  return ptr->size();
+}
+
+inline std::unique_ptr<MyUnorderedSet> create_unordered_set_customized_hash() {
+  auto result = std::make_unique<MyUnorderedSet>();
+  result->insert(1);
+  result->insert(2);
+  return result;
+}
+
+inline int consume_unordered_set_customized_hash(
+    std::unique_ptr<MyUnorderedSet> ptr = nullptr) {
+  if (!ptr) {
+    return 0;
+  }
+  return ptr->size();
 }
 
 #endif  // CLIF_TESTING_STD_CONTAINERS_H_

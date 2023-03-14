@@ -31,6 +31,18 @@ from "clif/testing/std_containers.h":
   def unique_ptr_vector_round_trip(v: list<int> = default) -> list<int>
   def unique_ptr_unordered_map_round_trip(m: dict<int, int> = default) -> dict<int, int>
   def unique_ptr_unordered_set_round_trip(m: set<int> = default) -> set<int>
+
+  class MyUnorderedMap:
+    pass
+
+  class MyUnorderedSet:
+    pass
+
+  def create_unordered_map_customized_hash() -> MyUnorderedMap
+  def consume_unordered_map_customized_hash(ptr: MyUnorderedMap) -> int
+  def create_unordered_set_customized_hash() -> MyUnorderedSet
+  def consume_unordered_set_customized_hash(ptr: MyUnorderedSet) -> int
+
   # TODO: Implement type casters for smart pointers with tuples.
   # def unique_ptr_pair_round_trip(t: tuple<int, int> = default) -> tuple<int, int>
 

@@ -115,9 +115,10 @@ class smart_pointer_vector_caster {
   }
 };
 
-template <typename T>
-class type_caster<std::unique_ptr<std::vector<T>>>
-    : public smart_pointer_vector_caster<std::unique_ptr<std::vector<T>>, T> {};
+template <typename T, typename D>
+class type_caster<std::unique_ptr<std::vector<T>, D>>
+    : public smart_pointer_vector_caster<
+        std::unique_ptr<std::vector<T>, D>, T> {};
 
 template <typename T>
 class type_caster<std::shared_ptr<std::vector<T>>>
@@ -180,45 +181,43 @@ class smart_pointer_map_caster {
   }
 };
 
-template <typename Key, typename Value>
-class type_caster<std::unique_ptr<std::map<Key, Value>>>
+template <typename Key, typename Value, typename D, typename... Extra>
+class type_caster<std::unique_ptr<std::map<Key, Value, Extra...>, D>>
     : public smart_pointer_map_caster<
-        std::unique_ptr<std::map<Key, Value>>, std::map<Key, Value>, Key,
-        Value> {};
+        std::unique_ptr<std::map<Key, Value, Extra...>, D>,
+        std::map<Key, Value, Extra...>, Key, Value> {};
 
-template <typename Key, typename Value>
-class type_caster<std::shared_ptr<std::map<Key, Value>>>
+template <typename Key, typename Value, typename... Extra>
+class type_caster<std::shared_ptr<std::map<Key, Value, Extra...>>>
     : public smart_pointer_map_caster<
-        std::shared_ptr<std::map<Key, Value>>, std::map<Key, Value>, Key,
-        Value> {};
+        std::shared_ptr<std::map<Key, Value, Extra...>>,
+        std::map<Key, Value, Extra...>, Key, Value> {};
 
-template <typename Key, typename Value>
-class type_caster<std::unique_ptr<std::unordered_map<Key, Value>>>
+template <typename Key, typename Value, typename D, typename... Extra>
+class type_caster<std::unique_ptr<std::unordered_map<Key, Value, Extra...>, D>>
     : public smart_pointer_map_caster<
-        std::unique_ptr<std::unordered_map<Key, Value>>,
-        std::unordered_map<Key, Value>, Key, Value> {};
+        std::unique_ptr<std::unordered_map<Key, Value, Extra...>, D>,
+        std::unordered_map<Key, Value, Extra...>, Key, Value> {};
 
-template <typename Key, typename Value>
-class type_caster<std::shared_ptr<std::unordered_map<Key, Value>>>
+template <typename Key, typename Value, typename... Extra>
+class type_caster<std::shared_ptr<std::unordered_map<Key, Value, Extra...>>>
     : public smart_pointer_map_caster<
-        std::shared_ptr<std::unordered_map<Key, Value>>,
-        std::unordered_map<Key, Value>, Key, Value> {};
+        std::shared_ptr<std::unordered_map<Key, Value, Extra...>>,
+        std::unordered_map<Key, Value, Extra...>, Key, Value> {};
 
-template <typename Key, typename Value, typename Hash, typename Equal,
-          typename Alloc>
+template <typename Key, typename Value, typename D, typename... Extra>
 struct type_caster<std::unique_ptr<
-                      absl::flat_hash_map<Key, Value, Hash, Equal, Alloc>>>
+                      absl::flat_hash_map<Key, Value, Extra...>, D>>
     : public smart_pointer_map_caster<
-        std::unique_ptr<absl::flat_hash_map<Key, Value, Hash, Equal, Alloc>>,
-        absl::flat_hash_map<Key, Value, Hash, Equal, Alloc>, Key, Value> {};
+        std::unique_ptr<absl::flat_hash_map<Key, Value, Extra...>, D>,
+        absl::flat_hash_map<Key, Value, Extra...>, Key, Value> {};
 
-template <typename Key, typename Value, typename Hash, typename Equal,
-          typename Alloc>
+template <typename Key, typename Value, typename... Extra>
 struct type_caster<std::shared_ptr<
-                      absl::flat_hash_map<Key, Value, Hash, Equal, Alloc>>>
+                      absl::flat_hash_map<Key, Value, Extra...>>>
     : public smart_pointer_map_caster<
-        std::shared_ptr<absl::flat_hash_map<Key, Value, Hash, Equal, Alloc>>,
-        absl::flat_hash_map<Key, Value, Hash, Equal, Alloc>, Key, Value> {};
+        std::shared_ptr<absl::flat_hash_map<Key, Value, Extra...>>,
+        absl::flat_hash_map<Key, Value, Extra...>, Key, Value> {};
 
 template <typename ValueAndHolder, typename Type, typename Key>
 class smart_pointer_set_caster {
@@ -265,39 +264,42 @@ class smart_pointer_set_caster {
   }
 };
 
-template <typename Key>
-class type_caster<std::unique_ptr<std::set<Key>>>
-    : public smart_pointer_set_caster<std::unique_ptr<std::set<Key>>,
-                                      std::set<Key>, Key> {};
-
-template <typename Key>
-class type_caster<std::shared_ptr<std::set<Key>>>
-    : public smart_pointer_set_caster<std::shared_ptr<std::set<Key>>,
-                                      std::set<Key>, Key> {};
-
-template <typename Key>
-class type_caster<std::unique_ptr<std::unordered_set<Key>>>
-    : public smart_pointer_set_caster<std::unique_ptr<std::unordered_set<Key>>,
-                                      std::unordered_set<Key>, Key> {};
-
-template <typename Key>
-class type_caster<std::shared_ptr<std::unordered_set<Key>>>
-    : public smart_pointer_set_caster<std::shared_ptr<std::unordered_set<Key>>,
-                                      std::unordered_set<Key>, Key> {};
-
-template <typename Key, typename Hash, typename Equal, typename Alloc>
-struct type_caster<std::unique_ptr<
-                      absl::flat_hash_set<Key, Hash, Equal, Alloc>>>
+template <typename Key, typename D, typename... Extra>
+class type_caster<std::unique_ptr<std::set<Key, Extra...>, D>>
     : public smart_pointer_set_caster<
-        std::unique_ptr<absl::flat_hash_set<Key, Hash, Equal, Alloc>>,
-        absl::flat_hash_set<Key, Hash, Equal, Alloc>, Key> {};
+        std::unique_ptr<std::set<Key, Extra...>, D>,
+        std::set<Key, Extra...>, Key> {};
 
-template <typename Key, typename Hash, typename Equal, typename Alloc>
-struct type_caster<std::shared_ptr<
-                      absl::flat_hash_set<Key, Hash, Equal, Alloc>>>
+template <typename Key, typename... Extra>
+class type_caster<std::shared_ptr<std::set<Key, Extra...>>>
     : public smart_pointer_set_caster<
-        std::shared_ptr<absl::flat_hash_set<Key, Hash, Equal, Alloc>>,
-        absl::flat_hash_set<Key, Hash, Equal, Alloc>, Key> {};
+        std::shared_ptr<std::set<Key, Extra...>>,
+        std::set<Key, Extra...>, Key> {};
+
+template <typename Key, typename D, typename... Extra>
+class type_caster<std::unique_ptr<std::unordered_set<Key, Extra...>, D>>
+    : public smart_pointer_set_caster<
+        std::unique_ptr<std::unordered_set<Key, Extra...>, D>,
+        std::unordered_set<Key>, Key> {};
+
+template <typename Key, typename... Extra>
+class type_caster<std::shared_ptr<std::unordered_set<Key, Extra...>>>
+    : public smart_pointer_set_caster<
+        std::shared_ptr<std::unordered_set<Key, Extra...>>,
+        std::unordered_set<Key, Extra...>, Key> {};
+
+template <typename Key, typename D, typename... Extra>
+struct type_caster<
+        std::unique_ptr<absl::flat_hash_set<Key, Extra...>, D>>
+    : public smart_pointer_set_caster<
+        std::unique_ptr<absl::flat_hash_set<Key, Extra...>, D>,
+        absl::flat_hash_set<Key, Extra...>, Key> {};
+
+template <typename Key, typename... Extra>
+struct type_caster<std::shared_ptr< absl::flat_hash_set<Key, Extra...>>>
+    : public smart_pointer_set_caster<
+        std::shared_ptr<absl::flat_hash_set<Key, Extra...>>,
+        absl::flat_hash_set<Key, Extra...>, Key> {};
 
 template <typename ValueAndHolder>
 class smart_pointer_string_caster {
@@ -322,9 +324,9 @@ class smart_pointer_string_caster {
   }
 };
 
-template <>
-struct type_caster<std::unique_ptr<std::string>>
-    : public smart_pointer_string_caster<std::unique_ptr<std::string>> {};
+template <typename D>
+struct type_caster<std::unique_ptr<std::string, D>>
+    : public smart_pointer_string_caster<std::unique_ptr<std::string, D>> {};
 
 template <>
 struct type_caster<std::shared_ptr<std::string>>
