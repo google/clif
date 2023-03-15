@@ -500,6 +500,9 @@ class Postprocessor(object):
       if 'suppress_upcasts' in decorators:
         p.suppress_upcasts = True
         decorators.remove('suppress_upcasts')
+      if 'suppress_shared_ptr_const_conversion' in decorators:
+        p.suppress_shared_ptr_const_conversion = True
+        decorators.remove('suppress_shared_ptr_const_conversion')
     if decorators:
       raise NameError('Unknown class decorator(s)%s: %s'
                       % (atln, ', '.join(decorators)))

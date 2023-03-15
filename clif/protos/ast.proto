@@ -79,7 +79,9 @@ message ClassDecl {
   };
   repeated Base cpp_bases = 11;   // Additional info for C++ base classes.
   optional bool is_cpp_polymorphic = 18;  // C++ class contains or inherits a virtual function.
-  // Next available: 19
+  // Set to true to not generate Clif_PyObj functions for shared_ptr<const T>.
+  optional bool suppress_shared_ptr_const_conversion = 19;
+  // Next available: 20
 };
 
 message EnumDecl {
