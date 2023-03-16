@@ -80,7 +80,8 @@ class Instance {
 
   // const-ness is lost to Python. This is a general limitation that can only be
   // solved with large, intrusive changes.
-  explicit Instance(std::shared_ptr<const T> shared): Instance(shared) { }
+  explicit Instance(std::shared_ptr<const T> shared)
+      : Instance(std::const_pointer_cast<T>(shared)) { }
 
   // Does not take ownership of the pointee when an Instance is created from an
   // unique pointer having non-default deleter.
