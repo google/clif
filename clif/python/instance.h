@@ -75,8 +75,12 @@ class Instance {
   // The new Instance does not own the pointee.
   explicit Instance(std::shared_ptr<T> shared)
       : ptr_(std::move(shared)), maybe_deleter_(nullptr) {
-    // When do not own the pointee and hence `maybe_deleter_` is null.
+    // We do not own the pointee and hence `maybe_deleter_` is null.
   }
+
+  // const-ness is lost to Python. This is a general limitation that can only be
+  // solved with large, intrusive changes.
+  explicit Instance(std::shared_ptr<const T> shared): Instance(shared) { }
 
   // Does not take ownership of the pointee when an Instance is created from an
   // unique pointer having non-default deleter.

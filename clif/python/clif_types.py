@@ -68,7 +68,8 @@ class ClassType(TypeDef):
   """C++ class as Python type."""
 
   def __init__(self, cpp_name, pypath, wclass, wtype, wnamespace,
-               can_copy, can_move, can_destruct, virtual, ns=None):
+               can_copy, can_move, can_destruct, virtual, ns=None,
+               suppress_shared_ptr_const_conversion=False):
     """Register a new class.
 
     Args:
@@ -82,6 +83,8 @@ class ClassType(TypeDef):
       can_destruct: True if C++ class has a public dtor
       virtual: True if class has @virtual method(s) and needs a redirector
       ns: namespace where class defined
+      suppress_shared_ptr_const_conversion: True if not generating conversion
+          functions for `shared_ptr<const T>`.
     """
     TypeDef.__init__(self, cpp_name, pypath, ns)
     self.wrapper_obj = wclass
@@ -113,6 +116,9 @@ class ClassType(TypeDef):
       self._from = [
           ('%s*', True, '::clif::Instance<%s>(c, ::clif::UnOwnedResource());'),
           ('std::shared_ptr<%s>', True, '::clif::Instance<%s>(c);')]
+      if not suppress_shared_ptr_const_conversion:
+        self._from.append(
+            ('std::shared_ptr<const %s>', True, '::clif::Instance<%s>(c);'))
       if can_destruct:
         self._from.append((
             'std::unique_ptr<%s>', True, '::clif::Instance<%s>(std::move(c));'))
@@ -131,6 +137,8 @@ class ClassType(TypeDef):
     self._as = [  # [C++ Argument, ptr_deref]
         ('%s*', ''),
         ('std::shared_ptr<%s>', '',)]
+    if not suppress_shared_ptr_const_conversion:
+      self._as.append(('std::shared_ptr<const %s>', ''))
     if can_destruct:
       self._as.append(('std::unique_ptr<%s>', ''))
     if can_copy and not virtual:
@@ -190,7 +198,7 @@ class ClassType(TypeDef):
           yield I+I+'return false;'
           yield I+'}'
           yield I+'c->reset(cpp);'
-        elif arg == 'std::shared_ptr<%s>':
+        elif arg == 'std::shared_ptr<%s>' or arg == 'std::shared_ptr<const %s>':
           if self.virtual:
             yield I+'auto& shared = %s;' % shared
             yield I+('*c = ::clif::MakeSharedVirtual<%s>(shared, py);'
