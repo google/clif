@@ -93,8 +93,6 @@ WRAPPER_CLASS_NAME = 'wrapper'
 STATIC_LINKING_PREFIX = ''  # Disable static linking.
 _ClassNamespace = lambda pyname: 'py' + pyname  # pylint: disable=invalid-name
 _ITER_KW = '__iter__'
-# TODO: Remove this after cl/510553569 is submitted.
-_ENABLE_SHARED_PTR_CONST_CONVERSION = False
 
 
 class Context(object):
@@ -612,8 +610,7 @@ class Module(object):
               can_destruct=c.cpp_has_public_dtor,
               virtual=vclass if virtual else '', ns=cpp_namespace,
               suppress_shared_ptr_const_conversion=(
-                  c.suppress_shared_ptr_const_conversion or
-                  not _ENABLE_SHARED_PTR_CONST_CONVERSION)))
+                  c.suppress_shared_ptr_const_conversion)))
 
   def WrapEnum(self, e, unused_ln, cpp_namespace, unused_class_ns=''):
     """Process AST.EnumDecl e."""
