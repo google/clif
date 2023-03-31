@@ -182,19 +182,32 @@ processing for contained types. Take a look at
 
 ## Introducing a CLIF name for the C++ type
 
-Usually you'll need a name to identify the C++ type within .clif files. Yes,
-this name is internal to CLIF and works only inside `.clif` files. For
-convenience CLIF names for standard types made the same as Python names (eg.
-int, set, dict). Python knows nothing about CLIF names.
-
-To add a CLIF name add a structured comment like
+Usually you will need a CLIF name to identify the C++ type within .clif files.
+To add a CLIF name add a structured comment of this form:
 
 ```c++
 // CLIF use `::fq::CppType` as ClifName
 ```
 
-to your library header file. The `ClifName` must be a valid Python name and be
-unique to CLIF (otherwise you'll silently hide some other type from CLIF).
+Strictly speaking the CLIF name is internal to CLIF and only works in the
+context of `.clif` files, but often the CLIF and Python names are identical,
+in particular for Python built-in types like `int`, `set`, `dict`.
+
+Multiple C++ type names may map to the same CLIF name. Currently CLIF uses
+a simple "last mapping seen wins" approach which can lead to surprises when
+a new `// CLIF use` is added, or even if it is just that the order of
+C++ `#include`s changes in a refactoring project. For example, a
+``// CLIF use `my::BytesLikeType` as bytes`` may suddenly take precedence over
+``// CLIF use `std::string` as bytes``. There is a simple way to work around
+this with `// CLIF use2` (think: "use this, too, but with lower priority"),
+for example:
+
+```c++
+// CLIF use2 `my::BytesLikeType` as bytes
+```
+
+In most cases it will be best to prefer `use2` when adding a mapping to a CLIF
+name that is established elsewhere already.
 
 ## Using the library
 
