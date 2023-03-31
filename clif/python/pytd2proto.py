@@ -35,7 +35,7 @@ from clif.protos import ast_pb2
 from clif.python import ast_manipulations
 from clif.python import pytd_parser
 
-CLIF_USE = re.compile(r'// *CLIF:? +use'
+CLIF_USE = re.compile(r'// *CLIF:? +use(?P<priority>2*)'
                       r' +`(?P<cname>.+)` +as +(?P<pyname>[\w.]+)')
 CLIF_INIT = re.compile(r'// *CLIF:? +init_module +(?P<cpp_statement>.+)')
 CLIF_MACRO = re.compile(r'// *CLIF:? +macro +(?P<name>.+) +(?P<def>.+)$')
@@ -49,6 +49,8 @@ def _read_include(input_stream, fname, prefix, typetable, capsules, interfaces,
   for s in input_stream:
     use = CLIF_USE.match(s)
     if use:
+      priority = 2 if use.group('priority') == '2' else 0
+      cname = use.group('cname')
       cname = use.group('cname')
       pyname = use.group('pyname')
       if pyname.endswith('.'):  # Like in a normal English sentence.
@@ -70,7 +72,7 @@ def _read_include(input_stream, fname, prefix, typetable, capsules, interfaces,
       if cname.endswith('*'):
         capsules[pyname] = cname
       else:
-        typetable.add_type(pyname, cname)
+        typetable.add_type(priority, pyname, cname)
       continue
     init = CLIF_INIT.match(s)
     if init:
@@ -437,7 +439,7 @@ class Postprocessor(object):
     if not self.is_pyname_known(p[1]):
       raise NameError('Type %s should be defined before use at line %s'
                       % (p[1], ln))
-    self._typetable.add_type(p[1], p[0])
+    self._typetable.add_type(0, p[1], p[0])
 
   # decl
 
@@ -1030,7 +1032,7 @@ class _TypeTable(object):
     assert '.' not in pyname
     self._current_scope.set_nested_type(pyname, cpp_name)
 
-  def add_type(self, pyname, cpp_name):
+  def add_type(self, priority, pyname, cpp_name):
     """Append a CPP type to a Python name in the current scope.
 
     This makes `cpp_name` the preferred type to use for `pyname`, i.e.,
@@ -1040,6 +1042,7 @@ class _TypeTable(object):
     or import statements.
 
     Args:
+      priority: int, 2 for prepend, any other value for append.
       pyname: str, the Python name for the type. It can be a dotted name,
         e.g., 'Foo.Bar'. If intermediate types don't exist, empty scopes
         will be created.
@@ -1056,9 +1059,9 @@ class _TypeTable(object):
       current = self._current_scope
       for name in parts:
         current = current.add_empty_nested_type(name)
-      current.add_nested_type(base_name, cpp_name)
+      current.add_nested_type(priority, base_name, cpp_name)
     else:
-      self._current_scope.add_nested_type(pyname, cpp_name)
+      self._current_scope.add_nested_type(priority, pyname, cpp_name)
 
   def get_last_cpp_type(self, pyname):
     """Get the last registered C++ type for a Python type.
@@ -1209,7 +1212,7 @@ class _TypeEntry(object):
     # list[str]
     self._cpp_names = []
     if cpp_name:
-      self.add_cpp_type(cpp_name)
+      self.add_cpp_type(0, cpp_name)
     # Optional[_TypeEntry]
     self._parent = parent
     # MutableMapping[str py_name, _TypeEntry]
@@ -1246,12 +1249,15 @@ class _TypeEntry(object):
   def get_cpp_types(self):
     return self._cpp_names[:]
 
-  def add_cpp_type(self, cpp_name):
+  def add_cpp_type(self, priority, cpp_name):
     """Add a C++ type to this entry."""
     assert cpp_name
     # NOTE: `cpp_name` may already be in the list, which seems redundant,
     # but is relied upon so that the last use X as Y statement wins.
-    self._cpp_names.append(cpp_name)
+    if priority == 2:
+      self._cpp_names.insert(0, cpp_name)
+    else:
+      self._cpp_names.append(cpp_name)
 
   def set_nested_type(self, pyname, cpp_name):
     """Set the C++ type for a Python type, checking for conflicts.
@@ -1281,7 +1287,7 @@ class _TypeEntry(object):
             'Python type {!r}: existing C++ types {!r} don\'t match desired '
             'types {!r}'.format(pyname, existing_cpp_names, desired_cpp_names))
 
-  def add_nested_type(self, pyname, cpp_name):
+  def add_nested_type(self, priority, pyname, cpp_name):
     """Append a C++ type to a Python type.
 
     If the Python type doesn't exist, it will be created.
@@ -1291,6 +1297,7 @@ class _TypeEntry(object):
     import statements.
 
     Args:
+      priority: int, 2 for prepend, any other value for append.
       pyname: str, the Python type name, no dots allowed.
       cpp_name: str, the C++ type name.
     """
@@ -1304,7 +1311,7 @@ class _TypeEntry(object):
       entry = self._create_child_entry(pyname, cpp_name)
       self._types[pyname] = entry
     else:
-      existing.add_cpp_type(cpp_name)
+      existing.add_cpp_type(priority, cpp_name)
 
   def add_empty_nested_type(self, pyname):
     """Create an empty nested type, e.g., to act as a namespace."""
