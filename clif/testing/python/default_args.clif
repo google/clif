@@ -18,6 +18,9 @@ from "clif/testing/python/default_args_clif_aux.h":
 
   class MyClass:
     enum Enum
+    value: int
+
+    def __init__(self, a: int, b: Arg = default, c: Arg = default, d: int = default)
 
     def MethodWithDefaultClassArg(
         self, arg: Arg = default, i: int = default) -> int

@@ -13,7 +13,7 @@
 # limitations under the License.
 """Generates pybind11 bindings code for classes."""
 
-from typing import Generator, Set
+from typing import Generator, Optional, Set
 
 from clif.protos import ast_pb2
 from clif.pybind11 import consts
@@ -171,24 +171,51 @@ def _generate_constructor(
   Yields:
     pybind11 function bindings code.
   """
+  function_lib.fix_unknown_default_value_for_unique_ptr_in_place(func_decl)
   num_unknown = function_lib.num_unknown_default_values(func_decl)
-  temp_func_decl = ast_pb2.FuncDecl()
-  temp_func_decl.CopyFrom(func_decl)
   if num_unknown:
-    for _ in range(num_unknown):
+    first_unknown_default_index = function_lib.find_first_unknown_default_index(
+        func_decl)
+
+    for unknown_default_indexes in (
+        function_lib.generate_index_combination_for_unknown_default_func_decl(
+            func_decl)):
+      if not unknown_default_indexes:
+        continue
+
+      # Workaround: Using multiple definitions because one or more default
+      # values are unknown to the code generator (due to limitations in the clif
+      # matcher).
+      # TODO: The workaround needs to generate 2^n function
+      # overloads. Generate Python C API code instead of overloads to reduce
+      # the file size when there are more than 5 params with unknown default
+      # values.
+      temp_func_decl = ast_pb2.FuncDecl()
+      temp_func_decl.CopyFrom(func_decl)
+      first_unknown_default_index = unknown_default_indexes[0]
+      first_unknown_default_param = ast_pb2.ParamDecl()
+      first_unknown_default_param.CopyFrom(
+          temp_func_decl.params[first_unknown_default_index])
+      for index in unknown_default_indexes[::-1]:
+        del temp_func_decl.params[index]
       yield from _generate_constructor_overload(
           class_name, temp_func_decl, class_decl, trampoline_generated,
-          codegen_info)
-      del temp_func_decl.params[-1]
-  yield from _generate_constructor_overload(
-      class_name, temp_func_decl, class_decl, trampoline_generated,
-      codegen_info)
+          codegen_info, first_unknown_default_index,
+          first_unknown_default_param)
+    yield from _generate_constructor_overload(
+        class_name, func_decl, class_decl, trampoline_generated, codegen_info)
+  else:
+    yield from _generate_constructor_overload(
+        class_name, func_decl, class_decl, trampoline_generated,
+        codegen_info)
 
 
 def _generate_constructor_overload(
     class_name: str, func_decl: ast_pb2.FuncDecl,
     class_decl: ast_pb2.ClassDecl,
-    trampoline_generated: bool, codegen_info: utils.CodeGenInfo
+    trampoline_generated: bool, codegen_info: utils.CodeGenInfo,
+    first_unknown_default_index: int = -1,
+    first_unknown_default_param: Optional[ast_pb2.ParamDecl] = None
 ) -> Generator[str, None, None]:
   """Generates pybind11 bindings code for a constructor."""
   params_list = []
@@ -199,15 +226,22 @@ def _generate_constructor_overload(
       [f'{p.cpp_type} {p.gen_name}' for p in params_list])
   params = ', '.join([p.function_argument for p in params_list])
   function_suffix = function_lib.generate_function_suffixes(
-      func_decl, release_gil=False)
+      func_decl, release_gil=False,
+      first_unknown_default_index=first_unknown_default_index)
   if func_decl.name.native == '__init__' and func_decl.is_extend_method:
     yield f'{class_name}.def(py::init([]({params_with_types}) {{'
-    for p in params_list:
-      yield from p.preprocess()
-    func_keeps_gil = function_lib.func_keeps_gil(func_decl)
-    if not func_keeps_gil:
-      yield I + 'py::gil_scoped_release release_gil;'
-    yield I + f'return {func_decl.name.cpp_name}({params});'
+    if function_lib.unknown_default_argument_needs_non_default_value(
+        params_list, first_unknown_default_index, first_unknown_default_param):
+      yield I + function_lib.generate_value_error_for_unknown_default_param(
+          func_decl, first_unknown_default_param)
+      yield I + 'return nullptr;'
+    else:
+      for p in params_list:
+        yield from p.preprocess()
+      func_keeps_gil = function_lib.func_keeps_gil(func_decl)
+      if not func_keeps_gil:
+        yield I + 'py::gil_scoped_release release_gil;'
+      yield I + f'return {func_decl.name.cpp_name}({params});'
     yield f'}}), {function_suffix}'
 
   elif func_decl.name.native == '__init__':
@@ -215,23 +249,35 @@ def _generate_constructor_overload(
     if trampoline_generated:
       cpp_name = utils.trampoline_name(class_decl)
     yield f'{class_name}.def(py::init([]({params_with_types}) {{'
-    for p in params_list:
-      yield from p.preprocess()
-    func_keeps_gil = function_lib.func_keeps_gil(func_decl)
-    if not func_keeps_gil and params_with_types:
-      yield I + 'py::gil_scoped_release release_gil;'
-    yield I + (f'return std::make_unique<{cpp_name}>'
-               f'({params}).release();')
+    if function_lib.unknown_default_argument_needs_non_default_value(
+        params_list, first_unknown_default_index, first_unknown_default_param):
+      yield I + function_lib.generate_value_error_for_unknown_default_param(
+          func_decl, first_unknown_default_param)
+      yield I + 'return nullptr;'
+    else:
+      for p in params_list:
+        yield from p.preprocess()
+      func_keeps_gil = function_lib.func_keeps_gil(func_decl)
+      if not func_keeps_gil and params_with_types:
+        yield I + 'py::gil_scoped_release release_gil;'
+      yield I + (f'return std::make_unique<{cpp_name}>'
+                 f'({params}).release();')
     yield f'}}), {function_suffix}'
 
   elif func_decl.constructor:
     yield (f'{class_name}.def_static("{func_decl.name.native}", '
            f'[]({params_with_types}) {{')
-    for p in params_list:
-      yield from p.preprocess()
-    func_keeps_gil = function_lib.func_keeps_gil(func_decl)
-    if not func_keeps_gil:
-      yield I + 'py::gil_scoped_release release_gil;'
-    yield I + (f'return std::make_unique<{class_decl.name.cpp_name}>'
-               f'({params});')
+    if function_lib.unknown_default_argument_needs_non_default_value(
+        params_list, first_unknown_default_index, first_unknown_default_param):
+      yield I + function_lib.generate_value_error_for_unknown_default_param(
+          func_decl, first_unknown_default_param)
+      yield I + 'return nullptr;'
+    else:
+      for p in params_list:
+        yield from p.preprocess()
+      func_keeps_gil = function_lib.func_keeps_gil(func_decl)
+      if not func_keeps_gil:
+        yield I + 'py::gil_scoped_release release_gil;'
+      yield I + (f'return std::make_unique<{class_decl.name.cpp_name}>'
+                 f'({params});')
     yield f'}}, {function_suffix}'

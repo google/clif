@@ -22,7 +22,7 @@ from clif.testing.python import default_args
 class DefaultArgsTest(absltest.TestCase):
 
   def testMixKnownAndUnknownDefaultArgs(self):
-    a = default_args.MyClass()
+    a = default_args.MyClass(0)
     b = default_args.Arg()
     b.e = 2
     c = default_args.Arg()
@@ -63,7 +63,7 @@ class DefaultArgsTest(absltest.TestCase):
     self.assertEqual(a.MethodWithKnownDefaultArgs(1), 10)
 
   def testUniquePtrUnknownDefaultArgs(self):
-    a = default_args.MyClass()
+    a = default_args.MyClass(0)
     self.assertEqual(a.MethodWithUnKnownUniquePtrDefaultArg(1, c=3, d=4), 8)
     self.assertEqual(a.MethodWithUnKnownUniquePtrDefaultArg(1, c=3), 8)
     self.assertEqual(a.MethodWithUnKnownUniquePtrDefaultArg(1, d=4), 8)
@@ -73,7 +73,7 @@ class DefaultArgsTest(absltest.TestCase):
     self.assertEqual(a.MethodWithUnKnownUniquePtrDefaultArg(1, b, d=4), 10)
 
   def testDefaultArgs(self):
-    a = default_args.MyClass()
+    a = default_args.MyClass(0)
     arg = default_args.Arg()
     arg.e = 100
     with self.assertRaisesRegex(
@@ -101,7 +101,7 @@ class DefaultArgsTest(absltest.TestCase):
     a.MethodWithOutputDefault8()
 
   def testManyUnknownDefaultArgs(self):
-    a = default_args.MyClass()
+    a = default_args.MyClass(0)
     b = default_args.Arg()
     b.e = 3
     c = default_args.Arg()
@@ -133,6 +133,27 @@ class DefaultArgsTest(absltest.TestCase):
     self.assertEqual(a.MethodWithManyUnknownAndEnumDefaultArgs(1), 448)
     self.assertEqual(a.MethodWithManyUnknownAndEnumDefaultArgs(
         1, b, c, d, e=default_args.MyClass.Enum.E3, f=6), 562)
+
+  def testCtorWithUnknownDefaultArgs(self):
+    b = default_args.Arg()
+    b.e = 2
+    c = default_args.Arg()
+    c.e = 3
+    self.assertEqual(default_args.MyClass(1, b, c).value, 10)
+    with self.assertRaisesRegex(
+        ValueError, r'__init__\(\) argument b needs a non-default value'):
+      default_args.MyClass(1, c=c, d=4)
+    with self.assertRaisesRegex(
+        ValueError, r'__init__\(\) argument c needs a non-default value'):
+      default_args.MyClass(1, b, d=4)
+    self.assertEqual(default_args.MyClass(1, b).value, 10)
+    with self.assertRaisesRegex(
+        ValueError, r'__init__\(\) argument b needs a non-default value'):
+      default_args.MyClass(1, c=c)
+    with self.assertRaisesRegex(
+        ValueError, r'__init__\(\) argument b needs a non-default value'):
+      default_args.MyClass(1, d=4)
+    self.assertEqual(default_args.MyClass(1).value, 10)
 
 
 if __name__ == '__main__':

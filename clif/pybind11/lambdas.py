@@ -50,11 +50,10 @@ def generate_lambda(
 
   # Only throw ValueError when there are parameters with unknown default value
   # and users do not provide values for it.
-  if (first_unknown_default_index != -1 and first_unknown_default_param and
-      len(params_list) > first_unknown_default_index):
-    yield I + (f'throw py::value_error("{func_decl.name.native}() argument '
-               f'{first_unknown_default_param.name.native} needs a non-default '
-               'value");')
+  if function_lib.unknown_default_argument_needs_non_default_value(
+      params_list, first_unknown_default_index, first_unknown_default_param):
+    yield I + function_lib.generate_value_error_for_unknown_default_param(
+        func_decl, first_unknown_default_param)
   else:
     yield from _generate_lambda_body(
         func_decl, params_list, codegen_info, class_decl)

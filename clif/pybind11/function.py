@@ -43,14 +43,11 @@ def generate_from(
   Yields:
     pybind11 function bindings code.
   """
-  _fix_unknown_default_value_for_unique_ptr_in_place(func_decl)
+  function_lib.fix_unknown_default_value_for_unique_ptr_in_place(func_decl)
   num_unknown = function_lib.num_unknown_default_values(func_decl)
   if num_unknown:
-    first_unknown_default_index = -1
-    for i, param in enumerate(func_decl.params):
-      if param.default_value == 'default':
-        first_unknown_default_index = i
-        break
+    first_unknown_default_index = function_lib.find_first_unknown_default_index(
+        func_decl)
 
     # For functions with unknown default values, we need to generate 2^n
     # overloaded functions as a workaround (due to limitations in the clif
@@ -67,14 +64,6 @@ def generate_from(
   else:
     yield from _generate_function(
         module_name, func_decl, codegen_info, class_decl)
-
-
-def _fix_unknown_default_value_for_unique_ptr_in_place(
-    func_decl: ast_pb2.FuncDecl) -> None:
-  for param in func_decl.params:
-    if (param.type.cpp_type.startswith('::std::unique_ptr') and
-        param.default_value == 'default'):
-      param.default_value = 'nullptr'
 
 
 def _generate_function(

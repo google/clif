@@ -39,6 +39,12 @@ class MyClass {
     F5 = 8
   };
 
+  int value;
+
+  MyClass(int a, Arg b = {2}, Arg c = {3}, int d = 4) {
+    value = a + b.e + c.e + d;
+  }
+
   int MethodWithDefaultClassArg(Arg arg = {10}, int i = 100) {
     return arg.e + i;
   }

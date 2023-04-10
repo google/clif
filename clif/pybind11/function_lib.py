@@ -15,7 +15,7 @@
 """Common utility functions for pybind11 function code generation."""
 import itertools
 import re
-from typing import Generator, Optional, Tuple
+from typing import Generator, List, Optional, Tuple
 
 from clif.protos import ast_pb2
 from clif.pybind11 import operators
@@ -110,6 +110,38 @@ def num_unknown_default_values(func_decl: ast_pb2.FuncDecl) -> int:
     if param.default_value == 'default':
       num_unknown += 1
   return num_unknown
+
+
+def fix_unknown_default_value_for_unique_ptr_in_place(
+    func_decl: ast_pb2.FuncDecl) -> None:
+  """Assume the default value of std::unique_ptr is nullptr."""
+  for param in func_decl.params:
+    if (param.type.cpp_type.startswith('::std::unique_ptr') and
+        param.default_value == 'default'):
+      param.default_value = 'nullptr'
+
+
+def find_first_unknown_default_index(func_decl: ast_pb2.FuncDecl) -> int:
+  for i, param in enumerate(func_decl.params):
+    if param.default_value == 'default':
+      return i
+  return -1
+
+
+def unknown_default_argument_needs_non_default_value(
+    params_list: List[Parameter],
+    first_unknown_default_index: int,
+    first_unknown_default_param: ast_pb2.ParamDecl) -> bool:
+  return (first_unknown_default_index != -1 and first_unknown_default_param and
+          len(params_list) > first_unknown_default_index)
+
+
+def generate_value_error_for_unknown_default_param(
+    func_decl: ast_pb2.FuncDecl, first_unknown_default_param: ast_pb2.ParamDecl
+) -> str:
+  return (f'throw py::value_error("{func_decl.name.native}() argument '
+          f'{first_unknown_default_param.name.native} needs a non-default '
+          'value");')
 
 
 def generate_index_combination_for_unknown_default_func_decl(
