@@ -22,6 +22,7 @@ from clif.pybind11 import function
 from clif.pybind11 import function_lib
 from clif.pybind11 import utils
 from clif.pybind11 import variables
+from clif.python import clif_types as types as legacy_types
 
 I = utils.I
 
@@ -51,11 +52,14 @@ def generate_from(
       yield I + I + f'using namespace {namespace};'
   class_name = f'{class_decl.name.native}_class'
   definition = f'py::classh<{class_decl.name.cpp_name}'
+  implicit_upcast_bases = []
   if not class_decl.suppress_upcasts:
     for base in class_decl.bases:
-      if (base.HasField('cpp_canonical_type') and
-          base.cpp_canonical_type in codegen_info.registered_types):
-        definition += f', {base.cpp_canonical_type}'
+      if base.HasField('cpp_canonical_type'):
+        if base.cpp_canonical_type in codegen_info.registered_types:
+          definition += f', {base.cpp_canonical_type}'
+        else:
+          implicit_upcast_bases.append(base)
   trampoline_class_name = utils.trampoline_name(class_decl)
   if trampoline_class_name in trampoline_class_names:
     definition += f', {trampoline_class_name}'
@@ -132,6 +136,16 @@ def generate_from(
   if (not default_constructor_defined and class_decl.cpp_has_def_ctor and
       (not class_decl.cpp_abstract or trampoline_generated)):
     yield I + I + f'{class_name}.def(py::init<>());'
+
+  for base in implicit_upcast_bases:
+    mangled = legacy_types.Mangle(base.cpp_canonical_type)
+    I2 = I + I  # pylint: disable=invalid-name
+    yield I2 + f'{class_name}.def('
+    yield I2 + I2 + f'"as_{mangled}",'
+    yield I2 + I2 + f'[]({class_decl.name.cpp_name}* self) {{'
+    yield I2 + I2 + I2 + 'return py::capsule(static_cast<void *>(self));'
+    yield I2 + I2 + '}'
+    yield I2 + ');'
 
   if not reduce_or_reduce_ex_defined:
     yield I + I + (f'{class_name}.def("__reduce_ex__",' +
