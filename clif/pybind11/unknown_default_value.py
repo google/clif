@@ -34,9 +34,12 @@ def generate_from(
   func_name = func_decl.name.native.rstrip('#').rstrip('@')
   params_with_type = 'py::args args, py::kwargs kw'
   if class_decl:
-    params_with_type = f'{class_decl.name.cpp_name} &self, ' + params_with_type
+    params_with_type = 'py::object self_py, ' + params_with_type
   yield (f'{module_name}.{function_lib.generate_def(func_decl)}'
          f'("{func_name}", []({params_with_type}) {{')
+
+  if class_decl:
+    yield f'auto self = self_py.cast<{class_decl.name.cpp_name}*>();'
 
   all_params = (
       func_decl.params if not (func_decl.is_extend_method and class_decl) else
@@ -127,13 +130,14 @@ def generate_from(
   # Generates call to the C++ function
   function_call = lambdas.generate_function_call(func_decl, class_decl)
   function_call_returns = lambdas.generate_function_call_returns(
-      func_decl, codegen_info)
+      func_decl, codegen_info, class_decl)
   yield I + 'switch (nargs) {'
   for n in range(minargs, nargs+1):
     yield I + I + f'case {n}:'
     params_str = ', '.join(params[:n])
-    if func_decl.is_extend_method and class_decl:
-      params_str = 'self, ' + params_str
+    if (lambdas.func_decl_is_member_function(func_decl, class_decl) and
+        func_decl.is_extend_method):
+      params_str = '*self, ' + params_str
     function_call_params = lambdas.generate_function_call_params(
         func_decl, params_str)
     cpp_function_call = f'{function_call}({function_call_params})'

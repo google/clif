@@ -33,22 +33,33 @@ class Parameter:
   function_argument: str  # How to pass this parameter to functions
 
   def __init__(self, param: ast_pb2.ParamDecl, param_name: str,
-               codegen_info: utils.CodeGenInfo):
+               codegen_info: utils.CodeGenInfo, is_self_param: bool = False):
     ptype = param.type
     ctype = ptype.cpp_type
     self.ptype = ptype
     self.cpp_type = ctype
+    self.original_param_name = param_name
     self.gen_name = param_name
     self.function_argument = param_name
     self.check_nullptr = False
+    self.is_self_param = is_self_param
     use_address = False
 
-    if not ptype.cpp_type:  # std::function
+    is_smart_ptr = (ctype.startswith('::std::unique_ptr') or
+                    ctype.startswith('::std::shared_ptr'))
+    self.is_ptr = ptype.cpp_raw_pointer or is_smart_ptr
+    if is_self_param:
+      self.cpp_type = 'py::object'
+      self.gen_name = f'{param_name}_py'
+      if self.is_ptr:
+        self.function_argument = param_name
+      else:
+        self.function_argument = f'*{param_name}'
+    elif not ptype.cpp_type:  # std::function
       self.cpp_type = generate_callback_signature(param)
       self.function_argument = f'std::move({self.gen_name})'
     # unique_ptr<T>, shared_ptr<T>
-    elif (ctype.startswith('::std::unique_ptr') or
-          ctype.startswith('::std::shared_ptr')):
+    elif is_smart_ptr:
       self.function_argument = f'std::move({self.gen_name})'
     elif is_cpp_vector(ptype):
       self.cpp_type = 'py::iterable'
@@ -83,7 +94,13 @@ class Parameter:
 
   def preprocess(self) -> Generator[str, None, None]:
     """Generate necessary preprocess for this parameter."""
-    if is_cpp_vector(self.ptype):
+    if self.is_self_param:
+      cpp_type = f'{self.ptype.cpp_type}*'
+      if self.is_ptr:
+        cpp_type = self.ptype.cpp_type
+      yield I + (f'auto {self.original_param_name} = '
+                 f'{self.gen_name}.cast<{cpp_type}>();')
+    elif is_cpp_vector(self.ptype):
       yield (I + f'{self.ptype.cpp_type} {self.gen_name}_ = py::list('
              f'{self.gen_name}).release().cast<{self.ptype.cpp_type}>();')
     elif is_cpp_set(self.ptype):

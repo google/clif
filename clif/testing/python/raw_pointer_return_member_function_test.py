@@ -25,7 +25,6 @@ class RawPointerReturnMemberFunctionTest(absltest.TestCase):
     self.assertEqual(h.vec_at(1).int_value, 24)
 
   def testTemporaryHolder(self):
-    self.skipTest('A fix for pybind11 is in the works.')
     if 'pybind11' not in tst.__doc__:
       self.skipTest(
           'Only PyCLIF-pybind11 handles this correctly'

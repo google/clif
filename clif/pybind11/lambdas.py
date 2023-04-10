@@ -35,10 +35,18 @@ def generate_lambda(
     first_unknown_default_param: Optional[ast_pb2.ParamDecl] = None
 ) -> Generator[str, None, None]:
   """Entry point for generation of lambda functions in pybind11."""
+  start_idx = 0
+  if func_decl_is_extend_member_function(func_decl, class_decl):
+    start_idx = 1
   params_list = []
-  for i, param in enumerate(func_decl.params):
+  for i, param in enumerate(func_decl.params[start_idx:]):
     params_list.append(
-        function_lib.Parameter(param, f'arg{i}', codegen_info))
+        function_lib.Parameter(param, f'arg{i + 1}', codegen_info))
+  if func_decl_is_extend_member_function(func_decl, class_decl):
+    assert func_decl.params
+    params_list = [
+        function_lib.Parameter(func_decl.params[0], 'arg0', codegen_info, True)
+    ] + params_list
   params_with_type = _generate_lambda_params_with_types(
       func_decl, params_list, class_decl)
   # @sequential, @context_manager
@@ -77,9 +85,9 @@ def generate_cpp_function_return_post_process(
 ) -> Generator[str, None, None]:
   """Generates post process for returns values of cpp functions."""
   if func_decl.postproc == '->self':
-    yield I + 'return self;'
+    yield I + f'return {self_param};'
   elif func_decl.name.native == '__enter__@':
-    yield I + f'return py::cast({self_param}).release();'
+    yield I + f'return {self_param};'
   elif func_decl.name.native == '__exit__@':
     yield I + 'return py::none();'
   elif func_decl.postproc:
@@ -108,6 +116,10 @@ def _generate_lambda_body(
   function_call_params = generate_function_call_params(func_decl, params_str)
   cpp_void_return = func_decl.cpp_void_return or not func_decl.returns
 
+  if (class_decl and func_decl_is_member_function(func_decl, class_decl) and
+      not func_decl.is_extend_method):
+    yield I + f'auto self = py::cast<{class_decl.name.cpp_name}*>(self_py);'
+
   # Generates void pointer check for parameters that are converted from non
   # pointers by code generator.
   for p in params:
@@ -121,9 +133,8 @@ def _generate_lambda_body(
                                           'one param')
     index = params[start_idx]
     self_param = (
-        params[0].gen_name if func_decl.is_extend_method else 'self')
-    yield I + (f'py::object length_function_ = py::cast({self_param})'
-               '.attr("__len__");')
+        params[0].gen_name if func_decl.is_extend_method else 'self_py')
+    yield I + f'py::object length_function_ = {self_param}.attr("__len__");'
     yield I + 'if (length_function_.is_none()) {'
     yield I + I + (f'throw py::attribute_error("class {class_decl.name.native} '
                    f'defined {func_decl.name.native}, but does not define '
@@ -177,7 +188,7 @@ def _generate_lambda_body(
       yield I + I + (f'{ret0.type.cpp_type} ret0_ = '
                      f'{function_call}({function_call_params});')
       ret0_with_py_cast = generate_function_call_return(
-          func_decl, ret0, 'ret0_', codegen_info)
+          func_decl, ret0, 'ret0_', codegen_info, class_decl)
       yield I + I + '{'
       yield I + I + I + 'py::gil_scoped_acquire gil_acquire;'
       yield I + I + I + f'ret0 = {ret0_with_py_cast};'
@@ -187,10 +198,10 @@ def _generate_lambda_body(
   yield I + '}'
 
   function_call_returns = generate_function_call_returns(
-      func_decl, codegen_info)
+      func_decl, codegen_info, class_decl)
   # Generates returns of the lambda expression
   self_param = 'self'
-  if func_decl.is_extend_method and len(params):
+  if func_decl_is_extend_member_function(func_decl, class_decl):
     self_param = params[0].gen_name
   yield from generate_cpp_function_return_post_process(
       func_decl, function_call_returns, self_param)
@@ -216,21 +227,24 @@ def generate_function_call_params(
 
 
 def generate_function_call_returns(
-    func_decl: ast_pb2.FuncDecl, codegen_info: utils.CodeGenInfo) -> str:
+    func_decl: ast_pb2.FuncDecl, codegen_info: utils.CodeGenInfo,
+    class_decl: Optional[ast_pb2.ClassDecl] = None) -> str:
   """Generates return values of cpp function."""
   all_returns_list = []
   for i, r in enumerate(func_decl.returns):
     if i == 0 and not func_decl.cpp_void_return:
       all_returns_list.append('ret0')
     else:
-      ret = generate_function_call_return(func_decl, r, f'ret{i}', codegen_info)
+      ret = generate_function_call_return(
+          func_decl, r, f'ret{i}', codegen_info, class_decl)
       all_returns_list.append(ret)
   return ', '.join(all_returns_list)
 
 
 def generate_function_call_return(
     func_decl: ast_pb2.FuncDecl, return_value: ast_pb2.ParamDecl,
-    return_value_name: str, codegen_info: utils.CodeGenInfo) -> str:
+    return_value_name: str, codegen_info: utils.CodeGenInfo,
+    class_decl: Optional[ast_pb2.ClassDecl] = None) -> str:
   """Generates return values of cpp function."""
   ret = f'std::move({return_value_name})'
   return_value_policy = 'py::return_value_policy::_clif_automatic'
@@ -242,7 +256,12 @@ def generate_function_call_return(
   elif function_lib.is_status_param(return_value, codegen_info.requires_status):
     status_type = function_lib.generate_status_type(func_decl, return_value)
     ret = f'({status_type})(std::move({return_value_name}))'
-  return f'py::cast({ret}, {return_value_policy})'
+  if func_decl_is_extend_member_function(func_decl, class_decl):
+    return f'py::cast({ret}, {return_value_policy}, arg0_py)'
+  elif func_decl_is_member_function(func_decl, class_decl):
+    return f'py::cast({ret}, {return_value_policy}, self_py)'
+  else:
+    return f'py::cast({ret}, {return_value_policy})'
 
 
 def _generate_lambda_params_with_types(
@@ -251,9 +270,9 @@ def _generate_lambda_params_with_types(
     class_decl: Optional[ast_pb2.ClassDecl] = None) -> str:
   """Generates parameters and types in the signatures of lambda expressions."""
   params_list = [f'{p.cpp_type} {p.gen_name}' for p in params]
-  if (class_decl and not func_decl.classmethod and
-      not func_decl.is_extend_method and not func_decl.cpp_opfunction):
-    params_list = [f'{class_decl.name.cpp_name} &self'] + params_list
+  if (func_decl_is_member_function(func_decl, class_decl) and
+      not func_decl.is_extend_method):
+    params_list = ['py::object self_py'] + params_list
   # For reflected operations, we need to generate (const Type& self, int lhs)
   # instead of (int lhs, const Type& self). So swapping the two function
   # parameters.
@@ -262,6 +281,20 @@ def _generate_lambda_params_with_types(
   if func_decl.name.native == '__exit__@' and class_decl:
     params_list.append('py::args')
   return ', '.join(params_list)
+
+
+def func_decl_is_member_function(
+    func_decl: ast_pb2.FuncDecl,
+    class_decl: Optional[ast_pb2.ClassDecl] = None) -> bool:
+  return (class_decl and not func_decl.classmethod and
+          not func_decl.cpp_opfunction)
+
+
+def func_decl_is_extend_member_function(
+    func_decl: ast_pb2.FuncDecl,
+    class_decl: Optional[ast_pb2.ClassDecl] = None) -> bool:
+  return (func_decl_is_member_function(func_decl, class_decl) and
+          func_decl.is_extend_method)
 
 
 def generate_function_call(
@@ -273,7 +306,7 @@ def generate_function_call(
     return func_decl.name.cpp_name
   else:
     method_name = func_decl.name.cpp_name.split('::')[-1]
-    return f'self.{method_name}'
+    return f'self->{method_name}'
 
 
 def generate_return_value_cpp_type(
