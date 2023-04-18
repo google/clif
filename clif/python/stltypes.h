@@ -849,8 +849,9 @@ namespace py {
 // Helper function to walk Python iterable and put converted elements to a C++
 // container of T via functor Inserter.
 template <typename T, typename Inserter>
-bool IterToCont(PyObject* py, Inserter add) {
-  if (PyBytes_Check(py) || PyUnicode_Check(py)) {
+bool IterToCont(PyObject* py, Inserter add, bool accept_dict = false) {
+  if (PyBytes_Check(py) || PyUnicode_Check(py) ||
+      (!accept_dict && PyDict_Check(py))) {
     return false;
   }
   PyObject* it = PyObject_GetIter(py);
@@ -889,7 +890,7 @@ template <typename T, typename U, typename F>
 bool ItemsToMap(PyObject* py, F add) {
   py = PyObject_CallMethod(py, "items", nullptr);
   if (py == nullptr) return false;
-  bool ok = py::IterToCont<std::pair<T, U>>(py, add);
+  bool ok = py::IterToCont<std::pair<T, U>>(py, add, true);
   Py_DECREF(py);
   return ok;
 }
