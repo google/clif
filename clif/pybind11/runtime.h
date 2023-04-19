@@ -200,7 +200,10 @@ template <typename Type,
               !has_customized_unique_ptr_conversion &&
               !has_customized_shared_ptr_conversion &&
               std::is_abstract_v<Type>>
-struct clif_type_caster {
+struct clif_type_caster;
+
+template <typename Type>
+struct clif_type_caster<Type, false, false, false, false, false> {
  public:
   PYBIND11_TYPE_CASTER(Type, const_name<Type>());
 
