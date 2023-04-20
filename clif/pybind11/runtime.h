@@ -179,31 +179,8 @@ namespace detail {
     return Clif_PyObjFrom(src, {});                                            \
   }                                                                            \
 
-template <typename Type,
-          bool has_customized_optional_conversion =
-              clif_pybind11::HasAbslOptionalPyObjAsFalseIfAbstract<Type>(),
-          bool has_customized_pointer_to_pointer_conversion =
-              !has_customized_optional_conversion &&
-              clif_pybind11::HasPyObjAs<Type*>(),
-          bool has_customized_unique_ptr_conversion =
-              !has_customized_optional_conversion &&
-              !has_customized_pointer_to_pointer_conversion &&
-              clif_pybind11::HasNonClifPyObjAs<std::unique_ptr<Type>>(0),
-          bool has_customized_shared_ptr_conversion =
-              !has_customized_optional_conversion &&
-              !has_customized_pointer_to_pointer_conversion &&
-              !has_customized_unique_ptr_conversion &&
-              clif_pybind11::HasPyObjAs<std::shared_ptr<Type>>(),
-          bool is_type_abstract =
-              !has_customized_optional_conversion &&
-              !has_customized_pointer_to_pointer_conversion &&
-              !has_customized_unique_ptr_conversion &&
-              !has_customized_shared_ptr_conversion &&
-              std::is_abstract_v<Type>>
-struct clif_type_caster;
-
-template <typename Type>
-struct clif_type_caster<Type, false, false, false, false, false> {
+template <class Type, typename SFINAE = void>
+struct clif_type_caster {
  public:
   PYBIND11_TYPE_CASTER(Type, const_name<Type>());
 
@@ -217,8 +194,11 @@ struct clif_type_caster<Type, false, false, false, false, false> {
   }
 };
 
-template <typename Type>
-struct clif_type_caster<Type, true, false, false, false, false> {
+template <class Type>
+struct clif_type_caster<
+    Type,
+    typename std::enable_if_t<
+        clif_pybind11::HasAbslOptionalPyObjAsFalseIfAbstract<Type>()>> {
  public:
   static constexpr auto name = const_name<Type>();
 
@@ -240,8 +220,12 @@ struct clif_type_caster<Type, true, false, false, false, false> {
   std::optional<Type> value;
 };
 
-template <typename Type>
-struct clif_type_caster<Type, false, true, false, false, false> {
+template <class Type>
+struct clif_type_caster<
+    Type,
+    typename std::enable_if_t<
+        !clif_pybind11::HasAbslOptionalPyObjAsFalseIfAbstract<Type>() &&
+        clif_pybind11::HasPyObjAs<Type*>()>> {
  public:
   static constexpr auto name = const_name<Type>();
 
@@ -268,8 +252,13 @@ struct clif_type_caster<Type, false, true, false, false, false> {
   Type* value;
 };
 
-template <typename Type>
-struct clif_type_caster<Type, false, false, true, false, false> {
+template <class Type>
+struct clif_type_caster<
+    Type,
+    typename std::enable_if_t<
+        !clif_pybind11::HasAbslOptionalPyObjAsFalseIfAbstract<Type>() &&
+        !clif_pybind11::HasPyObjAs<Type*>() &&
+        clif_pybind11::HasNonClifPyObjAs<std::unique_ptr<Type>>(0)>> {
  public:
   static constexpr auto name = const_name<Type>();
 
@@ -300,8 +289,14 @@ struct clif_type_caster<Type, false, false, true, false, false> {
   std::unique_ptr<Type> value;
 };
 
-template <typename Type>
-struct clif_type_caster<Type, false, false, false, true, false> {
+template <class Type>
+struct clif_type_caster<
+    Type,
+    typename std::enable_if_t<
+        !clif_pybind11::HasAbslOptionalPyObjAsFalseIfAbstract<Type>() &&
+        !clif_pybind11::HasPyObjAs<Type*>() &&
+        !clif_pybind11::HasNonClifPyObjAs<std::unique_ptr<Type>>(0) &&
+        clif_pybind11::HasPyObjAs<std::shared_ptr<Type>>()>> {
  public:
   static constexpr auto name = const_name<Type>();
 
@@ -332,8 +327,15 @@ struct clif_type_caster<Type, false, false, false, true, false> {
 };
 
 
-template <typename Type>
-struct clif_type_caster<Type, false, false, false, false, true> {
+template <class Type>
+struct clif_type_caster<
+    Type,
+    typename std::enable_if_t<
+        !clif_pybind11::HasAbslOptionalPyObjAsFalseIfAbstract<Type>() &&
+        !clif_pybind11::HasPyObjAs<Type*>() &&
+        !clif_pybind11::HasNonClifPyObjAs<std::unique_ptr<Type>>(0) &&
+        !clif_pybind11::HasPyObjAs<std::shared_ptr<Type>>() &&
+        std::is_abstract_v<Type>>> {
  public:
   static constexpr auto name = const_name<Type>();
 
