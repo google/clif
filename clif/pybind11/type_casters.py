@@ -34,6 +34,7 @@ _CLIF_USE = re.compile(
     r'// *CLIF:? +use(?P<priority>2*) +'
     r'`(?P<cpp_name>.+)` +as +(?P<py_name>[\w.]+)'
     r'(, NumTemplateParameter:(?P<num_template_parameter>\d+))?'
+    r'(, TemplateParameterString:`(?P<template_parameter_str>.+)`)?'
     f'({_HASTEMPLATE_PARAM})?'
     f'({_PYCAPSULE})?'
     f'({_PYOBJFROM_ONLY}|{_PYOBJAS_ONLY}|{_PYBIND11_IGNORE}|)')
@@ -108,13 +109,17 @@ def _get_clif_uses(
           use = _CLIF_USE.match(line)
           if use:
             num_template_parameter = 0
+            template_parameter_str = ''
             if use.group('num_template_parameter'):
               num_template_parameter = int(use.group('num_template_parameter'))
+            if use.group('template_parameter_str'):
+              template_parameter_str = use.group('template_parameter_str')
             has_template_parameter = (
                 _HASTEMPLATE_PARAM in use[0] or num_template_parameter)
             results.append(types.SimpleNamespace(
                 cpp_name=use.group('cpp_name'), py_name=use.group('py_name'),
                 has_template_parameter=has_template_parameter,
+                template_parameter_str=template_parameter_str,
                 pybind11_ignore=_PYBIND11_IGNORE in use[0],
                 python_capsule=_PYCAPSULE in use[0],
                 generate_load=_PYOBJFROM_ONLY not in use[0],
@@ -161,16 +166,25 @@ def generate_from(ast: ast_pb2.AST,
       ):
         type_caster_generated.add(cpp_name)
         yield from _generate_type_caster(clif_use.cpp_name,
-                                         clif_use.has_template_parameter)
+                                         clif_use.has_template_parameter,
+                                         clif_use.template_parameter_str)
 
 
 def _generate_type_caster(
-    cpp_name: str, has_template_parameter: bool
+    cpp_name: str, has_template_parameter: bool, template_parameter_str: str
 ) -> Generator[str, None, None]:
   """Generates pybind11 type caster code."""
   template_parameters = 'T...' if has_template_parameter else ''
+  if template_parameter_str:
+    parameters = template_parameter_str.split(',')
+    parameter_names = []
+    for parameter in parameters:
+      parameter_names.append(parameter.split(' ')[-1])
+    template_parameters = ', '.join(parameter_names)
   template_parameters_with_typename = (
       'typename... T' if has_template_parameter else '')
+  if template_parameter_str:
+    template_parameters_with_typename = template_parameter_str
   # It does not make much sense to generate `type_caster<Type*>` instead of
   # `type_caster<Type>.` Conversion to `Type*`` will be done by the type caster.
   cpp_name = cpp_name.rstrip('*')
