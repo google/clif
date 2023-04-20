@@ -43,7 +43,6 @@ def generate_from(
   Yields:
     pybind11 function bindings code.
   """
-  function_lib.fix_unknown_default_value_for_unique_ptr_in_place(func_decl)
   num_unknown = function_lib.num_unknown_default_values(func_decl)
   if num_unknown:
     first_unknown_default_index = function_lib.find_first_unknown_default_index(
@@ -59,6 +58,7 @@ def generate_from(
       yield from unknown_default_value.generate_from(
           module_name, func_decl, codegen_info, class_decl)
     else:
+      function_lib.fix_unknown_default_value_for_unique_ptr_in_place(func_decl)
       yield from _generate_overload_for_unknown_default_function(
           module_name, func_decl, codegen_info, class_decl)
   else:

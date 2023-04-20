@@ -103,6 +103,8 @@ def generate_cpp_function_return_post_process(
       yield I + f'return std::make_tuple({function_call_returns});'
     else:
       yield I + f'return {function_call_returns};'
+  else:
+    yield I + 'return py::none();'
 
 
 def _generate_lambda_body(
@@ -307,18 +309,3 @@ def generate_function_call(
   else:
     method_name = func_decl.name.cpp_name.split('::')[-1]
     return f'self->{method_name}'
-
-
-def generate_return_value_cpp_type(
-    func_decl: ast_pb2.FuncDecl, codegen_info: utils.CodeGenInfo) -> str:
-  """Generates type for the return value of the C++ function."""
-  ret0 = func_decl.returns[0]
-  if function_lib.is_status_param(ret0, codegen_info.requires_status):
-    return function_lib.generate_status_type(func_decl, ret0)
-  elif function_lib.is_status_callback(ret0, codegen_info.requires_status):
-    return function_lib.generate_status_type(func_decl,
-                                             ret0.type.callable.returns[0])
-  elif not ret0.type.cpp_type:
-    return function_lib.generate_callback_signature(ret0)
-  else:
-    return ret0.type.cpp_type
