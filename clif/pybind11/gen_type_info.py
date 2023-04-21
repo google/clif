@@ -54,20 +54,24 @@ class ClassType(BaseType):
 
   py_bases: Set[str]
 
+  def generate_type_trait(self, type_trait: str) -> Generator[str, None, None]:
+    yield ''
+    yield 'namespace pybind11 {'
+    yield 'namespace detail {'
+    yield ''
+    yield 'template <>'
+    yield f'struct {type_trait}<{self.cpp_name}>: std::false_type {{}};'
+    yield ''
+    yield '}  // namespace detail'
+    yield '}  // namespace pybind11'
+    yield ''
+
   def generate_type_caster(self) -> Generator[str, None, None]:
     yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({self.cpp_name})'
     if not self.cpp_copyable:
-      yield ''
-      yield 'namespace pybind11 {'
-      yield 'namespace detail {'
-      yield ''
-      yield 'template <>'
-      yield (f'struct is_copy_constructible<{self.cpp_name}>: '
-             'std::false_type {};')
-      yield ''
-      yield '}  // namespace detail'
-      yield '}  // namespace pybind11'
-      yield ''
+      yield from self.generate_type_trait('is_copy_constructible')
+    if not self.cpp_movable:
+      yield from self.generate_type_trait('is_move_constructible')
 
   def generate_header(self) -> Generator[str, None, None]:
     yield ''
