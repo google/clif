@@ -71,8 +71,8 @@ cc_test(
     ],
     deps = [
         ":instance",
-        "//util/gtl:ptr_util",
         "@com_github_google_glog//:glog",
+        "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest_main",
         "@python_runtime//:python_headers",
         "@python_runtime//:python_lib",
