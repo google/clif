@@ -109,6 +109,10 @@ class ModuleGenerator(object):
     for include in includes:
       yield f'#include "{include}"'
     yield ''
+    yield '#if !defined(PYCLIF_CODE_GEN_PYBIND11)'
+    yield I + '#define PYCLIF_CODE_GEN_PYBIND11'
+    yield '#endif'
+    yield ''
     for typedef in self._types:
       yield from typedef.generate_type_caster()
     yield ''
@@ -256,6 +260,7 @@ class ModuleGenerator(object):
     for include in includes:
       yield f'#include "{include}"'
     yield f'#include "{self._header_path}"'
+    yield '#include "clif/pybind11/clif_type_casters.h"'
     yield '#include "clif/pybind11/runtime.h"'
     yield '#include "clif/pybind11/type_casters.h"'
     yield '#include "third_party/pybind11_protobuf/native_proto_caster.h"'
