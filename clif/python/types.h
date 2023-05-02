@@ -59,6 +59,7 @@ headers are included.
 // CLIF use `::std::monostate` as Monostate
 
 #include "clif/python/postconv.h"
+#include "clif/python/pyobject_ptr_conv.h"
 // Protobuf type declared here because subincludes are not scanned for types.
 // CLIF use `::proto2::Message` as proto2_Message
 #include "clif/python/pyproto.h"
@@ -72,14 +73,6 @@ using std::swap;
 //
 
 // CLIF use `PyObject*` as object
-inline PyObject* Clif_PyObjFrom(PyObject* c, const py::PostConv&) {
-  // Ignore postconversion for object output.
-  if (c == nullptr && !PyErr_Occurred()) {
-    PyErr_SetString(PyExc_SystemError,
-                    "When returning the NULL object, exception must be set");
-  }
-  return c;
-}
 
 // int (long)
 // pyport.h should define Py_ssize_t as either int or long
@@ -188,13 +181,6 @@ bool Clif_PyObjAs(PyObject*, std::optional<T>*);
 //
 // From Python conversions.
 //
-
-inline bool Clif_PyObjAs(PyObject* py, PyObject** c) {
-  CHECK(c != nullptr);
-  CHECK(py != nullptr);
-  *c = py;  // Borrow reference from Python for C++ processing.
-  return true;
-}
 
 // int (long)
 bool Clif_PyObjAs(PyObject*, signed char*);

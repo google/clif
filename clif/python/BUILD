@@ -42,6 +42,7 @@ cc_library(
         "slots.h",
         "stltypes.h",
         "stltypes_fwd.h",
+        "pyobject_ptr_conv.h",
         "types.h",
     ],
     visibility = ["//visibility:public"],

@@ -15,10 +15,17 @@
 #ifndef THIRD_PARTY_CLIF_PYBIND11_CLIF_TYPE_CASTERS_H_
 #define THIRD_PARTY_CLIF_PYBIND11_CLIF_TYPE_CASTERS_H_
 
+// pybind11 includes have to be at the very top, even before Python.h
 #include "third_party/pybind11/include/pybind11/pybind11.h"
+
+// Must be after pybind11 include.
+#include <Python.h>
 
 // NOLINTNEXTLINE
 #include <type_traits>
+
+#include "clif/python/postconv.h"
+#include "clif/python/pyobject_ptr_conv.h"
 
 namespace clif_pybind11 {
 

@@ -39,6 +39,7 @@ target_link_libraries(pickle_support_lib PRIVATE
 
 add_library(pyClifRuntime SHARED
   postconv.h
+  pyobject_ptr_conv.h
   pyproto.h
   pyproto.cc
   runtime.cc
