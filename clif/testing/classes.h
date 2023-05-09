@@ -105,6 +105,15 @@ struct AddInitNoParams {
   int value;
 };
 
+// Use the duplicated namespace `clif_testing` for testing purposes.
+namespace clif_testing {
+
+struct WithAmbiguousNamespace {
+  int get_value() { return 10; }
+};
+
+}  // namespace clif_testing
+
 }  // namespace classes
 }  // namespace clif_testing
 

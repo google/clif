@@ -93,5 +93,10 @@ class ClassesTest(absltest.TestCase):
     obj = classes.AddInitNoParams()
     self.assertEqual(obj.get_value(), 10)
 
+  def testHandleAmbiguousNamespace(self):
+    obj = classes.WithAmbiguousNamespace()
+    self.assertEqual(obj.get_value(), 10)
+
+
 if __name__ == '__main__':
   absltest.main()

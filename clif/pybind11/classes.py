@@ -49,7 +49,7 @@ def generate_from(
     namespaces = decl.namespace_.strip(':').split('::')
     for i in range(0, len(namespaces)):
       namespace = '::'.join(namespaces[:i + 1])
-      yield I + I + f'using namespace {namespace};'
+      yield I + I + f'using namespace ::{namespace};'
   class_name = f'{class_decl.name.native}_class'
   definition = f'py::classh<{class_decl.name.cpp_name}'
   implicit_upcast_bases = []

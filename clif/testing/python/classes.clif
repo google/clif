@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from "clif/testing/classes.h":
-  namespace `clif_testing::classes`:
+  namespace `::clif_testing::classes`:
     class `K` as Klass:
       def __init__(self, i: int)
       const C: int
@@ -68,4 +68,8 @@ from "clif/testing/classes.h":
     class AddInitNoParams:
       @add__init__
       def Init(self)
+      def get_value(self) -> int
+
+  namespace `::clif_testing::classes::clif_testing`:
+    class WithAmbiguousNamespace:
       def get_value(self) -> int
