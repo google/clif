@@ -87,6 +87,11 @@ class ClassesTest(absltest.TestCase):
     with self.assertRaises((ValueError, TypeError)):
       classes.NoDefaultConstructor()
 
+  def testGenerateDefaultCtor(self):
+    obj = classes.AddInitNoParams.Init()
+    self.assertEqual(obj.get_value(), 10)
+    obj = classes.AddInitNoParams()
+    self.assertEqual(obj.get_value(), 10)
 
 if __name__ == '__main__':
   absltest.main()

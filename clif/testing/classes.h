@@ -97,6 +97,14 @@ struct ClassTakesEnum {
   explicit ClassTakesEnum(SomeEnum e = SomeEnum::a) {}
 };
 
+struct AddInitNoParams {
+  explicit AddInitNoParams() {
+    value = 10;
+  }
+  int get_value() { return value; }
+  int value;
+};
+
 }  // namespace classes
 }  // namespace clif_testing
 

@@ -74,7 +74,7 @@ def generate_from(
   definition += ');'
   yield I + I + definition
 
-  default_constructor_defined = False
+  ctor_defined = False
   reduce_or_reduce_ex_defined = False
   trampoline_generated = (
       utils.trampoline_name(class_decl) in trampoline_class_names)
@@ -91,11 +91,11 @@ def generate_from(
         # instead.
         if (not class_decl.cpp_abstract or trampoline_generated) and (
             class_decl.cpp_has_def_ctor or member.func.params):
-          if not member.func.params:
-            default_constructor_defined = True
           for s in _generate_constructor(class_name, member.func, class_decl,
                                          trampoline_generated, codegen_info):
             yield I + I + s
+          if not ctor_defined:
+            ctor_defined = member.func.name.native == '__init__'
       else:
         # This function will be overriden in Python. Do not call it from the
         # abstract base class.
@@ -133,7 +133,7 @@ def generate_from(
                                trampoline_class_names, codegen_info):
           yield I + s
 
-  if (not default_constructor_defined and class_decl.cpp_has_def_ctor and
+  if (not ctor_defined and class_decl.cpp_has_def_ctor and
       (not class_decl.cpp_abstract or trampoline_generated)):
     yield I + I + f'{class_name}.def(py::init<>());'
 

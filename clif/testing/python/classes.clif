@@ -64,3 +64,8 @@ from "clif/testing/classes.h":
 
     class ClassTakesEnum:
       def __init__(self, e: SomeEnum = default)
+
+    class AddInitNoParams:
+      @add__init__
+      def Init(self)
+      def get_value(self) -> int
