@@ -25,6 +25,9 @@ from "clif/testing/return_value_policy.h":
     def return_shared_pointer() -> Obj
     def return_unique_pointer() -> Obj
 
+    @return_reference
+    def `return_const_pointer` as return_const_pointer_reference() -> Obj
+
     class NoCopy:
       mtxt: str
 

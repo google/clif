@@ -17,6 +17,7 @@
 Produces pieces of generated code.
 """
 
+from clif.protos import ast_pb2
 from clif.python import astutils
 from clif.python import postconv
 from clif.python import slots
@@ -882,8 +883,18 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
     else:
       yield I+'return result_tuple;'
   elif nret:
-    yield I+'return Clif_PyObjFrom(std::move(%s0%s), %s);' % (
-        ret, ('.value()' if optional_ret0 else ''),
+    ret0 = 'std::move(ret0)'
+    ptype = func_ast.returns[0].type
+    if optional_ret0:
+      ret0 = 'std::move(ret0.value())'
+    elif (ptype.cpp_raw_pointer and ptype.cpp_type.startswith('const ') and
+          func_ast.return_value_policy ==
+          ast_pb2.FuncDecl.ReturnValuePolicy.REFERENCE):
+      cpp_type_no_const = (
+          func_ast.returns[0].type.cpp_type[len('const '):])
+      ret0 = f'std::move(const_cast<{cpp_type_no_const}>(ret0))'
+    yield I+'return Clif_PyObjFrom(%s, %s);' % (
+        ret0,
         postconv.Initializer(
             func_ast.returns[0].type,
             typepostconversion,

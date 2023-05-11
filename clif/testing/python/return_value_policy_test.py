@@ -26,6 +26,7 @@ class ReturnValuePolicyTestCase(parameterized.TestCase):
       ('return_const_reference', '^return_const_reference_CpCtor(_MvCtor)*$'),
       ('return_pointer', '^return_pointer$'),
       ('return_const_pointer', '^return_const_pointer_CpCtor$'),
+      ('return_const_pointer_reference', '^return_const_pointer$'),
       ('return_shared_pointer', '^return_shared_pointer$'),
       ('return_unique_pointer', '^return_unique_pointer$'),
       ('return_value_nocopy', '^return_value_nocopy_MvCtor(_MvCtor)*$'),

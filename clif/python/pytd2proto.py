@@ -801,30 +801,9 @@ class Postprocessor(object):
     if 'non_raising' in decorators:
       f.marked_non_raising = True
       decorators.remove('non_raising')
-    if 'return_value_policy_automatic' in decorators:
-      f.return_value_policy = ast_pb2.FuncDecl.AUTOMATIC
-      decorators.remove('return_value_policy_automatic')
-    if 'return_value_policy_automatic_reference' in decorators:
-      f.return_value_policy = ast_pb2.FuncDecl.AUTOMATIC_REFERENCE
-      decorators.remove('return_value_policy_automatic_reference')
-    if 'return_value_policy_take_ownership' in decorators:
-      f.return_value_policy = ast_pb2.FuncDecl.TAKE_OWNERSHIP
-      decorators.remove('return_value_policy_take_ownership')
-    if 'return_value_policy_copy' in decorators:
-      f.return_value_policy = ast_pb2.FuncDecl.COPY
-      decorators.remove('return_value_policy_copy')
-    if 'return_value_policy_move' in decorators:
-      f.return_value_policy = ast_pb2.FuncDecl.MOVE
-      decorators.remove('return_value_policy_move')
-    if 'return_value_policy_reference' in decorators:
-      f.return_value_policy = ast_pb2.FuncDecl.REFERENCE
-      decorators.remove('return_value_policy_reference')
-    if 'return_value_policy_reference_internal' in decorators:
-      f.return_value_policy = ast_pb2.FuncDecl.REFERENCE_INTERNAL
-      decorators.remove('return_value_policy_reference_internal')
-    if 'return_value_policy_return_as_bytes' in decorators:
-      f.return_value_policy = ast_pb2.FuncDecl.RETURN_AS_BYTES
-      decorators.remove('return_value_policy_return_as_bytes')
+    if 'return_reference' in decorators:
+      f.return_value_policy = ast_pb2.FuncDecl.ReturnValuePolicy.REFERENCE
+      decorators.remove('return_reference')
     if '__enter__' in decorators:
       f.name.native = '__enter__@'  # A hack to flag a ctx mgr.
       decorators.remove('__enter__')

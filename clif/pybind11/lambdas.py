@@ -258,6 +258,9 @@ def generate_function_call_return(
   elif function_lib.is_status_param(return_value, codegen_info.requires_status):
     status_type = function_lib.generate_status_type(func_decl, return_value)
     ret = f'({status_type})(std::move({return_value_name}))'
+  if (func_decl.return_value_policy ==
+      ast_pb2.FuncDecl.ReturnValuePolicy.REFERENCE):
+    return_value_policy = 'py::return_value_policy::reference'
   if func_decl_is_extend_member_function(func_decl, class_decl):
     return f'py::cast({ret}, {return_value_policy}, arg0_py)'
   elif func_decl_is_member_function(func_decl, class_decl):
