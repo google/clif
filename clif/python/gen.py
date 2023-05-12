@@ -106,6 +106,11 @@ def Headlines(src_file, hdr_files=(), sys_hdr_files=(), open_ns=None):
   if src_file:
     yield '// source: %s' % src_file
   yield ''
+  yield ('#if !defined(PYCLIF_CC_LIBRARY_REQUIREMENT_IS_MET)'
+         ' && !defined(PYBIND11_VERSION_HEX)')
+  yield '#error http://go/pyclif_cc_library_requirement'
+  yield '#endif'
+  yield ''
   python_h = False
   if hdr_files[:1] == ['PYTHON']:
     python_h = True
