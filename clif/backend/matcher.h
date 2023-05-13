@@ -1,3 +1,8 @@
+// ############################################################################
+//                                PLEASE UPDATE
+//                             kMatcherVersionStamp
+//            BELOW WHEN THERE ARE NEW FEATURES OR BEHAVIOR CHANGES.
+// ############################################################################
 /*
  * Copyright 2017 Google Inc.
  *
@@ -30,6 +35,7 @@
 #ifndef CLIF_BACKEND_MATCHER_H_
 #define CLIF_BACKEND_MATCHER_H_
 
+#include <cstdint>
 #include <list>
 #include <memory>
 #include <queue>
@@ -43,6 +49,11 @@
 #include "gtest/gtest_prod.h"  // Defines FRIEND_TEST.
 
 namespace clif {
+
+// ############################################################################
+//        PLEASE UPDATE WHEN THERE ARE NEW FEATURES OR BEHAVIOR CHANGES.
+// ############################################################################
+static constexpr std::int64_t kMatcherVersionStamp = 531560963;  // Use OCL
 
 using protos::AST;
 using protos::ClassDecl;

@@ -1,3 +1,8 @@
+// ############################################################################
+//                                PLEASE UPDATE
+//                             kMatcherVersionStamp
+//        IN matcher.h WHEN THERE ARE NEW FEATURES OR BEHAVIOR CHANGES.
+// ############################################################################
 // Copyright 2017 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -70,7 +75,7 @@ const std::string GetDeclNativeName(const Decl& decl) {
     case Decl::CLASS:    return decl.class_().name().native();
     case Decl::ENUM:     return decl.enum_().name().native();
     case Decl::VAR:      return decl.var().name().native();
-    case Decl::CONST:    return decl.const_().name().native();;
+    case Decl::CONST:    return decl.const_().name().native();
     case Decl::FUNC:     return decl.func().name().native();
     case Decl::TYPE:     return decl.fdecl().name().cpp_name();
     case Decl::UNKNOWN:  return unknown_name;
@@ -341,6 +346,7 @@ bool ClifMatcher::CompileMatchAndSet(
     AST* modified_clif_ast) {
   LLVM_DEBUG(llvm::dbgs() << clif_ast.DebugString());
   *modified_clif_ast = clif_ast;
+  modified_clif_ast->set_clif_matcher_version_stamp(kMatcherVersionStamp);
   BuildClifToClangTypeMap(clif_ast);
   if (RunCompiler(
           builder_.BuildCode(modified_clif_ast, &clif_to_clang_type_map_),

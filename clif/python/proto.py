@@ -148,16 +148,31 @@ def GenerateForPybind11(messages, clif_hdr, proto_hdr):
 
 def GenerateFrom(messages, proto_filename, clif_hdr, proto_hdr):
   """Traverse ast and generate output files."""
+  clif_matcher_version_stamp = None  # Not implemented.
   with open(FLAGS.header_out, 'w') as hout:
-    gen.WriteTo(hout, gen.Headlines(
-        proto_filename, [proto_hdr, 'clif/python/postconv.h']))
+    gen.WriteTo(
+        hout,
+        gen.Headlines(
+            proto_filename,
+            clif_matcher_version_stamp,
+            [proto_hdr, 'clif/python/postconv.h'],
+        ),
+    )
     gen.WriteTo(hout, _GenHeader(messages))
 
   with open(FLAGS.ccdeps_out, 'w') as cout:
-    gen.WriteTo(cout, gen.Headlines(
-        proto_filename, ['clif/python/runtime.h',
-                         'clif/python/types.h',
-                         clif_hdr]))
+    gen.WriteTo(
+        cout,
+        gen.Headlines(
+            proto_filename,
+            clif_matcher_version_stamp,
+            [
+                'clif/python/runtime.h',
+                'clif/python/types.h',
+                clif_hdr,
+            ],
+        ),
+    )
     for ns, ts in itertools.groupby(messages, types.Namespace):
       if ns == '::':
         ns = 'clif'
@@ -204,7 +219,7 @@ def main(_):
     raise _ParseError(desc.ErrorMsg())
   messages = CreatePyTypeInfo(desc, pypath, not FLAGS.allow_empty_package)
   if FLAGS.pyclif_codegen_mode == 'c_api':
-    GenerateFrom(messages, name, hdr, pypath+'.pb.h')
+    GenerateFrom(messages, name, hdr, pypath + '.pb.h')
   else:
     raise RuntimeError("Pybind11 code generator does not work with "
                        "opensource CLIF")

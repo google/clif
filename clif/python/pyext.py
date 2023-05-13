@@ -681,6 +681,7 @@ class Module(object):
     self.init += ast.extra_init
     for s in gen.Headlines(
         ast.source,
+        ast.clif_matcher_version_stamp,
         [
             'PYTHON', 'absl/memory/memory.h',
             'absl/types/optional.h',
@@ -733,11 +734,17 @@ class Module(object):
           ns=self.wrap_namespace):
         yield s
 
-  def GenerateInit(self, source_filename, skip_initfunc=False):
+  def GenerateInit(
+      self, source_filename, clif_matcher_version_stamp, skip_initfunc=False
+  ):
     """Generate module initialization file."""
     assert not self.nested, 'decl stack not exhausted (in GenInit)'
     for s in gen.Headlines(
-        source_filename, ['PYTHON'], open_ns=self.wrap_namespace):
+        source_filename,
+        clif_matcher_version_stamp,
+        ['PYTHON'],
+        open_ns=self.wrap_namespace,
+    ):
       yield s
     yield ''
     yield 'bool Ready();'
@@ -749,15 +756,29 @@ class Module(object):
           modname=self.modname, ns=self.wrap_namespace):
         yield s
 
-  def GenerateHeader(self, source_filename, api_header_filename, macros,
-                     is_extended_from_python, more_headers=None):
+  def GenerateHeader(
+      self,
+      source_filename,
+      clif_matcher_version_stamp,
+      api_header_filename,
+      macros,
+      is_extended_from_python,
+      more_headers=None,
+  ):
     """Generate header file with type conversion declarations."""
     if more_headers is None:
       more_headers = []
-    for s in gen.Headlines(source_filename, [
-        'absl/types/optional.h', api_header_filename,
-        'clif/python/postconv.h'
-    ] + more_headers, ['memory']):
+    for s in gen.Headlines(
+        source_filename,
+        clif_matcher_version_stamp,
+        [
+            'absl/types/optional.h',
+            api_header_filename,
+            'clif/python/postconv.h',
+        ]
+        + more_headers,
+        ['memory'],
+    ):
       yield s
     if self.types:
       for ns, ts in itertools.groupby(self.types, types.Namespace):
