@@ -67,7 +67,6 @@ class ClassType(BaseType):
     yield ''
 
   def generate_type_caster(self) -> Generator[str, None, None]:
-    assert self.cpp_name
     yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({self.cpp_name})'
     if not self.cpp_copyable:
       yield from self.generate_type_trait('is_copy_constructible')

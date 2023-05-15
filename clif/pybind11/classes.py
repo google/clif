@@ -55,11 +55,9 @@ def generate_from(
   implicit_upcast_bases = []
   if not class_decl.suppress_upcasts:
     for base in class_decl.bases:
-      if base.HasField('cpp_canonical_type') or base.HasField('cpp_name'):
-        # Fallback using cpp_name when cpp_canonical_type is empty
-        base_cpp_canonical_type = base.cpp_canonical_type or base.cpp_name
-        if base_cpp_canonical_type in codegen_info.registered_types:
-          definition += f', {base_cpp_canonical_type}'
+      if base.HasField('cpp_canonical_type'):
+        if base.cpp_canonical_type in codegen_info.registered_types:
+          definition += f', {base.cpp_canonical_type}'
         else:
           implicit_upcast_bases.append(base)
   trampoline_class_name = utils.trampoline_name(class_decl)
@@ -140,9 +138,7 @@ def generate_from(
     yield I + I + f'{class_name}.def(py::init<>());'
 
   for base in implicit_upcast_bases:
-    # Fallback using cpp_name when cpp_canonical_type is empty
-    base_cpp_canonical_type = base.cpp_canonical_type or base.cpp_name
-    mangled = legacy_types.Mangle(base_cpp_canonical_type)
+    mangled = legacy_types.Mangle(base.cpp_canonical_type)
     I2 = I + I  # pylint: disable=invalid-name
     yield I2 + f'{class_name}.def('
     yield I2 + I2 + f'"as_{mangled}",'

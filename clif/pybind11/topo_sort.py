@@ -110,16 +110,17 @@ def _initialize_graph(graph: dict[str, Node], members,
   """Initialize the graph with class nesting information."""
   for decl in members:
     if decl.decltype == ast_pb2.Decl.Type.CLASS:
-      # Fallback using cpp_name when cpp_canonical_type is empty
-      cpp_canonical_type = (
-          decl.class_.name.cpp_canonical_type or decl.class_.name.cpp_name)
-      if cpp_canonical_type not in graph:
-        graph[cpp_canonical_type] = Node(decl, is_nested=is_nested)
+      if decl.class_.name.cpp_canonical_type not in graph:
+        graph[decl.class_.name.cpp_canonical_type] = Node(
+            decl, is_nested=is_nested)
         if parent_class_name:
-          graph[cpp_canonical_type].requires.add(parent_class_name)
-          graph[parent_class_name].required_by.add(cpp_canonical_type)
+          graph[decl.class_.name.cpp_canonical_type].requires.add(
+              parent_class_name)
+          graph[parent_class_name].required_by.add(
+              decl.class_.name.cpp_canonical_type)
       _initialize_graph(graph, decl.class_.members,
-                        parent_class_name=cpp_canonical_type, is_nested=True)
+                        parent_class_name=decl.class_.name.cpp_canonical_type,
+                        is_nested=True)
 
 
 def _build_graph(graph: dict[str, Node], members) -> None:
@@ -127,13 +128,9 @@ def _build_graph(graph: dict[str, Node], members) -> None:
   for decl in members:
     if decl.decltype == ast_pb2.Decl.Type.CLASS:
       for base in decl.class_.bases:
-        # Fallback using cpp_name when cpp_canonical_type is empty
-        base_cpp_canonical_type = base.cpp_canonical_type or base.cpp_name
-        if base_cpp_canonical_type and base_cpp_canonical_type in graph:
-          decl_cpp_canonical_type = (
-              decl.class_.name.cpp_canonical_type or decl.class_.name.cpp_name)
-          graph[decl_cpp_canonical_type].requires.add(
-              base_cpp_canonical_type)
-          graph[base_cpp_canonical_type].required_by.add(
-              decl_cpp_canonical_type)
+        if base.cpp_canonical_type and base.cpp_canonical_type in graph:
+          graph[decl.class_.name.cpp_canonical_type].requires.add(
+              base.cpp_canonical_type)
+          graph[base.cpp_canonical_type].required_by.add(
+              decl.class_.name.cpp_canonical_type)
       _build_graph(graph, decl.class_.members)

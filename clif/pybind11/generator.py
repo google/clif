@@ -372,24 +372,16 @@ class ModuleGenerator(object):
         py_name = '.'.join([parent_py_name, py_name])
       py_bases = set(
           [b.native for b in decl.class_.bases if b.native and
-           not b.cpp_canonical_type and not b.cpp_name])
+           not b.cpp_canonical_type])
       class_type = gen_type_info.ClassType(
-          cpp_name=(
-              # Fallback using cpp_name when cpp_canonical_type is empty
-              decl.class_.name.cpp_canonical_type or decl.class_.name.cpp_name
-          ),
-          py_name=py_name,
-          cpp_namespace=cpp_namespace,
-          py_bases=py_bases,
+          cpp_name=decl.class_.name.cpp_canonical_type, py_name=py_name,
+          cpp_namespace=cpp_namespace, py_bases=py_bases,
           cpp_has_public_dtor=decl.class_.cpp_has_public_dtor,
-          cpp_copyable=(
-              decl.class_.cpp_copyable and not decl.class_.cpp_abstract
-          ),
-          cpp_movable=(
-              decl.class_.cpp_movable and not decl.class_.cpp_abstract
-          ),
-          override_in_python=override_in_python,
-      )
+          cpp_copyable=(decl.class_.cpp_copyable and
+                        not decl.class_.cpp_abstract),
+          cpp_movable=(decl.class_.cpp_movable and
+                       not decl.class_.cpp_abstract),
+          override_in_python=override_in_python)
       self._types.append(class_type)
       if not decl.class_.suppress_upcasts:
         # TODO: Find a stable way to find cpp_name of the imported
@@ -403,9 +395,7 @@ class ModuleGenerator(object):
                 f'Cannot find cpp name for class "{base.native}"')
             assert decl.class_.bases[i+1].cpp_name, (
                 f'Unexpected base class {decl.class_.bases[i+1]}')
-            base_class_cpp_name = (
-                decl.class_.bases[i + 1].cpp_canonical_type or
-                decl.class_.bases[i + 1].cpp_name)
+            base_class_cpp_name = decl.class_.bases[i + 1].cpp_canonical_type
             break
         if base_class_python_name:
           for base in decl.class_.cpp_bases:
