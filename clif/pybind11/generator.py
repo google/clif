@@ -249,8 +249,8 @@ class ModuleGenerator(object):
     yield '#include "third_party/pybind11/include/pybind11/functional.h"'
     yield '#include "third_party/pybind11/include/pybind11/operators.h"'
     yield '#include "third_party/pybind11/include/pybind11/smart_holder.h"'
-    yield '// potential future optimization: generate this line only as needed.'
     yield '#include "third_party/pybind11/include/pybind11/stl.h"'
+    yield '#include "third_party/pybind11/include/pybind11/type_caster_pyobject_ptr.h"'  # pylint: disable=long-line
     yield ''
     yield '// See pybind11_protobuf/proto_caster_impl.h'
     yield '#if !defined(PYBIND11_PROTOBUF_UNSAFE)'

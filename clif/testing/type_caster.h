@@ -80,6 +80,9 @@ inline int get_value_template_two_params(
 
 inline std::vector<PyObject *> pyobject_round_trip(
     const std::vector<PyObject*> vec) {
+  for (PyObject* e : vec) {
+    Py_INCREF(e);
+  }
   return vec;
 }
 

@@ -231,3 +231,5 @@ add_pyclif_library_for_test(virtual_funcs virtual_funcs.clif)
 add_pyclif_library_for_test(virtual_py_cpp_mix virtual_py_cpp_mix.clif)
 
 add_pyclif_library_for_test(alt_bytes alt_bytes.clif)
+
+add_pyclif_library_for_test(pyobject_ptr pyobject_ptr.clif)

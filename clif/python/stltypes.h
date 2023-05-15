@@ -355,6 +355,16 @@ void ArgIn(PyObject** a, Py_ssize_t idx, const py::PostConv& pc, T1&& c1,
   }
 }
 
+template <typename... T>
+void ArgIn(PyObject** a, Py_ssize_t idx, const py::PostConv& pc, PyObject* c1,
+           T&&... c) {
+  if (a && *a) {
+    // TODO: Py_INCREF(c1);  // For PyTuple_SET_ITEM() to steal.
+    PyTuple_SET_ITEM(*a, idx, c1);
+    ArgIn(a, idx + 1, pc, std::forward<T>(c)...);
+  }
+}
+
 template <typename R>
 class ReturnValue {
  public:

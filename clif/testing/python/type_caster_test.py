@@ -23,6 +23,14 @@ from clif.testing.python import lambda_expressions
 from clif.testing.python import type_caster
 
 
+# For use as a temporary user-defined object, to maximize sensitivity of the
+# tests below.
+class PyValueHolder:
+
+  def __init__(self, value):
+    self.value = value
+
+
 class TypeCasterTest(parameterized.TestCase):
 
   def test_get_values(self):
@@ -78,10 +86,13 @@ class TypeCasterTest(parameterized.TestCase):
     self.assertFalse(type_caster.can_convert_to_unique_ptr({10: '10'}))
 
   def test_pyobject_type_caster(self):
-    inp_list = [['1'], ['2'], ['3']]
-    out_list = type_caster.pyobject_round_trip(inp_list)
-    for inp, out in zip(inp_list, out_list):
-      self.assertIs(inp, out)
+    inp_list = [PyValueHolder(1), PyValueHolder(2), PyValueHolder(3)]
+    # Without the for loop ASAN did not reliably detect heap-use-after-free
+    # when Py_INCREF(e) was missing in the pyobject_round_trip() C++ function.
+    for _ in range(1000):
+      out_list = type_caster.pyobject_round_trip(inp_list)
+      for inp, out in zip(inp_list, out_list):
+        self.assertIs(inp, out)
 
   def test_abstract_type_type_caster(self):
     self.assertEqual(type_caster.abstract_raw_ptr_round_trip(10), 12)

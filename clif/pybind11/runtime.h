@@ -16,6 +16,7 @@
 #define THIRD_PARTY_CLIF_PYBIND11_RUNTIME_H_
 
 #include "third_party/pybind11/include/pybind11/smart_holder.h"
+#include "third_party/pybind11/include/pybind11/type_caster_pyobject_ptr.h"
 
 #include "clif/python/stltypes.h"
 #include "third_party/pybind11_abseil/absl_casters.h"
@@ -61,36 +62,6 @@ struct type_caster<clif::CapsuleWrapper<T>> {
       clif::CapsuleWrapper<T> src, return_value_policy, handle) {
     return capsule(src.ptr, typeid(T).name()).release();
   }
-};
-
-template <>
-class type_caster<PyObject> {
- public:
-  static constexpr auto name = const_name("PyObject *");
-
-  // Conversion part 1 (C++ -> Python)
-  static handle cast(PyObject* src, return_value_policy, handle) {
-    if (PyErr_Occurred() || src == nullptr) {
-      throw error_already_set();
-    }
-    return reinterpret_borrow<object>(src).release();
-  }
-
-  // Conversion part 2 (Python->C++)
-  bool load(handle src, bool convert) {
-    value = reinterpret_borrow<object>(src);
-    return true;
-  }
-
-  template <typename T>
-  using cast_op_type = PyObject *;
-
-  explicit operator PyObject *() {
-    return value.ptr();
-  }
-
- private:
-  object value;
 };
 
 }  // namespace detail
