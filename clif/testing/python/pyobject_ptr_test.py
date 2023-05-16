@@ -54,8 +54,6 @@ class PyObjectPtrTest(absltest.TestCase):
         cc(cb, tst.CppValueHolder(2))
 
   def test_call_callback_with_pyobject_ptr_arg(self):
-    if "pybind11" not in tst.__doc__:
-      self.skipTest("TODO")
 
     def cb(pvh):
       if pvh.value == 20:
@@ -82,8 +80,6 @@ class PyObjectPtrTest(absltest.TestCase):
         self.assertEqual(cc(cb, PyValueHolder(3.0)).value, -987)
 
   def test_call_callback_with_pyobject_ptr_int_args(self):
-    if "pybind11" not in tst.__doc__:
-      self.skipTest("TODO")
     def cb(pvh, num):
       return tst.CppValueHolder(pvh.value * 10 + num)
 
@@ -92,8 +88,6 @@ class PyObjectPtrTest(absltest.TestCase):
       self.assertEqual(cc(cb, PyValueHolder(30)).value, 340)
 
   def test_call_callback_with_int_pyobject_ptr_args(self):
-    if "pybind11" not in tst.__doc__:
-      self.skipTest("TODO")
     def cb(num, pvh):
       return tst.CppValueHolder(num * 20 + pvh.value)
 
