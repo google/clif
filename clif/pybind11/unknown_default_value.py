@@ -42,9 +42,12 @@ def generate_from(
   if class_decl and lambdas.func_decl_is_member_function(func_decl, class_decl):
     yield I + f'auto self = {self_py}.cast<{class_decl.name.cpp_name}*>();'
 
-  all_params = (
-      func_decl.params if not (func_decl.is_extend_method and class_decl) else
-      func_decl.params[1:])
+  if func_decl.cpp_opfunction or (
+      func_decl.is_extend_method and not func_decl.classmethod and
+      not func_decl.constructor):
+    all_params = func_decl.params[1:]
+  else:
+    all_params = func_decl.params
   nargs = len(all_params)
   minargs = sum(1 for p in all_params if not p.default_value)
   void_return_type = func_decl.cpp_void_return or not func_decl.returns
