@@ -153,6 +153,9 @@ class ModuleGenerator(object):
     Yields:
       Generated pybind11 bindings code.
     """
+
+    assert self._codegen_info is not None, '_codegen_info should be initialized'
+
     yield from self._generate_headlines()
 
     # Find and keep track of virtual functions.

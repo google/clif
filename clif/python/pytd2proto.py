@@ -984,6 +984,7 @@ class _TypeTable(object):
       pyname: str, the name of an existing Python type.
     """
     assert pyname, 'Non-empty pyname is required'
+    assert self._current_scope is not None, '_current_scope should be present'
     self._current_scope = self._current_scope.get_nested_type(pyname)
 
   def pop_scope(self):
@@ -1009,6 +1010,7 @@ class _TypeTable(object):
     """
     assert not isinstance(cpp_name, list)
     assert '.' not in pyname
+    assert self._current_scope is not None, '_current_scope should be present'
     self._current_scope.set_nested_type(pyname, cpp_name)
 
   def add_type(self, priority, pyname, cpp_name):
