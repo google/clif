@@ -69,12 +69,17 @@ inline int get_value_pybind11_ignore(const ValueHolderPybind11Ignore& vh) {
   return vh.value;
 }
 
-inline int get_value_template_one_param(const ValueHolderTemplate<int>& vh) {
+inline int get_value_template(const ValueHolderTemplate<int>& vh) {
+  return vh.value;
+}
+
+inline int get_value_template_one_param(
+    const ValueHolderTemplateParameterPack<int>& vh) {
   return vh.value;
 }
 
 inline int get_value_template_two_params(
-    const ValueHolderTemplate<int, int>& vh) {
+    const ValueHolderTemplateParameterPack<int, int>& vh) {
   return vh.value + 1;
 }
 

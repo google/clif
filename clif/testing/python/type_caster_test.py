@@ -57,6 +57,7 @@ class TypeCasterTest(parameterized.TestCase):
       type_caster.get_value_pybind11_ignore(10)
 
   def test_template(self):
+    self.assertEqual(type_caster.get_value_template(10), 13)
     self.assertEqual(type_caster.get_value_template_one_param(10), 14)
     self.assertEqual(type_caster.get_value_template_two_params(10), 15)
 
