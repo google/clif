@@ -250,6 +250,7 @@ class ModuleGenerator(object):
       includes.add(include)
     yield '#include "third_party/pybind11/include/pybind11/complex.h"'
     yield '#include "third_party/pybind11/include/pybind11/functional.h"'
+    yield '#include "third_party/pybind11/include/pybind11/native_enum.h"'
     yield '#include "third_party/pybind11/include/pybind11/operators.h"'
     yield '#include "third_party/pybind11/include/pybind11/smart_holder.h"'
     yield '#include "third_party/pybind11/include/pybind11/stl.h"'

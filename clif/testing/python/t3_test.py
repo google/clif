@@ -32,12 +32,23 @@ class T3Test(absltest.TestCase):
     self.assertEqual(t3.K.OldE.ONE, 1)
     self.assertEqual(t3.K.NewE.ONE, t3.K.NewE(11))
     self.assertRaises(TypeError, t3.K().M, (5))
+
+  @absltest.skipIf(
+      'pybind11' in t3.__doc__,
+      'When building with pybind11, t3._New.__module__ is a Module object '
+      'instead of a string.',
+  )
+  def testEnumModuleName(self):
     # This is necessary for proper pickling.
     self.assertEqual(t3._New.__module__, t3.__name__)
 
   def testEnumsExportedToParentScope(self):
     self.assertEqual(t3.Outer.A, t3.Outer.Inner.A)
     self.assertEqual(t3.Outer.B, t3.Outer.Inner.B)
+
+  def testIterateEnum(self):
+    l = [e for e in t3._Old]
+    self.assertCountEqual(l, [t3._Old.TOP1, t3._Old.TOPn])
 
 
 if __name__ == '__main__':
