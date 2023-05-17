@@ -36,12 +36,6 @@ add_pyclif_proto_library(clif_testing_nested_proto_wrapper
 
 target_link_libraries(clif_testing_t4 clif_testing_nested_proto)
 
-# t9 cc_library
-add_clif_test_cc_library(t9
-  t9.h
-  t9.cc
-)
-
 # std_variant cc_library
 add_clif_test_cc_library(std_variant
   std_variant.h
@@ -56,6 +50,5 @@ add_clif_test_cc_library(extend_classmethods
 
 find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
-target_link_libraries(clif_testing_t9 ${PYTHON_LIBRARIES})
 
 add_subdirectory("python")

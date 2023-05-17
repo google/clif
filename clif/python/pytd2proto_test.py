@@ -773,53 +773,6 @@ class ToprotoTest(unittest.TestCase):
         }
       """)
 
-  def testCapsuleFromDef(self):
-    self.ClifEqual("""\
-        from "some.h":
-          capsule Foo
-          def f(a: Foo)
-      """, """\
-        source: "clif_python_pytd2proto_test"
-        decls {
-          decltype: TYPE
-          cpp_file: "some.h"
-          line_number: 2
-          fdecl {
-            name {
-              native: "Foo"
-              cpp_name: "Foo"
-            }
-          }
-        }
-        decls {
-          decltype: FUNC
-          cpp_file: "some.h"
-          line_number: 3
-          func {
-            name {
-              native: "f"
-              cpp_name: "f"
-            }
-            params {
-              name {
-                native: "a"
-                cpp_name: "a"
-              }
-              type {
-                lang_type: "Foo"
-                cpp_type: "Foo *"
-                cpp_raw_pointer: true
-              }
-            }
-          }
-        }
-        extra_init: "PyEval_InitThreads();"
-        typemaps {
-          lang_type: "Foo"
-          cpp_type: "Foo *"
-        }
-      """, include_typemaps=True, add_extra_init=False)
-
   def testImport(self):
     self.ClifEqual(
         """\

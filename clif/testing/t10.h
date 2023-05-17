@@ -19,9 +19,6 @@
 #include <Python.h>
 
 #include "clif/testing/t2.h"
-#include "clif/testing/t9.h"
-
-void TakeBase(std::unique_ptr<t9::Base>) {}
 
 K* CreateK() {
   static K obj(0);

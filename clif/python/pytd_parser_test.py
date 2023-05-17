@@ -229,16 +229,6 @@ class PytdParserTest(absltest.TestCase):
             ['class', 0, ['final'], ['Abc'], [],
              [['func', 20, ['classmethod'], ['f'], 'cls', []]]])
 
-  def testCapsule0(self):
-    self.EQ(capsule_def, 'capsule Abc', ['capsule', 0, ['Abc']])
-
-  def testCapsule(self):
-    self.EQ(Clif, 'from "abc":\n  capsule Abc\n  def f(pointer: Abc)',
-            [['from', 0, 'abc', [
-                ['capsule', 14, ['Abc']],
-                ['func', 28, [], ['f'], [[['pointer'], [['Abc']]]]]
-                ]]])
-
   def testImport(self):
     self.EQ(import_stmt, 'from a.b.c import d', ['import', 11, 'a.b.c', 'd'])
 

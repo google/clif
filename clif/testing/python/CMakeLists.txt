@@ -71,9 +71,6 @@ add_pyclif_library_for_test(t6 t6.clif)
 
 add_pyclif_library_for_test(t7 t7.clif)
 
-add_pyclif_library_for_test(t9 t9.clif
-  CC_DEPS clif_testing_t9)
-
 add_pyclif_library_for_test(t10 t10.clif
   CLIF_DEPS clif_testing_python_t2
 )
@@ -89,8 +86,6 @@ add_pyclif_library_for_test(add_init_and_property add_init_and_property.clif)
 add_pyclif_library_for_test(callback callback.clif)
 
 add_pyclif_library_for_test(call_method call_method.clif)
-
-add_pyclif_library_for_test(capsule_fqcppname capsule_fqcppname.clif)
 
 add_pyclif_library_for_test(circular circular.clif)
 
@@ -128,10 +123,6 @@ add_pyclif_library_for_test(extension_type_refcount extension_type_refcount.clif
 
 add_pyclif_library_for_test(_hidden hidden.clif
   TEST hidden_test.py)
-
-add_pyclif_library_for_test(imported_capsule imported_capsule.clif
-  CLIF_DEPS clif_testing_python_special_classes
-)
 
 add_pyclif_library_for_test(imported_inheritance imported_inheritance.clif
   CLIF_DEPS clif_testing_python_nested_inheritance

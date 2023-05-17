@@ -443,17 +443,6 @@ class Postprocessor(object):
 
   # decl
 
-  def _capsule(self, ln, ast, pb, ns=None):
-    assert isinstance(pb, ast_pb2.Decl), repr(pb)
-    assert len(ast) == 3, ast.dump()
-    pb.line_number = ln
-    pb.decltype = pb.TYPE
-    p = pb.fdecl
-    _set_name(p.name, ast.name, ns, allow_fqcppname=True)
-    self.check_known_name(p.name.native)
-    self._capsules[p.name.native] = p.name.cpp_name + ' *'
-    return p.name.native
-
   def _extract_template_base_name(self, cpp_class_name):
     """Extracts the template name when the class is a renamed C++ template.
 
