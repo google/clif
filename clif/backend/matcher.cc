@@ -33,12 +33,15 @@
 #include "clang/AST/Mangle.h"
 #include "clang/AST/QualTypeNames.h"
 #include "clang/Sema/Initialization.h"
-#include "clang/Sema/EnterExpressionEvaluationContext.h"
 #include "clang/Sema/Sema.h"
 #include "clang/Sema/SemaDiagnostic.h"
 #include "clang/Sema/Template.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
+
+#if LLVM_VERSION_MAJOR > 15
+#include "clang/Sema/EnterExpressionEvaluationContext.h"
+#endif
 
 // TODO: Switch to clang diagnostics mechanism for errors.
 
