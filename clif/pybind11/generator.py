@@ -24,6 +24,7 @@ from clif.pybind11 import classes
 from clif.pybind11 import consts
 from clif.pybind11 import enums
 from clif.pybind11 import function
+from clif.pybind11 import function_lib
 from clif.pybind11 import gen_type_info
 from clif.pybind11 import topo_sort
 from clif.pybind11 import type_casters
@@ -333,14 +334,14 @@ class ModuleGenerator(object):
       elif 'absl::Status' in return_type:
         pybind11_override = 'PYBIND11_OVERRIDE_PURE_STATUS_RETURN'
       else:
-        pybind11_override = 'PYBIND11_OVERRIDE_PURE_NAME'
+        pybind11_override = 'PYBIND11_OVERRIDE_PURE_NAME_RVPP'
     else:
       if 'absl::StatusOr' in return_type:
         pybind11_override = 'PYBIND11_OVERRIDE_STATUSOR_RETURN'
       elif 'absl::Status' in return_type:
         pybind11_override = 'PYBIND11_OVERRIDE_STATUS_RETURN'
       else:
-        pybind11_override = 'PYBIND11_OVERRIDE_NAME'
+        pybind11_override = 'PYBIND11_OVERRIDE_NAME_RVPP'
 
     # Characters like ',' may cause the `PYBIND11_OVERRIDE_NAME` macro parsing
     # fail
@@ -353,13 +354,21 @@ class ModuleGenerator(object):
                                  'PYBIND11_OVERRIDE_PURE_STATUS_RETURN'):
       yield I + I + I + f'{return_type},'
     yield I + I + I + f'{class_name},'
+    yield I + I + I + f'"{func_decl.name.native}",'
+    yield I + I + I + f'{function_name},'
+    return_value_policy = (
+        function_lib.generate_return_value_policy_for_func_decl_params(
+            func_decl
+        )
+    )
+    return_value_policy_pack = (
+        f'py::return_value_policy_pack({return_value_policy})'
+    )
     if params:
-      yield I + I + I + f'"{func_decl.name.native}",'
-      yield I + I + I + f'{function_name},'
+      yield I + I + I + f'{return_value_policy_pack},'
       yield I + I + I + f'{params}'
     else:
-      yield I + I + I + f'"{func_decl.name.native}",'
-      yield I + I + I + f'{function_name}'
+      yield I + I + I + f'{return_value_policy_pack}'
     yield I + I + ');'
     yield I + '}'
 

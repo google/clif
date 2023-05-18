@@ -249,10 +249,10 @@ def generate_function_call_return(
     class_decl: Optional[ast_pb2.ClassDecl] = None) -> str:
   """Generates return values of cpp function."""
   ret = f'std::move({return_value_name})'
-  return_value_policy = 'py::return_value_policy::_clif_automatic'
-  if function_lib.is_bytes_type(return_value.type):
-    return_value_policy = 'py::return_value_policy::_return_as_bytes'
-  elif return_value.type.lang_type in codegen_info.capsule_types:
+  return_value_policy = function_lib.generate_return_value_policy_for_type(
+      return_value.type
+  )
+  if return_value.type.lang_type in codegen_info.capsule_types:
     ret = (f'clif::CapsuleWrapper<{return_value.type.cpp_type}>'
            f'({return_value_name})')
   elif function_lib.is_status_param(return_value, codegen_info.requires_status):
@@ -261,12 +261,15 @@ def generate_function_call_return(
   if (func_decl.return_value_policy ==
       ast_pb2.FuncDecl.ReturnValuePolicy.REFERENCE):
     return_value_policy = 'py::return_value_policy::reference'
+  return_value_policy_pack = (
+      f'py::return_value_policy_pack({return_value_policy})'
+  )
   if func_decl_is_extend_member_function(func_decl, class_decl):
-    return f'py::cast({ret}, {return_value_policy}, arg0_py)'
+    return f'py::cast({ret}, {return_value_policy_pack}, arg0_py)'
   elif func_decl_is_member_function(func_decl, class_decl):
-    return f'py::cast({ret}, {return_value_policy}, self_py)'
+    return f'py::cast({ret}, {return_value_policy_pack}, self_py)'
   else:
-    return f'py::cast({ret}, {return_value_policy})'
+    return f'py::cast({ret}, {return_value_policy_pack})'
 
 
 def _generate_lambda_params_with_types(

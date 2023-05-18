@@ -203,6 +203,55 @@ def generate_index_combination_for_unknown_default_func_decl(
           yield candidate
 
 
+def generate_return_value_policy_for_type(
+    param_type: ast_pb2.Type, is_callable_arg: bool = False
+) -> str:
+  """Generate return value policy for possibly nested types."""
+  if param_type.params:
+    return_value_policy_list = []
+    for child_param_type in param_type.params:
+      return_value_policy_list.append(
+          generate_return_value_policy_for_type(
+              child_param_type, is_callable_arg
+          )
+      )
+    return_value_policy_str = ', '.join(return_value_policy_list)
+    if len(return_value_policy_list) > 1:
+      return f'{{{return_value_policy_str}}}'
+    else:
+      return return_value_policy_str
+  else:
+    if param_type.lang_type == 'bytes':
+      return 'py::return_value_policy::_return_as_bytes'
+    elif is_callable_arg:
+      return 'py::return_value_policy::automatic_reference'
+    else:
+      return 'py::return_value_policy::_clif_automatic'
+
+
+def generate_return_value_policy_for_func_decl_params(
+    func_decl: ast_pb2.FuncDecl,
+) -> str:
+  """Generate return value policy for all parameters of a function."""
+  return_value_policy_list = []
+  for param in func_decl.params:
+    return_value_policy = generate_return_value_policy_for_type(
+        param.type, is_callable_arg=True
+    )
+    if len(param.type.params) > 1:
+      return_value_policy_list.append(f'{{{return_value_policy}}}')
+    else:
+      return_value_policy_list.append(return_value_policy)
+  if return_value_policy_list:
+    return_value_policy_str = ', '.join(return_value_policy_list)
+    if len(return_value_policy_list) > 1:
+      return f'{{{return_value_policy_str}}}'
+    else:
+      return return_value_policy_str
+  else:
+    return 'py::return_value_policy::_clif_automatic'
+
+
 def generate_function_suffixes(
     func_decl: ast_pb2.FuncDecl, release_gil: bool = True,
     is_member_function: bool = True, first_unknown_default_index: int = -1
@@ -317,16 +366,27 @@ def generate_py_args(func_decl: ast_pb2.FuncDecl,
     if ((param.name.native == 'self' or param.name.native == 'cls') and
         is_member_function):
       continue
+    return_value_policy_pack = _generate_return_value_policy_pack_for_py_arg(
+        param
+    )
     if first_unknown_default_index == -1:
       if (param.default_value and param.default_value != 'default'):
-        params_list.append(_generate_py_arg_with_default(param))
+        params_list.append(
+            _generate_py_arg_with_default(param, return_value_policy_pack)
+        )
       else:
-        params_list.append(f'py::arg("{param.name.cpp_name}")')
+        params_list.append(
+            _generate_py_arg_without_default(param, return_value_policy_pack)
+        )
     elif (i < first_unknown_default_index and param.default_value and
           param.default_value != 'default'):
-      params_list.append(_generate_py_arg_with_default(param))
+      params_list.append(
+          _generate_py_arg_with_default(param, return_value_policy_pack)
+      )
     else:
-      params_list.append(f'py::arg("{param.name.cpp_name}")')
+      params_list.append(
+          _generate_py_arg_without_default(param, return_value_policy_pack)
+      )
   # Insert `py::kw_only()` at the index of the first parameter with unknown
   # default value so that pybind11 is not confused about which overload to use.
   if first_unknown_default_index != -1 and params_list:
@@ -336,12 +396,55 @@ def generate_py_args(func_decl: ast_pb2.FuncDecl,
   return ', '.join(params_list)
 
 
-def _generate_py_arg_with_default(param: ast_pb2.ParamDecl) -> str:
-  if param.default_value == 'nullptr':
-    return f'py::arg("{param.name.cpp_name}") = {param.default_value}'
+def _generate_py_arg_with_default(
+    param: ast_pb2.ParamDecl, return_value_policy_pack: str
+) -> str:
+  """Generate `py::arg` for parameters with default value."""
+  if return_value_policy_pack:
+    if param.default_value == 'nullptr':
+      return (
+          f'py::arg("{param.name.cpp_name}")'
+          f'.policies({return_value_policy_pack}) = {param.default_value}'
+      )
+    else:
+      return (
+          f'py::arg("{param.name.cpp_name}")'
+          f'.policies({return_value_policy_pack}) = '
+          f'static_cast<{param.type.cpp_type}>({param.default_value})'
+      )
   else:
-    return (f'py::arg("{param.name.cpp_name}") = '
-            f'static_cast<{param.type.cpp_type}>({param.default_value})')
+    if param.default_value == 'nullptr':
+      return f'py::arg("{param.name.cpp_name}") = {param.default_value}'
+    else:
+      return (
+          f'py::arg("{param.name.cpp_name}") = '
+          f'static_cast<{param.type.cpp_type}>({param.default_value})'
+      )
+
+
+def _generate_py_arg_without_default(
+    param: ast_pb2.ParamDecl, return_value_policy_pack: str
+) -> str:
+  if return_value_policy_pack:
+    return (
+        f'py::arg("{param.name.cpp_name}").policies({return_value_policy_pack})'
+    )
+  else:
+    return f'py::arg("{param.name.cpp_name}")'
+
+
+def _generate_return_value_policy_pack_for_py_arg(
+    param: ast_pb2.ParamDecl,
+) -> str:
+  policy = ''
+  if param.type.HasField('callable'):
+    policy = generate_return_value_policy_for_func_decl_params(
+        param.type.callable
+    )
+  if policy:
+    return f'py::return_value_policy_pack({policy})'
+  else:
+    return ''
 
 
 def generate_docstring(docstring: str) -> str:
