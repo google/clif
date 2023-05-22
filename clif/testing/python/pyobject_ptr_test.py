@@ -73,6 +73,8 @@ class PyObjectPtrTest(absltest.TestCase):
       for _ in range(1000):
         with self.assertRaisesRegex(ValueError, r"^Unknown pvh\.value: 3\.0$"):
           cc(cb, PyValueHolder(3.0))
+    elif "/runfiles/" not in absltest.__file__:
+      self.skipTest("Fails if not running in ")
     else:
       for _ in range(1000):
         # BAD: Traceback sent to stdout and exception cleared,

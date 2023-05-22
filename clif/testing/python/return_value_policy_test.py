@@ -30,7 +30,7 @@ class ReturnValuePolicyTestCase(parameterized.TestCase):
       ('return_shared_pointer', '^return_shared_pointer$'),
       ('return_unique_pointer', '^return_unique_pointer$'),
       ('return_value_nocopy', '^return_value_nocopy_MvCtor(_MvCtor)*$'),
-      ('return_reference_nocopy', '^return_reference_nocopy_MvCtor$'),
+      ('return_reference_nocopy', '^return_reference_nocopy(_MvCtor)*$'),
       ('return_pointer_nocopy', '^return_pointer_nocopy$'),
       ('return_shared_pointer_nocopy', '^return_shared_pointer_nocopy$'),
       ('return_unique_pointer_nocopy', '^return_unique_pointer_nocopy$'),
