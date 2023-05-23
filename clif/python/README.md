@@ -707,25 +707,6 @@ and will be wrapped as module-level functions `some.path.my_library.Bar` and
 
 TIP: The C++ class name can be fully qualified.
 
-### capsule statement {#capsule}
-
-The *capsule* statement declares a raw pointer to the C++ type to be stored in a
-Python [capsule](https://docs.python.org/3/c-api/capsule.html) object.
-
-```python
-from "some/file.h":
-
-  capsule MyData  # stores MyData*
-```
-
-MyData* returned from C++ can be passed around to another C++ function as an
-input parameter.
-
-WARNING: Neither Python nor CLIF make any assumptions or give any guarantees
-about the lifetime or validity of that pointer.
-
-This statement is rarely needed.
-
 ### pass statement {#pass}
 
 The *pass* statement allows you to wrap a C++ class without any API. It has two
