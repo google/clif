@@ -47,6 +47,7 @@ headers are included.
 #endif                   // __EXCEPTIONS
 
 #include "absl/base/config.h"
+#include "absl/log/absl_log.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "clif/python/stltypes_fwd.h"
@@ -281,15 +282,6 @@ class GilLock {
   PyGILState_STATE threadstate_;
 };
 
-inline void HandlePyExc() {
-#ifdef __EXCEPTIONS
-  if (PyErr_Occurred()) throw std::domain_error(python::ExcStr());
-  throw std::system_error(std::error_code(), "Python: exception not set");
-#else
-  PyErr_PrintEx(1);
-#endif  // __EXCEPTIONS
-}
-
 // ------------------------------------------------------------------
 
 template <typename Container, typename ContainerIter>
@@ -363,6 +355,19 @@ void ArgIn(PyObject** a, Py_ssize_t idx, const py::PostConv& pc, PyObject* c1,
     PyTuple_SET_ITEM(*a, idx, c1);
     ArgIn(a, idx + 1, pc, std::forward<T>(c)...);
   }
+}
+
+inline void HandlePyExc() {
+#ifdef __EXCEPTIONS
+  if (PyErr_Occurred()) throw std::domain_error(python::ExcStr());
+  throw std::system_error(std::error_code(), "Python: exception not set");
+#else
+  fflush(stdout);
+  PyErr_PrintEx(1);
+  fflush(stderr);
+  LOG(ERROR) << "callback raised a Python exception. Please use absl::Status "
+                "or absl::StatusOr to handle such exceptions.";
+#endif  // __EXCEPTIONS
 }
 
 template <typename R>
