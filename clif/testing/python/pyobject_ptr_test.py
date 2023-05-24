@@ -73,11 +73,16 @@ class PyObjectPtrTest(absltest.TestCase):
       for _ in range(1000):
         with self.assertRaisesRegex(ValueError, r"^Unknown pvh\.value: 3\.0$"):
           cc(cb, PyValueHolder(3.0))
-    elif "/runfiles/" not in absltest.__file__:
-      self.skipTest("Fails if not running in ")
+    elif tst.cpp_exceptions_enabled():  # OSS (github.com/google/clif)
+      for _ in range(1000):
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"^C\+\+ exception: ValueError: Unknown pvh\.value: 3\.0$",
+        ):
+          cc(cb, PyValueHolder(3.0))
     else:
       for _ in range(1000):
-        # BAD: Traceback sent to stdout and exception cleared,
+        # BAD: Traceback sent to stderr and exception cleared,
         #      default-constructed object returned:
         self.assertEqual(cc(cb, PyValueHolder(3.0)).value, -987)
 

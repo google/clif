@@ -14,6 +14,8 @@
 
 from "clif/testing/pyobject_ptr.h":
   namespace `clif_testing_pyobject_ptr`:
+    def cpp_exceptions_enabled() -> bool
+
     class CppValueHolder:
       def __init__(self, value: int)
       value: int

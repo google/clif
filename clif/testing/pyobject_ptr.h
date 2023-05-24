@@ -22,6 +22,14 @@
 
 namespace clif_testing_pyobject_ptr {
 
+inline bool cpp_exceptions_enabled() {
+#ifdef __EXCEPTIONS
+  return true;
+#else
+  return false;
+#endif
+}
+
 // For use as a temporary user-defined object, to maximize sensitivity of the
 // unit tests.
 struct CppValueHolder {
