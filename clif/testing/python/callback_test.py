@@ -78,12 +78,19 @@ class CallbackTest(absltest.TestCase):
     # assert not raises:
     callback.SelfCallback(Callback)
 
-  def testStrCallback(self):
+  def testStringCallbackStr(self):
     def Cb(s):
       self.assertIsInstance(s, str)
       self.assertEqual(s, 'foo')
 
-    callback.StringCallback(Cb)
+    callback.StringCallbackStr(Cb)
+
+  def testStringCallbackBytes(self):
+    def Cb(s):
+      self.assertIsInstance(s, bytes)
+      self.assertEqual(s, b'foo')
+
+    callback.StringCallbackBytes(Cb)
 
   def testCallableOutput(self):
     returned_callback = callback.FunctionWithCallableReturn(Callback2)

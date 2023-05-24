@@ -24,7 +24,8 @@ from "clif/testing/callback.h":
   def FunctionWithCallableReturn(callback: (input:int) -> int) ->
       (return_value: (input:int) -> int)
 
-  def StringCallback(callback: (in:str) -> None)
+  def `StringCallback` as StringCallbackStr(callback: (in:str) -> None)
+  def `StringCallback` as StringCallbackBytes(callback: (in:bytes) -> None)
 
   class SelfCallback:
     def __init__(self, cb: (s:SelfCallback)->None)
