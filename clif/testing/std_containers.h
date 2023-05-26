@@ -20,11 +20,28 @@
 #include <array>
 #include <functional>
 #include <memory>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+inline int PassVectorInt(const std::vector<int>& v) {
+  int zum = 100;
+  for (const int i : v) {
+    zum += 2 * i;
+  }
+  return zum;
+}
+
+inline int PassSetInt(const std::set<int>& s) {
+  int zum = 200;
+  for (const int i : s) {
+    zum += 3 * i;
+  }
+  return zum;
+}
 
 // list input arg and return value.
 inline std::vector<int> Mul(std::vector<int> v, int m) {

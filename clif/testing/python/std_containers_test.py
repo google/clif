@@ -21,6 +21,18 @@ from clif.testing.python import std_containers
 
 class StdContainersTest(absltest.TestCase):
 
+  def testPassVectorInt(self):
+    self.assertEqual(std_containers.PassVectorInt([7, 13]), 140)
+    self.assertEqual(std_containers.PassVectorInt(set([9, 12, 9])), 142)
+    with self.assertRaises(TypeError):
+      std_containers.PassVectorInt({})
+
+  def testPassSetInt(self):
+    self.assertEqual(std_containers.PassSetInt(set([3, 15, 3])), 254)
+    self.assertEqual(std_containers.PassSetInt([5, 17, 5]), 266)
+    with self.assertRaises(TypeError):
+      std_containers.PassSetInt({})
+
   def testVector(self):
     self.assertEqual(std_containers.Mul([1, 2, 3], 2), [2, 4, 6])
 
