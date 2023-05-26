@@ -86,4 +86,9 @@ inline std::string LambdaCallback(std::function<std::string()> f) {
 
 inline PyObject* PyObjectCallback(std::function<PyObject*()> f) { return f(); }
 
+inline int CallCallbackPassIntReturnInt(const std::function<int(int)>& cb,
+                                        int val) {
+  return cb(val);
+}
+
 #endif  // CLIF_TESTING_CALLBACK_H_

@@ -398,6 +398,13 @@ py_library(
 )
 
 py_library(
+    name = "callback_exception_guard",
+    srcs = ["callback_exception_guard.py"],
+    visibility = ["//visibility:public"],
+    deps = ["//third_party/py/absl/logging"],
+)
+
+py_library(
     name = "type_customization",
     srcs = ["type_customization.py"],
     srcs_version = "PY2AND3",

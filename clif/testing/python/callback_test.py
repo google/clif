@@ -14,8 +14,15 @@
 
 """Tests for clif.testing.python.callback."""
 
-from absl.testing import absltest
+import contextlib
+import io
+from unittest import mock
 
+from absl import logging
+from absl.testing import absltest
+from absl.testing import parameterized
+
+from clif.python import callback_exception_guard
 from clif.testing.python import callback
 
 
@@ -43,7 +50,7 @@ def RaisingCallback():
   raise ValueError('raised a value error')
 
 
-class CallbackTest(absltest.TestCase):
+class CallbackTest(parameterized.TestCase):
 
   def CallbackMethod(self, data):
     return 1, data
@@ -109,6 +116,44 @@ class CallbackTest(absltest.TestCase):
   def testPyObjectCallbackRaises(self):
     with self.assertRaisesWithLiteralMatch(ValueError, 'raised a value error'):
       callback.PyObjectCallback(RaisingCallback)
+
+  @parameterized.parameters((None,), (io.StringIO(),))
+  def testCallbackExceptionPrintAndClear(self, file):
+    @callback_exception_guard.print_and_clear(
+        substitute_return_value=48, file=file
+    )
+    def Cb(val):
+      if val < 0:
+        raise ValueError(f'Negative value: {val}')
+      return val * 13
+
+    self.assertEqual(callback.CallCallbackPassIntReturnInt(Cb, 3), 39)
+    ctx_io = io.StringIO()
+    with contextlib.redirect_stderr(ctx_io):
+      self.assertEqual(callback.CallCallbackPassIntReturnInt(Cb, -1), 48)
+    if file is None:
+      captured = ctx_io
+    else:
+      self.assertEqual(ctx_io.getvalue(), '')
+      captured = file
+    self.assertIn('ValueError: Negative value: -1', captured.getvalue())
+
+  @mock.patch.object(logging, 'error', autospec=True)
+  def testCallbackExceptionLogAndClear(self, mock_logging_error):
+    @callback_exception_guard.log_and_clear(substitute_return_value=63)
+    def Cb(val):
+      if val > 0:
+        raise ValueError(f'Positive value: {val}')
+      return val * 17
+
+    self.assertEqual(callback.CallCallbackPassIntReturnInt(Cb, -3), -51)
+    mock_logging_error.assert_not_called()
+    self.assertEqual(callback.CallCallbackPassIntReturnInt(Cb, 5), 63)
+    mock_logging_error.assert_called()
+    self.assertEqual(
+        mock_logging_error.call_args_list[-1].args[0],
+        'ValueError: Positive value: 5',
+    )
 
 
 if __name__ == '__main__':

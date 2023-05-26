@@ -34,3 +34,5 @@ from "clif/testing/callback.h":
   def LambdaCallback(cb: () -> str) -> bytes
 
   def PyObjectCallback(cb: () -> object) -> object
+
+  def CallCallbackPassIntReturnInt(cb: (val: int) -> int, val: int) -> int
