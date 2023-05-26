@@ -17,6 +17,7 @@
 #define THIRD_PARTY_CLIF_TESTING_CLASSES_H_
 
 #include <string>
+#include <utility>
 
 // This comment intentionally includes UTF-8 characters as an IO test.
 //   "Use pytype 🦆✔  - make code maintainers happy!"
@@ -103,6 +104,62 @@ struct AddInitNoParams {
   }
   int get_value() { return value; }
   int value;
+};
+
+struct NestedAttributes {
+  std::pair<std::string, std::string> pair_attr_str_str = {"foo", "bar"};
+  std::pair<std::string, std::string> pair_attr_str_bytes = {"foo", "bar"};
+  std::pair<std::string, std::string> pair_attr_bytes_str = {"foo", "bar"};
+  std::pair<std::string, std::string> pair_attr_bytes_bytes = {"foo", "bar"};
+
+  std::pair<std::string, std::string> pair_property_str_str = {"foo", "bar"};
+  std::pair<std::string, std::string> pair_property_str_bytes = {"foo", "bar"};
+  std::pair<std::string, std::string> pair_property_bytes_str = {"foo", "bar"};
+  std::pair<std::string, std::string> pair_property_bytes_bytes = {"foo",
+                                                                   "bar"};
+
+  std::pair<std::string, std::string> pair_unproperty_str_str = {"foo", "bar"};
+  std::pair<std::string, std::string> pair_unproperty_str_bytes = {"foo",
+                                                                   "bar"};
+  std::pair<std::string, std::string> pair_unproperty_bytes_str = {"foo",
+                                                                   "bar"};
+  std::pair<std::string, std::string> pair_unproperty_bytes_bytes = {"foo",
+                                                                     "bar"};
+
+  std::pair<std::string, std::string> get_pair_property_str_str() const {
+    return pair_property_str_str;
+  }
+
+  void set_pair_property_str_str(const std::pair<std::string, std::string>& p) {
+    pair_property_str_str = p;
+  }
+
+  std::pair<std::string, std::string> get_pair_property_str_bytes() const {
+    return pair_property_str_bytes;
+  }
+
+  void set_pair_property_str_bytes(
+      const std::pair<std::string, std::string>& p) {
+    pair_property_str_bytes = p;
+  }
+
+  std::pair<std::string, std::string> get_pair_property_bytes_str() const {
+    return pair_property_bytes_str;
+  }
+
+  void set_pair_property_bytes_str(
+      const std::pair<std::string, std::string>& p) {
+    pair_property_bytes_str = p;
+  }
+
+  std::pair<std::string, std::string> get_pair_property_bytes_bytes() const {
+    return pair_property_bytes_bytes;
+  }
+
+  void set_pair_property_bytes_bytes(
+      const std::pair<std::string, std::string>& p) {
+    pair_property_bytes_bytes = p;
+  }
 };
 
 // Use the duplicated namespace `clif_testing` for testing purposes.

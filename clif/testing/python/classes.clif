@@ -70,6 +70,33 @@ from "clif/testing/classes.h":
       def Init(self)
       def get_value(self) -> int
 
+    class NestedAttributes:
+      def __init__(self)
+      pair_attr_str_str: tuple<str, str>
+      pair_attr_str_bytes: tuple<str, bytes>
+      pair_attr_bytes_str: tuple<bytes, str>
+      pair_attr_bytes_bytes: tuple<bytes, bytes>
+      pair_property_str_str: tuple<str, str> = property(`get_pair_property_str_str`, `set_pair_property_str_str`)
+      pair_property_str_bytes: tuple<str, bytes> = property(`get_pair_property_str_bytes`, `set_pair_property_str_bytes`)
+      pair_property_bytes_str: tuple<bytes, str> = property(`get_pair_property_bytes_str`, `set_pair_property_bytes_str`)
+      pair_property_bytes_bytes: tuple<bytes, bytes> = property(`get_pair_property_bytes_bytes`, `set_pair_property_bytes_bytes`)
+      @getter
+      def `pair_unproperty_str_str` as get_pair_unproperty_str_str(self) -> tuple<str, str>
+      @setter
+      def `pair_unproperty_str_str` as set_pair_unproperty_str_str(self, p: tuple<str, str>)
+      @getter
+      def `pair_unproperty_str_bytes` as get_pair_unproperty_str_bytes(self) -> tuple<str, bytes>
+      @setter
+      def `pair_unproperty_str_bytes` as set_pair_unproperty_str_bytes(self, p: tuple<str, bytes>)
+      @getter
+      def `pair_unproperty_bytes_str` as get_pair_unproperty_bytes_str(self) -> tuple<bytes, str>
+      @setter
+      def `pair_unproperty_bytes_str` as set_pair_unproperty_bytes_str(self, p: tuple<bytes, str>)
+      @getter
+      def `pair_unproperty_bytes_bytes` as get_pair_unproperty_bytes_bytes(self) -> tuple<bytes, bytes>
+      @setter
+      def `pair_unproperty_bytes_bytes` as set_pair_unproperty_bytes_bytes(self, p: tuple<bytes, bytes>)
+
   namespace `::clif_testing::classes::clif_testing`:
     class WithAmbiguousNamespace:
       def get_value(self) -> int

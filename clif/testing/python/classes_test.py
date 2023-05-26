@@ -15,11 +15,12 @@
 """Tests for clif.testing.python.classes."""
 
 from absl.testing import absltest
+from absl.testing import parameterized
 
 from clif.testing.python import classes
 
 
-class ClassesTest(absltest.TestCase):
+class ClassesTest(parameterized.TestCase):
 
   def testKlass(self):
     self.assertEqual(classes.Klass.C2(), 3)
@@ -96,6 +97,95 @@ class ClassesTest(absltest.TestCase):
   def testHandleAmbiguousNamespace(self):
     obj = classes.WithAmbiguousNamespace()
     self.assertEqual(obj.get_value(), 10)
+
+  @parameterized.parameters(
+      ('pair_attr_str_str', ('foo', 'bar'), ('foo1', 'bar1'), ('foo1', 'bar1')),
+      (
+          'pair_attr_str_bytes',
+          ('foo', b'bar'),
+          ('foo1', 'bar1'),
+          ('foo1', b'bar1'),
+      ),
+      (
+          'pair_attr_bytes_str',
+          (b'foo', 'bar'),
+          ('foo1', 'bar1'),
+          (b'foo1', 'bar1'),
+      ),
+      (
+          'pair_attr_bytes_bytes',
+          (b'foo', b'bar'),
+          ('foo1', 'bar1'),
+          (b'foo1', b'bar1'),
+      ),
+      (
+          'pair_property_str_str',
+          ('foo', 'bar'),
+          ('foo1', 'bar1'),
+          ('foo1', 'bar1'),
+      ),
+      (
+          'pair_property_str_bytes',
+          ('foo', b'bar'),
+          ('foo1', 'bar1'),
+          ('foo1', b'bar1'),
+      ),
+      (
+          'pair_property_bytes_str',
+          (b'foo', 'bar'),
+          ('foo1', 'bar1'),
+          (b'foo1', 'bar1'),
+      ),
+      (
+          'pair_property_bytes_bytes',
+          (b'foo', b'bar'),
+          ('foo1', 'bar1'),
+          (b'foo1', b'bar1'),
+      ),
+  )
+  def testNestedAttributes(self, attr, expected, new_value, new_expected):
+    obj = classes.NestedAttributes()
+    ret = getattr(obj, attr)
+    self.assertEqual(ret, expected)
+    setattr(obj, attr, new_value)
+    ret = getattr(obj, attr)
+    self.assertEqual(ret, new_expected)
+
+  @parameterized.parameters(
+      (
+          'pair_unproperty_str_str',
+          ('foo', 'bar'),
+          ('foo1', 'bar1'),
+          ('foo1', 'bar1'),
+      ),
+      (
+          'pair_unproperty_str_bytes',
+          ('foo', b'bar'),
+          ('foo1', 'bar1'),
+          ('foo1', b'bar1'),
+      ),
+      (
+          'pair_unproperty_bytes_str',
+          (b'foo', 'bar'),
+          ('foo1', 'bar1'),
+          (b'foo1', 'bar1'),
+      ),
+      (
+          'pair_unproperty_bytes_bytes',
+          (b'foo', b'bar'),
+          ('foo1', 'bar1'),
+          (b'foo1', b'bar1'),
+      ),
+  )
+  def testNestedUnproperty(self, attr, expected, new_value, new_expected):
+    getter = 'get_' + attr
+    setter = 'set_' + attr
+    obj = classes.NestedAttributes()
+    ret = getattr(obj, getter)()
+    self.assertEqual(ret, expected)
+    getattr(obj, setter)(new_value)
+    ret = getattr(obj, getter)()
+    self.assertEqual(ret, new_expected)
 
 
 if __name__ == '__main__':

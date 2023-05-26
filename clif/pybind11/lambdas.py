@@ -63,8 +63,9 @@ def generate_lambda(
     yield I + function_lib.generate_value_error_for_unknown_default_param(
         func_decl, first_unknown_default_param)
   else:
-    yield from _generate_lambda_body(
-        func_decl, params_list, codegen_info, class_decl)
+    yield from generate_lambda_body(
+        func_decl, params_list, codegen_info, class_decl
+    )
   is_member_function = (class_decl is not None)
   function_suffix = function_lib.generate_function_suffixes(
       func_decl, release_gil=False, is_member_function=is_member_function,
@@ -107,9 +108,10 @@ def generate_cpp_function_return_post_process(
     yield I + 'return py::none();'
 
 
-def _generate_lambda_body(
+def generate_lambda_body(
     func_decl: ast_pb2.FuncDecl,
-    params: List[function_lib.Parameter], codegen_info: utils.CodeGenInfo,
+    params: List[function_lib.Parameter],
+    codegen_info: utils.CodeGenInfo,
     class_decl: Optional[ast_pb2.ClassDecl] = None,
 ) -> Generator[str, None, None]:
   """Generates body of lambda expressions."""

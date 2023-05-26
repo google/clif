@@ -204,7 +204,9 @@ def generate_index_combination_for_unknown_default_func_decl(
 
 
 def generate_return_value_policy_for_type(
-    param_type: ast_pb2.Type, is_callable_arg: bool = False
+    param_type: ast_pb2.Type,
+    is_callable_arg: bool = False,
+    reference_internal: bool = False,
 ) -> str:
   """Generate return value policy for possibly nested types."""
   if param_type.params:
@@ -225,6 +227,8 @@ def generate_return_value_policy_for_type(
       return 'py::return_value_policy::_return_as_bytes'
     elif is_callable_arg:
       return 'py::return_value_policy::automatic_reference'
+    elif reference_internal:
+      return 'py::return_value_policy::reference_internal'
     else:
       return 'py::return_value_policy::_clif_automatic'
 
