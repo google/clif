@@ -79,7 +79,7 @@ class ToprotoTest(unittest.TestCase):
   def setUp(self):
     super().setUp()
     pytd_parser.reset_indentation()
-    self.maxDiff = 100000  # pylint: disable=invalid-name
+    self.maxDiff = 100000
 
   def testOptionIsExtendedFromPythonFalseTrue(self):
     for value in ('False', 'True'):

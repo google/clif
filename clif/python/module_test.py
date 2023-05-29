@@ -27,7 +27,7 @@ class ModuleTest(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.maxDiff = 100000  # pylint: disable=invalid-name
+    self.maxDiff = 100000
     self.m = pyext.Module('my.test')
 
   def testFuncInit(self):

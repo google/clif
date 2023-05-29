@@ -43,7 +43,7 @@ class ClassTest(unittest.TestCase):
     self.m = pyext.Module(PATH, namemap=(tm,))
     self.code = dict(tochar='PyUnicode_AsUTF8', f='',
                      frchar='PyUnicode_FromString')
-    self.maxDiff = 100000  # pylint: disable=invalid-name
+    self.maxDiff = 100000
 
   def assertClassEqual(self, proto, class_code, mod_code):
     ast = ast_pb2.ClassDecl()
