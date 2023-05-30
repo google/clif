@@ -242,6 +242,45 @@ std::string ExcStr(bool add_type) {
   Py_XDECREF(tb);
   return err;
 }
+
+void ThrowExcStrIfCppExceptionsEnabled() {
+#ifdef __EXCEPTIONS
+  if (PyErr_Occurred()) throw std::domain_error(python::ExcStr());
+  throw std::system_error(std::error_code(), "Python: exception not set");
+#endif
+}
+
+void LogCallbackPythonError(PyObject* callable,
+                            const char* return_typeid_name) {
+  // This block must remain at top, to ensure that the Python error is not
+  // clobbered:
+  fflush(stdout);  // Possibly redundant, depending on behavior of LOG().
+  fflush(stderr);  // But better safe than sorry.
+  if (!PyErr_Occurred()) {
+    LOG(FATAL)
+        << "Python exception in call of clif::callback EXPECTED BUT NOT SET.";
+  }
+  LOG(ERROR) << "Python exception in call of clif::callback FOLLOWS (stderr):";
+  fprintf(stderr, "@BEGIN(Python exception)\n\n");
+  fflush(stderr);
+  PyErr_PrintEx(1);
+  fprintf(stderr, "\n@END(Python exception)\n");
+  fflush(stderr);
+
+  LOG(ERROR) << "repr(callable) FOLLOWS (stderr):";
+  fprintf(stderr, "@BEGIN(Python repr)\n\n");
+  fflush(stderr);
+  if (PyObject_Print(callable, stderr, 0) == -1) {
+    fprintf(stderr, "\nFAILED: PyObject_Print()");
+    fflush(stderr);
+    PyErr_Clear();  // Ignore any errors from printing the exception.
+  }
+  fprintf(stderr, "\n\n@END(Python repr)\n");
+  fflush(stderr);
+  LOG(ERROR) << "typeid(ReturnType).name(): " << return_typeid_name
+             << " [HINT: http://demangle]";
+}
+
 }  // namespace python
 
 // The pyclif_instance_dict_* functions are heavily modified versions of

@@ -303,6 +303,7 @@ typename std::enable_if<std::is_copy_assignable<T>::value, PyObject*>::type  //
 }
 
 namespace callback {
+
 // This class is used to convert return values from callbacks and virtual
 // functions implemented in Python to C++. It deals with converting Python
 // objects returned under normal conditions, as well as error conditions
@@ -314,17 +315,6 @@ namespace callback {
 //
 // See util/task/python/clif.h for examples of specializations of this class
 // for Status and StatusOr values (ie., when R = Status or R = StatusOr<T>).
-//
-// There are a certain rules when defining specializations of this class.
-// 1. It specialized class should have a valid implicit or explicit default
-//    constructor.
-// 2. It should define a method 'FromPyValue' with the following signature.
-//       R FromPyValue(PyObject* r);
-// The method 'FromPyValue' is called to get a suitable C++ value of type R
-// corresponding to the Python object |r|. The implementations should call
-// PyErr_Occurred to determine if a Python exception is to be converted to a
-// value of type R. |r| can be equal to nullptr when PyErr_Occurred returns
-// true.
 template <typename R>
 class ReturnValue;
 

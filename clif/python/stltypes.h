@@ -331,83 +331,105 @@ using std::swap;
 
 // Convert arguments.
 
-inline void ArgIn(PyObject** a, Py_ssize_t idx, const py::PostConv& pc) {}
+inline Py_ssize_t ArgIn(PyObject**, Py_ssize_t idx, const py::PostConv&) {
+  return idx;
+}
 
 template <typename T1, typename... T>
-void ArgIn(PyObject** a, Py_ssize_t idx, const py::PostConv& pc, T1&& c1,
-           T&&... c) {
-  if (a && *a) {
-    PyObject* py = Clif_PyObjFrom(std::forward<T1>(c1), pc.Get(idx));
-    if (!py) {
-      Py_CLEAR(*a);
-    } else {
-      PyTuple_SET_ITEM(*a, idx, py);
-    }
-    ArgIn(a, idx + 1, pc, std::forward<T>(c)...);
+Py_ssize_t ArgIn(PyObject** a, Py_ssize_t idx, const py::PostConv& pc, T1&& c1,
+                 T&&... c) {
+  PyObject* py = Clif_PyObjFrom(std::forward<T1>(c1), pc.Get(idx));
+  if (!py) {
+    return idx;
   }
+  PyTuple_SET_ITEM(*a, idx, py);
+  return ArgIn(a, idx + 1, pc, std::forward<T>(c)...);
 }
 
 template <typename... T>
-void ArgIn(PyObject** a, Py_ssize_t idx, const py::PostConv& pc, PyObject* c1,
-           T&&... c) {
-  if (a && *a) {
-    Py_INCREF(c1);  // For PyTuple_SET_ITEM() to steal.
-    PyTuple_SET_ITEM(*a, idx, c1);
-    ArgIn(a, idx + 1, pc, std::forward<T>(c)...);
-  }
-}
-
-inline void HandlePyExc() {
-#ifdef __EXCEPTIONS
-  if (PyErr_Occurred()) throw std::domain_error(python::ExcStr());
-  throw std::system_error(std::error_code(), "Python: exception not set");
-#else
-  fflush(stdout);
-  PyErr_PrintEx(1);
-  fflush(stderr);
-  LOG(ERROR) << "callback raised a Python exception. Please use absl::Status "
-                "or absl::StatusOr to handle such exceptions.";
-#endif  // __EXCEPTIONS
+Py_ssize_t ArgIn(PyObject** a, Py_ssize_t idx, const py::PostConv& pc,
+                 PyObject* c1, T&&... c) {
+  Py_INCREF(c1);  // For PyTuple_SET_ITEM() to steal.
+  PyTuple_SET_ITEM(*a, idx, c1);
+  return ArgIn(a, idx + 1, pc, std::forward<T>(c)...);
 }
 
 template <typename R>
-class ReturnValue {
- public:
-  R FromPyValue(PyObject* result) {
-    if (PyErr_Occurred()) {
-      Py_XDECREF(result);
-      HandlePyExc();
+struct ReturnValue {
+  PyObject* callable;
+
+  ReturnValue(PyObject* callable) : callable{callable} {}
+
+  void ThrowOrLogPythonError() const {
+    python::ThrowExcStrIfCppExceptionsEnabled();
+    python::LogCallbackPythonError(callable, typeid(R).name());
+  }
+
+  R HandleLowLevelPythonError(const char* context_message) {
+    ThrowOrLogPythonError();
+    LOG(ERROR) << context_message << " (exception was sent to stderr).";
+    if constexpr (!std::is_same_v<R, void>) {
       return R();
     }
+  }
+
+  R HandleArgumentToPythonConversionError(Py_ssize_t idx) {
+    ThrowOrLogPythonError();
+    LOG(ERROR) << "Python exception in to-python conversion of C++ callback "
+                  "argument with (0-based) index "
+               << idx << " (exception was sent to stderr).";
+    if constexpr (!std::is_same_v<R, void>) {
+      return R();
+    }
+  }
+
+  R HandlePythonExceptionRaisedFromCallback() {
+    ThrowOrLogPythonError();
+    LOG(ERROR)
+        << "callback raised a Python exception (exception was sent to stderr). "
+           "If this is simply a bug, please fix. If exceptions are expected, "
+           "please use absl::Status / absl::StatusOr as return type "
+           "(recommended) or "
+           "google3/clif/python/callback_exception_guard.py "
+           "(less safe) to handle them.";
+    if constexpr (!std::is_same_v<R, void>) {
+      return R();
+    }
+  }
+
+  R FromPyValue(PyObject* result) {
     CHECK(result != nullptr);
-    R r;
-    bool ok = Clif_PyObjAs(result, &r);
-    Py_DECREF(result);
-    if (!ok) {
-      HandlePyExc();
+    if constexpr (std::is_same_v<R, void>) {
+      Py_DECREF(result);
+    } else {
+      R r;  // Return type must be default-constructible.
+      bool ok = Clif_PyObjAs(result, &r);
+      Py_DECREF(result);
+      if (!ok) {
+        ThrowOrLogPythonError();
+        LOG(ERROR) << "Python exception in from-python conversion of C++ "
+                      "callback return value (exception was sent to stderr).";
+      }
+      return r;
     }
-    return r;
   }
 };
 
 template <>
-class ReturnValue<PyObject*> {
- public:
-  PyObject* FromPyValue(PyObject* result) {
-    // Return as-is and offload exception handling to the caller.
-    return result;
-  }
-};
+struct ReturnValue<PyObject*> {
+  ReturnValue(PyObject* /*callable*/) {}
 
-template <>
-class ReturnValue<void> {
- public:
-  void FromPyValue(PyObject* result) {
-    Py_XDECREF(result);
-    if (PyErr_Occurred()) {
-      HandlePyExc();
-    }
+  PyObject* HandleLowLevelPythonError(const char* /*context_message*/) {
+    return nullptr;
   }
+
+  PyObject* HandleArgumentToPythonConversionError(Py_ssize_t /*idx*/) {
+    return nullptr;
+  }
+
+  PyObject* HandlePythonExceptionRaisedFromCallback() { return nullptr; }
+
+  PyObject* FromPyValue(PyObject* result) { return result; }
 };
 
 // Callback wrapper template class.
@@ -430,18 +452,29 @@ class Func {
     GilLock holder;  // Hold GIL during Python callback.
     int nargs = sizeof...(T);
     PyObject* pyargs = PyTuple_New(nargs);
-    if (pyargs && nargs) ArgIn(&pyargs, 0, pc_, std::forward<T>(arg)...);
-    if (!pyargs || PyErr_Occurred()) {
-      // Error converting arg1 to Python.
-      Py_XDECREF(pyargs);
-      return ReturnValue<R>().FromPyValue(nullptr);
-    } else {
-      // Call the user function with our parameters.
-      PyObject* result = PyObject_CallObject(callback_.get(), pyargs);
-      Py_DECREF(pyargs);
-      // Convert callback result to C++.
-      return ReturnValue<R>().FromPyValue(result);
+    if (!pyargs) {
+      return ReturnValue<R>(callback_.get())
+          .HandleLowLevelPythonError(
+              "Python exception allocating tuple object for callback "
+              "arguments");
     }
+    if (nargs) {
+      Py_ssize_t nargs_processed =
+          ArgIn(&pyargs, 0, pc_, std::forward<T>(arg)...);
+      if (nargs_processed != nargs) {
+        Py_DECREF(pyargs);
+        return ReturnValue<R>(callback_.get())
+            .HandleArgumentToPythonConversionError(nargs_processed);
+      }
+    }
+    // Call the user function with our parameters.
+    PyObject* result = PyObject_CallObject(callback_.get(), pyargs);
+    Py_DECREF(pyargs);
+    if (PyErr_Occurred()) {
+      return ReturnValue<R>(callback_.get())
+          .HandlePythonExceptionRaisedFromCallback();
+    }
+    return ReturnValue<R>(callback_.get()).FromPyValue(result);
   }
 
  private:

@@ -33,6 +33,8 @@ namespace clif {
 namespace python {
 
 std::string ExcStr(bool add_type = true);
+void ThrowExcStrIfCppExceptionsEnabled();
+void LogCallbackPythonError(PyObject* callable, const char* return_typeid_name);
 
 template <typename T>
 T* Get(const clif::Instance<T>& cpp, bool set_err = true) {
