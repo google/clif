@@ -367,7 +367,7 @@ struct ReturnValue {
 
   R HandleLowLevelPythonError(const char* context_message) {
     ThrowOrLogPythonError();
-    LOG(ERROR) << context_message << " (exception was sent to stderr).";
+    LOG(FATAL) << context_message << " (exception was sent to stderr).";
     if constexpr (!std::is_same_v<R, void>) {
       return R();
     }
@@ -385,7 +385,7 @@ struct ReturnValue {
 
   R HandlePythonExceptionRaisedFromCallback() {
     ThrowOrLogPythonError();
-    LOG(ERROR)
+    LOG(FATAL)
         << "callback raised a Python exception (exception was sent to stderr). "
            "If this is simply a bug, please fix. If exceptions are expected, "
            "please use absl::Status / absl::StatusOr as return type "
@@ -407,7 +407,7 @@ struct ReturnValue {
       Py_DECREF(result);
       if (!ok) {
         ThrowOrLogPythonError();
-        LOG(ERROR) << "Python exception in from-python conversion of C++ "
+        LOG(FATAL) << "Python exception in from-python conversion of C++ "
                       "callback return value (exception was sent to stderr).";
       }
       return r;
