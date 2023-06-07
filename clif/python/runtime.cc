@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "clif/python/pickle_support.h"
 #include "clif/python/runtime.h"
+
+#include <system_error>  // NOLINT(build/c++11)
+
+#include "clif/python/pickle_support.h"
+#include "absl/log/log.h"
 // This should be removed once CLIF depends on Abseil.
 #include <cassert>
 // NOLINTNEXTLINE(whitespace/line_length) because of MOE, result is within 80.

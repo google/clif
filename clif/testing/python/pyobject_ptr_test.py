@@ -60,9 +60,6 @@ class PyObjectPtrTest(absltest.TestCase):
 
     sio = io.StringIO()
 
-    @callback_exception_guard.print_and_clear(
-        substitute_return_value=tst.CppValueHolder(-123), file=sio
-    )
     def cb(pvh):
       if pvh.value == 20:
         return tst.CppValueHolder(100)
@@ -75,10 +72,8 @@ class PyObjectPtrTest(absltest.TestCase):
     # when there was a reference count bug in clif/python/stltypes.h.
     for _ in range(1000):
       self.assertEqual(cc(cb, PyValueHolder(20)).value, 100)
-    self.assertEqual(sio.getvalue(), "")
     for _ in range(1000):
       self.assertEqual(cc(cb, PyValueHolder("Two")).value, 101)
-    self.assertEqual(sio.getvalue(), "")
     if "pybind11" in tst.__doc__:
       for _ in range(1000):
         with self.assertRaisesRegex(ValueError, r"^Unknown pvh\.value: 3\.0$"):
@@ -91,8 +86,11 @@ class PyObjectPtrTest(absltest.TestCase):
         ):
           cc(cb, PyValueHolder(3.0))
     else:
+      cb_guarded = callback_exception_guard.print_and_clear(
+          substitute_return_value=tst.CppValueHolder(-123), file=sio
+      )(cb)
       for _ in range(1000):
-        self.assertEqual(cc(cb, PyValueHolder(3.0)).value, -123)
+        self.assertEqual(cc(cb_guarded, PyValueHolder(3.0)).value, -123)
       self.assertIn("ValueError: Unknown pvh.value: 3.0", sio.getvalue())
 
   def test_call_callback_with_pyobject_ptr_int_args(self):

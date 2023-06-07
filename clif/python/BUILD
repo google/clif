@@ -52,7 +52,7 @@ cc_library(
         "@com_github_google_glog//:glog",
         "@com_google_absl//absl/base:config",
         "@com_google_absl//absl/container:flat_hash_map",
-        "@com_google_absl//absl/log:absl_log",
+        "@com_google_absl//absl/log",
         "@com_google_absl//absl/numeric:int128",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:cord",

@@ -47,7 +47,7 @@ headers are included.
 #endif                   // __EXCEPTIONS
 
 #include "absl/base/config.h"
-#include "absl/log/absl_log.h"
+#include "absl/log/log.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "clif/python/stltypes_fwd.h"

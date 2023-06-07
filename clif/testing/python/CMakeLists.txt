@@ -83,7 +83,9 @@ add_pyclif_library_for_test(absl_uint128 absl_uint128.clif)
 
 add_pyclif_library_for_test(add_init_and_property add_init_and_property.clif)
 
-add_pyclif_library_for_test(callback callback.clif)
+add_pyclif_library_for_test(callback callback.clif
+  PY_DEPS clif_python_callback_exception_guard
+)
 
 add_pyclif_library_for_test(call_method call_method.clif)
 
@@ -223,4 +225,6 @@ add_pyclif_library_for_test(virtual_py_cpp_mix virtual_py_cpp_mix.clif)
 
 add_pyclif_library_for_test(alt_bytes alt_bytes.clif)
 
-add_pyclif_library_for_test(pyobject_ptr pyobject_ptr.clif)
+add_pyclif_library_for_test(pyobject_ptr pyobject_ptr.clif
+  PY_DEPS clif_python_callback_exception_guard
+)
