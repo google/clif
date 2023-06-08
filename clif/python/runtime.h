@@ -185,6 +185,10 @@ bool ensure_no_args_and_kw_args(const char* func, PyObject* args, PyObject* kw);
 // https://docs.python.org/3/library/pickle.html#object.__reduce_ex__
 PyObject* ReduceExImpl(PyObject* self, PyObject* args, PyObject* kw);
 
+bool PyObjectTypeIsConvertibleToStdVector(PyObject* obj);
+bool PyObjectTypeIsConvertibleToStdSet(PyObject* obj);
+bool PyObjectTypeIsConvertibleToStdMap(PyObject* obj);
+
 }  // namespace clif
 
 #endif  // CLIF_PYTHON_RUNTIME_H_

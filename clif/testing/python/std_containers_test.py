@@ -15,23 +15,44 @@
 """Tests for clif.testing.python.std_containers."""
 
 from absl.testing import absltest
+from absl.testing import parameterized
 
 from clif.testing.python import std_containers
 
 
-class StdContainersTest(absltest.TestCase):
+class StdContainersTest(parameterized.TestCase):
 
-  def testPassVectorInt(self):
-    self.assertEqual(std_containers.PassVectorInt([7, 13]), 140)
-    self.assertEqual(std_containers.PassVectorInt(set([9, 12, 9])), 142)
+  @parameterized.parameters(
+      (std_containers.PassVectorInt, 0), (std_containers.PassArrayInt2, 1)
+  )
+  def testPassVectorInt(self, fn, offset):
+    self.assertEqual(fn([7, 13]), 140 + offset)
+    self.assertEqual(fn({6, 2}), 116 + offset)
+    self.assertEqual(fn({'x': 8, 'y': 11}.values()), 138 + offset)
+    self.assertEqual(fn({3: None, 9: None}.keys()), 124 + offset)
+    self.assertEqual(fn(i for i in [4, 17]), 142 + offset)
+    self.assertEqual(fn(map(lambda i: i * 3, [8, 7])), 190 + offset)
     with self.assertRaises(TypeError):
-      std_containers.PassVectorInt({})
+      fn({'x': 0, 'y': 1})
+    with self.assertRaises(TypeError):
+      fn({})
+
+  def testPassVectorPairInt(self):
+    fn = std_containers.PassVectorPairInt
+    self.assertEqual(fn(zip([5, 17], [13, 9])), 2222)
 
   def testPassSetInt(self):
-    self.assertEqual(std_containers.PassSetInt(set([3, 15, 3])), 254)
-    self.assertEqual(std_containers.PassSetInt([5, 17, 5]), 266)
+    fn = std_containers.PassSetInt
+    self.assertEqual(fn({3, 15}), 254)
+    self.assertEqual(fn({5: None, 12: None}.keys()), 251)
     with self.assertRaises(TypeError):
-      std_containers.PassSetInt({})
+      fn([])
+    with self.assertRaises(TypeError):
+      fn({})
+    with self.assertRaises(TypeError):
+      fn({}.values())
+    with self.assertRaises(TypeError):
+      fn(i for i in [])
 
   def testVector(self):
     self.assertEqual(std_containers.Mul([1, 2, 3], 2), [2, 4, 6])

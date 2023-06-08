@@ -16,6 +16,8 @@ use `std::string` as str
 
 from "clif/testing/std_containers.h":
   def PassVectorInt(v: list<int>) -> int
+  def PassArrayInt2(a: `std::array<int, 2>` as list) -> int
+  def PassVectorPairInt(v: list<tuple<int, int>>) -> int
   def PassSetInt(v: `std::set` as set<int>) -> int
   def Mul(v: list<int>, m: int) -> list<int>
   def Div(v: `std::array<int, 2>` as list, m: int) -> `std::array<int, 2>` as list

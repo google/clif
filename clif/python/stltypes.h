@@ -222,7 +222,6 @@ typename std::enable_if<(I < sizeof...(U)), bool>::type  //
 PyObjAsVariantTryAll(PyObject* py, ::std::variant<U...>* v) {
   {
     bool success = PyObjAsVariantAt<I>(py, v);
-    DCHECK(success || PyErr_Occurred() != nullptr);
     if (success) {
       return true;
     }
@@ -936,10 +935,13 @@ bool IterToCont(PyObject* py, Inserter add, bool accept_dict = false) {
 // to a C++ container via functor add.
 template <typename T, typename U, typename F>
 bool ItemsToMap(PyObject* py, F add) {
-  py = PyObject_CallMethod(py, "items", nullptr);
-  if (py == nullptr) return false;
-  bool ok = py::IterToCont<std::pair<T, U>>(py, add, true);
-  Py_DECREF(py);
+  if (!PyObjectTypeIsConvertibleToStdMap(py)) {
+    return false;
+  }
+  PyObject* items = PyObject_CallMethod(py, "items", nullptr);
+  if (items == nullptr) return false;
+  bool ok = py::IterToCont<std::pair<T, U>>(items, add, true);
+  Py_DECREF(items);
   return ok;
 }
 }  // namespace py
@@ -948,6 +950,9 @@ bool ItemsToMap(PyObject* py, F add) {
 template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::vector<T, Args...>* c) {
   CHECK(c != nullptr);
+  if (!PyObjectTypeIsConvertibleToStdVector(py)) {
+    return false;
+  }
   c->clear();
   return py::IterToCont<T>(py, [&c](T&& i) {  // NOLINT: build/c++11
     c->push_back(std::move(i));
@@ -957,7 +962,9 @@ bool Clif_PyObjAs(PyObject* py, std::vector<T, Args...>* c) {
 template <typename T, std::size_t N>
 bool Clif_PyObjAs(PyObject* py, std::array<T, N>* c) {
   CHECK(c != nullptr);
-
+  if (!PyObjectTypeIsConvertibleToStdVector(py)) {
+    return false;
+  }
   int index = 0;
   bool rval = py::IterToCont<T>(py, [&c, &index](T&& i) {
     if (index < N) {
@@ -976,6 +983,9 @@ bool Clif_PyObjAs(PyObject* py, std::array<T, N>* c) {
 template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::unordered_set<T, Args...>* c) {
   CHECK(c != nullptr);
+  if (!PyObjectTypeIsConvertibleToStdSet(py)) {
+    return false;
+  }
   c->clear();
   return py::IterToCont<T>(py, [&c](T&& i) {  // NOLINT: build/c++11
     c->insert(std::move(i));
@@ -984,6 +994,9 @@ bool Clif_PyObjAs(PyObject* py, std::unordered_set<T, Args...>* c) {
 template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::set<T, Args...>* c) {
   CHECK(c != nullptr);
+  if (!PyObjectTypeIsConvertibleToStdSet(py)) {
+    return false;
+  }
   c->clear();
   return py::IterToCont<T>(py, [&c](T&& i) {  // NOLINT: build/c++11
     c->insert(std::move(i));

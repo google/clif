@@ -35,6 +35,18 @@ inline int PassVectorInt(const std::vector<int>& v) {
   return zum;
 }
 
+inline int PassArrayInt2(const std::array<int, 2>& a) {
+  return PassVectorInt(std::vector<int>(a.begin(), a.end())) + 1;
+}
+
+inline int PassVectorPairInt(const std::vector<std::pair<int, int>>& v) {
+  int zum = 0;
+  for (const auto& ij : v) {
+    zum += ij.first * 100 + ij.second;
+  }
+  return zum;
+}
+
 inline int PassSetInt(const std::set<int>& s) {
   int zum = 200;
   for (const int i : s) {

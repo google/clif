@@ -14,6 +14,7 @@
 
 #include "clif/python/runtime.h"
 
+#include <initializer_list>
 #include <system_error>  // NOLINT(build/c++11)
 
 #include "clif/python/pickle_support.h"
@@ -382,6 +383,44 @@ PyObject* ReduceExImpl(PyObject* self, PyObject* args, PyObject* kw) {
     return nullptr;
   }
   return ReduceExCore(self, protocol);
+}
+
+namespace {
+
+bool PyObjectIsInstanceWithOneOfTpNames(
+    PyObject* obj, std::initializer_list<const char*> tp_names) {
+  if (PyType_Check(obj)) {
+    return false;
+  }
+  const char* obj_tp_name = Py_TYPE(obj)->tp_name;
+  for (const auto* tp_name : tp_names) {
+    if (strcmp(obj_tp_name, tp_name) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+}  // namespace
+
+bool PyObjectTypeIsConvertibleToStdVector(PyObject* obj) {
+  if (PySequence_Check(obj) != 0) {
+    return !PyUnicode_Check(obj) && !PyBytes_Check(obj);
+  }
+  return (PyGen_Check(obj) != 0) || (PyAnySet_Check(obj) != 0) ||
+         PyObjectIsInstanceWithOneOfTpNames(
+             obj, {"dict_keys", "dict_values", "dict_items", "map", "zip"});
+}
+
+bool PyObjectTypeIsConvertibleToStdSet(PyObject* obj) {
+  return (PyAnySet_Check(obj) != 0) ||
+         PyObjectIsInstanceWithOneOfTpNames(obj, {"dict_keys"});
+}
+
+bool PyObjectTypeIsConvertibleToStdMap(PyObject* obj) {
+  return (PyDict_Check(obj) != 0) ||
+         ((PyMapping_Check(obj) != 0) &&
+          (PyObject_HasAttrString(obj, "items") != 0));
 }
 
 }  // namespace clif

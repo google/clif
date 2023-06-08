@@ -149,31 +149,36 @@ class AcceptIterableTest(parameterized.TestCase):
     self.assertCountEqual(iterable, obj.value)
 
   def test_accept_iterable_as_set(self, iterable):
-    self.assertEqual(lambda_expressions.takes_set(iterable), 3)
-    self.assertEqual(lambda_expressions.takes_unordered_set(iterable), 3)
-    self.assertEqual(lambda_expressions.takes_set((i for i in iterable)), 3)
-    self.assertEqual(lambda_expressions.takes_unordered_set(
-        (i for i in iterable)), 3)
+    # Explicit set() added with cl/536221955.
+    self.assertEqual(lambda_expressions.takes_set(set(iterable)), 3)
+    self.assertEqual(lambda_expressions.takes_unordered_set(set(iterable)), 3)
+    self.assertEqual(lambda_expressions.takes_set(set(i for i in iterable)), 3)
+    self.assertEqual(
+        lambda_expressions.takes_unordered_set(set(i for i in iterable)), 3
+    )
 
   def test_ctor_accept_iterable_as_set(self, iterable):
-    obj = lambda_expressions.CtorTakesSet(iterable)
+    # Explicit set() added with cl/536221955.
+    obj = lambda_expressions.CtorTakesSet(set(iterable))
     self.assertCountEqual(iterable, obj.value)
-    obj = lambda_expressions.CtorTakesUnorderedSet(iterable)
+    obj = lambda_expressions.CtorTakesUnorderedSet(set(iterable))
     self.assertCountEqual(iterable, obj.value)
-    obj = lambda_expressions.CtorTakesSet((i for i in iterable))
+    obj = lambda_expressions.CtorTakesSet(set(i for i in iterable))
     self.assertCountEqual(iterable, obj.value)
-    obj = lambda_expressions.CtorTakesUnorderedSet((i for i in iterable))
+    obj = lambda_expressions.CtorTakesUnorderedSet(set(i for i in iterable))
     self.assertCountEqual(iterable, obj.value)
 
   def test_extended_ctor_accept_iterable_as_set(self, iterable):
-    obj = lambda_expressions.ExtendedCtorTakesSet(iterable)
+    # Explicit set() added with cl/536221955.
+    obj = lambda_expressions.ExtendedCtorTakesSet(set(iterable))
     self.assertCountEqual(iterable, obj.value)
-    obj = lambda_expressions.ExtendedCtorTakesUnorderedSet(iterable)
+    obj = lambda_expressions.ExtendedCtorTakesUnorderedSet(set(iterable))
     self.assertCountEqual(iterable, obj.value)
-    obj = lambda_expressions.ExtendedCtorTakesSet((i for i in iterable))
+    obj = lambda_expressions.ExtendedCtorTakesSet(set(i for i in iterable))
     self.assertCountEqual(iterable, obj.value)
     obj = lambda_expressions.ExtendedCtorTakesUnorderedSet(
-        (i for i in iterable))
+        set(i for i in iterable)
+    )
     self.assertCountEqual(iterable, obj.value)
 
 
