@@ -45,6 +45,10 @@ jobs:
           python: "3.8"
         - ubuntu: "20.04"
           python: "3.9"
+        - ubuntu: "20.04"
+          python: "3.10"
+        - ubuntu: "20.04"
+          python: "3.11"
 
     name: "Ubuntu ${{ matrix.ubuntu }} - Python ${{ matrix.python }}"
     runs-on: ubuntu-latest

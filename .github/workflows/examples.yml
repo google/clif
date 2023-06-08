@@ -35,19 +35,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ubuntu:
-        - 18.04
-        - 20.04
-        python:
-        - 3.7
-        - 3.8
-        - 3.9
+        include:
+        - ubuntu: "18.04"
+          python: "3.8"
+        - ubuntu: "20.04"
+          python: "3.8"
+        - ubuntu: "20.04"
+          python: "3.9"
+        - ubuntu: "20.04"
+          python: "3.10"
+        - ubuntu: "20.04"
+          python: "3.11"
 
     name: "Ubuntu ${{ matrix.ubuntu }} - Python ${{ matrix.python }}"
     runs-on: ubuntu-latest
 
     # Registry service is required for the docker image built via
-    # docker/build-push-actions to be usable in folllowing steps.
+    # docker/build-push-actions to be usable in following steps.
     services:
         registry:
             image: registry:2
