@@ -81,7 +81,7 @@ setuptools.setup(
     python_requires='>=3.6.0',
     install_requires=[
         'setuptools>=24.2.0',
-        'pyparsing==2.2.0',
+        'pyparsing==2.2.2',
         'protobuf>=3.8.0',
     ],
     # PyPI package information.

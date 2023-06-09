@@ -117,4 +117,4 @@ RUN "python$PYTHON_VERSION" -m pip install \
     absl-py \
     parameterized \
     protobuf=="4.$PROTOBUF_VERSION" \
-    pyparsing==2.2.0
+    pyparsing==2.2.2

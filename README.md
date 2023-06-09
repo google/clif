@@ -69,7 +69,7 @@ subdirectory.  Both Python 2 and 3 are supported.
     installed.
 
  1. You must have pyparsing installed, so we can build protobuf. Use
-    `pip install 'pyparsing==2.2.0'` to fetch the correct version.
+    `pip install 'pyparsing==2.2.2'` to fetch the correct version.
 
  1. Make sure `pkg-config --libs python` works (e.g. install `python-dev` and
     `pkg-config`).
