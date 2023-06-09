@@ -121,17 +121,17 @@ The following outlines the steps in `INSTALL.sh` for clarification.
     ninja -j 2 install
     ```
 
-    If you have more than one Python version installed (eg. python3.6 and
-    python3.7) cmake may have problems finding python libraries for the Python
+    If you have more than one Python version installed (eg. python3.8 and
+    python3.9) cmake may have problems finding python libraries for the Python
     you specified as INSTALL.sh argument and uses the default Python instead. To
     help cmake use the correct Python add the following options to the cmake
     command (substitute the correct path for your system):
 
     ```bash
     cmake ... \
-      -DPYTHON_INCLUDE_DIR="/usr/include/python3.6" \
-      -DPYTHON_LIBRARY="/usr/lib/x86_64-linux-gnu/libpython3.6m.so" \
-      -DPYTHON_EXECUTABLE="/usr/bin/python3.6" \
+      -DPYTHON_INCLUDE_DIR="/usr/include/python3.9" \
+      -DPYTHON_LIBRARY="/usr/lib/x86_64-linux-gnu/libpython3.9m.so" \
+      -DPYTHON_EXECUTABLE="/usr/bin/python3.9" \
       "${CMAKE_G_FLAGS[@]}" "$CLIFSRC_DIR"
     ```
 

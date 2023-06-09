@@ -78,7 +78,7 @@ setuptools.setup(
             ],
         ),
     ],
-    python_requires='>=3.6.0',
+    python_requires='>=3.8.0',
     install_requires=[
         'setuptools>=24.2.0',
         'pyparsing==2.2.2',
@@ -94,7 +94,7 @@ setuptools.setup(
         'Programming Language :: C++',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Software Development :: Code Generators',

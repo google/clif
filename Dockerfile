@@ -32,7 +32,7 @@
 #  UBUNTU_VERSION: one of tags listed on https://hub.docker.com/_/ubuntu
 #  ABSL_VERSION: one of abseil/abseil-cpp Github releases
 #  PROTOBUF_VERSION: one of protocolbuffers/protobuf Github releases
-#  PYTHON_VERSION: python version to use (>= 3.6)
+#  PYTHON_VERSION: python version to use (>= 3.8)
 
 ARG UBUNTU_VERSION=20.04
 
@@ -40,7 +40,7 @@ FROM ubuntu:${UBUNTU_VERSION}
 
 ARG ABSL_VERSION=20230125.1
 ARG PROTOBUF_VERSION=22.0
-ARG PYTHON_VERSION=3.9
+ARG PYTHON_VERSION=3.10
 
 ENV DEBIAN_FRONTEND=noninteractive
 
