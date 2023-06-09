@@ -166,8 +166,6 @@ class Postprocessor(object):
 
     self._parse_pytd(pytd_file, pb)
 
-    # Since most C++ calls release GIL we need threads.
-    pb.extra_init.append('PyEval_InitThreads();')
     # Assumed we always want a deterministic output proto. Since dict/set order
     # is not, do sorted() order traversal.
     order = sorted

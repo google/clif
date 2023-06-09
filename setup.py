@@ -13,7 +13,7 @@
 # limitations under the License.
 """Setup configuration."""
 
-from distutils import sysconfig
+from distutils import sysconfig  # pylint: disable=deprecated-module
 import os
 import setuptools
 
