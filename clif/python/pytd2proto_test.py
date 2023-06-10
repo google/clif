@@ -51,8 +51,7 @@ class ToprotoTest(unittest.TestCase):
                 clif,
                 types=None,
                 include_typemaps=False,
-                include_namemaps=False,
-                add_extra_init=True):
+                include_namemaps=False):
     pytd = textwrap.dedent(pytd)
     try:
       pb = _ParseFile(pytd, types)
@@ -69,8 +68,6 @@ class ToprotoTest(unittest.TestCase):
       m.definition = b''
     out = text_format.MessageToString(pb)
     expected = FixTypes(textwrap.dedent(clif))
-    if add_extra_init:
-      expected += 'extra_init: "PyEval_InitThreads();"\n'
     self.assertMultiLineEqual(out, expected)
 
   def ClifEqualWithTypes(self, pytd, clif, **kw):
@@ -822,14 +819,12 @@ class ToprotoTest(unittest.TestCase):
             postproc: "clif.helpers.Replacer"
           }
         }
-        extra_init: "PyEval_InitThreads();"
         namemaps {
           name: "Replacer"
           fq_name: "clif.helpers.Replacer"
         }
         """,
-        include_namemaps=True,
-        add_extra_init=False)
+        include_namemaps=True)
 
   def testFromStaticmethods(self):
     self.ClifEqual("""\
@@ -2094,12 +2089,11 @@ class ToprotoTest(unittest.TestCase):
             }
           }
         }
-        extra_init: "PyEval_InitThreads();"
         macros {
           name: "Foo"
           definition: ""
         }
-        """, add_extra_init=False)
+        """)
 
   def testDocString(self):
     self.ClifEqualWithTypes('''\
@@ -2173,7 +2167,7 @@ class ToprotoTest(unittest.TestCase):
           docstring: "DogCat\\n    multiline\\n    comment"
         }
       }
-    """, add_extra_init=True)
+    """)
 
 
 class IncludeTest(unittest.TestCase):
