@@ -367,4 +367,19 @@ struct clif_smart_ptr_type_caster {
 }  // namespace detail
 }  // namespace pybind11
 
+// NOTE: This macro MUST ONLY BE INVOKED IN THE GLOBAL NAMESPACE.
+#define PYCLIF_PYBIND11_CLIF_TYPE_CASTERS(...)                        \
+  namespace pybind11::detail {                                        \
+  template <>                                                         \
+  struct type_caster<__VA_ARGS__> : clif_type_caster<__VA_ARGS__> {}; \
+  template <>                                                         \
+  struct type_caster<std::shared_ptr<__VA_ARGS__>>                    \
+      : clif_smart_ptr_type_caster<__VA_ARGS__,                       \
+                                   std::shared_ptr<__VA_ARGS__>> {};  \
+  template <>                                                         \
+  struct type_caster<std::unique_ptr<__VA_ARGS__>>                    \
+      : clif_smart_ptr_type_caster<__VA_ARGS__,                       \
+                                   std::unique_ptr<__VA_ARGS__>> {};  \
+  }
+
 #endif  // THIRD_PARTY_CLIF_PYBIND11_CLIF_TYPE_CASTERS_H_
