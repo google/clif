@@ -21,6 +21,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <unordered_set>
 
@@ -47,7 +48,7 @@ struct Derived: public Abstract {
 struct NoCopy {
   // This constructor is to resolve Github CI failures.
   NoCopy() : value("Default") { }
-  explicit NoCopy(const std::string &v) : value(v) {}
+  explicit NoCopy(std::string_view v) : value(v) {}
   NoCopy(const NoCopy&) = delete;
   NoCopy(NoCopy&& other) { value = other.value; }
 
@@ -72,7 +73,7 @@ struct NoCopyNoMove {
 };
 
 struct FromNoCopy {
-  explicit FromNoCopy(const std::string& v): value(v) { }
+  explicit FromNoCopy(std::string_view v): value(v) { }
   explicit FromNoCopy(const NoCopy& nc): value(nc.value) { }
   std::string value;
   std::string get() { return value; }

@@ -19,13 +19,14 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace clif_testing {
 
 struct Obj {
   std::string mtxt;
   Obj() : mtxt("DefaultConstructor") {}
-  Obj(const std::string &mtxt_) : mtxt(mtxt_) {}
+  Obj(std::string_view mtxt_) : mtxt(mtxt_) {}
   Obj(const Obj &other) { mtxt = other.mtxt + "_CpCtor"; }
   Obj(Obj &&other) { mtxt = other.mtxt + "_MvCtor"; }
 
@@ -82,7 +83,7 @@ inline std::unique_ptr<Obj> return_unique_pointer() {
 struct NoCopy {
   std::string mtxt;
   NoCopy() : mtxt("DefaultConstructor") {}
-  NoCopy(const std::string &mtxt_) : mtxt(mtxt_) {}
+  NoCopy(std::string_view mtxt_) : mtxt(mtxt_) {}
   NoCopy(const NoCopy&) = delete;
   NoCopy(NoCopy&& other) { mtxt = other.mtxt + "_MvCtor"; }
 
@@ -120,7 +121,7 @@ inline std::unique_ptr<NoCopy> return_unique_pointer_nocopy() {
 struct NoMove {
   std::string mtxt;
   NoMove() : mtxt("DefaultConstructor") {}
-  NoMove(const std::string &mtxt_) : mtxt(mtxt_) {}
+  NoMove(std::string_view mtxt_) : mtxt(mtxt_) {}
   NoMove(const NoMove &other) { mtxt = other.mtxt + "_CpCtor"; }
 
   NoMove& operator=(const NoMove &other) {
@@ -168,7 +169,7 @@ inline std::unique_ptr<NoMove> return_unique_pointer_nomove() {
 struct NoCopyNoMove {
   std::string mtxt;
   NoCopyNoMove() : mtxt("DefaultConstructor") {}
-  NoCopyNoMove(const std::string &mtxt_) : mtxt(mtxt_) {}
+  NoCopyNoMove(std::string_view mtxt_) : mtxt(mtxt_) {}
   NoCopyNoMove(const NoCopyNoMove&) = delete;
   NoCopyNoMove(NoCopyNoMove&&) = delete;
 

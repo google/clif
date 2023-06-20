@@ -18,6 +18,7 @@
 
 #include <functional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -72,7 +73,7 @@ struct VirtualBaseVectorString {
 };
 
 inline bool CallVirtualPassList(VirtualBaseVectorString* vb,
-                                const std::string& fname) {
+                                std::string_view fname) {
   if (fname == "PassListStr") {
     return vb->PassListStr(VectorString{kUC32});
   }
@@ -80,7 +81,7 @@ inline bool CallVirtualPassList(VirtualBaseVectorString* vb,
 }
 
 inline int CallVirtualReturnList(VirtualBaseVectorString* vb,
-                                 const std::string& fname) {
+                                 std::string_view fname) {
   VectorString v;
   if (fname == "ReturnListStr") {
     v = vb->ReturnListStr();
@@ -122,7 +123,7 @@ struct VirtualBasePairString {
 };
 
 inline bool CallVirtualPassTuple(VirtualBasePairString* vb,
-                                 const std::string& fname) {
+                                 std::string_view fname) {
   PairString p{"", ""};
   if (fname == "PassTupleStrStr") {
     return vb->PassTupleStrStr(p);
@@ -137,7 +138,7 @@ inline bool CallVirtualPassTuple(VirtualBasePairString* vb,
 }
 
 inline int CallVirtualReturnTuple(VirtualBasePairString* vb,
-                                  const std::string& fname) {
+                                  std::string_view fname) {
   PairString p;
   if (fname == "ReturnTupleStrStr") {
     p = vb->ReturnTupleStrStr();
