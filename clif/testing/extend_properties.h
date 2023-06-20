@@ -17,6 +17,7 @@
 #define CLIF_TESTING_EXTEND_PROPERTIES_H_
 
 #include <string>
+#include <string_view>
 
 namespace clif_testing {
 
@@ -25,7 +26,7 @@ struct ValueHolder {
   int get_value() { return value_; }
   void set_value(int v) { value_ = v; }
   std::string get_value_str() { return value_str_; }
-  void set_value_str(const std::string& v) { value_str_ = v; }
+  void set_value_str(std::string_view v) { value_str_ = v; }
   int value_;
   std::string value_str_;
 };

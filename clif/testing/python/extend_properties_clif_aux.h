@@ -17,6 +17,7 @@
 #define CLIF_TESTING_PYTHON_EXTEND_PROPERTIES_CLIF_AUX_H_
 
 #include <string>
+#include <string_view>
 
 #include "clif/testing/extend_properties.h"
 
@@ -46,7 +47,7 @@ inline std::string PropertyHolder__extend__get_value_bytes(
 }
 
 inline void PropertyHolder__extend__set_value_bytes(
-    PropertyHolder& self, const std::string& value) {
+    PropertyHolder& self, std::string_view value) {
   self.value_holder_.set_value_str(value);
 }
 

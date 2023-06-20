@@ -17,6 +17,7 @@
 #define CLIF_TESTING_PICKLE_COMPATIBILITY_H_
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace clif_testing {
@@ -47,7 +48,7 @@ class StoreTwoWithState {
   StoreTwoWithState(int v0, int v1) : values{v0, v1}, state{"blank"} {}
   const std::vector<int>& GetInitArgs() const { return values; }
   const std::string& GetState() const { return state; }
-  void SetState(const std::string& state) { this->state = state; }
+  void SetState(std::string_view state) { this->state = state; }
 
  private:
   std::vector<int> values;
