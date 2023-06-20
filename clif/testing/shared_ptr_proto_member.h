@@ -17,6 +17,7 @@
 #define CLIF_TESTING_SHARED_PTR_PROTO_MEMBER_H_
 
 #include <memory>
+#include <string_view>
 
 // AST proto conveniently doubles as test object.
 #include "clif/protos/ast.pb.h"
@@ -33,7 +34,7 @@ class ProtoHolderByValue {
 
   clif::protos::AST GetByValue() const { return by_val_ast_; }
   const clif::protos::AST& GetConstRef() const { return by_val_ast_; }
-  void ResetSource(const std::string& new_source) {
+  void ResetSource(std::string_view new_source) {
     by_val_ast_.set_source(new_source);
   }
 
@@ -49,7 +50,7 @@ class ProtoHolderUniquePtr {
   std::unique_ptr<clif::protos::AST> GetUniquePtr() {
     return std::move(uq_ptr_ast_);
   }
-  void ResetSource(const std::string& new_source) {
+  void ResetSource(std::string_view new_source) {
     uq_ptr_ast_->set_source(new_source);
   }
 
@@ -68,7 +69,7 @@ class ProtoHolderSharedPtr {
   std::shared_ptr<clif::protos::AST> GetSharedPtr() const {
     return sh_ptr_ast_;
   }
-  void ResetSource(const std::string& new_source) {
+  void ResetSource(std::string_view new_source) {
     sh_ptr_ast_->set_source(new_source);
   }
 

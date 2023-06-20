@@ -17,6 +17,7 @@
 #define CLIF_TESTING_EXTEND_FROM_CLIFAUX_H_
 
 #include <string>
+#include <string_view>
 
 namespace clif_testing {
 namespace extend_from_clifaux {
@@ -24,7 +25,7 @@ namespace extend_from_clifaux {
 class WhatHappened {
  public:
   WhatHappened() : last_event_{"Nothing yet."} {}
-  void Record(const std::string& event) const { last_event_ = event; }
+  void Record(std::string_view event) const { last_event_ = event; }
   std::string Last() const { return last_event_; }
 
  private:
