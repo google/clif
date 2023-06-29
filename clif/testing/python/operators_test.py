@@ -64,6 +64,14 @@ class OperatorsTest(absltest.TestCase):
     with self.assertRaises(IndexError):
       _ = obj[4]
 
+  def testOperatorsWithIncompatibleArguments(self):
+    obj = operators.UnsetAttrValue()
+    self.assertEqual(obj, obj)
+    self.assertNotEqual(1, obj)
+    self.assertNotEqual('x', obj)
+    with self.assertRaises(TypeError):
+      obj.equal(1)
+
 
 if __name__ == '__main__':
   absltest.main()

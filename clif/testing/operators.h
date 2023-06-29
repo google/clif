@@ -99,6 +99,11 @@ struct WithExtendGetItemAndExtendLen {
   std::vector<int> data;
 };
 
+struct UnsetAttrValue {
+  bool operator==(UnsetAttrValue _) const { return true; }
+  int GetHash() const { return typeid(*this).hash_code(); }
+};
+
 }  // namespace clif_ops_test
 
 #endif  // CLIF_TESTING_OPERATORS_H_
