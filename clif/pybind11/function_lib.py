@@ -266,6 +266,8 @@ def generate_function_suffixes(
   suffix = ''
   if py_args:
     suffix += f'{py_args}, '
+  if func_decl.name.native in operators.ALL_OPS:
+    suffix += 'py::is_operator(), '
   suffix += 'py::return_value_policy::_clif_automatic'
   if func_decl.docstring:
     suffix += f', {generate_docstring(func_decl.docstring)}'

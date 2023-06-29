@@ -52,3 +52,9 @@ from "clif/testing/python/operators_clif_aux.h":
       def __rsub__(self, other: int) -> int
       def __mod__(self, other: int) -> int
       def __rmod__(self, other: int) -> int
+
+    class UnsetAttrValue:
+      def __init__(self)
+      def `operator==` as __eq__(self, b: UnsetAttrValue) -> bool
+      def `GetHash` as __hash__(self) -> int
+      def `operator==` as equal(self, b: UnsetAttrValue) -> bool
