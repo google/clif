@@ -32,6 +32,9 @@ from "clif/testing/python/extend_properties_clif_aux.h":
       @extend
       value_bytes: bytes = property(`get_value_bytes`, `set_value_bytes`)
 
+      @extend
+      value_ptr_self: int = property(`get_value_ptr_self`)
+
     class NestedPropertyHolder:
       class Inner:
         def __init__(self, v: int)

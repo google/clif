@@ -33,6 +33,15 @@ def _convert_ptr_to_ref(var_decl: ast_pb2.VarDecl) -> bool:
   )
 
 
+def _generate_self_param_with_type(
+    var_decl: ast_pb2.VarDecl,
+    class_decl: ast_pb2.ClassDecl) -> str:
+  if var_decl.is_extend_variable:
+    assert var_decl.cpp_get.params
+    return f'{var_decl.cpp_get.params[0].type.cpp_type} self'
+  return f'{class_decl.name.cpp_name} &self'
+
+
 def _generate_cpp_get(
     var_decl: ast_pb2.VarDecl,
     class_decl: ast_pb2.ClassDecl,
@@ -56,10 +65,11 @@ def _generate_cpp_get(
   return_value_policy_pack = (
       f'py::return_value_policy_pack({return_value_policy})'
   )
+  self_param_with_type = _generate_self_param_with_type(var_decl, class_decl)
   if generate_comma:
-    yield I + f'py::cpp_function([]({class_decl.name.cpp_name} &self) {{'
+    yield I + f'py::cpp_function([]({self_param_with_type}) {{'
   else:
-    yield I + f'[]({class_decl.name.cpp_name} &self) {{'
+    yield I + f'[]({self_param_with_type}) {{'
   yield I + I + f'return {ret};'
   if generate_comma:
     yield I + f'}}, {return_value_policy_pack}),'

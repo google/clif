@@ -37,6 +37,11 @@ class ExtendPropertiesTest(absltest.TestCase):
     ph.value_gs = new_value
     self.assertEqual(ph.value_gs, new_value)
 
+  def test_property_with_pointer_self(self):
+    expected_value = 54321
+    ph = extend_properties.PropertyHolder(expected_value)
+    self.assertEqual(ph.value_ptr_self, expected_value)
+
   def test_bytes_property(self):
     expected_value = b'54321'
     ph = extend_properties.PropertyHolder(12345)
