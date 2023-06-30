@@ -41,6 +41,10 @@ inline void PropertyHolder__extend__set_value_gs(
   self.value_holder_.set_value(value);
 }
 
+inline int PropertyHolder__extend__get_value_ptr_self(PropertyHolder* self) {
+  return self->value_holder_.get_value();
+}
+
 inline std::string PropertyHolder__extend__get_value_bytes(
     PropertyHolder& self) {
   return self.value_holder_.get_value_str();
