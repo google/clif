@@ -2956,7 +2956,9 @@ const clang::FunctionDecl* ClifMatcher::SpecializeFunctionTemplate(
       nullptr,  // No explicitly listed template arguments.
       arg_ptrs, specialized_decl, info,
       false,  // No partial overloading
+#if LLVM_VERSION_MAJOR > 16
       /*AggregateDeductionCandidate=*/false,
+#endif
       [&](clang::ArrayRef<QualType> param_types) {
         // For template parameters that aren't instantiation
         // dependent, should we check for valid conversions prior to
