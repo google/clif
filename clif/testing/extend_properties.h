@@ -43,6 +43,21 @@ struct NestedPropertyHolder {
   };
 };
 
+struct UncopyableHolder {
+  explicit UncopyableHolder(int v): value(v) { }
+  UncopyableHolder(const UncopyableHolder&) = delete;
+  UncopyableHolder(UncopyableHolder&& other) { value = other.value; }
+
+  UncopyableHolder& operator=(const UncopyableHolder &) = delete;
+  UncopyableHolder& operator=(UncopyableHolder&& other) {
+    value = other.value;
+    return *this;
+  }
+  int get_value() { return value; }
+  void set_value(int v) { value = v; }
+  int value;
+};
+
 }  // namespace clif_testing
 
 #endif  // CLIF_TESTING_EXTEND_PROPERTIES_H_

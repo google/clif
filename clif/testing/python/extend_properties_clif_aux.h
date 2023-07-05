@@ -71,6 +71,15 @@ inline void NestedPropertyHolder_Inner__extend__set_value_gs(
   self.value_holder_.set_value(value + 57);
 }
 
+inline int UncopyableHolder__extend__get_value(UncopyableHolder& self) {
+  return self.get_value();
+}
+
+inline void UncopyableHolder__extend__set_value(
+    UncopyableHolder& self, int value) {
+  self.set_value(value);
+}
+
 }  // namespace extend_properties
 }  // namespace clif_testing
 

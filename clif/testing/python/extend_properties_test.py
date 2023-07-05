@@ -42,6 +42,14 @@ class ExtendPropertiesTest(absltest.TestCase):
     ph = extend_properties.PropertyHolder(expected_value)
     self.assertEqual(ph.value_ptr_self, expected_value)
 
+  def test_uncopyable_property_holder(self):
+    expected_value = 54321
+    ph = extend_properties.UncopyableHolder(expected_value)
+    self.assertEqual(ph.value, expected_value)
+    new_value = 12345
+    ph.value = new_value
+    self.assertEqual(ph.value, new_value)
+
   def test_bytes_property(self):
     expected_value = b'54321'
     ph = extend_properties.PropertyHolder(12345)

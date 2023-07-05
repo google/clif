@@ -38,7 +38,7 @@ def _generate_self_param_with_type(
     class_decl: ast_pb2.ClassDecl) -> str:
   if var_decl.is_extend_variable:
     assert var_decl.cpp_get.params
-    return f'{var_decl.cpp_get.params[0].type.cpp_type} self'
+    return f'{var_decl.cpp_get.params[0].cpp_exact_type} self'
   return f'{class_decl.name.cpp_name} &self'
 
 
