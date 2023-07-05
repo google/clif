@@ -212,6 +212,7 @@ bool Clif_PyObjAs(PyObject*, bool*);
 // bytes
 bool Clif_PyObjAs(PyObject*, std::string*);
 bool Clif_PyObjAs(PyObject* py, std::shared_ptr<std::string>* c);
+bool Clif_PyObjAs(PyObject*, std::string_view*);
 
 PyObject* UnicodeFromBytes(PyObject*);
 
