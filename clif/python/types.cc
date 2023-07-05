@@ -324,4 +324,22 @@ bool Clif_PyObjAs(PyObject* p, std::shared_ptr<std::string>* c) {
   *c = std::move(pt);
   return true;
 }
+
+bool Clif_PyObjAs(PyObject* p, std::string_view* c) {
+  CHECK(c != nullptr);
+  if (PyUnicode_Check(p)) {
+    Py_ssize_t length;
+    const char* data = PyUnicode_AsUTF8AndSize(p, &length);
+    if (!data) return false;
+    *c = std::string_view(data, length);
+    return true;
+  }
+  if (!PyBytes_Check(p)) {
+    PyErr_SetString(PyExc_TypeError, "expecting str");
+    return false;
+  }
+  *c = std::string_view(PyBytes_AS_STRING(p), PyBytes_GET_SIZE(p));
+  return true;
+}
+
 }  // namespace clif
