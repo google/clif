@@ -349,6 +349,7 @@ bool ClifMatcher::CompileMatchAndSet(
     AST* modified_clif_ast) {
   LLVM_DEBUG(llvm::dbgs() << clif_ast.DebugString());
   *modified_clif_ast = clif_ast;
+  modified_clif_ast->set_clif_matcher_argv0(clif_matcher_argv0_);
   modified_clif_ast->set_clif_matcher_version_stamp(kMatcherVersionStamp);
   BuildClifToClangTypeMap(clif_ast);
   if (RunCompiler(

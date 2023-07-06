@@ -681,6 +681,7 @@ class Module(object):
     self.init += ast.extra_init
     for s in gen.Headlines(
         ast.source,
+        ast.clif_matcher_argv0,
         ast.clif_matcher_version_stamp,
         [
             'PYTHON', 'absl/memory/memory.h',
@@ -735,12 +736,14 @@ class Module(object):
         yield s
 
   def GenerateInit(
-      self, source_filename, clif_matcher_version_stamp, skip_initfunc=False
+      self, source_filename, clif_matcher_argv0, clif_matcher_version_stamp,
+      skip_initfunc=False
   ):
     """Generate module initialization file."""
     assert not self.nested, 'decl stack not exhausted (in GenInit)'
     for s in gen.Headlines(
         source_filename,
+        clif_matcher_argv0,
         clif_matcher_version_stamp,
         ['PYTHON'],
         open_ns=self.wrap_namespace,
@@ -759,6 +762,7 @@ class Module(object):
   def GenerateHeader(
       self,
       source_filename,
+      clif_matcher_argv0,
       clif_matcher_version_stamp,
       api_header_filename,
       macros,
@@ -770,6 +774,7 @@ class Module(object):
       more_headers = []
     for s in gen.Headlines(
         source_filename,
+        clif_matcher_argv0,
         clif_matcher_version_stamp,
         [
             'absl/types/optional.h',

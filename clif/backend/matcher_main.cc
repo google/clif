@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
   }
   input_stream.close();
 
-  ClifMatcher matcher;
+  ClifMatcher matcher(argv[0]);
   AST output_proto;
   std::vector<std::string> args;
   args.push_back(argv[0]);

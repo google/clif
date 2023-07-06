@@ -112,11 +112,12 @@ def GenerateFrom(ast):
     gen.WriteTo(cout, m.GenerateBase(ast, inc_headers))
   with open(FLAGS.ccinit_out, 'w') as iout:
     gen.WriteTo(iout, m.GenerateInit(
-        ast.source, ast.clif_matcher_version_stamp))
+        ast.source, ast.clif_matcher_argv0, ast.clif_matcher_version_stamp))
   with open(FLAGS.header_out, 'w') as hout:
     gen.WriteTo(
         hout, m.GenerateHeader(
-            ast.source, ast.clif_matcher_version_stamp, api_header, ast.macros,
+            ast.source, ast.clif_matcher_argv0, ast.clif_matcher_version_stamp,
+            api_header, ast.macros,
             ast.options.get('is_extended_from_python', 'False') == 'True'))
 
 
