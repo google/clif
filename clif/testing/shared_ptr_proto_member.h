@@ -35,7 +35,7 @@ class ProtoHolderByValue {
   clif::protos::AST GetByValue() const { return by_val_ast_; }
   const clif::protos::AST& GetConstRef() const { return by_val_ast_; }
   void ResetSource(std::string_view new_source) {
-    by_val_ast_.set_source(new_source);
+    by_val_ast_.set_source(std::string(new_source));
   }
 
  private:
@@ -51,7 +51,7 @@ class ProtoHolderUniquePtr {
     return std::move(uq_ptr_ast_);
   }
   void ResetSource(std::string_view new_source) {
-    uq_ptr_ast_->set_source(new_source);
+    uq_ptr_ast_->set_source(std::string(new_source));
   }
 
  private:
@@ -70,7 +70,7 @@ class ProtoHolderSharedPtr {
     return sh_ptr_ast_;
   }
   void ResetSource(std::string_view new_source) {
-    sh_ptr_ast_->set_source(new_source);
+    sh_ptr_ast_->set_source(std::string(new_source));
   }
 
   std::size_t GetSharedPtrUseCount() const { return sh_ptr_ast_.use_count(); }
