@@ -29,6 +29,9 @@
 
 #define PROTOBUF_NS google::protobuf
 
+#define LOCAL_STRINGIFY(x) #x
+#define LOCAL_TOSTRING(x) LOCAL_STRINGIFY(x)
+
 namespace clif {
 
 using clif::TranslationUnitAST;
@@ -70,7 +73,7 @@ class ClifMatcherTest : public testing::Test {
     StrAppend(&clif_ast_proto_text, typemaps);
     EXPECT_TRUE(PROTOBUF_NS::TextFormat::ParseFromString(
         clif_ast_proto_text, &clif_ast_));
-    matcher_.reset(new ClifMatcher);
+    matcher_.reset(new ClifMatcher(__FILE__ ":" LOCAL_TOSTRING(__LINE__)));
     // Builds the hashmap of the typemaps from CLIF AST.
     auto& type_map = matcher_->BuildClifToClangTypeMap(clif_ast_);
     std::string code = matcher_->builder_.BuildCode(&clif_ast_, &type_map);
@@ -132,7 +135,7 @@ TEST_F(ClifMatcherTest, BuildCode) {
   protos::AST ast_proto;
   EXPECT_TRUE(PROTOBUF_NS::TextFormat::ParseFromString(
       proto_string, &ast_proto));
-  matcher_.reset(new ClifMatcher);
+  matcher_.reset(new ClifMatcher(__FILE__ ":" LOCAL_TOSTRING(__LINE__)));
   auto type_map = matcher_->BuildClifToClangTypeMap(ast_proto);
   std::string code = matcher_->builder_.BuildCode(&ast_proto, &type_map);
   EXPECT_TRUE(llvm::StringRef(code).contains("#include \"foo.h\""));

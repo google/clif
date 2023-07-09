@@ -34,6 +34,8 @@ I = utils.I
 
 _IMPORTMODULEPATTERN = r'module_path:(?P<module_path>.*)'
 
+CLIF_MATCHER_VERSION_STAMP_REQUIRED_MINIMUM = 531560963
+
 
 # Do a SWIG-like name mangling.
 def _generate_mangled_name_for_module(full_dotted_module_name: str) -> str:
@@ -153,9 +155,23 @@ class ModuleGenerator(object):
 
     Yields:
       Generated pybind11 bindings code.
+
+    Raises:
+      RuntimeError: When the CLIF matcher we are using is out of date.
     """
 
     assert self._codegen_info is not None, '_codegen_info should be initialized'
+    if (
+        ast.clif_matcher_version_stamp is None
+        or ast.clif_matcher_version_stamp
+        < CLIF_MATCHER_VERSION_STAMP_REQUIRED_MINIMUM
+    ):
+      raise RuntimeError(
+          'Incompatible clif_matcher_version_stamp'
+          f' ("{ast.clif_matcher_argv0}"):'
+          f' {ast.clif_matcher_version_stamp} (required minimum:'
+          f' {CLIF_MATCHER_VERSION_STAMP_REQUIRED_MINIMUM})'
+      )
 
     yield from self._generate_headlines()
 

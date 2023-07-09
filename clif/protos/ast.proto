@@ -28,7 +28,9 @@ message AST {
   repeated Macro macros = 7;      // Macro definitions to pass through.
   repeated Namemap namemaps = 8;  // Imported names.
   map<string, string> options = 9;  // OPTION statements.
+  // The next two are populated from the clif_matcher:
   optional int64 clif_matcher_version_stamp = 10;
+  optional string clif_matcher_argv0 = 11;
 }
 
 message Decl {

@@ -53,7 +53,7 @@ namespace clif {
 // ############################################################################
 //        PLEASE UPDATE WHEN THERE ARE NEW FEATURES OR BEHAVIOR CHANGES.
 // ############################################################################
-static constexpr std::int64_t kMatcherVersionStamp = 531560963;  // Use OCL
+static constexpr std::int64_t kMatcherVersionStamp = 546096150;  // Use OCL
 
 using protos::AST;
 using protos::ClassDecl;
@@ -180,7 +180,8 @@ class ClifMatcherTest;
 class ClifMatcher {
   friend class ClifMatcherTest;
  public:
-  ClifMatcher() = default;
+  explicit ClifMatcher(const char* clif_matcher_argv0)
+      : clif_matcher_argv0_(clif_matcher_argv0) {}
 
   // Main entry point and one-stop-shop for doing all the work. Does the
   // following in order:
@@ -550,6 +551,8 @@ class ClifMatcher {
     }
     return nullptr;
   }
+
+  std::string clif_matcher_argv0_;
 
   std::unique_ptr<TranslationUnitAST> ast_;
 

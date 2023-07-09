@@ -148,12 +148,14 @@ def GenerateForPybind11(messages, clif_hdr, proto_hdr):
 
 def GenerateFrom(messages, proto_filename, clif_hdr, proto_hdr):
   """Traverse ast and generate output files."""
-  clif_matcher_version_stamp = None  # Not implemented.
+  clif_matcher_argv0 = None
+  clif_matcher_version_stamp = None
   with open(FLAGS.header_out, 'w') as hout:
     gen.WriteTo(
         hout,
         gen.Headlines(
             proto_filename,
+            clif_matcher_argv0,
             clif_matcher_version_stamp,
             [proto_hdr, 'clif/python/postconv.h'],
         ),
@@ -165,6 +167,7 @@ def GenerateFrom(messages, proto_filename, clif_hdr, proto_hdr):
         cout,
         gen.Headlines(
             proto_filename,
+            clif_matcher_argv0,
             clif_matcher_version_stamp,
             [
                 'clif/python/runtime.h',
