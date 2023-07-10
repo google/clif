@@ -27,7 +27,7 @@
 #include <memory>
 
 #include "absl/container/btree_map.h"
-#include "absl/log/absl_log.h"
+#include "absl/log/log.h"
 #include "clif/backend/strutil.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/Mangle.h"
@@ -39,7 +39,11 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 
-#if LLVM_VERSION_MAJOR > 15
+#ifndef PYCLIF_LLVM_VERSION_MAJOR
+#define PYCLIF_LLVM_VERSION_MAJOR LLVM_VERSION_MAJOR
+#endif
+
+#if PYCLIF_LLVM_VERSION_MAJOR > 16
 #include "clang/Sema/EnterExpressionEvaluationContext.h"
 #endif
 
@@ -83,7 +87,7 @@ const std::string GetDeclNativeName(const Decl& decl) {
     case Decl::TYPE:     return decl.fdecl().name().cpp_name();
     case Decl::UNKNOWN:  return unknown_name;
   }
-  ABSL_LOG(FATAL) << "Unknown decl.decltype_(): " << decl.decltype_();
+  LOG(FATAL) << "Unknown decl.decltype_(): " << decl.decltype_();
 }
 
 std::string GetGloballyQualifiedName(const NamedDecl* decl) {
@@ -93,7 +97,7 @@ std::string GetGloballyQualifiedName(const NamedDecl* decl) {
 }
 
 static const char kConstToken[] = "const ";  // Trailing space is important.
-#if LLVM_VERSION_MAJOR < 14
+#if PYCLIF_LLVM_VERSION_MAJOR < 14
 static const char kCppCharArray[] = "const char [";
 #else
 static const char kCppCharArray[] = "const char[";
@@ -170,7 +174,7 @@ static std::string GetErrorCodeString(ClifErrorCode code) {
     case kMustUseResultIgnored:
       return ("Clif can not ignore ABSL_MUST_USE_RESULT return values.");
   }
-  ABSL_LOG(FATAL) << "Unknown ClifErrorCode: " << code;
+  LOG(FATAL) << "Unknown ClifErrorCode: " << code;
 }
 
 static void ReportMultimatchError(
@@ -750,7 +754,7 @@ bool ClifMatcher::AreAssignableTypes(const QualType from_type,
       clang::Sema::ExpressionEvaluationContext::Unevaluated);
 
   InitializedEntity entity = InitializedEntity::InitializeResult(loc, to_type
-#if LLVM_VERSION_MAJOR < 14
+#if PYCLIF_LLVM_VERSION_MAJOR < 14
       , false
 #endif
   );
@@ -2957,7 +2961,7 @@ const clang::FunctionDecl* ClifMatcher::SpecializeFunctionTemplate(
       nullptr,  // No explicitly listed template arguments.
       arg_ptrs, specialized_decl, info,
       false,  // No partial overloading
-#if LLVM_VERSION_MAJOR > 16
+#if PYCLIF_LLVM_VERSION_MAJOR > 16
       /*AggregateDeductionCandidate=*/false,
 #endif
       [&](clang::ArrayRef<QualType> param_types) {

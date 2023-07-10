@@ -61,7 +61,7 @@ cc_library(
         ":strutil",
         "//clif/protos:ast_cc_proto",
         "@com_google_absl//absl/container:btree",
-        "@com_google_absl//absl/log:absl_log",
+        "@com_google_absl//absl/log",
         "@com_google_googletest//:gtest_prod",
         "@llvm-project//clang:ast",
         "@llvm-project//clang:sema",
