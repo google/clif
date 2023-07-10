@@ -33,13 +33,20 @@ def _convert_ptr_to_ref(var_decl: ast_pb2.VarDecl) -> bool:
   )
 
 
-def _generate_self_param_with_type(
+def _generate_self_param_type(
     var_decl: ast_pb2.VarDecl,
     class_decl: ast_pb2.ClassDecl) -> str:
   if var_decl.is_extend_variable:
     assert var_decl.cpp_get.params
-    return f'{var_decl.cpp_get.params[0].cpp_exact_type} self'
-  return f'{class_decl.name.cpp_name} &self'
+    return var_decl.cpp_get.params[0].cpp_exact_type
+  return f'{class_decl.name.cpp_name}&'
+
+
+def _is_var_decl_type_cpp_copyable(var_decl: ast_pb2.VarDecl) -> bool:
+  if not var_decl.cpp_get.returns:
+    return var_decl.type.cpp_copyable
+  else:
+    return var_decl.cpp_get.returns[0].type.cpp_copyable
 
 
 def _generate_cpp_get(
@@ -65,11 +72,30 @@ def _generate_cpp_get(
   return_value_policy_pack = (
       f'py::return_value_policy_pack({return_value_policy})'
   )
-  self_param_with_type = _generate_self_param_with_type(var_decl, class_decl)
-  if generate_comma:
-    yield I + f'py::cpp_function([]({self_param_with_type}) {{'
+
+  if not _is_var_decl_type_cpp_copyable(var_decl):
+    yield from _generate_cpp_get_for_uncopyable_type(
+        var_decl, class_decl, return_value_policy_pack, ret,
+        generate_comma=generate_comma)
   else:
-    yield I + f'[]({self_param_with_type}) {{'
+    yield from _generate_cpp_get_for_copyable_type(
+        var_decl, class_decl, return_value_policy_pack, ret,
+        generate_comma=generate_comma)
+
+
+def _generate_cpp_get_for_copyable_type(
+    var_decl: ast_pb2.VarDecl,
+    class_decl: ast_pb2.ClassDecl,
+    return_value_policy_pack: str,
+    ret: str,
+    generate_comma: bool = False,
+) -> Generator[str, None, None]:
+  """Generate lambda expressions for getters when the type is copyable."""
+  self_param_type = _generate_self_param_type(var_decl, class_decl)
+  if generate_comma:
+    yield I + f'py::cpp_function([]({self_param_type} self) {{'
+  else:
+    yield I + f'[]({self_param_type} self) {{'
   yield I + I + f'return {ret};'
   if generate_comma:
     yield I + f'}}, {return_value_policy_pack}),'
@@ -77,19 +103,49 @@ def _generate_cpp_get(
     yield I + f'}}, {return_value_policy_pack});'
 
 
+def _generate_cpp_get_for_uncopyable_type(
+    var_decl: ast_pb2.VarDecl,
+    class_decl: ast_pb2.ClassDecl,
+    return_value_policy_pack: str,
+    ret: str,
+    generate_comma: bool = False,
+) -> Generator[str, None, None]:
+  """Generate lambda expressions for getters when the type is uncopyable."""
+  if generate_comma:
+    yield I + 'py::cpp_function([](py::object self_py) -> py::object {'
+  else:
+    yield I + '[](py::object self_py) -> py::object {'
+  self_param_type = _generate_self_param_type(var_decl, class_decl)
+  yield I + I + f'{self_param_type} self = self_py.cast<{self_param_type}>();'
+  yield I + I + (f'return py::cast({ret}, {return_value_policy_pack}, '
+                 'self_py);')
+  if generate_comma:
+    yield I + '}),'
+  else:
+    yield I + '});'
+
+
 def _generate_cpp_set(
     var_decl: ast_pb2.VarDecl,
     class_decl: ast_pb2.ClassDecl,
+    generate_comma: bool = False,
 ) -> Generator[str, None, None]:
   """Generate lambda expressions for setters."""
-  yield I + (
-      f'[]({class_decl.name.cpp_name}& self, {var_decl.type.cpp_type} v) {{'
-  )
+  if generate_comma:
+    yield I + (f'py::cpp_function([]({class_decl.name.cpp_name}& self, '
+               f'{var_decl.type.cpp_type} v) {{')
+  else:
+    yield I + (
+        f'[]({class_decl.name.cpp_name}& self, {var_decl.type.cpp_type} v) {{'
+    )
   value = 'v'
   if var_decl.type.cpp_type.startswith('::std::unique_ptr'):
     value = 'std::move(v)'
   yield I + I + f'self.{var_decl.name.cpp_name} = {value};'
-  yield I + '});'
+  if generate_comma:
+    yield I + '}));'
+  else:
+    yield I + '});'
 
 
 def generate_from(
@@ -107,7 +163,7 @@ def generate_from(
     if _convert_ptr_to_ref(var_decl):
       yield f'{class_name}.def_property("{var_decl.name.native}", '
       yield from _generate_cpp_get(var_decl, class_decl, generate_comma=True)
-      yield from _generate_cpp_set(var_decl, class_decl)
+      yield from _generate_cpp_set(var_decl, class_decl, generate_comma=True)
     else:
       return_value_policy = function_lib.generate_return_value_policy_for_type(
           var_decl.type
