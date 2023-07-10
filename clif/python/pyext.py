@@ -94,6 +94,8 @@ STATIC_LINKING_PREFIX = ''  # Disable static linking.
 _ClassNamespace = lambda pyname: 'py' + pyname  # pylint: disable=invalid-name
 _ITER_KW = '__iter__'
 
+CLIF_MATCHER_VERSION_STAMP_REQUIRED_MINIMUM = 531560963
+
 
 class Context(object):
   """Reflection of C++ [nested] class/struct."""
@@ -677,6 +679,17 @@ class Module(object):
 
   def GenerateBase(self, ast, more_headers):
     """Extension module generation."""
+    if (
+        ast.clif_matcher_version_stamp is None
+        or ast.clif_matcher_version_stamp
+        < CLIF_MATCHER_VERSION_STAMP_REQUIRED_MINIMUM
+    ):
+      raise RuntimeError(
+          'Incompatible clif_matcher_version_stamp'
+          f' ("{ast.clif_matcher_argv0}"):'
+          f' {ast.clif_matcher_version_stamp} (required minimum:'
+          f' {CLIF_MATCHER_VERSION_STAMP_REQUIRED_MINIMUM})'
+      )
     ast_manipulations.MoveExtendsBackIntoClassesInPlace(ast)
     self.init += ast.extra_init
     for s in gen.Headlines(
