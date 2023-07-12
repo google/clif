@@ -21,6 +21,7 @@ cc_library(
     hdrs = ["pickle_support.h"],
     visibility = ["//visibility:public"],
     deps = [
+        "@com_google_absl//absl/log:check",
         "@python_runtime//:python_headers",
     ],
 )

@@ -14,6 +14,8 @@
 
 #include <Python.h>
 
+#include "absl/log/check.h"
+
 namespace clif {
 
 namespace {
@@ -30,10 +32,7 @@ bool ClsGetStateIsBaseObjectGetstate(PyTypeObject*) { return false; }
 bool ClsGetStateIsBaseObjectGetstate(PyTypeObject* cls) {
   PyObject* base_getstate =
       PyObject_GetAttrString((PyObject*)&PyBaseObject_Type, "__getstate__");
-  if (base_getstate == nullptr) {
-    PyErr_Clear();
-    return false;
-  }
+  CHECK(base_getstate != nullptr);
   PyObject* cls_getstate =
       PyObject_GetAttrString((PyObject*)cls, "__getstate__");
   if (cls_getstate == nullptr) {
