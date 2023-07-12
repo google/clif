@@ -16,7 +16,43 @@
 
 namespace clif {
 
+namespace {
+
+#if PY_VERSION_HEX < 0x030B0000
+
+bool ClsGetStateIsBaseObjectGetstate(PyTypeObject*) { return false; }
+
+#else
+
+// The object.__getstate__() added with
+// https://github.com/python/cpython/pull/2821
+// is not suitable for extension types.
+bool ClsGetStateIsBaseObjectGetstate(PyTypeObject* cls) {
+  PyObject* base_getstate =
+      PyObject_GetAttrString((PyObject*)&PyBaseObject_Type, "__getstate__");
+  if (base_getstate == nullptr) {
+    PyErr_Clear();
+    return false;
+  }
+  PyObject* cls_getstate =
+      PyObject_GetAttrString((PyObject*)cls, "__getstate__");
+  if (cls_getstate == nullptr) {
+    PyErr_Clear();
+    Py_DECREF(base_getstate);
+    return false;
+  }
+  bool retval = (cls_getstate == base_getstate);
+  Py_DECREF(cls_getstate);
+  Py_DECREF(base_getstate);
+  return retval;
+}
+
+#endif
+
+}  // namespace
+
 PyObject* ReduceExCore(PyObject* self, const int protocol) {
+  PyTypeObject* cls = Py_TYPE(self);
   // Similar to time-tested approach used in Boost.Python:
   // https://www.boost.org/doc/libs/1_55_0/libs/python/doc/v2/pickle.html
   // https://github.com/boostorg/python/blob/develop/src/object/pickle_support.cpp
@@ -24,15 +60,17 @@ PyObject* ReduceExCore(PyObject* self, const int protocol) {
   if (getinitargs == nullptr) {
     PyErr_Clear();
   }
-  PyObject* getstate = PyObject_GetAttrString(self, "__getstate__");
-  if (getstate == nullptr) {
-    PyErr_Clear();
+  PyObject* getstate = nullptr;
+  if (!ClsGetStateIsBaseObjectGetstate(cls)) {
+    getstate = PyObject_GetAttrString(self, "__getstate__");
+    if (getstate == nullptr) {
+      PyErr_Clear();
+    }
   }
   PyObject* setstate = PyObject_GetAttrString(self, "__setstate__");
   if (setstate == nullptr) {
     PyErr_Clear();
   }
-  PyTypeObject* cls = Py_TYPE(self);
   PyObject* initargs_or_empty_tuple = nullptr;
   PyObject* empty_tuple = nullptr;
   PyObject* initargs = nullptr;

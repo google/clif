@@ -214,7 +214,7 @@ def generate_return_value_policy_for_type(
     for child_param_type in param_type.params:
       return_value_policy_list.append(
           generate_return_value_policy_for_type(
-              child_param_type, is_callable_arg
+              child_param_type, is_callable_arg, reference_internal
           )
       )
     return_value_policy_str = ', '.join(return_value_policy_list)
