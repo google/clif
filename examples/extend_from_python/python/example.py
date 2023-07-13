@@ -26,7 +26,7 @@ if TYPE_CHECKING:  # b/161575039
 
 
 @type_customization.extend(ext.MyClass)
-class _(object):
+class _:
   """Anonymous helper class."""
 
   def g(self):

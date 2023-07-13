@@ -81,12 +81,12 @@ class _:
 
 
 @type_customization.extend(extend_methods.VirtualBaseHolder)
-class _(object):
+class _:
   """Added to VirtualBaseHolder."""
 
 
 @type_customization.extend(extend_methods.ConcreteHolder)
-class NamedFromClass(object):
+class NamedFromClass:
 
   def NfcInstanceMethod(self, prefix):
     return ':'.join(
@@ -109,7 +109,7 @@ class NamedFromClass(object):
     self.Set(value + 11)
 
 
-class NfcInstanceMethodOverride(object):
+class NfcInstanceMethodOverride:
 
   def NfcInstanceMethod(self, prefix):
     return ':'.join(
@@ -149,7 +149,7 @@ else:
   _base_old_style_failure_test_error = None
 
 
-class _BaseBaseFailureTestBase(object):
+class _BaseBaseFailureTestBase:
   pass
 
 

@@ -19,7 +19,7 @@ from clif.testing.python._pickle_compatibility import *  # pylint: disable=wildc
 
 
 @type_customization.extend(StoreTwoUsingExtend)  # pylint: disable=undefined-variable
-class _(object):
+class _:
 
   def __reduce_ex__(self, protocol):
     return (self.__class__, (self.Get(0), self.Get(1)))

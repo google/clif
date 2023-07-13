@@ -101,7 +101,7 @@ def _read_include(input_stream, fname, prefix, typetable, capsules, interfaces,
       continue
 
 
-class Postprocessor(object):
+class Postprocessor:
   """Process parsed IR."""
 
   def __init__(self, config_headers=None, include_paths=('.',), preamble=''):
@@ -927,7 +927,7 @@ class Postprocessor(object):
         _set_name(p.name, t.name)
 
 
-class _TypeTable(object):
+class _TypeTable:
   """Manage the Python -> C++ type name mappings.
 
   Normally, the Python -> C++ mapping is simple: replace '.' with '::'. However,
@@ -1150,7 +1150,7 @@ class _TypeTable(object):
     return '_TypeTable(types=\n{types}\n)'.format(types=types)
 
 
-class _TypeEntry(object):
+class _TypeEntry:
   """Type mapping information for use by _TypeTable.
 
   This is private to _TypeTable; _TypeTable has the public APIs for correctly

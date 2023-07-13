@@ -43,7 +43,7 @@ def _generate_mangled_name_for_module(full_dotted_module_name: str) -> str:
   return full_dotted_module_name.replace('_', '__').replace('.', '_')
 
 
-class ModuleGenerator(object):
+class ModuleGenerator:
   """A class that generates pybind11 bindings code from CLIF ast."""
 
   def __init__(self, ast: ast_pb2.AST, module_path: str, header_path: str,

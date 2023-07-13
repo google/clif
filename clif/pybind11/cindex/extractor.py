@@ -28,7 +28,7 @@ def _get_pointee_name(type_name: Text) -> Text:
   return type_name
 
 
-class Type(object):
+class Type:
   """Wraps a clang or a CLIF type."""
 
   def __init__(self, name: Text, is_pointer: bool, is_reference: bool,
@@ -115,7 +115,7 @@ class Type(object):
       return ''
 
 
-class Function(object):
+class Function:
   """Wraps a clang or a CLIF Function."""
 
   def __init__(self, fq_name: Text, is_pure_virtual: bool,
@@ -191,7 +191,7 @@ class Function(object):
     self._is_overloaded = is_overloaded
 
 
-class Module(object):
+class Module:
   """Wraps a clang AST."""
 
   def __init__(self, tu: TranslationUnit):
