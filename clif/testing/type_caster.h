@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <optional>
+#include <string>
 #include <variant>
 #include <vector>
 
@@ -71,6 +72,11 @@ inline int get_value_pybind11_ignore(const ValueHolderPybind11Ignore& vh) {
 
 inline int get_value_template(const ValueHolderTemplate<int>& vh) {
   return vh.value;
+}
+
+inline ValueHolderTemplate<std::string> make_value_holder_string(
+    const std::string& v) {
+  return ValueHolderTemplate<std::string>(v);
 }
 
 inline int get_value_template_one_param(

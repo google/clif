@@ -33,6 +33,9 @@ from "clif/testing/python/type_caster_clif_aux.h":
     def get_value_template_one_param(vh: ValueHolderTemplateParameterPack<int>) -> int
     def get_value_template_two_params(vh: ValueHolderTemplateParameterPack<int, int>) -> int
 
+    def `make_value_holder_string` as make_value_holder_str(v: str) -> ValueHolderTemplate<str>
+    def `make_value_holder_string` as make_value_holder_bytes(v: str) -> ValueHolderTemplate<bytes>
+
     @do_not_release_gil
     def get_refcount_from_raw_ptr() -> int
     @do_not_release_gil

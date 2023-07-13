@@ -95,12 +95,13 @@ inline PyObject* Clif_PyObjFrom(const ValueHolderPybind11Ignore& c,
 // CLIF use `::clif_testing::ValueHolderTemplate` as ValueHolderTemplate, NumTemplateParameter:1
 template <typename T>
 inline bool Clif_PyObjAs(PyObject* obj, ValueHolderTemplate<T>* c) {
-  PyObject *tmp = PyNumber_Long(obj);
-  if (!tmp) {
-    return false;
-  }
-  c->value = PyLong_AsLong(tmp) + 3;
-  return true;
+  return clif::Clif_PyObjAs(obj, &c->value);
+}
+
+template <typename T>
+inline PyObject* Clif_PyObjFrom(const ValueHolderTemplate<T>& c,
+                                const clif::py::PostConv& pc) {
+  return clif::Clif_PyObjFrom(c.value, pc.Get(0));
 }
 
 // NOLINTNEXTLINE

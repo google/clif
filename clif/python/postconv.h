@@ -53,16 +53,20 @@ class PostConv {
   typedef std::vector<PostConv> Array;
   PyObject* Apply(PyObject* x) const {
     if (noop_) return x;
+    if (f_ == nullptr) return x;
     return f_(x);
   }
   const PostConv& Get(Array::size_type i) const {
     if (noop_) return getNoop();
+    if (c_.empty()) return getNoop();
     return c_.at(i);
   }
   PostConv() : noop_(true), f_(nullptr) {}
   PostConv(Func f) : noop_(false), f_(f ? f : postconv::PASS) {}
   PostConv(std::initializer_list<PostConv> lst)
       : noop_(!lst.size()), f_(nullptr), c_(lst) {}
+  PostConv(const std::vector<PostConv>& vec)
+      : noop_(vec.empty()), f_(nullptr), c_(vec) {}
 
   bool isMarkedNonRaising() const { return f_ == postconv::MarkedNonRaising; }
 

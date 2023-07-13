@@ -216,6 +216,10 @@ bool Clif_PyObjAs(PyObject*, std::string_view*);
 
 PyObject* UnicodeFromBytes(PyObject*);
 
+// If the input is bytes, convert it to unicode. Otherwise just return the
+// input object.
+PyObject* UnicodeFromBytesIfPossible(PyObject*);
+
 // Reusing non-const T* conversion for const T*.
 template <typename T>
 bool Clif_PyObjAs(PyObject* py, const T** c) {

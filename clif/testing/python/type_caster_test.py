@@ -57,9 +57,18 @@ class TypeCasterTest(parameterized.TestCase):
       type_caster.get_value_pybind11_ignore(10)
 
   def test_template(self):
-    self.assertEqual(type_caster.get_value_template(10), 13)
+    self.assertEqual(type_caster.get_value_template(10), 10)
     self.assertEqual(type_caster.get_value_template_one_param(10), 14)
     self.assertEqual(type_caster.get_value_template_two_params(10), 15)
+
+  def test_clif_type_caster_with_str_bytes(self):
+    self.assertEqual(type_caster.make_value_holder_str('abc'), 'abc')
+    self.assertEqual(type_caster.make_value_holder_bytes('abc'), b'abc')
+    expected_error = (
+        TypeError if 'pybind11' in type_caster.__doc__ else UnicodeDecodeError)
+    with self.assertRaises(expected_error):
+      type_caster.make_value_holder_str(b'\x80')
+    self.assertEqual(type_caster.make_value_holder_bytes(b'\x80'), b'\x80')
 
   @parameterized.parameters(
       type_caster.get_refcount_from_raw_ptr,

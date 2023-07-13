@@ -39,6 +39,15 @@ PyObject* UnicodeFromBytes(PyObject* b) {
   return u;
 }
 
+PyObject* UnicodeFromBytesIfPossible(PyObject* b) {
+  if (b == nullptr || !PyBytes_Check(b)) {
+    return b;
+  }
+  PyObject* u = PyUnicode_FromStringAndSize(PyBytes_AS_STRING(b),
+                                            PyBytes_GET_SIZE(b));
+  Py_DECREF(b);
+  return u;
+}
 
 //// From Python conversions.
 

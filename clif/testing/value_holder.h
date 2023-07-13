@@ -60,9 +60,9 @@ class ValueHolderPybind11Ignore {
 template <typename T>
 class ValueHolderTemplate {
  public:
-  ValueHolderTemplate(): value(0) { }
-  ValueHolderTemplate(int v): value(v) { }
-  int value;
+  ValueHolderTemplate() = default;
+  ValueHolderTemplate(T v): value(v) { }
+  T value;
 };
 
 template <typename... T>

@@ -26,6 +26,7 @@
 
 #include "clif/python/postconv.h"
 #include "clif/python/pyobject_ptr_conv.h"
+#include "clif/python/types.h"
 
 namespace clif_pybind11 {
 
@@ -108,64 +109,73 @@ constexpr bool HasPyObjFrom() {
 
 pybind11::object ReduceExImpl(pybind11::handle self, int protocol);
 
+clif::py::PostConv PostConvFromReturnValuePolicyPack(
+    const pybind11::return_value_policy_pack& rvpp);
+
 }  // namespace clif_pybind11
 
 namespace pybind11 {
 namespace detail {
 
-#define CLIF_TYPE_CASTER_CAST                                              \
-  template <class T = Type,                                                \
-            std::enable_if_t<clif_pybind11::HasPyObjFrom<T>(), int> = 0>   \
-  static handle cast(Type& src, return_value_policy /* policy */,          \
-                     handle /* parent */) {                                \
-    using ::clif::Clif_PyObjFrom;                                          \
-    return Clif_PyObjFrom(std::move(src), {});                             \
-  }                                                                        \
-                                                                           \
-  template <class T = Type,                                                \
-            std::enable_if_t<clif_pybind11::HasPyObjFrom<T>(), int> = 0>   \
-  static handle cast(const Type& src, return_value_policy /* policy */,    \
-                     handle /* parent */) {                                \
-    using ::clif::Clif_PyObjFrom;                                          \
-    return Clif_PyObjFrom(std::move(src), {});                             \
-  }                                                                        \
-                                                                           \
-  template <class T = Type,                                                \
-            std::enable_if_t<clif_pybind11::HasPyObjFrom<T>(), int> = 0>   \
-  static handle cast(Type&& src, return_value_policy /* policy */,         \
-                     handle /* parent */) {                                \
-    using ::clif::Clif_PyObjFrom;                                          \
-    return Clif_PyObjFrom(std::move(src), {});                             \
-  }                                                                        \
-                                                                           \
-  template <typename T = Type,                                             \
-            std::enable_if_t<clif_pybind11::HasPyObjFrom<T*>(), int> = 0>  \
-  static handle cast(Type* src, return_value_policy /* policy */,          \
-                     handle /* parent */) {                                \
-    using ::clif::Clif_PyObjFrom;                                          \
-    return Clif_PyObjFrom(src, {});                                        \
-  }                                                                        \
-                                                                           \
-  template <typename T = Type,                                             \
-            std::enable_if_t<clif_pybind11::HasPyObjFrom<T*>(), int> = 0>  \
-  static handle cast(const Type* src, return_value_policy /* policy */,    \
-                     handle /* parent */) {                                \
-    using ::clif::Clif_PyObjFrom;                                          \
-    return Clif_PyObjFrom(src, {});                                        \
-  }                                                                        \
-                                                                           \
-  template <typename T = Type,                                             \
-            std::enable_if_t<clif_pybind11::HasPyObjFrom<T**>(), int> = 0> \
-  static handle cast(Type** src, return_value_policy /* policy */,         \
-                     handle /* parent */) {                                \
-    using ::clif::Clif_PyObjFrom;                                          \
-    return Clif_PyObjFrom(src, {});                                        \
+#define CLIF_TYPE_CASTER_CAST                                               \
+  template <class T = Type,                                                 \
+            std::enable_if_t<clif_pybind11::HasPyObjFrom<T>(), int> = 0>    \
+  static handle cast(Type& src, const return_value_policy_pack& rvpp,       \
+                     handle /* parent */) {                                 \
+    using ::clif::Clif_PyObjFrom;                                           \
+    return Clif_PyObjFrom(std::move(src),                                   \
+        clif_pybind11::PostConvFromReturnValuePolicyPack(rvpp));            \
+  }                                                                         \
+                                                                            \
+  template <class T = Type,                                                 \
+            std::enable_if_t<clif_pybind11::HasPyObjFrom<T>(), int> = 0>    \
+  static handle cast(const Type& src, const return_value_policy_pack& rvpp, \
+                     handle /* parent */) {                                 \
+    using ::clif::Clif_PyObjFrom;                                           \
+    return Clif_PyObjFrom(std::move(src),                                   \
+        clif_pybind11::PostConvFromReturnValuePolicyPack(rvpp));            \
+  }                                                                         \
+                                                                            \
+  template <class T = Type,                                                 \
+            std::enable_if_t<clif_pybind11::HasPyObjFrom<T>(), int> = 0>    \
+  static handle cast(Type&& src, const return_value_policy_pack& rvpp,      \
+                     handle /* parent */) {                                 \
+    using ::clif::Clif_PyObjFrom;                                           \
+    return Clif_PyObjFrom(std::move(src),                                   \
+        clif_pybind11::PostConvFromReturnValuePolicyPack(rvpp));            \
+  }                                                                         \
+                                                                            \
+  template <typename T = Type,                                              \
+            std::enable_if_t<clif_pybind11::HasPyObjFrom<T*>(), int> = 0>   \
+  static handle cast(Type* src, const return_value_policy_pack& rvpp,       \
+                     handle /* parent */) {                                 \
+    using ::clif::Clif_PyObjFrom;                                           \
+    return Clif_PyObjFrom(src,                                              \
+        clif_pybind11::PostConvFromReturnValuePolicyPack(rvpp));            \
+  }                                                                         \
+                                                                            \
+  template <typename T = Type,                                              \
+            std::enable_if_t<clif_pybind11::HasPyObjFrom<T*>(), int> = 0>   \
+  static handle cast(const Type* src, const return_value_policy_pack& rvpp, \
+                     handle /* parent */) {                                 \
+    using ::clif::Clif_PyObjFrom;                                           \
+    return Clif_PyObjFrom(src,                                              \
+        clif_pybind11::PostConvFromReturnValuePolicyPack(rvpp));            \
+  }                                                                         \
+                                                                            \
+  template <typename T = Type,                                              \
+            std::enable_if_t<clif_pybind11::HasPyObjFrom<T**>(), int> = 0>  \
+  static handle cast(Type** src, const return_value_policy_pack& rvpp,      \
+                     handle /* parent */) {                                 \
+    using ::clif::Clif_PyObjFrom;                                           \
+    return Clif_PyObjFrom(src,                                              \
+        clif_pybind11::PostConvFromReturnValuePolicyPack(rvpp));            \
   }
 
 template <class Type, typename SFINAE = void>
 struct clif_type_caster {
  public:
-  PYBIND11_TYPE_CASTER(Type, const_name<Type>());
+  PYBIND11_TYPE_CASTER_RVPP(Type, const_name<Type>());
 
   CLIF_TYPE_CASTER_CAST
 
