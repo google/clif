@@ -42,7 +42,7 @@ def Namespace(typedef):
   return typedef.namespace or ''  # Collapse None -> ''.
 
 
-class TypeDef(object):
+class TypeDef:
   """C++ class as some Python object."""
   _genclifuse = False  # Generate '// CLIF use' in the header file.
 

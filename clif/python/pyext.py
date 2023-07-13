@@ -97,7 +97,7 @@ _ITER_KW = '__iter__'
 CLIF_MATCHER_VERSION_STAMP_REQUIRED_MINIMUM = 531560963
 
 
-class Context(object):
+class Context:
   """Reflection of C++ [nested] class/struct."""
   WRAPPER_CLASS_NAME = 'wrapper'
 
@@ -117,7 +117,7 @@ def _GetCppObj(get='cpp', py='self'):
   return 'reinterpret_cast<%s*>(%s)->%s' % (WRAPPER_CLASS_NAME, py, get)
 
 
-class Module(object):
+class Module:
   """Extended context for module namespace."""
 
   def __init__(self,

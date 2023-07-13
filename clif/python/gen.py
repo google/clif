@@ -163,7 +163,7 @@ def _DefTable(ctype, cname, lines):
   yield '};'
 
 
-class _MethodDef(object):
+class _MethodDef:
   name = 'MethodsStaticAlloc'
 
   def __call__(self, methods):
@@ -174,7 +174,7 @@ class _MethodDef(object):
 MethodDef = _MethodDef()  # pylint: disable=invalid-name
 
 
-class _GetSetDef(object):
+class _GetSetDef:
   # pylint: disable=missing-class-docstring
   name = 'Properties'
 
@@ -968,7 +968,7 @@ def CastAsCapsule(wrapped_cpp, pointer_name, wrapper):
   yield '}'
 
 
-class _NewIter(object):
+class _NewIter:
   """Generate the new_iter function."""
   name = 'new_iter'
 
@@ -986,7 +986,7 @@ class _NewIter(object):
 NewIter = _NewIter()  # pylint: disable=invalid-name
 
 
-class _IterNext(object):
+class _IterNext:
   """Generate the iternext function."""
   name = 'iternext'
 

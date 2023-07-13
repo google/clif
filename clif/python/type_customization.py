@@ -1,7 +1,7 @@
 """Decorator for adding attributes (incl. methods) into extension classes."""
 
 
-class _EmptyFromClass(object):
+class _EmptyFromClass:
   pass
 
 _EMPTY_FROM_CLASS_DICT_KEYS = frozenset(_EmptyFromClass.__dict__)

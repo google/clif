@@ -131,7 +131,7 @@ Bar = ext.Bar
 
 
 @type_customization.extend(ext.Bar):
-class _(object):
+class _:
 
   def foo(self, ...):
     ...
