@@ -87,6 +87,16 @@ class T4Test(absltest.TestCase):
     self.assertIsInstance(actual.scalar_bytes_val, bytes)
     self.assertIsInstance(actual.repeated_bytes_val[0], bytes)
 
+  def testModifyProtoInPlace(self):
+    pb = nested_pb2.Outer.Inner()
+    pb.scalar_bytes_val = b'scalar'
+    self.assertEqual(pb.scalar_bytes_val, b'scalar')
+    t4.ModifyProtoInPlace(pb)
+    # Though the C++ function takes a pointer to the input proto, the generated
+    # pybind11 code makes a copy of it, therefore the changes on the C++ side do
+    # not reflect in Python.
+    self.assertEqual(pb.scalar_bytes_val, b'scalar')
+
 
 if __name__ == '__main__':
   absltest.main()

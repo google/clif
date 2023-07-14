@@ -61,5 +61,10 @@ inline std::shared_ptr<Decl> GetSharedPtr(const Decl& pb) {
 }
 
 inline Outer::Inner ReturnProto(const Outer::Inner& pb) { return pb; }
+
+inline void ModifyProtoInPlace(Outer::Inner* pb) {
+  pb->set_scalar_bytes_val("abcd");
+}
+
 }  // namespace clif_testing
 #endif  // CLIF_TESTING_T4_H_

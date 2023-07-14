@@ -67,7 +67,15 @@ class Parameter:
     elif is_cpp_set(ptype):
       self.cpp_type = 'py::iterable'
       self.function_argument = f'std::move({self.gen_name}_)'
-    elif not ptype.cpp_raw_pointer:
+    elif ptype.cpp_raw_pointer:
+      if (not ptype.cpp_toptr_conversion and ctype.endswith('*')
+          and ptype.cpp_has_public_dtor and not ptype.cpp_abstract
+          and ptype.cpp_has_def_ctor):
+        # Create a copy on stack and pass its address.
+        # For compatibility with the original C API code generator.
+        self.cpp_type = ctype[:-1]
+        self.function_argument = f'&{param_name}'
+    else:
       # T, [const] T&
       if ptype.cpp_toptr_conversion:
         self.cpp_type = f'{ctype}*'
