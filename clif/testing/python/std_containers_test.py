@@ -96,6 +96,17 @@ class StdContainersTest(parameterized.TestCase):
     self.assertEqual(capitals[1], ('OR', 'Salem'))
     self.assertEqual(capitals[2], ('WA', 'Olympia'))
 
+  def testConcatAllListListStr(self):
+    f = std_containers.ConcatAllListListStr
+    self.assertEqual(f([]), '')
+    self.assertEqual(f([[]]), '$')
+    self.assertEqual(f([[], []]), '$$')
+    self.assertEqual(f([['a']]), 'a,$')
+    self.assertEqual(f([['a'], ['b']]), 'a,$b,$')
+    self.assertEqual(f([['a', 'b']]), 'a,b,$')
+    with self.assertRaises(TypeError):
+      f([-1])
+
   def testMatrixSum(self):
     a = [[1, 2, 3], [3, 2, 1]]
     b = [[4, 3, 2], [2, 3, 4]]
