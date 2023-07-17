@@ -418,9 +418,23 @@ bool PyObjectTypeIsConvertibleToStdSet(PyObject* obj) {
 }
 
 bool PyObjectTypeIsConvertibleToStdMap(PyObject* obj) {
-  return (PyDict_Check(obj) != 0) ||
-         ((PyMapping_Check(obj) != 0) &&
-          (PyObject_HasAttrString(obj, "items") != 0));
+  if (PyDict_Check(obj)) {
+    return true;
+  }
+  // Implicit requirement in the conditions below:
+  // A type with `.__getitem__()` & `.items()` methods must implement these
+  // to be compatible with https://docs.python.org/3/c-api/mapping.html
+  if (PyMapping_Check(obj) == 0) {
+    return false;
+  }
+  PyObject* items = PyObject_GetAttrString(obj, "items");
+  if (items == nullptr) {
+    PyErr_Clear();
+    return false;
+  }
+  bool is_convertible = (PyCallable_Check(items) != 0);
+  Py_DECREF(items);
+  return is_convertible;
 }
 
 }  // namespace clif
