@@ -227,6 +227,10 @@ struct TestExtendCtxMgr {
   int value;
 };
 
+inline void python_exception_in_function() {
+  PyErr_SetString(PyExc_ValueError, "Error in python_exception_in_function");
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_LAMBDA_EXPRESSIONS_H_

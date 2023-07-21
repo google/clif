@@ -125,6 +125,13 @@ class LambdaExpressionsTest(parameterized.TestCase):
     with lambda_expressions.TestExtendCtxMgr() as obj:
       self.assertEqual(obj.value, 10)
 
+  def test_cpp_function_set_python_exception(self):
+    expected_exception_type = (
+        ValueError if 'pybind11' in lambda_expressions.__doc__
+        else SystemError)
+    with self.assertRaises(expected_exception_type):
+      lambda_expressions.python_exception_in_function()
+
 
 @parameterized.parameters(
     ([1, 2, 3],),

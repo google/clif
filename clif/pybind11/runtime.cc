@@ -27,6 +27,20 @@ Py_ssize_t item_index(Py_ssize_t idx, Py_ssize_t length) {
   return idx < 0 ? idx + length : idx;
 }
 
+void ThrowErrorAlreadySetIfPythonErrorOccurred() {
+  if (PyErr_Occurred()) {
+    throw pybind11::error_already_set();
+  }
+}
+
+bool ThrowErrorAlreadySetIfFalse(bool success) {
+  ThrowErrorAlreadySetIfPythonErrorOccurred();
+  if (!success) {
+    throw pybind11::error_already_set();
+  }
+  return true;
+}
+
 }  // namespace clif
 
 namespace clif_pybind11 {

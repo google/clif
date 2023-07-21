@@ -285,6 +285,32 @@ inline PyObject* Clif_PyObjFrom(const ValueHolderOnlySharedPtrConversion& c,
   return clif::Clif_PyObjFrom(c.value, {});
 }
 
+// NOLINTBEGIN
+// CLIF use `::clif_testing::PythonErrorInConversions` as PythonErrorInConversions
+// NOLINTEND
+inline bool Clif_PyObjAs(PyObject* obj, PythonErrorInConversions* c) {
+  PyObject *tmp = PyNumber_Long(obj);
+  if (!tmp) {
+    return false;
+  }
+  int value = PyLong_AsLong(tmp);
+  if (value < 0) {
+    PyErr_SetString(PyExc_ValueError, "Error in Clif_PyObjAs");
+    return false;
+  }
+  c->value = value;
+  return true;
+}
+
+inline PyObject* Clif_PyObjFrom(const PythonErrorInConversions& c,
+                                const clif::py::PostConv& pc) {
+  if (c.value < 0) {
+    PyErr_SetString(PyExc_ValueError, "Error in Clif_PyObjFrom");
+    return nullptr;
+  }
+  return clif::Clif_PyObjFrom(c.value, {});
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_CLIF_CONVERSION_H_
