@@ -61,12 +61,6 @@ class Parameter:
     # unique_ptr<T>, shared_ptr<T>
     elif is_smart_ptr:
       self.function_argument = f'std::move({self.gen_name})'
-    elif is_cpp_vector(ptype):
-      self.cpp_type = 'py::iterable'
-      self.function_argument = f'std::move({self.gen_name}_)'
-    elif is_cpp_set(ptype):
-      self.cpp_type = 'py::iterable'
-      self.function_argument = f'std::move({self.gen_name}_)'
     elif ptype.cpp_raw_pointer:
       if (not ptype.cpp_toptr_conversion and ctype.endswith('*')
           and ptype.cpp_has_public_dtor and not ptype.cpp_abstract
@@ -108,25 +102,6 @@ class Parameter:
         cpp_type = self.ptype.cpp_type
       yield I + (f'auto {self.original_param_name} = '
                  f'{self.gen_name}.cast<{cpp_type}>();')
-    elif is_cpp_vector(self.ptype):
-      yield (I + f'{self.ptype.cpp_type} {self.gen_name}_ = py::list('
-             f'{self.gen_name}).release().cast<{self.ptype.cpp_type}>();')
-    elif is_cpp_set(self.ptype):
-      yield (I + f'{self.ptype.cpp_type} {self.gen_name}_ = py::set('
-             f'{self.gen_name}).release().cast<{self.ptype.cpp_type}>();')
-
-
-def is_cpp_vector(param_type: ast_pb2.Type) -> bool:
-  return (param_type.cpp_type.startswith('::std::vector') and
-          param_type.lang_type.startswith('list'))
-
-
-def is_cpp_set(param_type: ast_pb2.Type) -> bool:
-  return ((param_type.cpp_type.startswith('::std::set') or
-           param_type.cpp_type.startswith('::std::unordered_set') or
-           param_type.cpp_type.startswith('::absl::flat_hash_set') or
-           param_type.cpp_type.startswith('::absl::node_hash_set')) and
-          param_type.lang_type.startswith('set'))
 
 
 def num_unknown_default_values(func_decl: ast_pb2.FuncDecl) -> int:

@@ -64,9 +64,7 @@ class TypeCasterTest(parameterized.TestCase):
   def test_clif_type_caster_with_str_bytes(self):
     self.assertEqual(type_caster.make_value_holder_str('abc'), 'abc')
     self.assertEqual(type_caster.make_value_holder_bytes('abc'), b'abc')
-    expected_error = (
-        TypeError if 'pybind11' in type_caster.__doc__ else UnicodeDecodeError)
-    with self.assertRaises(expected_error):
+    with self.assertRaises(UnicodeDecodeError):
       type_caster.make_value_holder_str(b'\x80')
     self.assertEqual(type_caster.make_value_holder_bytes(b'\x80'), b'\x80')
 
@@ -129,6 +127,14 @@ class TypeCasterTest(parameterized.TestCase):
     self.assertEqual(type_caster.return_pyobject_throw_python_exception(10), 10)
     with self.assertRaisesRegex(ValueError, r'Value < 0'):
       type_caster.return_pyobject_throw_python_exception(-1)
+
+  def test_python_exception_in_type_caster(self):
+    self.assertEqual(type_caster.consume_python_error_in_conversions(10), 10)
+    with self.assertRaisesRegex(ValueError, r'Error in Clif_PyObjAs'):
+      type_caster.consume_python_error_in_conversions(-1)
+    self.assertEqual(type_caster.return_python_error_in_conversions(10), 10)
+    with self.assertRaisesRegex(ValueError, r'Error in Clif_PyObjFrom'):
+      type_caster.return_python_error_in_conversions(-1)
 
 
 if __name__ == '__main__':

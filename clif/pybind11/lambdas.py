@@ -164,12 +164,12 @@ def generate_lambda_body(
       yield I + f'{r.type.cpp_type} ret{i}{{}};'
 
   yield I + '{'
-  if not function_lib.func_keeps_gil(func_decl):
+  func_keeps_gil = function_lib.func_keeps_gil(func_decl)
+  if not func_keeps_gil:
     yield I + I + 'py::gil_scoped_release gil_release;'
 
   # Generates call to the wrapped function
   cpp_void_return = func_decl.cpp_void_return or not func_decl.returns
-  ret0_with_py_cast = ''
   if not cpp_void_return:
     ret0 = func_decl.returns[0]
     if not ret0.type.cpp_type:
@@ -181,12 +181,15 @@ def generate_lambda_body(
       yield I + I + (f'{callback_cpp_type} ret0_ = '
                      f'{function_call}({function_call_params});')
       yield I + I + '{'
-      yield I + I + I + 'py::gil_scoped_acquire gil_acquire;'
+      if not func_keeps_gil:
+        yield I + I + I + 'py::gil_scoped_acquire gil_acquire;'
       if callback_params_str:
         yield I + I + I + ('ret0 = py::cpp_function(ret0_, '
                            f'{callback_params_str});')
       else:
         yield I + I + I + 'ret0 = py::cpp_function(ret0_);'
+      for s in _generate_python_error_check():
+        yield I + I + I + s
       yield I + I + '}'
     else:
       yield I + I + (f'{ret0.type.cpp_type} ret0_ = '
@@ -194,11 +197,16 @@ def generate_lambda_body(
       ret0_with_py_cast = generate_function_call_return(
           func_decl, ret0, 'ret0_', codegen_info, class_decl)
       yield I + I + '{'
-      yield I + I + I + 'py::gil_scoped_acquire gil_acquire;'
+      if not func_keeps_gil:
+        yield I + I + I + 'py::gil_scoped_acquire gil_acquire;'
       yield I + I + I + f'ret0 = {ret0_with_py_cast};'
+      for s in _generate_python_error_check():
+        yield I + I + I + s
       yield I + I + '}'
   else:
     yield I + I + f'{function_call}({function_call_params});'
+    for s in _generate_python_error_check(not func_keeps_gil):
+      yield I + I + s
   yield I + '}'
 
   function_call_returns = generate_function_call_returns(
@@ -317,3 +325,10 @@ def generate_function_call(
   else:
     method_name = func_decl.name.cpp_name.split('::')[-1]
     return f'self->{method_name}'
+
+
+def _generate_python_error_check(
+    acquire_gil: bool = False) -> Generator[str, None, None]:
+  if acquire_gil:
+    yield 'py::gil_scoped_acquire gil_acquire;'
+  yield '::clif::ThrowErrorAlreadySetIfPythonErrorOccurred();'

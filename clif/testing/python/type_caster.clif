@@ -68,3 +68,6 @@ from "clif/testing/python/type_caster_clif_aux.h":
     def consume_multiple_conversions(vh: ValueHolderMultipleConversions) -> int
 
     def consume_ptr_in_clif_use_comment(vh: ValueHolderPtrInCLIFUseComment) -> int
+
+    def return_python_error_in_conversions(v: int) -> PythonErrorInConversions
+    def consume_python_error_in_conversions(vh: PythonErrorInConversions) -> int

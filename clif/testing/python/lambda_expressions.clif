@@ -142,3 +142,6 @@ from "clif/testing/python/lambda_expressions_clif_aux.h":
       @__exit__
       @extend
       def Close(self)
+
+    @do_not_release_gil
+    def python_exception_in_function()

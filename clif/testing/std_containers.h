@@ -139,6 +139,19 @@ inline std::vector<std::vector<int>> MatrixSum(
   return sum;
 }
 
+inline std::string ConcatAllListListStr(
+    const std::vector<std::vector<std::string>>& list_list_str) {
+  std::string accu;
+  for (const auto& list_str : list_list_str) {
+    for (const auto& s : list_str) {
+      accu += s;
+      accu += ',';
+    }
+    accu += '$';
+  }
+  return accu;
+}
+
 inline std::tuple<std::tuple<int, int, int>, std::tuple<int, int, int>>
 Make2By3() {
   return std::tuple<std::tuple<int, int, int>, std::tuple<int, int, int>>();

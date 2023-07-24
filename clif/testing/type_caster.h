@@ -154,6 +154,15 @@ inline int consume_ptr_in_clif_use_comment(
   return vh->value;
 }
 
+inline int consume_python_error_in_conversions(
+    const PythonErrorInConversions& vh) {
+  return vh.value;
+}
+
+inline PythonErrorInConversions return_python_error_in_conversions(int v) {
+  return PythonErrorInConversions(v);
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_TYPE_CASTER_H_

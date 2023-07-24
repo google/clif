@@ -28,6 +28,7 @@ from "clif/testing/std_containers.h":
   def Ones(rows: int, columns: int) -> list<list<int>>
   def Capitals() -> list<tuple<str, str>>
   def MatrixSum(a: list<list<int>>, b: list<list<int>>) -> list<list<int>>
+  def ConcatAllListListStr(list_list_str: list<list<str>>) -> str
   def Make2By3() -> `std::tuple` as tuple<`std::tuple` as tuple<int, int, int>, `std::tuple` as tuple<int, int, int>>
   def Flatten2By3(m: `std::tuple` as tuple<`std::tuple` as tuple<int, int, int>, `std::tuple` as tuple<int, int, int>>) -> `std::tuple` as tuple<int, int, int, int, int, int>
   def LastStringInVector(v: list<str>) -> (output: str)
