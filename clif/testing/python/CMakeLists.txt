@@ -228,3 +228,5 @@ add_pyclif_library_for_test(alt_bytes alt_bytes.clif)
 add_pyclif_library_for_test(pyobject_ptr pyobject_ptr.clif
   PY_DEPS clif_python_callback_exception_guard
 )
+
+add_pyclif_library_for_test(property_get_set_cpp_derived property_get_set_cpp_derived.clif)
