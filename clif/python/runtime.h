@@ -32,6 +32,13 @@ extern "C" int Clif_PyType_Inconstructible(PyObject*, PyObject*, PyObject*);
 namespace clif {
 namespace python {
 
+// Similar to https://docs.python.org/3/c-api/object.html#c.PyObject_IsInstance
+// but a simple heuristic is used to filter out `unittest.mock` objects
+// (see implementation for details).
+// Return `1` if `inst` is an instance of the class `cls` or a subclass of
+// `cls`, or `0` if not. On error, returns `-1` and sets an exception.
+int IsWrapperTypeInstance(PyObject* inst, PyTypeObject* cls);
+
 std::string ExcStr(bool add_type = true);
 void ThrowExcStrIfCppExceptionsEnabled();
 void LogCallbackPythonError(PyObject* callable, const char* return_typeid_name);
@@ -49,6 +56,7 @@ T* Get(const clif::Instance<T>& cpp, bool set_err = true) {
   }
   return d;
 }
+
 }  // namespace python
 
 // Returns py.__class__.__name__ (needed for PY2 old style classes).

@@ -23,6 +23,8 @@ from "clif/testing/classes.h":
       i: int = property(`get`, `set`)
       i2: int = property(`get2`)
 
+    def `PassK` as PassKlass(k_inst: Klass) -> int
+
     class Derived(Klass):
       """This class also has a "docstring".
 

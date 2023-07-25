@@ -226,12 +226,12 @@ class ClassTest(unittest.TestCase):
           }
           Py_DECREF(base);
         }
-        if (PyObject_IsInstance(py, reinterpret_cast<PyObject*>(wrapper_Type))) {
+        if (::clif::python::IsWrapperTypeInstance(py, wrapper_Type)) {
           if (!base) {
             return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
           }
           PyErr_Format(PyExc_ValueError, "can't convert %%s %%s to StructTy*", ClassName(py), ClassType(py));
-        } else {
+        } else if (!PyErr_Occurred()) {
           PyErr_Format(PyExc_TypeError, "expecting %%s instance, got %%s %%s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
         }
         return nullptr;
@@ -431,12 +431,12 @@ class ClassTest(unittest.TestCase):
           }
           Py_DECREF(base);
         }
-        if (PyObject_IsInstance(py, reinterpret_cast<PyObject*>(wrapper_Type))) {
+        if (::clif::python::IsWrapperTypeInstance(py, wrapper_Type)) {
           if (!base) {
             return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
           }
           PyErr_Format(PyExc_ValueError, "can't convert %%s %%s to StructTy*", ClassName(py), ClassType(py));
-        } else {
+        } else if (!PyErr_Occurred()) {
           PyErr_Format(PyExc_TypeError, "expecting %%s instance, got %%s %%s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
         }
         return nullptr;
@@ -627,12 +627,12 @@ class ClassTest(unittest.TestCase):
           }
           Py_DECREF(base);
         }
-        if (PyObject_IsInstance(py, reinterpret_cast<PyObject*>(wrapper_Type))) {
+        if (::clif::python::IsWrapperTypeInstance(py, wrapper_Type)) {
           if (!base) {
             return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
           }
           PyErr_Format(PyExc_ValueError, "can't convert %%s %%s to StructTy*", ClassName(py), ClassType(py));
-        } else {
+        } else if (!PyErr_Occurred()) {
           PyErr_Format(PyExc_TypeError, "expecting %%s instance, got %%s %%s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
         }
         return nullptr;
@@ -899,12 +899,12 @@ class ClassTest(unittest.TestCase):
           }
           Py_DECREF(base);
         }
-        if (PyObject_IsInstance(py, reinterpret_cast<PyObject*>(wrapper_Type))) {
+        if (::clif::python::IsWrapperTypeInstance(py, wrapper_Type)) {
           if (!base) {
             return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
           }
           PyErr_Format(PyExc_ValueError, "can't convert %%s %%s to OutKlass::InnKlass*", ClassName(py), ClassType(py));
-        } else {
+        } else if (!PyErr_Occurred()) {
           PyErr_Format(PyExc_TypeError, "expecting %%s instance, got %%s %%s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
         }
         return nullptr;
@@ -1002,12 +1002,12 @@ class ClassTest(unittest.TestCase):
           }
           Py_DECREF(base);
         }
-        if (PyObject_IsInstance(py, reinterpret_cast<PyObject*>(wrapper_Type))) {
+        if (::clif::python::IsWrapperTypeInstance(py, wrapper_Type)) {
           if (!base) {
             return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
           }
           PyErr_Format(PyExc_ValueError, "can't convert %%s %%s to OutKlass*", ClassName(py), ClassType(py));
-        } else {
+        } else if (!PyErr_Occurred()) {
           PyErr_Format(PyExc_TypeError, "expecting %%s instance, got %%s %%s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
         }
         return nullptr;
@@ -1234,12 +1234,12 @@ class ClassTest(unittest.TestCase):
           }
           Py_DECREF(base);
         }
-        if (PyObject_IsInstance(py, reinterpret_cast<PyObject*>(wrapper_Type))) {
+        if (::clif::python::IsWrapperTypeInstance(py, wrapper_Type)) {
           if (!base) {
             return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
           }
           PyErr_Format(PyExc_ValueError, "can't convert %%s %%s to StructTy*", ClassName(py), ClassType(py));
-        } else {
+        } else if (!PyErr_Occurred()) {
           PyErr_Format(PyExc_TypeError, "expecting %%s instance, got %%s %%s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
         }
         return nullptr;
@@ -1428,12 +1428,12 @@ class ClassTest(unittest.TestCase):
           }
           Py_DECREF(base);
         }
-        if (PyObject_IsInstance(py, reinterpret_cast<PyObject*>(wrapper_Type))) {
+        if (::clif::python::IsWrapperTypeInstance(py, wrapper_Type)) {
           if (!base) {
             return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
           }
           PyErr_Format(PyExc_ValueError, "can't convert %%s %%s to StructTy*", ClassName(py), ClassType(py));
-        } else {
+        } else if (!PyErr_Occurred()) {
           PyErr_Format(PyExc_TypeError, "expecting %%s instance, got %%s %%s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
         }
         return nullptr;
@@ -2025,12 +2025,12 @@ class ClassTest(unittest.TestCase):
           }
           Py_DECREF(base);
         }
-        if (PyObject_IsInstance(py, reinterpret_cast<PyObject*>(wrapper_Type))) {
+        if (::clif::python::IsWrapperTypeInstance(py, wrapper_Type)) {
           if (!base) {
             return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
           }
           PyErr_Format(PyExc_ValueError, "can't convert %%s %%s to StructCpp*", ClassName(py), ClassType(py));
-        } else {
+        } else if (!PyErr_Occurred()) {
           PyErr_Format(PyExc_TypeError, "expecting %%s instance, got %%s %%s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
         }
         return nullptr;
@@ -2273,12 +2273,12 @@ class ClassTest(unittest.TestCase):
           }
           Py_DECREF(base);
         }
-        if (PyObject_IsInstance(py, reinterpret_cast<PyObject*>(wrapper_Type))) {
+        if (::clif::python::IsWrapperTypeInstance(py, wrapper_Type)) {
           if (!base) {
             return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
           }
           PyErr_Format(PyExc_ValueError, "can't convert %%s %%s to StructCpp*", ClassName(py), ClassType(py));
-        } else {
+        } else if (!PyErr_Occurred()) {
           PyErr_Format(PyExc_TypeError, "expecting %%s instance, got %%s %%s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
         }
         return nullptr;

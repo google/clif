@@ -38,6 +38,8 @@ class K {
   int i_;
 };
 
+inline int PassK(const K& k_inst) { return k_inst.get() * 10; }
+
 class NoDefaultConstructor {
  private:
   explicit NoDefaultConstructor() {}

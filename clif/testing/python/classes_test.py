@@ -14,6 +14,8 @@
 
 """Tests for clif.testing.python.classes."""
 
+from unittest import mock
+
 from absl.testing import absltest
 from absl.testing import parameterized
 
@@ -33,6 +35,22 @@ class ClassesTest(parameterized.TestCase):
     # AttributeError on CPython; TypeError on PyPy.
     with self.assertRaises((AttributeError, TypeError)):
       k.i2 = 0
+
+  def testMockIsRejected(self):
+    k_inst = classes.Klass(3)
+    self.assertEqual(classes.PassKlass(k_inst), 30)
+    d_inst = classes.Derived.Init(4, 0)
+    self.assertEqual(classes.PassKlass(d_inst), 40)
+    with mock.patch.object(classes, 'Klass', autospec=True):
+      k_mock = classes.Klass(3)
+      with self.assertRaises(TypeError) as ctx:
+        classes.PassKlass(k_mock)
+      self.assertIn('Mock', str(ctx.exception))
+    with mock.patch.object(classes, 'Derived', autospec=True):
+      d_mock = classes.Derived.Init(4, 0)
+      with self.assertRaises(TypeError) as ctx:
+        classes.PassKlass(d_mock)
+      self.assertIn('Mock', str(ctx.exception))
 
   def testDerivedClassDocstring(self):
     # Nothing special about this being a derived class; that is just the

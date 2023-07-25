@@ -499,13 +499,13 @@ def GenThisPointerFunc(cname, w='wrapper', final=False):
     _I=''  # pylint: disable=bad-whitespace,invalid-name
   else:
     # as_Base returned an error / wrong capsule
-    yield I+'if (PyObject_IsInstance(py, %s)) {' % AsPyObj(t)
+    yield I+'if (::clif::python::IsWrapperTypeInstance(py, %s)) {' % t
     yield I+I+'if (!base) {'  # base set in _GenBaseCapsule
     yield I+I+I+return_this_cpp
     yield I+I+'}'
     yield I+I+('PyErr_Format(PyExc_ValueError, "can\'t convert %s %s to {}*", '
                'ClassName(py), ClassType(py));').format(cname)
-    yield I+'} else {'
+    yield I+'} else if (!PyErr_Occurred()) {'
     _I=I  # pylint: disable=bad-whitespace,invalid-name
   yield _I+I+('PyErr_Format(PyExc_TypeError, "expecting %s instance, got %s %s"'
               ', {}->tp_name, ClassName(py), ClassType(py));'.format(t))

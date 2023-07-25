@@ -14,6 +14,7 @@
 
 #include "clif/python/runtime.h"
 
+#include <cassert>
 #include <initializer_list>
 #include <system_error>  // NOLINT(build/c++11)
 
@@ -227,6 +228,42 @@ PyObject* ArgError(const char func[],
 }
 
 namespace python {
+
+namespace {
+
+int FilterMockUsingPragmaticHeuristics(PyObject* inst) {
+  // Definition of the class variable leveraged as "is a mock" indicator:
+  // https://github.com/python/cpython/blob/7d41ead9191a18bc473534f6f8bd1095f2232cc2/Lib/unittest/mock.py#L426
+  // The runtime overhead is very small: a single attribute lookup.
+  // Likelihood of false negatives: practically zero.
+  // Likelihood of false positives: extremely unlikely.
+  // It actually seems much more likely that this function works as intended
+  // for hypothetical non-unittest mocks, rather than producing a false
+  // positive for an object that is not a mock.
+  assert(PyType_Check(inst) == 0);
+  PyTypeObject* typ = reinterpret_cast<PyTypeObject*>(Py_TYPE(inst));
+  PyObject* mock_attr = PyObject_GetAttrString(reinterpret_cast<PyObject*>(typ),
+                                               "_mock_return_value");
+  if (mock_attr != nullptr) {
+    Py_DECREF(mock_attr);
+    return 0;  // "Yes this is a mock."
+  }
+  if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+    PyErr_Clear();
+    return 1;  // "No this is not a mock."
+  }
+  return -1;  // Unexpected error.
+}
+
+}  // namespace
+
+int IsWrapperTypeInstance(PyObject* inst, PyTypeObject* cls) {
+  int stat = PyObject_IsInstance(inst, reinterpret_cast<PyObject*>(cls));
+  if (stat == 1) {
+    return FilterMockUsingPragmaticHeuristics(inst);
+  }
+  return stat;
+}
 
 std::string ExcStr(bool add_type) {
   PyObject* exc, *val, *tb;
