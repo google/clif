@@ -114,7 +114,7 @@ from some.place import _mylib as ext
 and/or (!)
 
 ```python
-from some.place._mylib as *  # pylint: disable=wildcard-import
+from some.place._mylib import *  # pylint: disable=wildcard-import
 ```
 
 The second form may be preferable if `_mylib` wraps many functions or types,
