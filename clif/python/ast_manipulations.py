@@ -188,8 +188,6 @@ def MoveExtendPropertiesBackIntoClassesInPlace(ast, class_decls_by_fq_native):
     property_decl = ast_pb2.Decl()
     property_decl.CopyFrom(decl)
     property_decl.var.name.native = property_name_from_var
-    if property_decl.var.HasField('cpp_set'):
-      del property_decl.var.cpp_set.params[0]
     target_class_decl.members.append(property_decl)
     extend_properties_orig_decl_indices.append(orig_decl_index)
   for orig_decl_index in reversed(extend_properties_orig_decl_indices):

@@ -1055,8 +1055,8 @@ def VarSetter(name, cfunc, error, cvar, v, csetter, as_str, is_extend=False):
     yield I+I+ret_error
     yield I+'}'
     if csetter:
-      # Workaround BUG "v.type.cpp_type not updated by Matcher", so get p[0].
-      yield I+'%s cval;' % v.cpp_set.params[0].type.cpp_type
+      # Workaround BUG "v.type.cpp_type not updated by Matcher", so get p[-1].
+      yield I+'%s cval;' % v.cpp_set.params[-1].type.cpp_type
       yield I+'if (Clif_PyObjAs(value, &cval)) {'
       if error:
         yield I+I+error+ret_error
