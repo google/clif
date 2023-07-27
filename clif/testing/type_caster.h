@@ -163,6 +163,10 @@ inline PythonErrorInConversions return_python_error_in_conversions(int v) {
   return PythonErrorInConversions(v);
 }
 
+inline ValueHolderAsString return_value_holder_as_string() {
+  return ValueHolderAsString("123");
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_TYPE_CASTER_H_

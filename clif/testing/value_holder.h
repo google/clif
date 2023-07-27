@@ -65,6 +65,13 @@ class ValueHolderTemplate {
   T value;
 };
 
+class ValueHolderAsString {
+ public:
+  ValueHolderAsString() = default;
+  ValueHolderAsString(const std::string& v): value(v) { }
+  std::string value;
+};
+
 template <typename... T>
 class ValueHolderTemplateParameterPack {
  public:

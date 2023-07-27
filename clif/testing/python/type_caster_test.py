@@ -67,6 +67,8 @@ class TypeCasterTest(parameterized.TestCase):
     with self.assertRaises(UnicodeDecodeError):
       type_caster.make_value_holder_str(b'\x80')
     self.assertEqual(type_caster.make_value_holder_bytes(b'\x80'), b'\x80')
+    self.assertEqual(type_caster.return_value_holder_str(), '123')
+    self.assertEqual(type_caster.return_value_holder_bytes(), b'123')
 
   @parameterized.parameters(
       type_caster.get_refcount_from_raw_ptr,
