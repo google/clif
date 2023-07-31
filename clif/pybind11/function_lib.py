@@ -204,7 +204,9 @@ def generate_return_value_policy_for_type(
     if len(return_value_policy_list) > 1:
       return f'{{{return_value_policy_str}}}'
     else:
-      return return_value_policy_str
+      return ('py::return_value_policy_pack(std::vector<'
+              f'py::return_value_policy_pack>({{{return_value_policy_str}}}), '
+              'py::return_value_policy::_clif_automatic)')
   else:
     if param_type.lang_type == 'bytes':
       return 'py::return_value_policy::_return_as_bytes'
