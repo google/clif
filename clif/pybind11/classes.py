@@ -56,18 +56,42 @@ def generate_from(
   if not class_decl.suppress_upcasts:
     for base in class_decl.bases:
       if base.HasField('cpp_canonical_type'):
-        if base.cpp_canonical_type in codegen_info.registered_types:
-          definition += f', {base.cpp_canonical_type}'
-        else:
-          implicit_upcast_bases.append(base)
+        implicit_upcast_bases.append(base)
   trampoline_class_name = utils.trampoline_name(class_decl)
   if trampoline_class_name in trampoline_class_names:
     definition += f', {trampoline_class_name}'
   definition += (f'> {class_name}({superclass_name}, '
                  f'"{class_decl.name.native}"')
+  if not class_decl.suppress_upcasts:
+    for base in class_decl.bases:
+      if base.native and not base.HasField('cpp_canonical_type'):
+        possibly_nested_classes = base.native.split('.')
+        attrs_list = [
+            f'attr("{nested_class}")'
+            for nested_class in possibly_nested_classes]
+        attr_str = '.'.join(attrs_list)
+
+        # The base class is imported from another .clif file.
+        if possibly_nested_classes[0] in codegen_info.namemap:
+          fq_py_base = codegen_info.namemap[possibly_nested_classes[0]]
+          fq_module = fq_py_base[:fq_py_base.rfind('.')]
+          module_variable_name = utils.generate_mangled_name_for_module(
+              fq_module)
+          definition += f', {module_variable_name}.{attr_str}'
+        else:
+          definition += f', m.{attr_str}'
   if class_decl.HasField('docstring'):
     definition += f', {function_lib.generate_docstring(class_decl.docstring)}'
-  if class_decl.enable_instance_dict:
+
+  # If we generate `py::dynamic_attr()` for the base class, we also need to
+  # generate `py::dynamic_attr()` for the derived class.
+  enable_instance_dict = class_decl.enable_instance_dict
+  for base in class_decl.bases:
+    if (base.HasField('cpp_canonical_type') and
+        base.cpp_canonical_type in codegen_info.dynamic_attr_types):
+      enable_instance_dict = True
+      break
+  if enable_instance_dict:
     definition += ', py::dynamic_attr()'
   if class_decl.final:
     definition += ', py::is_final()'

@@ -14,6 +14,7 @@
 
 from "clif/testing/python/nested_inheritance_clif.h" import *
 from clif.testing.python.nested_inheritance import Nested
+from clif.testing.python.nested_inheritance import AmbiguousBase
 from clif.testing.python.nested_fields import DD
 from clif.testing.python.nested_fields import Base
 from clif.testing.python.nested_fields import Derived
@@ -33,4 +34,7 @@ from "clif/testing/imported_inheritance.h":
     pass
 
   class InheritImportedDerived(Derived):
+    pass
+
+  class InheritImportedAmbiguousBase(AmbiguousBase):
     pass

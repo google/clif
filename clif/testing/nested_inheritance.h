@@ -29,5 +29,13 @@ struct Nested {
 };
 
 struct InheritInner : public Nested::Inner {};
+
+struct AmbiguousBase {};
+
+namespace nested_inheritance {
+
+struct AmbiguousBase : public ::clif_testing::AmbiguousBase {};
+
+}  // namespace nested_inheritance
 }  // namespace clif_testing
 #endif  // CLIF_TESTING_NESTED_INHERITANCE_H_
