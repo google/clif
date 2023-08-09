@@ -232,3 +232,5 @@ add_pyclif_library_for_test(pyobject_ptr pyobject_ptr.clif
 add_pyclif_library_for_test(property_get_set_cpp_derived property_get_set_cpp_derived.clif)
 
 add_pyclif_library_for_test(python_multiple_inheritance python_multiple_inheritance.clif)
+
+add_pyclif_library_for_test(mock_uninitializable mock_uninitializable.clif)
