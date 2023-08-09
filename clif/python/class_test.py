@@ -68,7 +68,8 @@ class ClassTest(unittest.TestCase):
     self.assertMultiLineEqual(out, textwrap.dedent(mod_code))
 
   def testStruct(self):
-    self.assertClassEqual("""
+    self.assertClassEqual(
+        """
       name {
         native: "Struct"
         cpp_name: "StructTy"
@@ -100,7 +101,8 @@ class ClassTest(unittest.TestCase):
           }
         }
       }
-    """, """
+    """,
+        """
       namespace pyStruct {
 
       struct wrapper {
@@ -238,7 +240,8 @@ class ClassTest(unittest.TestCase):
       }
 
       }  // namespace pyStruct
-    """ % self.code, """
+    """ % self.code,
+        """
       bool Ready() {
         pyStruct::wrapper_Type =
         pyStruct::_build_heap_type();
@@ -271,10 +274,12 @@ class ClassTest(unittest.TestCase):
         Py_DECREF(module);
         return nullptr;
       }
-    """)
+    """,
+    )
 
   def testCppDerivedStruct(self):
-    self.assertClassEqual("""
+    self.assertClassEqual(
+        """
       name {
         native: "Struct"
         cpp_name: "StructTy"
@@ -295,7 +300,8 @@ class ClassTest(unittest.TestCase):
           }
         }
       }
-    """, """
+    """,
+        """
       namespace pyStruct {
 
       struct wrapper {
@@ -443,7 +449,8 @@ class ClassTest(unittest.TestCase):
       }
 
       }  // namespace pyStruct
-    """ % self.code, """
+    """ % self.code,
+        """
       bool Ready() {
         pyStruct::wrapper_Type =
         pyStruct::_build_heap_type();
@@ -454,7 +461,9 @@ class ClassTest(unittest.TestCase):
         Py_INCREF(pyStruct::wrapper_Type);  // For PyModule_AddObject to steal.
         return true;
       }
-    """ + ("""
+    """
+        + (
+            """
       static struct PyModuleDef Module = {
         PyModuleDef_HEAD_INIT,
         ThisModuleName,
@@ -475,10 +484,13 @@ class ClassTest(unittest.TestCase):
         Py_DECREF(module);
         return nullptr;
       }
-    """))
+    """
+        ),
+    )
 
   def testPythonImportedDerivedStruct(self):
-    self.assertClassEqual("""
+    self.assertClassEqual(
+        """
       name {
         native: "Struct"
         cpp_name: "StructTy"
@@ -499,7 +511,8 @@ class ClassTest(unittest.TestCase):
           }
         }
       }
-    """, """
+    """,
+        """
       namespace pyStruct {
 
       struct wrapper {
@@ -639,7 +652,8 @@ class ClassTest(unittest.TestCase):
       }
 
       }  // namespace pyStruct
-    """ % self.code, """
+    """ % self.code,
+        """
       bool Ready() {
         pyStruct::wrapper_Type =
         pyStruct::_build_heap_type();
@@ -664,7 +678,9 @@ class ClassTest(unittest.TestCase):
         Py_INCREF(pyStruct::wrapper_Type);  // For PyModule_AddObject to steal.
         return true;
       }
-    """ + ("""
+    """
+        + (
+            """
       static struct PyModuleDef Module = {
         PyModuleDef_HEAD_INIT,
         ThisModuleName,
@@ -685,10 +701,13 @@ class ClassTest(unittest.TestCase):
         Py_DECREF(module);
         return nullptr;
       }
-    """))
+    """
+        ),
+    )
 
   def testNestedStruct(self):
-    self.assertClassEqual("""
+    self.assertClassEqual(
+        """
       name {
         native: "Outer"
         cpp_name: "OutKlass"
@@ -730,7 +749,8 @@ class ClassTest(unittest.TestCase):
           }
         }
       }
-    """, """
+    """,
+        """
       namespace pyOuter {
 
       struct wrapper {
@@ -1014,7 +1034,8 @@ class ClassTest(unittest.TestCase):
       }
 
       }  // namespace pyOuter
-    """ % self.code, """
+    """ % self.code,
+        """
       bool Ready() {
         pyOuter::pyInner::wrapper_Type =
         pyOuter::pyInner::_build_heap_type();
@@ -1030,7 +1051,9 @@ class ClassTest(unittest.TestCase):
         Py_INCREF(pyOuter::wrapper_Type);  // For PyModule_AddObject to steal.
         return true;
       }
-    """ + ("""
+    """
+        + (
+            """
       static struct PyModuleDef Module = {
         PyModuleDef_HEAD_INIT,
         ThisModuleName,
@@ -1063,10 +1086,13 @@ class ClassTest(unittest.TestCase):
         Py_DECREF(module);
         return nullptr;
       }
-    """))
+    """
+        ),
+    )
 
   def testStructProperty(self):
-    self.assertClassEqual("""
+    self.assertClassEqual(
+        """
       name {
         native: "Struct"
         cpp_name: "StructTy"
@@ -1104,7 +1130,8 @@ class ClassTest(unittest.TestCase):
           }
         }
       }
-    """, """
+    """,
+        """
       namespace pyStruct {
 
       struct wrapper {
@@ -1246,7 +1273,8 @@ class ClassTest(unittest.TestCase):
       }
 
       }  // namespace pyStruct
-    """ % self.code, """
+    """ % self.code,
+        """
       bool Ready() {
         pyStruct::wrapper_Type =
         pyStruct::_build_heap_type();
@@ -1257,7 +1285,9 @@ class ClassTest(unittest.TestCase):
         Py_INCREF(pyStruct::wrapper_Type);  // For PyModule_AddObject to steal.
         return true;
       }
-    """ + ("""
+    """
+        + (
+            """
       static struct PyModuleDef Module = {
         PyModuleDef_HEAD_INIT,
         ThisModuleName,
@@ -1278,10 +1308,13 @@ class ClassTest(unittest.TestCase):
         Py_DECREF(module);
         return nullptr;
       }
-    """))
+    """
+        ),
+    )
 
   def testStructUnProperty(self):
-    self.assertClassEqual("""
+    self.assertClassEqual(
+        """
       name {
         native: "Struct"
         cpp_name: "StructTy"
@@ -1310,7 +1343,8 @@ class ClassTest(unittest.TestCase):
           }
         }
       }
-    """, """
+    """,
+        """
       namespace pyStruct {
 
       struct wrapper {
@@ -1331,7 +1365,7 @@ class ClassTest(unittest.TestCase):
         auto cpp = ThisPtr(self); if (!cpp) return nullptr;
         if (Clif_PyObjAs(value, &cpp->a)) Py_RETURN_NONE;
         PyObject* s = PyObject_Repr(value);
-        PyErr_Format(PyExc_ValueError, "%%s is not valid for x:int", s? PyUnicode_AsUTF8(s): "input");
+        PyErr_Format(PyExc_ValueError, "%s is not valid for x:int", s? PyUnicode_AsUTF8(s): "input");
         Py_XDECREF(s);
         return nullptr;
       }
@@ -1432,15 +1466,16 @@ class ClassTest(unittest.TestCase):
           if (!base) {
             return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
           }
-          PyErr_Format(PyExc_ValueError, "can't convert %%s %%s to StructTy*", ClassName(py), ClassType(py));
+          PyErr_Format(PyExc_ValueError, "can't convert %s %s to StructTy*", ClassName(py), ClassType(py));
         } else if (!PyErr_Occurred()) {
-          PyErr_Format(PyExc_TypeError, "expecting %%s instance, got %%s %%s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
+          PyErr_Format(PyExc_TypeError, "expecting %s instance, got %s %s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
         }
         return nullptr;
       }
 
       }  // namespace pyStruct
-    """ % self.code, """
+    """,
+        """
       bool Ready() {
         pyStruct::wrapper_Type =
         pyStruct::_build_heap_type();
@@ -1451,7 +1486,9 @@ class ClassTest(unittest.TestCase):
         Py_INCREF(pyStruct::wrapper_Type);  // For PyModule_AddObject to steal.
         return true;
       }
-    """ + ("""
+    """
+        + (
+            """
       static struct PyModuleDef Module = {
         PyModuleDef_HEAD_INIT,
         ThisModuleName,
@@ -1472,7 +1509,9 @@ class ClassTest(unittest.TestCase):
         Py_DECREF(module);
         return nullptr;
       }
-    """))
+    """
+        ),
+    )
 
   def testFinalStructProperty(self):
     self.assertClassEqual(
@@ -1534,7 +1573,8 @@ class ClassTest(unittest.TestCase):
         }
       }
       final: true
-    """, """
+    """,
+        """
       namespace pyStruct {
 
       struct wrapper {
@@ -1670,7 +1710,8 @@ class ClassTest(unittest.TestCase):
       }
 
       }  // namespace pyStruct
-    """ % self.code, """
+    """ % self.code,
+        """
       bool Ready() {
         pyStruct::wrapper_Type =
         pyStruct::_build_heap_type();
@@ -1681,7 +1722,9 @@ class ClassTest(unittest.TestCase):
         Py_INCREF(pyStruct::wrapper_Type);  // For PyModule_AddObject to steal.
         return true;
       }
-    """ + ("""
+    """
+        + (
+            """
       static struct PyModuleDef Module = {
         PyModuleDef_HEAD_INIT,
         ThisModuleName,
@@ -1702,7 +1745,9 @@ class ClassTest(unittest.TestCase):
         Py_DECREF(module);
         return nullptr;
       }
-    """))
+    """
+        ),
+    )
 
   def testFinalStruct(self):
     self.assertClassEqual(
@@ -1723,7 +1768,8 @@ class ClassTest(unittest.TestCase):
           }
         }
       }
-    """, r"""
+    """,
+        r"""
       namespace pyStruct {
 
       struct wrapper {
@@ -1831,12 +1877,13 @@ class ClassTest(unittest.TestCase):
           }
           Py_DECREF(base);
         }
-        PyErr_Format(PyExc_TypeError, "expecting %%s instance, got %%s %%s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
+        PyErr_Format(PyExc_TypeError, "expecting %s instance, got %s %s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
         return nullptr;
       }
 
       }  // namespace pyStruct
-    """ % self.code, """
+    """,
+        """
       bool Ready() {
         pyStruct::wrapper_Type =
         pyStruct::_build_heap_type();
@@ -1847,7 +1894,9 @@ class ClassTest(unittest.TestCase):
         Py_INCREF(pyStruct::wrapper_Type);  // For PyModule_AddObject to steal.
         return true;
       }
-    """ + ("""
+    """
+        + (
+            """
       static struct PyModuleDef Module = {
         PyModuleDef_HEAD_INIT,
         ThisModuleName,
@@ -1868,10 +1917,13 @@ class ClassTest(unittest.TestCase):
         Py_DECREF(module);
         return nullptr;
       }
-    """))
+    """
+        ),
+    )
 
   def testVirtualStruct(self):
-    self.assertClassEqual("""
+    self.assertClassEqual(
+        """
       name {
         native: "Struct"
         cpp_name: "StructCpp"
@@ -1886,7 +1938,8 @@ class ClassTest(unittest.TestCase):
           virtual: true
         }
       }
-    """, r"""
+    """,
+        r"""
       namespace pyStruct {
 
       struct Overrider : StructCpp, PyObjRef {
@@ -2029,15 +2082,16 @@ class ClassTest(unittest.TestCase):
           if (!base) {
             return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
           }
-          PyErr_Format(PyExc_ValueError, "can't convert %%s %%s to StructCpp*", ClassName(py), ClassType(py));
+          PyErr_Format(PyExc_ValueError, "can't convert %s %s to StructCpp*", ClassName(py), ClassType(py));
         } else if (!PyErr_Occurred()) {
-          PyErr_Format(PyExc_TypeError, "expecting %%s instance, got %%s %%s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
+          PyErr_Format(PyExc_TypeError, "expecting %s instance, got %s %s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
         }
         return nullptr;
       }
 
       }  // namespace pyStruct
-    """ % self.code, """
+    """,
+        """
       bool Ready() {
         pyStruct::wrapper_Type =
         pyStruct::_build_heap_type();
@@ -2048,7 +2102,9 @@ class ClassTest(unittest.TestCase):
         Py_INCREF(pyStruct::wrapper_Type);  // For PyModule_AddObject to steal.
         return true;
       }
-    """ + ("""
+    """
+        + (
+            """
       static struct PyModuleDef Module = {
         PyModuleDef_HEAD_INIT,
         ThisModuleName,
@@ -2069,10 +2125,13 @@ class ClassTest(unittest.TestCase):
         Py_DECREF(module);
         return nullptr;
       }
-    """))
+    """
+        ),
+    )
 
   def testIteratorStruct(self):
-    self.assertClassEqual("""
+    self.assertClassEqual(
+        """
       name {
         native: "Struct"
         cpp_name: "StructCpp"
@@ -2103,7 +2162,8 @@ class ClassTest(unittest.TestCase):
           }
         }
       }
-    """, r"""
+    """,
+        r"""
       namespace pyStruct {
 
       struct wrapper {
@@ -2277,15 +2337,16 @@ class ClassTest(unittest.TestCase):
           if (!base) {
             return ::clif::python::Get(reinterpret_cast<wrapper*>(py)->cpp);
           }
-          PyErr_Format(PyExc_ValueError, "can't convert %%s %%s to StructCpp*", ClassName(py), ClassType(py));
+          PyErr_Format(PyExc_ValueError, "can't convert %s %s to StructCpp*", ClassName(py), ClassType(py));
         } else if (!PyErr_Occurred()) {
-          PyErr_Format(PyExc_TypeError, "expecting %%s instance, got %%s %%s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
+          PyErr_Format(PyExc_TypeError, "expecting %s instance, got %s %s", wrapper_Type->tp_name, ClassName(py), ClassType(py));
         }
         return nullptr;
       }
 
       }  // namespace pyStruct
-    """ % self.code, """
+    """,
+        """
       bool Ready() {
         pyStruct::py__iter__::wrapper_Type =
         pyStruct::py__iter__::_build_heap_type();
@@ -2301,7 +2362,9 @@ class ClassTest(unittest.TestCase):
         Py_INCREF(pyStruct::wrapper_Type);  // For PyModule_AddObject to steal.
         return true;
       }
-    """ + ("""
+    """
+        + (
+            """
       static struct PyModuleDef Module = {
         PyModuleDef_HEAD_INIT,
         ThisModuleName,
@@ -2322,7 +2385,9 @@ class ClassTest(unittest.TestCase):
         Py_DECREF(module);
         return nullptr;
       }
-    """))
+    """
+        ),
+    )
 
   def testEnum(self):
     self.assertEnumEqual("""

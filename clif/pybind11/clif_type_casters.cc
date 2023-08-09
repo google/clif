@@ -27,9 +27,9 @@ clif::py::PostConv PostConvFromReturnValuePolicyPack(
   if (rvpp.vec_rvpp.empty()) {
     auto policy = pybind11::return_value_policy(rvpp);
     if (policy == pybind11::return_value_policy::_return_as_bytes) {
-      return {};
+      return clif::py::postconv::PASS;
     } else {
-      return {clif::UnicodeFromBytesIfPossible};
+      return clif::UnicodeFromBytesIfPossible;
     }
   }
   std::vector<clif::py::PostConv> post_conv;

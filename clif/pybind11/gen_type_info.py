@@ -51,6 +51,7 @@ class ClassType(BaseType):
   cpp_copyable: bool
   cpp_movable: bool
   override_in_python: bool
+  enable_instance_dict: bool
 
   py_bases: Set[str]
 

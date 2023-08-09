@@ -24,5 +24,7 @@ struct InheritImportedNestedField : public DD {};
 
 struct InheritImportedBase: public Derived {};
 struct InheritImportedDerived: public Derived {};
+struct InheritImportedAmbiguousBase:
+    public nested_inheritance::AmbiguousBase {};
 }  // namespace clif_testing
 #endif  // CLIF_TESTING_IMPPORTED_INHERITANCE_H_

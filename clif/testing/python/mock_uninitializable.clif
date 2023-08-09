@@ -1,4 +1,4 @@
-# Copyright 2020 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,17 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from "clif/testing/nested_inheritance.h":
- namespace `clif_testing`:
-
-  class AmbiguousBase:
-    pass
-
-  class InheritInner(Nested.Inner):
-    pass
-
-  class Nested:
-    a: int = property(`get_a`, `set_a`)
-    class Inner:
-      a: int = property(`get_a`, `set_a`)
-
+from "clif/testing/mock_uninitializable.h":
+  namespace `clif_testing_mock_uninitializable`:
+    class NoCtor:
+      def Mul100(self, i: int) -> int

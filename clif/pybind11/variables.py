@@ -33,12 +33,21 @@ def _convert_ptr_to_ref(var_decl: ast_pb2.VarDecl) -> bool:
   )
 
 
-def _generate_self_param_type(
+def _generate_self_param_type_for_cpp_get(
     var_decl: ast_pb2.VarDecl,
     class_decl: ast_pb2.ClassDecl) -> str:
   if var_decl.is_extend_variable:
     assert var_decl.cpp_get.params
     return var_decl.cpp_get.params[0].cpp_exact_type
+  return f'{class_decl.name.cpp_name}&'
+
+
+def _generate_self_param_type_for_cpp_set(
+    var_decl: ast_pb2.VarDecl,
+    class_decl: ast_pb2.ClassDecl) -> str:
+  if var_decl.is_extend_variable:
+    assert var_decl.cpp_set.params
+    return var_decl.cpp_set.params[0].cpp_exact_type
   return f'{class_decl.name.cpp_name}&'
 
 
@@ -91,7 +100,7 @@ def _generate_cpp_get_for_copyable_type(
     generate_comma: bool = False,
 ) -> Generator[str, None, None]:
   """Generate lambda expressions for getters when the type is copyable."""
-  self_param_type = _generate_self_param_type(var_decl, class_decl)
+  self_param_type = _generate_self_param_type_for_cpp_get(var_decl, class_decl)
   if generate_comma:
     yield I + f'py::cpp_function([]({self_param_type} self) {{'
   else:
@@ -115,7 +124,7 @@ def _generate_cpp_get_for_uncopyable_type(
     yield I + 'py::cpp_function([](py::object self_py) -> py::object {'
   else:
     yield I + '[](py::object self_py) -> py::object {'
-  self_param_type = _generate_self_param_type(var_decl, class_decl)
+  self_param_type = _generate_self_param_type_for_cpp_get(var_decl, class_decl)
   yield I + I + f'{self_param_type} self = self_py.cast<{self_param_type}>();'
   yield I + I + (f'return py::cast({ret}, {return_value_policy_pack}, '
                  'self_py);')
@@ -125,12 +134,12 @@ def _generate_cpp_get_for_uncopyable_type(
     yield I + '});'
 
 
-def _generate_cpp_set(
+def _generate_cpp_set_without_setter(
     var_decl: ast_pb2.VarDecl,
     class_decl: ast_pb2.ClassDecl,
     generate_comma: bool = False,
 ) -> Generator[str, None, None]:
-  """Generate lambda expressions for setters."""
+  """Generate lambda expressions for setters when setters are undefined."""
   if generate_comma:
     yield I + (f'py::cpp_function([]({class_decl.name.cpp_name}& self, '
                f'{var_decl.type.cpp_type} v) {{')
@@ -148,6 +157,25 @@ def _generate_cpp_set(
     yield I + '});'
 
 
+def _generate_cpp_set_with_setter(
+    var_decl: ast_pb2.VarDecl,
+    class_decl: ast_pb2.ClassDecl,
+) -> Generator[str, None, None]:
+  """Generate lambda expressions for setters when setters are defined."""
+  assert var_decl.cpp_set.params, (f'var_decl {var_decl.name.native} does not'
+                                   'have any params.')
+  self_param_type = _generate_self_param_type_for_cpp_set(var_decl, class_decl)
+  yield I + (f'py::cpp_function([]({self_param_type} self, '
+             f'{var_decl.cpp_set.params[-1].type.cpp_type} v) {{')
+  if var_decl.is_extend_variable:
+    function_call = f'{var_decl.cpp_set.name.cpp_name}(self, std::move(v))'
+  else:
+    method_name = var_decl.cpp_set.name.cpp_name.split('::')[-1]
+    function_call = f'self.{method_name}(std::move(v))'
+  yield I + I + f'{function_call};'
+  yield I + '}));'
+
+
 def generate_from(
     class_name: str,
     var_decl: ast_pb2.VarDecl,
@@ -163,7 +191,8 @@ def generate_from(
     if _convert_ptr_to_ref(var_decl):
       yield f'{class_name}.def_property("{var_decl.name.native}", '
       yield from _generate_cpp_get(var_decl, class_decl, generate_comma=True)
-      yield from _generate_cpp_set(var_decl, class_decl, generate_comma=True)
+      yield from _generate_cpp_set_without_setter(
+          var_decl, class_decl, generate_comma=True)
     else:
       return_value_policy = function_lib.generate_return_value_policy_for_type(
           var_decl.type
@@ -182,17 +211,13 @@ def _generate_property(
     class_name: str, var_decl: ast_pb2.VarDecl, class_decl: ast_pb2.ClassDecl
 ) -> Generator[str, None, None]:
   """Generates property for simple attributes."""
-  cpp_set = f'&{var_decl.cpp_set.name.cpp_name}'
-  if var_decl.cpp_set.is_overloaded:
-    cpp_set_cast = function_lib.generate_cpp_function_cast(
-        var_decl.cpp_set, class_decl)
-    cpp_set = f'{cpp_set_cast}&{var_decl.cpp_set.name.cpp_name}'
-  if not var_decl.cpp_set.name.cpp_name:
-    cpp_set = 'nullptr'
   if var_decl.HasField('cpp_set'):
     yield f'{class_name}.def_property("{var_decl.name.native}", '
     yield from _generate_cpp_get(var_decl, class_decl, generate_comma=True)
-    yield I + f'{cpp_set});'
+    if not var_decl.cpp_set.name.cpp_name:
+      yield I + 'nullptr);'
+    else:
+      yield from _generate_cpp_set_with_setter(var_decl, class_decl)
   else:
     yield f'{class_name}.def_property_readonly("{var_decl.name.native}", '
     yield from _generate_cpp_get(var_decl, class_decl)
@@ -206,4 +231,4 @@ def _generate_unproperty(
   yield from _generate_cpp_get(var_decl, class_decl)
   if var_decl.HasField('cpp_set'):
     yield f'{class_name}.def("{var_decl.cpp_set.name.native}",'
-    yield from _generate_cpp_set(var_decl, class_decl)
+    yield from _generate_cpp_set_without_setter(var_decl, class_decl)

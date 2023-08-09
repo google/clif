@@ -35,6 +35,8 @@ from "clif/testing/python/type_caster_clif_aux.h":
 
     def `make_value_holder_string` as make_value_holder_str(v: str) -> ValueHolderTemplate<str>
     def `make_value_holder_string` as make_value_holder_bytes(v: str) -> ValueHolderTemplate<bytes>
+    def `return_value_holder_as_string` as return_value_holder_str() -> `ValueHolderAsString` as str
+    def `return_value_holder_as_string` as return_value_holder_bytes() -> `ValueHolderAsString` as bytes
 
     @do_not_release_gil
     def get_refcount_from_raw_ptr() -> int
@@ -71,3 +73,4 @@ from "clif/testing/python/type_caster_clif_aux.h":
 
     def return_python_error_in_conversions(v: int) -> PythonErrorInConversions
     def consume_python_error_in_conversions(vh: PythonErrorInConversions) -> int
+

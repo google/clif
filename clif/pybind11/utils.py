@@ -14,7 +14,7 @@
 
 """Utility functions for pybind11 code generator."""
 import dataclasses
-from typing import Set
+from typing import Dict, Set
 
 from clif.protos import ast_pb2
 
@@ -30,11 +30,22 @@ class CodeGenInfo:
   # A set of C++ types that are defined as capsules.
   capsule_types: Set[str]
 
-  # A set of C++ types that are registered to the pybind11 code generator.
-  registered_types: Set[str]
-
   # Is type caster of `absl::Status` required?
   requires_status: bool
+
+  # What C++ types do we need to generate `py::dynamic_attr()`? This is needed
+  # because if we generate `py::dynamic_attr()` for the base class, we also need
+  # to generate `py::dynamic_attr()` for the derived class.
+  dynamic_attr_types: Set[str]
+
+  # Dict[Python Name, Fully qualified Python name]
+  namemap: Dict[str, str]
+
+
+# Do a SWIG-like name mangling.
+def generate_mangled_name_for_module(full_dotted_module_name: str) -> str:
+  """Converts `third_party.py.module` to `third__party_py_module`."""
+  return full_dotted_module_name.replace('_', '__').replace('.', '_')
 
 
 def trampoline_name(class_decl: ast_pb2.ClassDecl) -> str:

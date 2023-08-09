@@ -16,7 +16,6 @@
 
 import itertools
 import re
-import types
 from typing import Generator, List, Set
 
 from clif.protos import ast_pb2
@@ -37,12 +36,6 @@ _IMPORTMODULEPATTERN = r'module_path:(?P<module_path>.*)'
 CLIF_MATCHER_VERSION_STAMP_REQUIRED_MINIMUM = 531560963
 
 
-# Do a SWIG-like name mangling.
-def _generate_mangled_name_for_module(full_dotted_module_name: str) -> str:
-  """Converts `third_party.py.module` to `third__party_py_module`."""
-  return full_dotted_module_name.replace('_', '__').replace('.', '_')
-
-
 class ModuleGenerator:
   """A class that generates pybind11 bindings code from CLIF ast."""
 
@@ -54,7 +47,6 @@ class ModuleGenerator:
     self._header_path = header_path
     self._include_paths = include_paths
     self._types = []
-    self._namemap = {}
     self._extend_from_python = ast.options.get(
         'is_extended_from_python', 'False') == 'True'
     self._pybind11_only_includes = pybind11_only_includes
@@ -63,8 +55,8 @@ class ModuleGenerator:
   def preprocess_ast(self) -> None:
     """Preprocess the ast to collect type information."""
     topo_sort.topo_sort_ast_in_place(self._ast)
-    self._namemap = {
-        m.name: types.SimpleNamespace(fq_name=m.fq_name, cpp_name='')
+    namemap = {
+        m.name: m.fq_name
         for m in self._ast.namemaps
     }
     for decl in self._ast.decls:
@@ -80,20 +72,20 @@ class ModuleGenerator:
         t.py_name for t in self._types
         if isinstance(t, gen_type_info.CapsuleType)
     ]).union(imported_capsule_types)
+    dynamic_attr_types = set([
+        t.cpp_name for t in self._types
+        if isinstance(t, gen_type_info.ClassType) and t.enable_instance_dict
+    ])
     cpp_import_type_cpp_names = set([t.cpp_name for t in cpp_import_types])
     requires_status = 'absl::Status' in cpp_import_type_cpp_names
-    python_import_types = set(
-        [t.cpp_name for t in self._namemap.values() if t.cpp_name])
-    registered_types = set([t.cpp_name for t in self._types]).union(
-        cpp_import_type_cpp_names).union(python_import_types)
     self._codegen_info = utils.CodeGenInfo(
-        capsule_types=capsule_types, registered_types=registered_types,
-        requires_status=requires_status)
+        capsule_types=capsule_types, requires_status=requires_status,
+        namemap=namemap, dynamic_attr_types=dynamic_attr_types)
 
   def generate_pyinit(self) -> Generator[str, None, None]:
     yield '#include <Python.h>'
     yield ''
-    mangled_module_name = _generate_mangled_name_for_module(
+    mangled_module_name = utils.generate_mangled_name_for_module(
         self._module_path)
     yield f'extern "C" PyObject* GooglePyInit_{mangled_module_name}();'
     yield ''
@@ -225,7 +217,7 @@ class ModuleGenerator:
     yield ''
     yield '}  // namespace'
     yield ''
-    mangled_module_name = _generate_mangled_name_for_module(
+    mangled_module_name = utils.generate_mangled_name_for_module(
         self._module_path)
     yield f'extern "C" PyObject* GooglePyInit_{mangled_module_name}() {{'
     yield I + 'return this_module_init();'
@@ -248,15 +240,19 @@ class ModuleGenerator:
       res = re.search(_IMPORTMODULEPATTERN, init)
       if res:
         all_modules.add(res.group('module_path'))
+    assert self._codegen_info is not None, '_codegen_info should be initialized'
     for c in self._types:
       if isinstance(c, gen_type_info.ClassType):
         for b in c.py_bases:
-          if b in self._namemap:
-            fq_py_base = self._namemap[b].fq_name
+          if b in self._codegen_info.namemap:
+            fq_py_base = self._codegen_info.namemap[b]
             # converts `module.type` to `module`
             all_modules.add(fq_py_base[:fq_py_base.rfind('.')])
     for module_path in all_modules:
-      yield I + f'py::module_::import("{module_path}");'
+      module_variable_name = utils.generate_mangled_name_for_module(
+          module_path)
+      yield I + (f'auto {module_variable_name} = '
+                 f'py::module_::import("{module_path}");')
 
   def _generate_headlines(self):
     """Generates #includes and headers."""
@@ -410,29 +406,9 @@ class ModuleGenerator:
                         not decl.class_.cpp_abstract),
           cpp_movable=(decl.class_.cpp_movable and
                        not decl.class_.cpp_abstract),
-          override_in_python=override_in_python)
+          override_in_python=override_in_python,
+          enable_instance_dict=decl.class_.enable_instance_dict)
       self._types.append(class_type)
-      if not decl.class_.suppress_upcasts:
-        # TODO: Find a stable way to find cpp_name of the imported
-        # base class. See b/225961086#comment22 for details.
-        base_class_python_name = ''
-        base_class_cpp_name = ''
-        for i, base in enumerate(decl.class_.bases):
-          if base.native and not base.cpp_name and base.native in self._namemap:
-            base_class_python_name = base.native
-            assert i + 1 < len(decl.class_.bases), (
-                f'Cannot find cpp name for class "{base.native}"')
-            assert decl.class_.bases[i+1].cpp_name, (
-                f'Unexpected base class {decl.class_.bases[i+1]}')
-            base_class_cpp_name = decl.class_.bases[i + 1].cpp_canonical_type
-            break
-        if base_class_python_name:
-          for base in decl.class_.cpp_bases:
-            class_cpp_name = base.name.split('::')[-1]
-            if class_cpp_name == base_class_python_name:
-              base_class_cpp_name = base.name
-              break
-          self._namemap[base_class_python_name].cpp_name = base_class_cpp_name
       for member in decl.class_.members:
         self._register_types(member, py_name, cpp_namespace)
     elif decl.decltype == ast_pb2.Decl.Type.ENUM:

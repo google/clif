@@ -311,6 +311,12 @@ inline PyObject* Clif_PyObjFrom(const PythonErrorInConversions& c,
   return clif::Clif_PyObjFrom(c.value, {});
 }
 
+// CLIF use `::clif_testing::ValueHolderAsString` as ValueHolderAsString
+inline PyObject* Clif_PyObjFrom(const ValueHolderAsString& c,
+                                const clif::py::PostConv& pc) {
+  return clif::Clif_PyObjFrom(c.value, pc);
+}
+
 }  // namespace clif_testing
 
 #endif  // THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_CLIF_CONVERSION_H_
