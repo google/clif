@@ -158,7 +158,7 @@ class ClassType(TypeDef):
       else:
         yield 'PyObject* Clif_PyObjFrom(%s, py::PostConv);' % (arg % self.cname)
 
-  def GenConverters(self, ns):
+  def GenConverters(self, ns):  # pylint: disable=arguments-renamed
     """Generate Clif_PyObjAs() and Clif_PyObjFrom() definitions."""
     pytype = ns+'::'+self.wrapper_type
     yield ''
@@ -282,7 +282,7 @@ class EnumType(TypeDef):
     yield ''
     yield 'static PyObject* %s{};  // set by above func in Init()' % varname
 
-  def GenConverters(self, ns):
+  def GenConverters(self, ns):  # pylint: disable=arguments-renamed
     """Generate Clif_PyObjAs() and Clif_PyObjFrom() definitions."""
     wname = ns + '::' + self.wrapper_name
     yield ''
@@ -422,7 +422,7 @@ class CallableType(TypeDef):
     yield '// '+(self.pyname or self.cname)
     yield 'PyObject* Clif_PyObjFrom(%s, py::PostConv);' % self.cname
 
-  def GenConverters(self, ns):
+  def GenConverters(self, ns):  # pylint: disable=arguments-renamed
     """Generate a Clif_PyObjFrom(std::function<>) converter."""
     yield ''
     yield '// Create a Python function that calls %s cfunction.' % self.cname
