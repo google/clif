@@ -412,3 +412,10 @@ py_library(
     srcs_version = "PY2AND3",
     visibility = ["//visibility:public"],
 )
+
+py_library(
+    name = "type_mimicry",
+    srcs = ["type_mimicry.py"],
+    srcs_version = "PY2AND3",
+    visibility = ["//visibility:public"],
+)
