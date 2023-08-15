@@ -48,7 +48,8 @@ General usage:
     obj = FakeSimple()  # Already sealed. (The unsealed type is inaccessible.)
 """
 
-from typing import Any, Generic, Type, TypeVar
+from typing import Any, Generic, TypeVar
+from typing import Type  # Python 3.8 compatibility.
 
 _T = TypeVar("_T")
 
