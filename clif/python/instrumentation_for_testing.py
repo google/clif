@@ -48,7 +48,7 @@ General usage:
     obj = FakeSimple()  # Already sealed. (The unsealed type is inaccessible.)
 """
 
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, Type, TypeVar
 
 _T = TypeVar("_T")
 
@@ -68,6 +68,6 @@ class ProductionType(Generic[_T]):
     return self
 
 
-def Unseal(instrumented_object: Any, instrumented_type: type[_T]) -> _T:
+def Unseal(instrumented_object: Any, instrumented_type: Type[_T]) -> _T:
   assert instrumented_object.__class__ is instrumented_type
   return instrumented_object
