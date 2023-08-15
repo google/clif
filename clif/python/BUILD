@@ -414,8 +414,8 @@ py_library(
 )
 
 py_library(
-    name = "type_mimicry",
-    srcs = ["type_mimicry.py"],
+    name = "instrumentation_for_testing",
+    srcs = ["instrumentation_for_testing.py"],
     srcs_version = "PY2AND3",
     visibility = ["//visibility:public"],
 )

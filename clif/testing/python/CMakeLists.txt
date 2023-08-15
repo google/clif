@@ -233,4 +233,6 @@ add_pyclif_library_for_test(property_get_set_cpp_derived property_get_set_cpp_de
 
 add_pyclif_library_for_test(python_multiple_inheritance python_multiple_inheritance.clif)
 
-add_pyclif_library_for_test(mock_uninitializable mock_uninitializable.clif)
+add_pyclif_library_for_test(mock_uninitializable mock_uninitializable.clif
+  PY_DEPS clif_python_instrumentation_for_testing
+)

@@ -95,6 +95,7 @@ target_link_libraries(proto_util_cc PRIVATE
 )
 
 add_py_library(callback_exception_guard callback_exception_guard.py)
+add_py_library(instrumentation_for_testing instrumentation_for_testing.py)
 add_py_library(type_customization type_customization.py)
 add_py_library(postproc postproc.py)
 
