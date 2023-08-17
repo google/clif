@@ -321,28 +321,6 @@ py_library(
 )
 
 py_test(
-    name = "class_test",
-    size = "small",
-    srcs = ["class_test.py"],
-    python_version = "PY3",
-    srcs_version = "PY3",
-    deps = [":class_test_lib"],
-)
-
-py_library(
-    name = "class_test_lib",
-    testonly = 1,
-    srcs = ["class_test.py"],
-    srcs_version = "PY2AND3",
-    deps = [
-        ":generator_lib",
-        "//clif/protos:ast_py_pb2",
-        "@com_google_protobuf//:protobuf_python",
-        "@io_abseil_py//absl/testing:absltest",
-    ],
-)
-
-py_test(
     name = "types_test",
     size = "small",
     srcs = ["types_test.py"],
