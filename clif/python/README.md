@@ -17,6 +17,12 @@ from "util/task/python/clif.h" import *  # Status
 from  "file/base/options_pyclif.h" import *
 # 4. Load pure-Python postprocessor function for Status
 from devtools.clif.python.postproc import DropOkStatus
+# 5. Load pure-Python types for CLIF wrapper (for improved PyType, when
+#    available).
+from file.base.python.filestat import FileStat
+# 6. Load pure-Python types for generated Python proto library (for improved
+#    PyType, when available).
+from file.base.options_pb2 import Options
 
 from "file/base/filesystem.h":
   namespace `file`:
@@ -675,6 +681,8 @@ it can be described as
 
 ```python
 from "file/base/fileproperties_pyclif.h" import *
+
+from file.base.fileproperties_pb2 import FileProperties
 
 from "file/base/filestat.h":
 
