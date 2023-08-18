@@ -157,6 +157,17 @@ Current Limitation:
     [clif/examples/extend_from_python/python/example.py](
     ../../examples/extend_from_python/python/example.py)
 
+> NOTE: When providing a `py_library(name = "foo")` that publicly exposed types
+> from the private `py_clif_cc(name = "_foo")` library, and also using types
+> declared in `_foo` in some other `py_clif_cc(name = "bar")` library, some
+> additional care is needed to ensure that users of `bar` always get the
+> customizations made in `foo`:
+>
+> `bar` should import the `foo_clif.h` header normally (which targets `_foo`),
+> but the pythonic style `from` statement should reference the `foo` library
+> that re-exports the types, which means that `bar`'s `py_deps` list must
+> include `foo`, even when its `pyclif_deps` includes `_foo`.
+
 ## Wrapping POD data types {#wrappod}
 
 NOTE: The example, `wrappod`, used in this section lives in
@@ -436,6 +447,11 @@ that struct. The CLIF file wrapping these functions is as follows:
 # We use a type wrapped elsewhere in this .clif file.
 # Hence, import the wrapped type from the CLIF generated C++ header file.
 from "clif/examples/wrappod/python/wrappod_clif.h" import *
+
+# By importing in the pythonic style as well, we improve PyType safety, as the
+# generated `.pyi` files will use `MyClass` rather than `Any` in the inputs and
+# outputs.
+from clif.examples.wrapped.python.wrappod import MyClass
 
 from "clif/examples/wrapfunc/wrapfunc.h":
   namespace `clif_example::wrapfunc`:
