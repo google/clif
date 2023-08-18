@@ -16,11 +16,6 @@
 # Hence, import the wrapped type from the clif generated C++ header file.
 from "wrappod/python/wrappod_clif.h" import *
 
-# By importing in the pythonic style as well, we improve PyType safety, as the
-# generated `.pyi` files will use `MyClass` rather than `Any` in the inputs and
-# outputs.
-from clif.examples.wrappod.python.wrappod import MyClass
-
 from "wrapfunc/wrapfunc.h":
   namespace `clif_example::wrapfunc`:
     def ResetState()
