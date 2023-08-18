@@ -437,6 +437,11 @@ that struct. The CLIF file wrapping these functions is as follows:
 # Hence, import the wrapped type from the CLIF generated C++ header file.
 from "clif/examples/wrappod/python/wrappod_clif.h" import *
 
+# By importing in the pythonic style as well, we improve PyType safety (when
+# available), as the generated `.pyi` files can use `MyClass` rather than `Any`
+# in the inputs and outputs.
+from clif.examples.wrapped.python.wrappod import MyClass
+
 from "clif/examples/wrapfunc/wrapfunc.h":
   namespace `clif_example::wrapfunc`:
     def ResetState()

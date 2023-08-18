@@ -12,7 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Imports the CLIF-generated C++ headers for the protobuf types. This import is
+# required for CLIF to compile the `from` block below.
 from "wrap_protos/protos/sample_pyclif.h" import *
+
+# Imports the Python-generated library for the protobuf types. This import is
+# not strictly required, but it improves PyType specificity (when available),
+# and it ensures that the Python proto library is available to callers who do
+# not directly import the type.
+from clif.examples.wrap_protos.protos.sample_pb2 import MyMessage
 
 from "wrap_protos/wrap_protos.h":
   namespace `clif_example::wrap_protos`:
