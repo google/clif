@@ -394,20 +394,24 @@ def TypeObject(ht_qualname, tracked_slot_groups,
   #       NOT identical. tp_group has additional customizations.
   if ctor:
     yield ''
-    yield '// %s __init__' % pyname
-    yield 'static int _ctor(PyObject* self, PyObject* args, PyObject* kw);'
+    yield '// %s tp_init_impl' % pyname
+    yield (
+        'static int tp_init_impl(PyObject* self, PyObject* args, PyObject* kw);'
+    )
   if not iterator:
     yield ''
-    yield '// %s __new__' % pyname
-    yield 'static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems);'
-    tp_slots['tp_alloc'] = '_new'
+    yield '// %s tp_alloc' % pyname
+    yield (
+        'static PyObject* tp_alloc_impl(PyTypeObject* type, Py_ssize_t nitems);'
+    )
+    tp_slots['tp_alloc'] = 'tp_alloc_impl'
     tp_slots['tp_new'] = 'PyType_GenericNew'
   yield ''
-  yield '// %s __del__' % pyname
   # Use dtor for dynamic types (derived) to wind down malloc'ed C++ obj, so
   # the C++ dtors are run.
-  tp_slots['tp_dealloc'] = '_dtor'
-  yield 'static void _dtor(PyObject* self) {'
+  yield '// %s tp_dealloc_impl' % pyname
+  yield 'static void tp_dealloc_impl(PyObject* self) {'
+  tp_slots['tp_dealloc'] = 'tp_dealloc_impl'
   if not iterator:
     yield I+'if (%s(self)->weakrefs) {' % _Cast(wname)
     yield I+I+'PyObject_ClearWeakRefs(self);'
@@ -426,13 +430,15 @@ def TypeObject(ht_qualname, tracked_slot_groups,
   yield I+'Py_TYPE(self)->tp_free(self);'
   yield '}'
   if not iterator:
-    # Use delete for static types (not derived), allocated with _new.
-    tp_slots['tp_free'] = '_del'
+    # Use delete for static types (not derived), allocated with tp_alloc_impl.
+    tp_slots['tp_free'] = 'tp_free_impl'
     yield ''
-    yield 'static void _del(void* self) {'
+    yield 'static void tp_free_impl(void* self) {'
     yield I+'delete %s(self);' % _Cast(wname)
     yield '}'
-  tp_slots['tp_init'] = '_ctor' if ctor else 'Clif_PyType_Inconstructible'
+  tp_slots['tp_init'] = (
+      'tp_init_impl' if ctor else 'Clif_PyType_Inconstructible'
+  )
   tp_slots['tp_basicsize'] = 'sizeof(%s)' % wname
   tp_slots['tp_itemsize'] = tp_slots['tp_version_tag'] = '0'
   tp_slots['tp_dictoffset'] = tp_slots['tp_weaklistoffset'] = '0'
@@ -474,7 +480,10 @@ def TypeObject(ht_qualname, tracked_slot_groups,
   yield '}'
   if ctor:
     yield ''
-    yield 'static int _ctor(PyObject* self, PyObject* args, PyObject* kw) {'
+    yield (
+        'static int tp_init_impl('
+        'PyObject* self, PyObject* args, PyObject* kw) {'
+    )
     if abstract:
       yield I+'if (Py_TYPE(self) == %s) {' % wtype
       yield I+I+'return Clif_PyType_Inconstructible(self, args, kw);'
@@ -491,9 +500,10 @@ def TypeObject(ht_qualname, tracked_slot_groups,
       # We have been lucky so far because NULL initialization of clif::Instance
       # object is equivalent to constructing it with the default constructor.
       # (NULL initialization happens in PyType_GenericAlloc).
-      # We don't have a place to call placement new. __init__ (and so _ctor) can
-      # be called many times and we have no way to ensure the previous object is
-      # destructed properly (it may be NULL or new initialized).
+      # We don't have a place to call placement new. __init__ (and so
+      # tp_init_impl) can be called many times and we have no way to ensure the
+      # previous object is destructed properly (it may be NULL or new
+      # initialized).
       yield I+'%s = ::clif::MakeShared<%s>();' % (cpp,
                                                   subst_cpp_ptr or fqclassname)
       if subst_cpp_ptr:
@@ -522,7 +532,10 @@ def TypeObject(ht_qualname, tracked_slot_groups,
     yield '}'
   if not iterator:
     yield ''
-    yield 'static PyObject* _new(PyTypeObject* type, Py_ssize_t nitems) {'
+    yield (
+        'static PyObject* tp_alloc_impl('
+        'PyTypeObject* type, Py_ssize_t nitems) {'
+    )
     yield I+'DCHECK(nitems == 0);'
     yield I+'%s* wobj = new %s;' % (wname, wname)
     if enable_instance_dict:
