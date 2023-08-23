@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from absl.testing import absltest
+from absl.testing import parameterized
 
 from clif.testing.python import python_multiple_inheritance as tm
 
@@ -32,7 +33,25 @@ class PPCCInit(PC, tm.CppDrvd):
     tm.CppDrvd.__init__(self, value + 1)
 
 
-class PythonMultipleInheritanceTest(absltest.TestCase):
+class PCExplicitInitWithSuper(tm.CppBase):
+
+  def __init__(self, value):
+    super().__init__(value + 1)
+
+
+class PCExplicitInitMissingSuper(tm.CppBase):
+
+  def __init__(self, value):
+    del value
+
+
+class PCExplicitInitMissingSuper2(tm.CppBase):
+
+  def __init__(self, value):
+    del value
+
+
+class PythonMultipleInheritanceTest(parameterized.TestCase):
 
   def testPC(self):
     d = PC(11)
@@ -79,6 +98,22 @@ class PythonMultipleInheritanceTest(absltest.TestCase):
     d.reset_base_value_from_drvd(30)
     self.assertEqual(d.get_base_value(), (30, 20)[i])
     self.assertEqual(d.get_base_value_from_drvd(), 30)
+
+  def testPCExplicitInitWithSuper(self):
+    d = PCExplicitInitWithSuper(14)
+    self.assertEqual(d.get_base_value(), 15)
+
+  @parameterized.parameters(
+      PCExplicitInitMissingSuper, PCExplicitInitMissingSuper2
+  )
+  def testPCExplicitInitMissingSuper(self, derived_type):
+    with self.assertRaises(TypeError) as ctx:
+      derived_type(0)
+    self.assertEndsWith(
+        str(ctx.exception),
+        "python_multiple_inheritance.CppBase.__init__() must be called when"
+        " overriding __init__",
+    )
 
 
 if __name__ == "__main__":

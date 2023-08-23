@@ -398,14 +398,24 @@ def TypeObject(ht_qualname, tracked_slot_groups,
     yield (
         'static int tp_init_impl(PyObject* self, PyObject* args, PyObject* kw);'
     )
+    yield (
+        'static int tp_init_intercepted('
+        'PyObject* self, PyObject* args, PyObject* kw);'
+    )
   if not iterator:
     yield ''
-    yield '// %s tp_alloc' % pyname
+    yield '// %s tp_alloc_impl' % pyname
     yield (
         'static PyObject* tp_alloc_impl(PyTypeObject* type, Py_ssize_t nitems);'
     )
     tp_slots['tp_alloc'] = 'tp_alloc_impl'
-    tp_slots['tp_new'] = 'PyType_GenericNew'
+    yield ''
+    yield '// %s tp_new_impl' % pyname
+    yield (
+        'static PyObject* tp_new_impl(PyTypeObject* type, PyObject* args,'
+        ' PyObject* kwds);'
+    )
+    tp_slots['tp_new'] = 'tp_new_impl'
   yield ''
   # Use dtor for dynamic types (derived) to wind down malloc'ed C++ obj, so
   # the C++ dtors are run.
@@ -433,6 +443,7 @@ def TypeObject(ht_qualname, tracked_slot_groups,
     # Use delete for static types (not derived), allocated with tp_alloc_impl.
     tp_slots['tp_free'] = 'tp_free_impl'
     yield ''
+    yield '// %s tp_free_impl' % pyname
     yield 'static void tp_free_impl(void* self) {'
     yield I+'delete %s(self);' % _Cast(wname)
     yield '}'
@@ -479,6 +490,16 @@ def TypeObject(ht_qualname, tracked_slot_groups,
   yield I+'return ty;'
   yield '}'
   if ctor:
+    yield ''
+    yield '// Intentionally leak the unordered_map:'
+    yield (
+        '// https://google.github.io/styleguide/cppguide.html'
+        '#Static_and_Global_Variables'
+    )
+    yield (
+        'static auto* derived_tp_init_registry = new std::unordered_map<'
+        'PyTypeObject*, int(*)(PyObject*, PyObject*, PyObject*)>;'
+    )
     yield ''
     yield (
         'static int tp_init_impl('
@@ -530,6 +551,28 @@ def TypeObject(ht_qualname, tracked_slot_groups,
         yield I+'Py_XDECREF(init);'
         yield I+'return init? 0: -1;'
     yield '}'
+    yield ''
+    yield (
+        'static int tp_init_intercepted('
+        'PyObject* self, PyObject* args, PyObject* kw) {'
+    )
+    yield I+'DCHECK(PyType_Check(self) == 0);'
+    yield (
+        I+'const auto derived_tp_init = '
+        'derived_tp_init_registry->find(Py_TYPE(self));'
+    )
+    yield I+'CHECK(derived_tp_init != derived_tp_init_registry->end());'
+    yield I+'int status = (*derived_tp_init->second)(self, args, kw);'
+    yield I+'if (status == 0 &&'
+    yield I+'    reinterpret_cast<wrapper*>(self)->cpp.get() == nullptr) {'
+    yield I+'  Py_DECREF(self);'
+    yield I+'  PyErr_Format(PyExc_TypeError,'
+    yield I+'               "%s.__init__() must be called when"'
+    yield I+'               " overriding __init__", wrapper_Type->tp_name);'
+    yield I+'  return -1;'
+    yield I+'}'
+    yield I+'return status;'
+    yield '}'
   if not iterator:
     yield ''
     yield (
@@ -542,6 +585,19 @@ def TypeObject(ht_qualname, tracked_slot_groups,
       yield I+'wobj->instance_dict = nullptr;'
     yield I+'PyObject* self = %s(wobj);' % _Cast()
     yield I+'return PyObject_Init(self, %s);' % wtype
+    yield '}'
+    yield ''
+    yield (
+        'static PyObject* tp_new_impl(PyTypeObject* type, PyObject* args,'
+        ' PyObject* kwds) {'
+    )
+    if ctor:
+      yield I+'if (type->tp_init != tp_init_impl &&'
+      yield I+'    derived_tp_init_registry->count(type) == 0) {'
+      yield I+I+'(*derived_tp_init_registry)[type] = type->tp_init;'
+      yield I+I+'type->tp_init = tp_init_intercepted;'
+      yield I+'}'
+    yield I+'return PyType_GenericNew(type, args, kwds);'
     yield '}'
 
 
