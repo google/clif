@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import TYPE_CHECKING
 from unittest import mock
 
 from absl.testing import absltest
@@ -104,8 +103,9 @@ class FakeExtensionNoCtorSealedAs:
     return self.state * i * 102
 
 
-# When access to instrumented_type is needed.
-class FakeExtensionNoCtorUnsealed(i4t.ProductionType[tm.NoCtor]):
+# When access to instrumented_type is needed and the fake __init__ signature is
+# DIFFERENT from that of production_type.
+class FakeExtensionNoCtorInitWithArgsUnsealed(i4t.ProductionType[tm.NoCtor]):
 
   def __init__(self, state):
     self.state = state
@@ -114,9 +114,35 @@ class FakeExtensionNoCtorUnsealed(i4t.ProductionType[tm.NoCtor]):
     return self.state * i * 103
 
 
-# TODO: Nicer API after the pytype bug is resolved.
-FakeExtensionNoCtorSealed = (
-    tm.NoCtor if TYPE_CHECKING else FakeExtensionNoCtorUnsealed
+# When access to instrumented_type is needed and the fake __init__ signature is
+# IDENTICAL to that of production_type (or __init__ has no arguments if
+# production_type has no __init__).
+class FakeExtensionNoCtorDefaultInitUnsealed(i4t.ProductionType[tm.NoCtor]):
+
+  # __init__ is intentionally missing.
+
+  def Mul100(self, i):
+    return i * 104
+
+
+FakeExtensionNoCtorDefaultInitSealed = (
+    FakeExtensionNoCtorDefaultInitUnsealed.SealType()
+)
+
+
+# Very similar to FakeExtensionNoCtorDefaultInitUnsealed, but with
+# explicit __init__.
+class FakeExtensionNoCtorInitNoArgsUnsealed(i4t.ProductionType[tm.NoCtor]):
+
+  def __init__(self):
+    self.state = 8
+
+  def Mul100(self, i):
+    return self.state * i * 105
+
+
+FakeExtensionNoCtorInitNoArgsSealed = (
+    FakeExtensionNoCtorInitNoArgsUnsealed.SealType()
 )
 
 
@@ -156,13 +182,28 @@ class FakeUninitializableTest(absltest.TestCase):
     # assert_type(obj, tm.NoCtor)
     self.assertEqual(ProductionCodePassNoCtor(obj), 612)
 
-  def testFakeExtensionNoCtorUnsealed(self):
-    obj = FakeExtensionNoCtorUnsealed(5).Seal()
+  def testFakeExtensionNoCtorInitWithArgs(self):
+    obj = FakeExtensionNoCtorInitWithArgsUnsealed(5).Seal()
     # assert_type(obj, tm.NoCtor)
     self.assertEqual(ProductionCodePassNoCtor(obj), 1030)
-    fake_obj = i4t.Unseal(obj, FakeExtensionNoCtorUnsealed)
-    # assert_type(fake_obj, FakeExtensionNoCtorUnsealed)
+    fake_obj = i4t.Unseal(obj, FakeExtensionNoCtorInitWithArgsUnsealed)
+    # assert_type(fake_obj, FakeExtensionNoCtorInitWithArgsUnsealed)
     self.assertEqual(fake_obj.state, 5)
+
+  def testFakeExtensionNoCtorDefaultInit(self):
+    obj = FakeExtensionNoCtorDefaultInitSealed()
+    # assert_type(obj, tm.NoCtor)
+    self.assertEqual(ProductionCodePassNoCtor(obj), 208)
+    fake_obj = i4t.Unseal(obj, FakeExtensionNoCtorDefaultInitUnsealed)
+    # assert_type(fake_obj, FakeExtensionNoCtorDefaultInitUnsealed)
+
+  def testFakeExtensionNoCtorInitNoArgs(self):
+    obj = FakeExtensionNoCtorInitNoArgsSealed()
+    # assert_type(obj, tm.NoCtor)
+    self.assertEqual(ProductionCodePassNoCtor(obj), 1680)
+    fake_obj = i4t.Unseal(obj, FakeExtensionNoCtorInitNoArgsUnsealed)
+    # assert_type(fake_obj, FakeExtensionNoCtorInitNoArgsUnsealed)
+    self.assertEqual(fake_obj.state, 8)
 
   def testFakeNativeWithCtor(self):
     orig_fake_obj = FakeNativeWithCtor()

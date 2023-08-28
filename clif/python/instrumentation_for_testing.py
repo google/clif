@@ -68,6 +68,10 @@ class ProductionType(Generic[_T]):
   def Seal(self) -> _T:
     return self
 
+  @classmethod
+  def SealType(cls) -> Type[_T]:
+    return cls
+
 
 def Unseal(instrumented_object: Any, instrumented_type: Type[_T]) -> _T:
   assert instrumented_object.__class__ is instrumented_type
