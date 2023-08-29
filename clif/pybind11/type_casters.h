@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef THIRD_PARTY_CLIF_PYBIND11_TYPE_CASTERS_H_
-#define THIRD_PARTY_CLIF_PYBIND11_TYPE_CASTERS_H_
+#ifndef CLIF_PYBIND11_TYPE_CASTERS_H_
+#define CLIF_PYBIND11_TYPE_CASTERS_H_
 
 // pybind11 includes have to be at the very top, even before Python.h
 #include <pybind11/smart_holder.h>
@@ -372,4 +372,4 @@ struct type_caster<std::shared_ptr<std::string>>
 }  // namespace detail
 }  // namespace pybind11
 
-#endif  // THIRD_PARTY_CLIF_PYBIND11_TYPE_CASTERS_H_
+#endif  // CLIF_PYBIND11_TYPE_CASTERS_H_

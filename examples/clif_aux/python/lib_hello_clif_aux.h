@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef THIRD_PARTY_CLIF_EXAMPLES_CLIF_AUX_PYTHON_LIB_HELLO_CLIF_AUX_H_
-#define THIRD_PARTY_CLIF_EXAMPLES_CLIF_AUX_PYTHON_LIB_HELLO_CLIF_AUX_H_
+#ifndef CLIF_EXAMPLES_CLIF_AUX_PYTHON_LIB_HELLO_CLIF_AUX_H_
+#define CLIF_EXAMPLES_CLIF_AUX_PYTHON_LIB_HELLO_CLIF_AUX_H_
 
 #include <string>
 
@@ -30,4 +30,4 @@ inline std::string hello_and_bye(const std::string& who) {
 }  // namespace clif_aux
 }  // namespace clif_examples
 
-#endif  // THIRD_PARTY_CLIF_EXAMPLES_CLIF_AUX_PYTHON_LIB_HELLO_CLIF_AUX_H_
+#endif  // CLIF_EXAMPLES_CLIF_AUX_PYTHON_LIB_HELLO_CLIF_AUX_H_

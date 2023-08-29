@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef THIRD_PARTY_CLIF_EXAMPLES_CLIF_AUX_LIB_HELLO_H_
-#define THIRD_PARTY_CLIF_EXAMPLES_CLIF_AUX_LIB_HELLO_H_
+#ifndef CLIF_EXAMPLES_CLIF_AUX_LIB_HELLO_H_
+#define CLIF_EXAMPLES_CLIF_AUX_LIB_HELLO_H_
 
 #include <string>
 
@@ -28,4 +28,4 @@ inline std::string hello(const std::string& who) {
 }  // namespace clif_aux
 }  // namespace clif_examples
 
-#endif  // THIRD_PARTY_CLIF_EXAMPLES_CLIF_AUX_LIB_HELLO_H_
+#endif  // CLIF_EXAMPLES_CLIF_AUX_LIB_HELLO_H_

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef THIRD_PARTY_CLIF_PYBIND11_CLIF_TYPE_CASTERS_H_
-#define THIRD_PARTY_CLIF_PYBIND11_CLIF_TYPE_CASTERS_H_
+#ifndef CLIF_PYBIND11_CLIF_TYPE_CASTERS_H_
+#define CLIF_PYBIND11_CLIF_TYPE_CASTERS_H_
 
 // pybind11 includes have to be at the very top, even before Python.h
 #include "third_party/pybind11/include/pybind11/pybind11.h"
@@ -390,4 +390,4 @@ struct clif_smart_ptr_type_caster {
                                    std::unique_ptr<__VA_ARGS__>> {};  \
   }
 
-#endif  // THIRD_PARTY_CLIF_PYBIND11_CLIF_TYPE_CASTERS_H_
+#endif  // CLIF_PYBIND11_CLIF_TYPE_CASTERS_H_

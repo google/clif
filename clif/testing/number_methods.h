@@ -249,4 +249,4 @@ class AnotherNumber {
 
 }  // namespace clif_testing
 
-#endif  // CLIF_TESTING_SEQUENCE_METHODS_H_
+#endif  // CLIF_TESTING_NUMBER_METHODS_H_

@@ -83,4 +83,4 @@ inline void UncopyableHolder__extend__set_value(
 }  // namespace extend_properties
 }  // namespace clif_testing
 
-#endif  // THIRD_PARTY_CLIF_TESTING_PYTHON_EXTEND_PROPERTIES_CLIF_AUX_H_
+#endif  // CLIF_TESTING_PYTHON_EXTEND_PROPERTIES_CLIF_AUX_H_

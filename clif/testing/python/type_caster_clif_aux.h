@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef THIRD_PARTY_CLIF_TESTING_PYTHON_TYPE_CASTER_CLIF_AUX_H_
-#define THIRD_PARTY_CLIF_TESTING_PYTHON_TYPE_CASTER_CLIF_AUX_H_
+#ifndef CLIF_TESTING_PYTHON_TYPE_CASTER_CLIF_AUX_H_
+#define CLIF_TESTING_PYTHON_TYPE_CASTER_CLIF_AUX_H_
 
 #include <memory>
 
@@ -125,4 +125,4 @@ inline bool can_convert_enum_to_concrete(PyObject* obj) {
 
 }  // namespace clif_testing
 
-#endif  // THIRD_PARTY_CLIF_TESTING_PYTHON_TYPE_CASTER_CLIF_AUX_H_
+#endif  // CLIF_TESTING_PYTHON_TYPE_CASTER_CLIF_AUX_H_

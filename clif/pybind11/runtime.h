@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef THIRD_PARTY_CLIF_PYBIND11_RUNTIME_H_
-#define THIRD_PARTY_CLIF_PYBIND11_RUNTIME_H_
+#ifndef CLIF_PYBIND11_RUNTIME_H_
+#define CLIF_PYBIND11_RUNTIME_H_
 
 #include "third_party/pybind11/include/pybind11/smart_holder.h"
 #include "third_party/pybind11/include/pybind11/type_caster_pyobject_ptr.h"
@@ -70,4 +70,4 @@ struct type_caster<clif::CapsuleWrapper<T>> {
 }  // namespace detail
 }  // namespace pybind11
 
-#endif  // THIRD_PARTY_CLIF_PYBIND11_RUNTIME_H_
+#endif  // CLIF_PYBIND11_RUNTIME_H_

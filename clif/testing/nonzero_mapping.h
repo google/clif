@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef THIRD_PARTY_CLIF_TESTING_NONZERO_MAPPING_H_
-#define THIRD_PARTY_CLIF_TESTING_NONZERO_MAPPING_H_
+#ifndef CLIF_TESTING_NONZERO_MAPPING_H_
+#define CLIF_TESTING_NONZERO_MAPPING_H_
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -38,4 +38,4 @@ struct MightBeTrue {
 
 }  // namespace clif_testing
 
-#endif  // THIRD_PARTY_CLIF_TESTING_NONZERO_MAPPING_H_
+#endif  // CLIF_TESTING_NONZERO_MAPPING_H_

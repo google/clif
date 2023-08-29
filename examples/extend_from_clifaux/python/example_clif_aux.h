@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef EXPERIMENTAL_USERS_LMAKHLIS_CLIF_PYTHON_EXAMPLE_CLIF_AUX_H_
-#define EXPERIMENTAL_USERS_LMAKHLIS_CLIF_PYTHON_EXAMPLE_CLIF_AUX_H_
+#ifndef CLIF_EXAMPLES_EXTEND_FROM_CLIFAUX_PYTHON_EXAMPLE_CLIF_AUX_H_
+#define CLIF_EXAMPLES_EXTEND_FROM_CLIFAUX_PYTHON_EXAMPLE_CLIF_AUX_H_
 
 #include "extend_from_clifaux/example.h"
 
@@ -34,4 +34,4 @@ inline int MyClass__extend__k(MyClass& self, int x, int y) { return 2 * x + y; }
 }  // namespace extend_from_clifaux
 }  // namespace clif_examples
 
-#endif  // EXPERIMENTAL_USERS_LMAKHLIS_CLIF_PYTHON_EXAMPLE_CLIF_AUX_H_
+#endif  // CLIF_EXAMPLES_EXTEND_FROM_CLIFAUX_PYTHON_EXAMPLE_CLIF_AUX_H_

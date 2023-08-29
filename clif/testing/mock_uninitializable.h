@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef CLIF_TESTING_PROPERTY_PYTHON_MULTIPLE_INHERITANCE_H_
-#define CLIF_TESTING_PROPERTY_PYTHON_MULTIPLE_INHERITANCE_H_
+#ifndef CLIF_TESTING_MOCK_UNINITIALIZABLE_H_
+#define CLIF_TESTING_MOCK_UNINITIALIZABLE_H_
 
 namespace clif_testing_mock_uninitializable {
 
@@ -25,4 +25,4 @@ struct NoCtor {
 
 }  // namespace clif_testing_mock_uninitializable
 
-#endif  // CLIF_TESTING_PYTHON_MULTIPLE_INHERITANCE_H_
+#endif  // CLIF_TESTING_MOCK_UNINITIALIZABLE_H_

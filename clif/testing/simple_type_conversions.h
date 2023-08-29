@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef CLIF_SIMPLE_TYPE_CONCERSIONS_H_
-#define CLIF_SIMPLE_TYPE_CONCERSIONS_H_
+#ifndef CLIF_TESTING_SIMPLE_TYPE_CONVERSIONS_H_
+#define CLIF_TESTING_SIMPLE_TYPE_CONVERSIONS_H_
 
 namespace clif_testing {
 
@@ -26,4 +26,4 @@ inline unsigned char UnsignedCharManipulation(unsigned char inp) {
 
 }  // namespace clif_testing
 
-#endif  // CLIF_SIMPLE_TYPE_CONCERSIONS_H_
+#endif  // CLIF_TESTING_SIMPLE_TYPE_CONVERSIONS_H_

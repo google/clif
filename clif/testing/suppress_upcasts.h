@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef THIRD_PARTY_CLIF_TESTING_SUPPRESS_UPCASTS_H_
-#define THIRD_PARTY_CLIF_TESTING_SUPPRESS_UPCASTS_H_
+#ifndef CLIF_TESTING_SUPPRESS_UPCASTS_H_
+#define CLIF_TESTING_SUPPRESS_UPCASTS_H_
 
 namespace clif_testing {
 
@@ -37,4 +37,4 @@ class DerivedSuppressUpcasts: public BaseWrapper::Base {
 
 }  // namespace clif_testing
 
-#endif  // THIRD_PARTY_CLIF_TESTING_SUPPRESS_UPCASTS_H_
+#endif  // CLIF_TESTING_SUPPRESS_UPCASTS_H_

@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef CLIF_TESTING_PROPERTY_PYTHON_MULTIPLE_INHERITANCE_H_
-#define CLIF_TESTING_PROPERTY_PYTHON_MULTIPLE_INHERITANCE_H_
+#ifndef CLIF_TESTING_PYTHON_MULTIPLE_INHERITANCE_H_
+#define CLIF_TESTING_PYTHON_MULTIPLE_INHERITANCE_H_
 
 namespace clif_testing_python_multiple_inheritance {
 
