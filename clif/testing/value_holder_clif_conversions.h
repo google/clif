@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CLIF_TESTING_VALUE_HOLDER_CLIF_CONVERSION_H_
-#define CLIF_TESTING_VALUE_HOLDER_CLIF_CONVERSION_H_
+#ifndef CLIF_TESTING_VALUE_HOLDER_CLIF_CONVERSIONS_H_
+#define CLIF_TESTING_VALUE_HOLDER_CLIF_CONVERSIONS_H_
 
 #include <memory>
 
@@ -319,4 +319,4 @@ inline PyObject* Clif_PyObjFrom(const ValueHolderAsString& c,
 
 }  // namespace clif_testing
 
-#endif  // CLIF_TESTING_VALUE_HOLDER_CLIF_CONVERSION_H_
+#endif  // CLIF_TESTING_VALUE_HOLDER_CLIF_CONVERSIONS_H_

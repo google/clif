@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef CLIF_TESTING_IMPPORTED_INHERITANCE_H_
-#define CLIF_TESTING_IMPPORTED_INHERITANCE_H_
+#ifndef CLIF_TESTING_IMPORTED_INHERITANCE_H_
+#define CLIF_TESTING_IMPORTED_INHERITANCE_H_
 #include "clif/testing/nested_inheritance.h"
 #include "clif/testing/nested_fields.h"
 namespace clif_testing {
@@ -27,4 +27,4 @@ struct InheritImportedDerived: public Derived {};
 struct InheritImportedAmbiguousBase:
     public nested_inheritance::AmbiguousBase {};
 }  // namespace clif_testing
-#endif  // CLIF_TESTING_IMPPORTED_INHERITANCE_H_
+#endif  // CLIF_TESTING_IMPORTED_INHERITANCE_H_
