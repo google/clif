@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef THIRD_PARTY_CLIF_EXAMPLES_UNIQUE_PTR_MEMBER_H_
-#define THIRD_PARTY_CLIF_EXAMPLES_UNIQUE_PTR_MEMBER_H_
+#ifndef CLIF_EXAMPLES_UNIQUE_PTR_MEMBER_H_
+#define CLIF_EXAMPLES_UNIQUE_PTR_MEMBER_H_
 
 #include <memory>
 
@@ -54,4 +54,4 @@ inline int cpp_pattern() {
 }  // namespace unique_ptr_member
 }  // namespace clif_examples
 
-#endif  // THIRD_PARTY_CLIF_EXAMPLES_UNIQUE_PTR_MEMBER_H_
+#endif  // CLIF_EXAMPLES_UNIQUE_PTR_MEMBER_H_

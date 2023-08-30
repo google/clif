@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef THIRD_PARTY_CLIF_PYTHON_PYOBJECT_PTR_CONV_H_
-#define THIRD_PARTY_CLIF_PYTHON_PYOBJECT_PTR_CONV_H_
+#ifndef CLIF_PYTHON_PYOBJECT_PTR_CONV_H_
+#define CLIF_PYTHON_PYOBJECT_PTR_CONV_H_
 
 #include <Python.h>
 
@@ -42,4 +42,4 @@ inline bool Clif_PyObjAs(PyObject* py, PyObject** c) {
 
 }  // namespace clif
 
-#endif  // THIRD_PARTY_CLIF_PYTHON_PYOBJECT_PTR_CONV_H_
+#endif  // CLIF_PYTHON_PYOBJECT_PTR_CONV_H_

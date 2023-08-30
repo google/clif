@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef THIRD_PARTY_CLIF_TESTING_LAMBDA_EXPRESSIONS_H_
-#define THIRD_PARTY_CLIF_TESTING_LAMBDA_EXPRESSIONS_H_
+#ifndef CLIF_TESTING_LAMBDA_EXPRESSIONS_H_
+#define CLIF_TESTING_LAMBDA_EXPRESSIONS_H_
 
 #include <Python.h>
 
@@ -233,4 +233,4 @@ inline void python_exception_in_function() {
 
 }  // namespace clif_testing
 
-#endif  // THIRD_PARTY_CLIF_TESTING_LAMBDA_EXPRESSIONS_H_
+#endif  // CLIF_TESTING_LAMBDA_EXPRESSIONS_H_

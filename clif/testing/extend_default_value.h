@@ -1,5 +1,5 @@
-#ifndef THIRD_PARTY_CLIF_TESTING_EXTEND_DEFAULT_VALUE_H_
-#define THIRD_PARTY_CLIF_TESTING_EXTEND_DEFAULT_VALUE_H_
+#ifndef CLIF_TESTING_EXTEND_DEFAULT_VALUE_H_
+#define CLIF_TESTING_EXTEND_DEFAULT_VALUE_H_
 
 namespace clif_testing {
 
@@ -23,4 +23,4 @@ struct TestNestedDefaultValue {
 
 }  // namespace clif_testing
 
-#endif  // THIRD_PARTY_CLIF_TESTING_EXTEND_DEFAULT_VALUE_H_
+#endif  // CLIF_TESTING_EXTEND_DEFAULT_VALUE_H_

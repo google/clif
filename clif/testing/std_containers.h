@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <array>
 #include <functional>
+#include <list>
 #include <memory>
 #include <set>
 #include <string>
@@ -35,8 +36,12 @@ inline int PassVectorInt(const std::vector<int>& v) {
   return zum;
 }
 
+inline int PassListInt(const std::list<int>& l) {
+  return PassVectorInt(std::vector<int>(l.begin(), l.end())) + 1;
+}
+
 inline int PassArrayInt2(const std::array<int, 2>& a) {
-  return PassVectorInt(std::vector<int>(a.begin(), a.end())) + 1;
+  return PassVectorInt(std::vector<int>(a.begin(), a.end())) + 2;
 }
 
 inline int PassVectorPairInt(const std::vector<std::pair<int, int>>& v) {

@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef THIRD_PARTY_CLIF_TESTING_PYTHON_OPERATORS_CLIF_AUX_H_
-#define THIRD_PARTY_CLIF_TESTING_PYTHON_OPERATORS_CLIF_AUX_H_
+#ifndef CLIF_TESTING_PYTHON_OPERATORS_CLIF_AUX_H_
+#define CLIF_TESTING_PYTHON_OPERATORS_CLIF_AUX_H_
 
 #include "clif/testing/operators.h"
 
@@ -36,4 +36,4 @@ inline int WithExtendGetItemAndExtendLen_getitem(
 
 }  // namespace clif_ops_test
 
-#endif  // THIRD_PARTY_CLIF_TESTING_PYTHON_OPERATORS_CLIF_AUX_H_
+#endif  // CLIF_TESTING_PYTHON_OPERATORS_CLIF_AUX_H_

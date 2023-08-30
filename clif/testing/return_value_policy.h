@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef THIRD_PARTY_CLIF_TESTING_RETURN_VALUE_POLICY_H_
-#define THIRD_PARTY_CLIF_TESTING_RETURN_VALUE_POLICY_H_
+#ifndef CLIF_TESTING_RETURN_VALUE_POLICY_H_
+#define CLIF_TESTING_RETURN_VALUE_POLICY_H_
 
 #include <memory>
 #include <string>
@@ -195,4 +195,4 @@ inline std::unique_ptr<NoCopyNoMove> return_unique_pointer_nocopy_nomove() {
 
 }  // namespace clif_testing
 
-#endif  // THIRD_PARTY_CLIF_TESTING_RETURN_VALUE_POLICY_H_
+#endif  // CLIF_TESTING_RETURN_VALUE_POLICY_H_

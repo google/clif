@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef THIRD_PARTY_CLIF_PYTHON_PICKLE_SUPPORT_H_
-#define THIRD_PARTY_CLIF_PYTHON_PICKLE_SUPPORT_H_
+#ifndef CLIF_PYTHON_PICKLE_SUPPORT_H_
+#define CLIF_PYTHON_PICKLE_SUPPORT_H_
 
 #include <Python.h>
 
@@ -23,4 +23,4 @@ PyObject* ReduceExCore(PyObject* self, const int protocol);
 
 }  // namespace clif
 
-#endif  // THIRD_PARTY_CLIF_PYTHON_PICKLE_SUPPORT_H_
+#endif  // CLIF_PYTHON_PICKLE_SUPPORT_H_

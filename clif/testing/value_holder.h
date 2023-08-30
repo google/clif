@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_H_
-#define THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_H_
+#ifndef CLIF_TESTING_VALUE_HOLDER_H_
+#define CLIF_TESTING_VALUE_HOLDER_H_
 
 #include <vector>
 namespace clif_testing {
@@ -171,4 +171,4 @@ class PythonErrorInConversions {
 
 }  // namespace clif_testing
 
-#endif  // THIRD_PARTY_CLIF_TESTING_VALUE_HOLDER_H_
+#endif  // CLIF_TESTING_VALUE_HOLDER_H_

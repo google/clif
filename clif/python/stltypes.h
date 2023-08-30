@@ -959,6 +959,18 @@ bool Clif_PyObjAs(PyObject* py, std::vector<T, Args...>* c) {
   });
 }
 
+template <typename T, typename... Args>
+bool Clif_PyObjAs(PyObject* py, std::list<T, Args...>* c) {
+  CHECK(c != nullptr);
+  if (!PyObjectTypeIsConvertibleToStdVector(py)) {
+    return false;
+  }
+  c->clear();
+  return py::IterToCont<T>(py, [&c](T&& i) {  // NOLINT: build/c++11
+    c->push_back(std::move(i));
+  });
+}
+
 template <typename T, std::size_t N>
 bool Clif_PyObjAs(PyObject* py, std::array<T, N>* c) {
   CHECK(c != nullptr);

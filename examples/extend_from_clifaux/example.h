@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef THIRD_PARTY_CLIF_EXAMPLES_EXTEND_FROM_CLIFAUX_EXAMPLE_H_
-#define THIRD_PARTY_CLIF_EXAMPLES_EXTEND_FROM_CLIFAUX_EXAMPLE_H_
+#ifndef CLIF_EXAMPLES_EXTEND_FROM_CLIFAUX_EXAMPLE_H_
+#define CLIF_EXAMPLES_EXTEND_FROM_CLIFAUX_EXAMPLE_H_
 
 namespace clif_examples {
 namespace extend_from_clifaux {
@@ -27,4 +27,4 @@ class MyClass {
 }  // namespace extend_from_clifaux
 }  // namespace clif_examples
 
-#endif  // THIRD_PARTY_CLIF_EXAMPLES_EXTEND_FROM_CLIFAUX_EXAMPLE_H_
+#endif  // CLIF_EXAMPLES_EXTEND_FROM_CLIFAUX_EXAMPLE_H_

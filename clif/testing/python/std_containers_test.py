@@ -23,7 +23,9 @@ from clif.testing.python import std_containers
 class StdContainersTest(parameterized.TestCase):
 
   @parameterized.parameters(
-      (std_containers.PassVectorInt, 0), (std_containers.PassArrayInt2, 1)
+      (std_containers.PassVectorInt, 0),
+      (std_containers.PassListInt, 1),
+      (std_containers.PassArrayInt2, 2),
   )
   def testPassVectorInt(self, fn, offset):
     self.assertEqual(fn([7, 13]), 140 + offset)

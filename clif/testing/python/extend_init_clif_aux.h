@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef THIRD_PARTY_CLIF_TESTING_PYTHON_EXTEND_INIT_CLIF_AUX_H_
-#define THIRD_PARTY_CLIF_TESTING_PYTHON_EXTEND_INIT_CLIF_AUX_H_
+#ifndef CLIF_TESTING_PYTHON_EXTEND_INIT_CLIF_AUX_H_
+#define CLIF_TESTING_PYTHON_EXTEND_INIT_CLIF_AUX_H_
 
 #include <Python.h>
 
@@ -68,4 +68,4 @@ TestPyErrFromConstructor__extend__init__(int v) {
 
 }  // namespace clif_testing
 
-#endif  // THIRD_PARTY_CLIF_TESTING_PYTHON_EXTEND_INIT_CLIF_AUX_H_
+#endif  // CLIF_TESTING_PYTHON_EXTEND_INIT_CLIF_AUX_H_

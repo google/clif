@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef THIRD_PARTY_CLIF_TESTING_TYPE_CASTER_H_
-#define THIRD_PARTY_CLIF_TESTING_TYPE_CASTER_H_
+#ifndef CLIF_TESTING_TYPE_CASTER_H_
+#define CLIF_TESTING_TYPE_CASTER_H_
 
 #include <Python.h>
 
@@ -169,4 +169,4 @@ inline ValueHolderAsString return_value_holder_as_string() {
 
 }  // namespace clif_testing
 
-#endif  // THIRD_PARTY_CLIF_TESTING_TYPE_CASTER_H_
+#endif  // CLIF_TESTING_TYPE_CASTER_H_

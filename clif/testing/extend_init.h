@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef THIRD_PARTY_CLIF_TESTING_EXTEND_INIT_H_
-#define THIRD_PARTY_CLIF_TESTING_EXTEND_INIT_H_
+#ifndef CLIF_TESTING_EXTEND_INIT_H_
+#define CLIF_TESTING_EXTEND_INIT_H_
 
 namespace clif_testing {
 
@@ -61,4 +61,4 @@ struct TestPyErrFromConstructor {};
 
 }  // namespace clif_testing
 
-#endif  // THIRD_PARTY_CLIF_TESTING_EXTEND_INIT_H_
+#endif  // CLIF_TESTING_EXTEND_INIT_H_

@@ -1,5 +1,5 @@
-#ifndef THIRD_PARTY_CLIF_TESTING_VARIABLES_H_
-#define THIRD_PARTY_CLIF_TESTING_VARIABLES_H_
+#ifndef CLIF_TESTING_VARIABLES_H_
+#define CLIF_TESTING_VARIABLES_H_
 
 #include <complex>
 #include <string_view>
@@ -30,4 +30,4 @@ enum {
 }  // namespace variables
 }  // namespace clif_testing
 
-#endif  // THIRD_PARTY_CLIF_TESTING_VARIABLES_H_
+#endif  // CLIF_TESTING_VARIABLES_H_

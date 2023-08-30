@@ -253,6 +253,9 @@ PyObject* Clif_PyObjFrom(std::vector<bool, Args...>&& c, const py::PostConv&);
 template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::vector<T, Args...>* c);
 
+template <typename T, typename... Args>
+bool Clif_PyObjAs(PyObject* py, std::list<T, Args...>* c);
+
 // CLIF use `std::pair` as tuple
 template <typename T, typename U>
 PyObject* Clif_PyObjFrom(const std::pair<T, U>& c, const py::PostConv&);
