@@ -26,6 +26,10 @@ from clif.python import clif_types as types as legacy_types
 
 I = utils.I
 
+_KNOWN_TYPES_WITH_MULTIPLE_INHERITANCE = {
+    '::borg::Config': ['::borg::ConfigArgs']
+}
+
 
 def generate_from(
     decl: ast_pb2.Decl, superclass_name: str,
@@ -60,9 +64,14 @@ def generate_from(
   trampoline_class_name = utils.trampoline_name(class_decl)
   if trampoline_class_name in trampoline_class_names:
     definition += f', {trampoline_class_name}'
+  mi_bases = _KNOWN_TYPES_WITH_MULTIPLE_INHERITANCE.get(
+      class_decl.name.cpp_name)
+  if mi_bases:
+    for base in mi_bases:
+      definition += f', {base}'
   definition += (f'> {class_name}({superclass_name}, '
                  f'"{class_decl.name.native}"')
-  if not class_decl.suppress_upcasts:
+  if not class_decl.suppress_upcasts and not mi_bases:
     for base in class_decl.bases:
       if base.native and not base.HasField('cpp_canonical_type'):
         possibly_nested_classes = base.native.split('.')
@@ -91,6 +100,8 @@ def generate_from(
         base.cpp_canonical_type in codegen_info.dynamic_attr_types):
       enable_instance_dict = True
       break
+  if mi_bases:
+    definition += ', py::multiple_inheritance()'
   if enable_instance_dict:
     definition += ', py::dynamic_attr()'
   if class_decl.final:
