@@ -396,4 +396,7 @@ py_library(
     srcs = ["instrumentation_for_testing.py"],
     srcs_version = "PY2AND3",
     visibility = ["//visibility:public"],
+    deps = [
+        "//third_party/py/pytype_extensions:instrumentation_for_testing",
+    ],
 )
