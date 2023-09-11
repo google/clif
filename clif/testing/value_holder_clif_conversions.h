@@ -295,7 +295,7 @@ inline bool Clif_PyObjAs(PyObject* obj, PythonErrorInConversions* c) {
   }
   int value = PyLong_AsLong(tmp);
   if (value < 0) {
-    PyErr_SetString(PyExc_ValueError, "Error in Clif_PyObjAs");
+    PyErr_SetString(PyExc_TypeError, "Error in Clif_PyObjAs");
     return false;
   }
   c->value = value;

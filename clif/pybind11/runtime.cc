@@ -15,8 +15,10 @@
 #include "third_party/pybind11/include/pybind11/pybind11.h"
 
 // NOLINTNEXTLINE
+#include "absl/log/check.h"
 #include "clif/pybind11/runtime.h"
 #include "clif/python/pickle_support.h"
+#include "clif/python/runtime.h"
 
 namespace clif {
 
@@ -39,6 +41,16 @@ bool ThrowErrorAlreadySetIfFalse(bool success) {
     throw pybind11::error_already_set();
   }
   return true;
+}
+
+bool ClearClif_PyObjAsPythonErrorIfFalse(bool success) {
+  if (success) {
+    clif::LogFatalIfPythonErrorOccurred();
+    return true;
+  }
+  CHECK(PyErr_Occurred());
+  PyErr_Clear();
+  return false;
 }
 
 }  // namespace clif

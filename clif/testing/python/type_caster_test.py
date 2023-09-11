@@ -132,7 +132,7 @@ class TypeCasterTest(parameterized.TestCase):
 
   def test_python_exception_in_type_caster(self):
     self.assertEqual(type_caster.consume_python_error_in_conversions(10), 10)
-    with self.assertRaisesRegex(ValueError, r'Error in Clif_PyObjAs'):
+    with self.assertRaises(TypeError):
       type_caster.consume_python_error_in_conversions(-1)
     self.assertEqual(type_caster.return_python_error_in_conversions(10), 10)
     with self.assertRaisesRegex(ValueError, r'Error in Clif_PyObjFrom'):
