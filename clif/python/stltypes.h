@@ -50,6 +50,7 @@ headers are included.
 #include "absl/log/log.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "clif/python/runtime.h"
 #include "clif/python/stltypes_fwd.h"
 #include "clif/python/types.h"
 
@@ -936,6 +937,7 @@ bool IterToCont(PyObject* py, Inserter add, bool accept_dict = false) {
 template <typename T, typename U, typename F>
 bool ItemsToMap(PyObject* py, F add) {
   if (!PyObjectTypeIsConvertibleToStdMap(py)) {
+    SetIsNotConvertibleError(py, "std::map-like");
     return false;
   }
   PyObject* items = PyObject_CallMethod(py, "items", nullptr);
@@ -951,6 +953,7 @@ template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::vector<T, Args...>* c) {
   CHECK(c != nullptr);
   if (!PyObjectTypeIsConvertibleToStdVector(py)) {
+    SetIsNotConvertibleError(py, "std::vector");
     return false;
   }
   c->clear();
@@ -963,6 +966,7 @@ template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::list<T, Args...>* c) {
   CHECK(c != nullptr);
   if (!PyObjectTypeIsConvertibleToStdVector(py)) {
+    SetIsNotConvertibleError(py, "std::list");
     return false;
   }
   c->clear();
@@ -975,6 +979,7 @@ template <typename T, std::size_t N>
 bool Clif_PyObjAs(PyObject* py, std::array<T, N>* c) {
   CHECK(c != nullptr);
   if (!PyObjectTypeIsConvertibleToStdVector(py)) {
+    SetIsNotConvertibleError(py, "std::array");
     return false;
   }
   int index = 0;
@@ -996,6 +1001,7 @@ template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::unordered_set<T, Args...>* c) {
   CHECK(c != nullptr);
   if (!PyObjectTypeIsConvertibleToStdSet(py)) {
+    SetIsNotConvertibleError(py, "std::unordered_set");
     return false;
   }
   c->clear();
@@ -1007,6 +1013,7 @@ template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::set<T, Args...>* c) {
   CHECK(c != nullptr);
   if (!PyObjectTypeIsConvertibleToStdSet(py)) {
+    SetIsNotConvertibleError(py, "std::set");
     return false;
   }
   c->clear();

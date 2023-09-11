@@ -20,6 +20,8 @@ from "clif/testing/std_containers.h":
   def PassArrayInt2(a: `std::array<int, 2>` as list) -> int
   def PassVectorPairInt(v: list<tuple<int, int>>) -> int
   def PassSetInt(v: `std::set` as set<int>) -> int
+  def PassUnorderedSetInt(v: `std::unordered_set` as set<int>) -> int
+  def PassMapInt(v: `std::map` as dict<int, int>) -> int
   def Mul(v: list<int>, m: int) -> list<int>
   def Div(v: `std::array<int, 2>` as list, m: int) -> `std::array<int, 2>` as list
   def Transpose(m: `std_array_2` as list<`std::array<int, 3>` as list>) -> `std_array_3` as list<`std::array<int, 2>` as list>

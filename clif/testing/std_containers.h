@@ -20,6 +20,7 @@
 #include <array>
 #include <functional>
 #include <list>
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -56,6 +57,22 @@ inline int PassSetInt(const std::set<int>& s) {
   int zum = 200;
   for (const int i : s) {
     zum += 3 * i;
+  }
+  return zum;
+}
+
+inline int PassUnorderedSetInt(const std::unordered_set<int>& s) {
+  int zum = 300;
+  for (const int i : s) {
+    zum += 4 * i;
+  }
+  return zum;
+}
+
+inline int PassMapInt(const std::map<int, int>& m) {
+  int zum = 400;
+  for (const auto& it : m) {
+    zum += it.first * 100 + it.second;
   }
   return zum;
 }

@@ -56,6 +56,18 @@ class StdContainersTest(parameterized.TestCase):
     with self.assertRaises(TypeError):
       fn(i for i in [])
 
+  def testPassUnorderedSetInt(self):
+    fn = std_containers.PassUnorderedSetInt
+    self.assertEqual(fn({3, 15}), 372)
+    with self.assertRaises(TypeError):
+      fn([])
+
+  def testPassMapInt(self):
+    fn = std_containers.PassMapInt
+    self.assertEqual(fn({3: 7, 15: 11}), 2218)
+    with self.assertRaises(TypeError):
+      fn([])
+
   def testVector(self):
     self.assertEqual(std_containers.Mul([1, 2, 3], 2), [2, 4, 6])
 
