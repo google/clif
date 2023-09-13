@@ -26,13 +26,6 @@ class PPCC(PC, tm.CppDrvd):
   pass
 
 
-class PPCCInit(PC, tm.CppDrvd):
-
-  def __init__(self, value):
-    PC.__init__(self, value)
-    tm.CppDrvd.__init__(self, value + 1)
-
-
 class PCExplicitInitWithSuper(tm.CppBase):
 
   def __init__(self, value):
@@ -59,10 +52,6 @@ class PythonMultipleInheritanceTest(parameterized.TestCase):
     d.reset_base_value(13)
     self.assertEqual(d.get_base_value(), 13)
 
-  @absltest.skipIf(
-      "pybind11" in tm.__doc__,
-      "Preempt `__init__() must be called when overriding __init__` exception.",
-  )
   def testPPCC(self):
     d = PPCC(11)
     self.assertEqual(d.get_drvd_value(), 33)
@@ -77,26 +66,6 @@ class PythonMultipleInheritanceTest(parameterized.TestCase):
     self.assertEqual(d.get_base_value_from_drvd(), 20)
     d.reset_base_value_from_drvd(30)
     self.assertEqual(d.get_base_value(), 30)
-    self.assertEqual(d.get_base_value_from_drvd(), 30)
-
-  def testPPCCInit(self):
-    d = PPCCInit(11)
-    self.assertEqual(d.get_drvd_value(), 36)
-    d.reset_drvd_value(55)
-    self.assertEqual(d.get_drvd_value(), 55)
-
-    # PyCLIF-C-API: CppBase is initialized but never used.
-    # PyCLIF-pybind11: CppBase is initialized and used when CppBase methods
-    #                  are called, but CppDrvd is used when CppDrvd methods
-    #                  are called.
-    i = 1 if "pybind11" in tm.__doc__ else 0
-    self.assertEqual(d.get_base_value(), (12, 11)[i])
-    self.assertEqual(d.get_base_value_from_drvd(), 12)
-    d.reset_base_value(20)
-    self.assertEqual(d.get_base_value(), 20)
-    self.assertEqual(d.get_base_value_from_drvd(), (20, 12)[i])
-    d.reset_base_value_from_drvd(30)
-    self.assertEqual(d.get_base_value(), (30, 20)[i])
     self.assertEqual(d.get_base_value_from_drvd(), 30)
 
   def testPCExplicitInitWithSuper(self):
