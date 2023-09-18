@@ -16,6 +16,9 @@
 #ifndef CLIF_TESTING_SIMPLE_TYPE_CONVERSIONS_H_
 #define CLIF_TESTING_SIMPLE_TYPE_CONVERSIONS_H_
 
+#include <cstdint>
+#include <string>
+
 namespace clif_testing {
 
 inline signed char SignedCharManipulation(signed char inp) { return 31 - inp; }
@@ -23,6 +26,8 @@ inline signed char SignedCharManipulation(signed char inp) { return 31 - inp; }
 inline unsigned char UnsignedCharManipulation(unsigned char inp) {
   return 42 - inp;
 }
+
+inline std::string PassUint32(std::uint32_t val) { return std::to_string(val); }
 
 }  // namespace clif_testing
 

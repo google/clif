@@ -15,3 +15,4 @@
 from "clif/testing/simple_type_conversions.h":
   def SignedCharManipulation(inp: int) -> int
   def UnsignedCharManipulation(inp: int) -> int
+  def PassUint32(val: int) -> str

@@ -14,39 +14,71 @@
 
 from absl.testing import absltest
 
-from clif.testing.python import simple_type_conversions
+from clif.testing.python import simple_type_conversions as tm
 
 
 class SimpleTypeConversions(absltest.TestCase):
 
   def testSignedCharManipulation(self):
-    self.assertEqual(simple_type_conversions.SignedCharManipulation(2), 29)
+    self.assertEqual(tm.SignedCharManipulation(2), 29)
     for inp in [-129, 128]:
-      if 'pybind11' in simple_type_conversions.__doc__:
+      if 'pybind11' in tm.__doc__:
         with self.assertRaises(TypeError) as ctx:
-          simple_type_conversions.SignedCharManipulation(inp)
+          tm.SignedCharManipulation(inp)
         self.assertIn('incompatible function arguments.', str(ctx.exception))
       else:
         with self.assertRaises(ValueError) as ctx:
-          simple_type_conversions.SignedCharManipulation(inp)
+          tm.SignedCharManipulation(inp)
         self.assertEqual(
             str(ctx.exception),
             'SignedCharManipulation() argument inp is not valid:'
             ' value %d is out of range for signed char' % inp)
 
   def testUnsignedCharManipulation(self):
-    self.assertEqual(simple_type_conversions.UnsignedCharManipulation(3), 39)
-    if 'pybind11' in simple_type_conversions.__doc__:
+    self.assertEqual(tm.UnsignedCharManipulation(3), 39)
+    if 'pybind11' in tm.__doc__:
       with self.assertRaises(TypeError) as ctx:
-        simple_type_conversions.SignedCharManipulation(256)
+        tm.SignedCharManipulation(256)
       self.assertIn('incompatible function arguments.', str(ctx.exception))
     else:
       with self.assertRaises(ValueError) as ctx:
-        simple_type_conversions.UnsignedCharManipulation(256)
+        tm.UnsignedCharManipulation(256)
       self.assertEqual(
           str(ctx.exception),
           'UnsignedCharManipulation() argument inp is not valid:'
           ' value 256 is too large for unsigned char')
+
+  def testPassUint32InRange(self):
+    self.assertEqual(tm.PassUint32(0), '0')
+    self.assertEqual(tm.PassUint32(2**32 - 1), '4294967295')
+
+  def testPassUint32Negative(self):
+    if 'pybind11' in tm.__doc__:
+      with self.assertRaisesRegex(
+          TypeError, r'PassUint32\(\): incompatible function arguments.*'
+      ):
+        tm.PassUint32(-1)
+    else:
+      with self.assertRaisesRegex(
+          OverflowError,
+          r"PassUint32\(\) argument val is not valid: can't convert negative"
+          ' value to unsigned int',
+      ):
+        tm.PassUint32(-1)
+
+  def testPassUint32OutOfRange(self):
+    if 'pybind11' in tm.__doc__:
+      with self.assertRaisesRegex(
+          TypeError, r'PassUint32\(\): incompatible function arguments.*'
+      ):
+        tm.PassUint32(2**32)
+    else:
+      with self.assertRaisesRegex(
+          ValueError,
+          r'PassUint32\(\) argument val is not valid: value too large for'
+          ' unsigned int',
+      ):
+        tm.PassUint32(2**32)
 
 
 if __name__ == '__main__':
