@@ -1108,6 +1108,7 @@ def VarSetter(name, cfunc, error, cvar, v, csetter, as_str, is_extend=False):
   Yields:
      Source code for setter function.
   """
+  del as_str  # Not used anymore. Clean up later.
   yield ''
   if cfunc:
     yield 'static PyObject* %s(PyObject* self, PyObject* value) {' % name
@@ -1139,10 +1140,7 @@ def VarSetter(name, cfunc, error, cvar, v, csetter, as_str, is_extend=False):
     if error:
       yield I+error+ret_error
     yield I+'if (Clif_PyObjAs(value, &%s)) ' % cvar + ret_ok
-  yield I+'PyObject* s = PyObject_Repr(value);'
-  yield I+('PyErr_Format(PyExc_ValueError, "%s is not valid for {}:{}", s? {}'
-           '(s): "input");').format(v.name.native, v.type.lang_type, as_str)
-  yield I+'Py_XDECREF(s);'
+  yield I+'CHECK(PyErr_Occurred());'
   yield I+ret_error
   yield '}'
 

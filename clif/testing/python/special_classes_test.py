@@ -19,15 +19,11 @@ from absl.testing import absltest
 from clif.testing.python import special_classes
 
 
-def expected_exception():
-  return TypeError if 'pybind11' in special_classes.__doc__ else ValueError
-
-
 class SpecialClassesTest(absltest.TestCase):
 
   def testAbstract(self):
     self.assertTrue(special_classes.Abstract.Future)
-    self.assertRaises(expected_exception(), special_classes.Abstract)
+    self.assertRaises(TypeError, special_classes.Abstract)
     self.assertEqual(special_classes.Abstract.KIND, 'pure virtual',
                      str(type(special_classes.Abstract.KIND)))
 
@@ -35,10 +31,10 @@ class SpecialClassesTest(absltest.TestCase):
     self.assertEqual(special_classes.InconstructibleF(), 0)
 
   def testNoDefaultConstructor(self):
-    with self.assertRaises(expected_exception()):
+    with self.assertRaises(TypeError):
       # true error, no def ctor
       _ = special_classes.NoDefaultConstructor().a
-    with self.assertRaises(expected_exception()):
+    with self.assertRaises(TypeError):
       # true error, non-def ctor not wrapped
       _ = special_classes.NoDefaultConstructor(1).a
 

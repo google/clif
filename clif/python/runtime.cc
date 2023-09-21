@@ -29,7 +29,7 @@
 
 extern "C"
 int Clif_PyType_Inconstructible(PyObject* self, PyObject* a, PyObject* kw) {
-  PyErr_Format(PyExc_ValueError, "Class %s has no default constructor",
+  PyErr_Format(PyExc_TypeError, "%s: No constructor defined!",
                Py_TYPE(self)->tp_name);
   return -1;
 }
@@ -89,8 +89,8 @@ SafeAttr::SafeAttr(PyObject* pyobj, const char* name) {
   if (meth_ == nullptr) {
     if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
       PyErr_Clear();
-    } else if (PyErr_Occurred()) {
-      PyErr_PrintEx(0);
+    } else {
+      LogFatalIfPythonErrorOccurred();
     }
     PyGILState_Release(state_);
   }

@@ -88,8 +88,8 @@ class VirtualTest(absltest.TestCase):
       'Currently pybind11 does not throw exceptions when initializing abstract'
       'classes.')
   def testInitAbstract(self):
-    self.assertRaises(ValueError, virtual_funcs.K)
-    self.assertRaises(ValueError, virtual_funcs.AbstractClassNonDefConst)
+    self.assertRaises(TypeError, virtual_funcs.K)
+    self.assertRaises(TypeError, virtual_funcs.AbstractClassNonDefConst)
 
   def testRenameVirtualFunction(self):
     obj = TestRenameVirtualFunctions()

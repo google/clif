@@ -74,11 +74,8 @@ class StdContainersTest(parameterized.TestCase):
   def testArrayDiv(self):
     self.assertEqual(std_containers.Div([2, 4], 2), [1, 2])
 
-    error = ValueError
-    if 'pybind11' in std_containers.__doc__:
-      error = TypeError
     # Exceed bounds of array.
-    self.assertRaises(error, lambda: std_containers.Div([2, 4, 6], 2))
+    self.assertRaises(TypeError, lambda: std_containers.Div([2, 4, 6], 2))
 
   def testArrayTranspose(self):
     self.assertEqual(

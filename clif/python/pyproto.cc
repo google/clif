@@ -71,10 +71,20 @@ namespace proto {
 // Get py.DESCRIPTOR.full_name as a new object.
 PyObject* GetMessageName(PyObject* py) {
   PyObject* pyd = PyObject_GetAttrString(py, "DESCRIPTOR");
-  if (pyd == nullptr) return nullptr;
+  if (pyd == nullptr) {
+    if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+      PyErr_Format(PyExc_TypeError, "'%s' %s has no attribute 'DESCRIPTOR'",
+                   ClassName(py), ClassType(py));
+    }
+    return nullptr;
+  }
   PyObject* fn = PyObject_GetAttrString(pyd, "full_name");
   Py_DECREF(pyd);
-  if (fn == nullptr) return nullptr;
+  if (fn == nullptr) {
+    PyErr_Format(PyExc_TypeError,
+                 "'%s.DESCRIPTOR' has no attribute 'full_name'", ClassName(py));
+    return nullptr;
+  }
   if (!PyUnicode_Check(fn)) {
     PyErr_SetString(PyExc_TypeError, "DESCRIPTOR.full_name must return str");
     Py_DECREF(fn);

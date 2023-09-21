@@ -27,11 +27,12 @@ class SimpleTypeConversions(absltest.TestCase):
           tm.SignedCharManipulation(inp)
         self.assertIn('incompatible function arguments.', str(ctx.exception))
       else:
-        with self.assertRaises(ValueError) as ctx:
+        with self.assertRaises(TypeError) as ctx:
           tm.SignedCharManipulation(inp)
         self.assertEqual(
             str(ctx.exception),
-            'SignedCharManipulation() argument inp is not valid:'
+            'SignedCharManipulation() argument inp is not valid for'
+            ' signed char (int instance given):'
             ' value %d is out of range for signed char' % inp)
 
   def testUnsignedCharManipulation(self):
@@ -41,11 +42,12 @@ class SimpleTypeConversions(absltest.TestCase):
         tm.SignedCharManipulation(256)
       self.assertIn('incompatible function arguments.', str(ctx.exception))
     else:
-      with self.assertRaises(ValueError) as ctx:
+      with self.assertRaises(TypeError) as ctx:
         tm.UnsignedCharManipulation(256)
       self.assertEqual(
           str(ctx.exception),
-          'UnsignedCharManipulation() argument inp is not valid:'
+          'UnsignedCharManipulation() argument inp is not valid for'
+          ' unsigned char (int instance given):'
           ' value 256 is too large for unsigned char')
 
   def testPassUint32InRange(self):
@@ -60,9 +62,9 @@ class SimpleTypeConversions(absltest.TestCase):
         tm.PassUint32(-1)
     else:
       with self.assertRaisesRegex(
-          OverflowError,
-          r"PassUint32\(\) argument val is not valid: can't convert negative"
-          ' value to unsigned int',
+          TypeError,
+          r'PassUint32\(\) argument val is not valid for unsigned int \(int'
+          r" instance given\): can't convert negative value to unsigned int",
       ):
         tm.PassUint32(-1)
 
@@ -74,9 +76,9 @@ class SimpleTypeConversions(absltest.TestCase):
         tm.PassUint32(2**32)
     else:
       with self.assertRaisesRegex(
-          ValueError,
-          r'PassUint32\(\) argument val is not valid: value too large for'
-          ' unsigned int',
+          TypeError,
+          r'PassUint32\(\) argument val is not valid for unsigned int \(int'
+          r' instance given\): value too large for unsigned int',
       ):
         tm.PassUint32(2**32)
 

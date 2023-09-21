@@ -559,7 +559,7 @@ bool Clif_PyObjAs(PyObject* py, std::pair<T, U>* c) {
   Py_ssize_t len = PySequence_Length(py);
   if (len != 2) {
     if (len != -1) {
-      PyErr_Format(PyExc_ValueError, "expected a sequence with len==2, got %zd",
+      PyErr_Format(PyExc_TypeError, "expected a sequence with len==2, got %zd",
                    len);
     }
     return false;
@@ -738,7 +738,7 @@ bool Clif_PyObjAs(PyObject* py, std::tuple<T...>* c) {
   Py_ssize_t len = PyTuple_Size(py);
   if (len != _TUPLE_SIZE(*c)) {
     if (len != -1) {
-      PyErr_Format(PyExc_ValueError, "expected a tuple with len==%zd, got %zd",
+      PyErr_Format(PyExc_TypeError, "expected a tuple with len==%zd, got %zd",
                    _TUPLE_SIZE(*c), len);
     }
     return false;
@@ -990,7 +990,7 @@ bool Clif_PyObjAs(PyObject* py, std::array<T, N>* c) {
     ++index;  // Continue to increment, so we know true size for reporting.
   });
   if (index != N) {
-    PyErr_Format(PyExc_ValueError, "expected a size of %zd, got %zd", N, index);
+    PyErr_Format(PyExc_TypeError, "expected a size of %zd, got %zd", N, index);
     return false;
   }
   return rval;
