@@ -50,6 +50,7 @@ headers are included.
 #include "absl/log/log.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "clif/python/runtime.h"
 #include "clif/python/stltypes_fwd.h"
 #include "clif/python/types.h"
 
@@ -558,7 +559,7 @@ bool Clif_PyObjAs(PyObject* py, std::pair<T, U>* c) {
   Py_ssize_t len = PySequence_Length(py);
   if (len != 2) {
     if (len != -1) {
-      PyErr_Format(PyExc_ValueError, "expected a sequence with len==2, got %zd",
+      PyErr_Format(PyExc_TypeError, "expected a sequence with len==2, got %zd",
                    len);
     }
     return false;
@@ -737,7 +738,7 @@ bool Clif_PyObjAs(PyObject* py, std::tuple<T...>* c) {
   Py_ssize_t len = PyTuple_Size(py);
   if (len != _TUPLE_SIZE(*c)) {
     if (len != -1) {
-      PyErr_Format(PyExc_ValueError, "expected a tuple with len==%zd, got %zd",
+      PyErr_Format(PyExc_TypeError, "expected a tuple with len==%zd, got %zd",
                    _TUPLE_SIZE(*c), len);
     }
     return false;
@@ -936,6 +937,7 @@ bool IterToCont(PyObject* py, Inserter add, bool accept_dict = false) {
 template <typename T, typename U, typename F>
 bool ItemsToMap(PyObject* py, F add) {
   if (!PyObjectTypeIsConvertibleToStdMap(py)) {
+    SetIsNotConvertibleError(py, "std::map-like");
     return false;
   }
   PyObject* items = PyObject_CallMethod(py, "items", nullptr);
@@ -951,6 +953,7 @@ template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::vector<T, Args...>* c) {
   CHECK(c != nullptr);
   if (!PyObjectTypeIsConvertibleToStdVector(py)) {
+    SetIsNotConvertibleError(py, "std::vector");
     return false;
   }
   c->clear();
@@ -963,6 +966,7 @@ template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::list<T, Args...>* c) {
   CHECK(c != nullptr);
   if (!PyObjectTypeIsConvertibleToStdVector(py)) {
+    SetIsNotConvertibleError(py, "std::list");
     return false;
   }
   c->clear();
@@ -975,6 +979,7 @@ template <typename T, std::size_t N>
 bool Clif_PyObjAs(PyObject* py, std::array<T, N>* c) {
   CHECK(c != nullptr);
   if (!PyObjectTypeIsConvertibleToStdVector(py)) {
+    SetIsNotConvertibleError(py, "std::array");
     return false;
   }
   int index = 0;
@@ -985,7 +990,7 @@ bool Clif_PyObjAs(PyObject* py, std::array<T, N>* c) {
     ++index;  // Continue to increment, so we know true size for reporting.
   });
   if (index != N) {
-    PyErr_Format(PyExc_ValueError, "expected a size of %zd, got %zd", N, index);
+    PyErr_Format(PyExc_TypeError, "expected a size of %zd, got %zd", N, index);
     return false;
   }
   return rval;
@@ -996,6 +1001,7 @@ template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::unordered_set<T, Args...>* c) {
   CHECK(c != nullptr);
   if (!PyObjectTypeIsConvertibleToStdSet(py)) {
+    SetIsNotConvertibleError(py, "std::unordered_set");
     return false;
   }
   c->clear();
@@ -1007,6 +1013,7 @@ template <typename T, typename... Args>
 bool Clif_PyObjAs(PyObject* py, std::set<T, Args...>* c) {
   CHECK(c != nullptr);
   if (!PyObjectTypeIsConvertibleToStdSet(py)) {
+    SetIsNotConvertibleError(py, "std::set");
     return false;
   }
   c->clear();

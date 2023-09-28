@@ -53,15 +53,33 @@ PyObject* UnicodeFromBytesIfPossible(PyObject* b) {
 
 // int (long)
 
+namespace {
+
+void ChangeOverflowErrorToTypeError() {
+  if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
+    Py_DECREF(type);
+    type = PyExc_TypeError;
+    Py_INCREF(type);
+    PyErr_Restore(type, value, traceback);
+  }
+}
+
+}  // namespace
+
 bool Clif_PyObjAs(PyObject* py, int* c) {
   CHECK(c != nullptr);
   long i;  //NOLINT: runtime/int
   if (PyLong_Check(py)) {
     i = PyLong_AsLong(py);
-    if (i == -1 && PyErr_Occurred()) return false;
+    if (PyErr_Occurred()) {
+      ChangeOverflowErrorToTypeError();
+      return false;
+    }
 #if SIZEOF_INT < SIZEOF_LONG
     if (i > INT_MAX || i < INT_MIN) {
-      PyErr_SetString(PyExc_ValueError, "value too large for int");
+      PyErr_SetString(PyExc_TypeError, "value too large for int");
       return false;
     }
 #endif
@@ -80,7 +98,7 @@ bool Clif_PyObjAs(PyObject* py, short* c) {  //NOLINT: runtime/int
     return false;
   }
   if (i > SHRT_MAX || i < SHRT_MIN) {
-    PyErr_SetString(PyExc_ValueError, "value too large for short int");
+    PyErr_SetString(PyExc_TypeError, "value too large for short int");
     return false;
   }
   *c = i;
@@ -94,8 +112,8 @@ bool Clif_PyObjAs(PyObject* py, signed char* c) {
     return false;
   }
   if (SCHAR_MIN > i || i > SCHAR_MAX) {
-    PyErr_Format(
-        PyExc_ValueError, "value %ld is out of range for signed char", i);
+    PyErr_Format(PyExc_TypeError, "value %ld is out of range for signed char",
+                 i);
     return false;
   }
   *c = i;
@@ -110,8 +128,8 @@ bool Clif_PyObjAs(PyObject* py, unsigned char* c) {
     return false;
   }
   if (i > UCHAR_MAX) {
-    PyErr_Format(
-        PyExc_ValueError, "value %ld is too large for unsigned char", i);
+    PyErr_Format(PyExc_TypeError, "value %ld is too large for unsigned char",
+                 i);
     return false;
   }
   *c = i;
@@ -127,9 +145,12 @@ bool Clif_PyObjAs(PyObject* py, unsigned short* c) {  //NOLINT: runtime/int
     PyErr_SetString(PyExc_TypeError, "expecting int");
     return false;
   }
-  if (PyErr_Occurred()) return false;
+  if (PyErr_Occurred()) {
+    ChangeOverflowErrorToTypeError();
+    return false;
+  }
   if (i > USHRT_MAX) {
-    PyErr_SetString(PyExc_ValueError, "value too large for unsigned short");
+    PyErr_SetString(PyExc_TypeError, "value too large for unsigned short");
     return false;
   }
   *c = i;
@@ -145,9 +166,12 @@ bool Clif_PyObjAs(PyObject* py, unsigned int* c) {
     PyErr_SetString(PyExc_TypeError, "expecting int");
     return false;
   }
-  if (PyErr_Occurred()) return false;
+  if (PyErr_Occurred()) {
+    ChangeOverflowErrorToTypeError();
+    return false;
+  }
   if (i > UINT_MAX) {
-    PyErr_SetString(PyExc_ValueError, "value too large for unsigned int");
+    PyErr_SetString(PyExc_TypeError, "value too large for unsigned int");
     return false;
   }
   *c = i;
@@ -162,7 +186,11 @@ bool Clif_PyObjAs(PyObject* py, unsigned long* c) {  //NOLINT: runtime/int
     PyErr_SetString(PyExc_TypeError, "expecting int");
     return false;
   }
-  return !PyErr_Occurred();
+  if (PyErr_Occurred()) {
+    ChangeOverflowErrorToTypeError();
+    return false;
+  }
+  return true;
 }
 
 bool Clif_PyObjAs(PyObject* py, long* c) {  //NOLINT: runtime/int
@@ -173,7 +201,11 @@ bool Clif_PyObjAs(PyObject* py, long* c) {  //NOLINT: runtime/int
     PyErr_SetString(PyExc_TypeError, "expecting int");
     return false;
   }
-  return !PyErr_Occurred();
+  if (PyErr_Occurred()) {
+    ChangeOverflowErrorToTypeError();
+    return false;
+  }
+  return true;
 }
 
 // int64
@@ -185,7 +217,11 @@ bool Clif_PyObjAs(PyObject* py, long long* c) {  //NOLINT: runtime/int
     return false;
   }
   *c = PyLong_AsLongLong(py);
-  return !PyErr_Occurred();
+  if (PyErr_Occurred()) {
+    ChangeOverflowErrorToTypeError();
+    return false;
+  }
+  return true;
 }
 
 // uint64
@@ -197,7 +233,11 @@ bool Clif_PyObjAs(PyObject* py, unsigned long long* c) {  //NOLINT: runtime/int
     PyErr_SetString(PyExc_TypeError, "expecting int");
     return false;
   }
-  return !PyErr_Occurred();
+  if (PyErr_Occurred()) {
+    ChangeOverflowErrorToTypeError();
+    return false;
+  }
+  return true;
 }
 
 // int128

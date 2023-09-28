@@ -390,10 +390,3 @@ py_library(
     srcs_version = "PY2AND3",
     visibility = ["//visibility:public"],
 )
-
-py_library(
-    name = "instrumentation_for_testing",
-    srcs = ["instrumentation_for_testing.py"],
-    srcs_version = "PY2AND3",
-    visibility = ["//visibility:public"],
-)

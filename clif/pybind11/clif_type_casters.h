@@ -184,7 +184,8 @@ struct clif_type_caster {
             std::enable_if_t<clif_pybind11::HasPyObjAs<T>(), int> = 0>
   bool load(handle src, bool) {
     using ::clif::Clif_PyObjAs;
-    return ::clif::ThrowErrorAlreadySetIfFalse(Clif_PyObjAs(src.ptr(), &value));
+    return ::clif::ClearClif_PyObjAsPythonErrorIfFalse(
+        Clif_PyObjAs(src.ptr(), &value));
   }
 };
 
@@ -199,7 +200,8 @@ struct clif_type_caster<
 
   bool load(handle src, bool) {
     using ::clif::Clif_PyObjAs;
-    return ::clif::ThrowErrorAlreadySetIfFalse(Clif_PyObjAs(src.ptr(), &value));
+    return ::clif::ClearClif_PyObjAsPythonErrorIfFalse(
+        Clif_PyObjAs(src.ptr(), &value));
   }
 
   template <typename T_>
@@ -227,7 +229,8 @@ struct clif_type_caster<
             std::enable_if_t<clif_pybind11::HasPyObjAs<T*>(), int> = 0>
   bool load(handle src, bool) {
     using ::clif::Clif_PyObjAs;
-    return ::clif::ThrowErrorAlreadySetIfFalse(Clif_PyObjAs(src.ptr(), &value));
+    return ::clif::ClearClif_PyObjAsPythonErrorIfFalse(
+        Clif_PyObjAs(src.ptr(), &value));
   }
 
   template <typename T_>
@@ -260,7 +263,8 @@ struct clif_type_caster<
     // TODO: Test with two passes in pybind11 dispatcher.
     std::unique_ptr<Type> res;
     using ::clif::Clif_PyObjAs;
-    if (!::clif::ThrowErrorAlreadySetIfFalse(Clif_PyObjAs(src.ptr(), &res))) {
+    if (!::clif::ClearClif_PyObjAsPythonErrorIfFalse(
+            Clif_PyObjAs(src.ptr(), &res))) {
       return false;
     }
     value = std::move(res);
@@ -296,7 +300,8 @@ struct clif_type_caster<
   bool load(handle src, bool) {
     std::shared_ptr<Type> res;
     using ::clif::Clif_PyObjAs;
-    if (!::clif::ThrowErrorAlreadySetIfFalse(Clif_PyObjAs(src.ptr(), &res))) {
+    if (!::clif::ClearClif_PyObjAsPythonErrorIfFalse(
+            Clif_PyObjAs(src.ptr(), &res))) {
       return false;
     }
     value = std::move(res);
@@ -333,7 +338,8 @@ struct clif_type_caster<
   bool load(handle src, bool) {
     std::unique_ptr<Type> res;
     using ::clif::Clif_PyObjAs;
-    if (!::clif::ThrowErrorAlreadySetIfFalse(Clif_PyObjAs(src.ptr(), &res))) {
+    if (!::clif::ClearClif_PyObjAsPythonErrorIfFalse(
+            Clif_PyObjAs(src.ptr(), &res))) {
       return false;
     }
     value = std::move(res);
@@ -360,7 +366,8 @@ struct clif_smart_ptr_type_caster {
             std::enable_if_t<clif_pybind11::HasPyObjAs<T>(), int> = 0>
   bool load(handle src, bool) {
     using ::clif::Clif_PyObjAs;
-    return ::clif::ThrowErrorAlreadySetIfFalse(Clif_PyObjAs(src.ptr(), &value));
+    return ::clif::ClearClif_PyObjAsPythonErrorIfFalse(
+        Clif_PyObjAs(src.ptr(), &value));
   }
 
   template <typename T = HolderType,

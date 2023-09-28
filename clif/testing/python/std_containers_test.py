@@ -56,17 +56,26 @@ class StdContainersTest(parameterized.TestCase):
     with self.assertRaises(TypeError):
       fn(i for i in [])
 
+  def testPassUnorderedSetInt(self):
+    fn = std_containers.PassUnorderedSetInt
+    self.assertEqual(fn({3, 15}), 372)
+    with self.assertRaises(TypeError):
+      fn([])
+
+  def testPassMapInt(self):
+    fn = std_containers.PassMapInt
+    self.assertEqual(fn({3: 7, 15: 11}), 2218)
+    with self.assertRaises(TypeError):
+      fn([])
+
   def testVector(self):
     self.assertEqual(std_containers.Mul([1, 2, 3], 2), [2, 4, 6])
 
   def testArrayDiv(self):
     self.assertEqual(std_containers.Div([2, 4], 2), [1, 2])
 
-    error = ValueError
-    if 'pybind11' in std_containers.__doc__:
-      error = TypeError
     # Exceed bounds of array.
-    self.assertRaises(error, lambda: std_containers.Div([2, 4, 6], 2))
+    self.assertRaises(TypeError, lambda: std_containers.Div([2, 4, 6], 2))
 
   def testArrayTranspose(self):
     self.assertEqual(

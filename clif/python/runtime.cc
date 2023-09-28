@@ -14,6 +14,8 @@
 
 #include "clif/python/runtime.h"
 
+#include <stdio.h>
+
 #include <cassert>
 #include <initializer_list>
 #include <system_error>  // NOLINT(build/c++11)
@@ -27,7 +29,7 @@
 
 extern "C"
 int Clif_PyType_Inconstructible(PyObject* self, PyObject* a, PyObject* kw) {
-  PyErr_Format(PyExc_ValueError, "Class %s has no default constructor",
+  PyErr_Format(PyExc_TypeError, "%s: No constructor defined!",
                Py_TYPE(self)->tp_name);
   return -1;
 }
@@ -87,8 +89,8 @@ SafeAttr::SafeAttr(PyObject* pyobj, const char* name) {
   if (meth_ == nullptr) {
     if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
       PyErr_Clear();
-    } else if (PyErr_Occurred()) {
-      PyErr_PrintEx(0);
+    } else {
+      LogFatalIfPythonErrorOccurred();
     }
     PyGILState_Release(state_);
   }
@@ -292,6 +294,18 @@ void ThrowExcStrIfCppExceptionsEnabled() {
 #endif
 }
 
+namespace {
+
+void DumpPyErrToStderr() {
+  fprintf(stderr, "@BEGIN(Python exception)\n\n");
+  fflush(stderr);
+  PyErr_PrintEx(1);
+  fprintf(stderr, "\n@END(Python exception)\n");
+  fflush(stderr);
+}
+
+}  // namespace
+
 void LogCallbackPythonError(PyObject* callable,
                             const char* return_typeid_name) {
   // This block must remain at top, to ensure that the Python error is not
@@ -303,11 +317,7 @@ void LogCallbackPythonError(PyObject* callable,
         << "Python exception in call of clif::callback EXPECTED BUT NOT SET.";
   }
   LOG(ERROR) << "Python exception in call of clif::callback FOLLOWS (stderr):";
-  fprintf(stderr, "@BEGIN(Python exception)\n\n");
-  fflush(stderr);
-  PyErr_PrintEx(1);
-  fprintf(stderr, "\n@END(Python exception)\n");
-  fflush(stderr);
+  DumpPyErrToStderr();
 
   LOG(ERROR) << "repr(callable) FOLLOWS (stderr):";
   fprintf(stderr, "@BEGIN(Python repr)\n\n");
@@ -472,6 +482,21 @@ bool PyObjectTypeIsConvertibleToStdMap(PyObject* obj) {
   bool is_convertible = (PyCallable_Check(items) != 0);
   Py_DECREF(items);
   return is_convertible;
+}
+
+void LogFatalIfPythonErrorOccurred() {
+  if (PyErr_Occurred()) {
+    LOG(ERROR) << "UNEXPECTED Python exception FOLLOWS (stderr):";
+    python::DumpPyErrToStderr();
+    LOG(FATAL) << "UNEXPECTED PyErr_Occurred(): The unexpected Python error "
+                  "was sent to stderr.";
+  }
+}
+
+void SetIsNotConvertibleError(PyObject* py_obj, const char* cpp_type) {
+  LogFatalIfPythonErrorOccurred();
+  PyErr_Format(PyExc_TypeError, "%s %s is not convertible to a %s object",
+               ClassName(py_obj), ClassType(py_obj), cpp_type);
 }
 
 }  // namespace clif

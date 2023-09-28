@@ -193,9 +193,18 @@ bool ensure_no_args_and_kw_args(const char* func, PyObject* args, PyObject* kw);
 // https://docs.python.org/3/library/pickle.html#object.__reduce_ex__
 PyObject* ReduceExImpl(PyObject* self, PyObject* args, PyObject* kw);
 
+// https://github.com/pybind/pybind11/pull/4686
 bool PyObjectTypeIsConvertibleToStdVector(PyObject* obj);
 bool PyObjectTypeIsConvertibleToStdSet(PyObject* obj);
 bool PyObjectTypeIsConvertibleToStdMap(PyObject* obj);
+
+// Helper function to LOG(FATAL) if the Python error indicator is unexpectedly
+// set (to ensure code health).
+void LogFatalIfPythonErrorOccurred();
+
+// Helper function to format Python error messages in the context of the
+// PyObjectTypeIsConvertible*() functions above.
+void SetIsNotConvertibleError(PyObject* py_obj, const char* cpp_type);
 
 }  // namespace clif
 

@@ -76,16 +76,13 @@ class VariantClifTest(absltest.TestCase):
     with self.assertRaises(TypeError):
       std_variant.index_int_str_list(1.1)
 
-    expected_exception_type = (
-        ValueError if "pybind11" in std_variant.__doc__ else TypeError)
-
-    with self.assertRaises(expected_exception_type):
+    with self.assertRaises(TypeError):
       std_variant.get_direct(-1)
 
-    with self.assertRaises(expected_exception_type):
+    with self.assertRaises(TypeError):
       std_variant.get_optional(-1)
 
-    with self.assertRaises(expected_exception_type):
+    with self.assertRaises(TypeError):
       std_variant.get_unique_ptr(-1)
 
 if __name__ == "__main__":

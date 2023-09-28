@@ -35,6 +35,7 @@ Py_ssize_t item_index(Py_ssize_t idx, Py_ssize_t length);
 
 void ThrowErrorAlreadySetIfPythonErrorOccurred();
 bool ThrowErrorAlreadySetIfFalse(bool success);
+bool ClearClif_PyObjAsPythonErrorIfFalse(bool success);
 
 }  // namespace clif
 
