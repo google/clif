@@ -196,7 +196,7 @@ def _generate_iterator(
   if function_lib.has_bytes_return(func_decl):
     template_param = '<py::return_value_policy::_return_as_bytes>'
   yield (
-      f'{class_name}.def("__iter__", [](const {class_decl.name.cpp_name} &s)'
+      f'{class_name}.def("__iter__", []({class_decl.name.cpp_name} &s)'
       f'{{ return py::make_iterator{template_param}(s.begin(), s.end()); }}, '
       'py::keep_alive<0, 1>());')
 
