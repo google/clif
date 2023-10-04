@@ -63,8 +63,13 @@ class Parameter:
       self.function_argument = f'std::move({self.gen_name})'
     elif ptype.cpp_raw_pointer:
       if (not ptype.cpp_toptr_conversion and ctype.endswith('*')
-          and ptype.cpp_has_public_dtor and not ptype.cpp_abstract
-          and ptype.cpp_has_def_ctor):
+          and ptype.cpp_abstract and ptype.cpp_touniqptr_conversion):
+        t = ctype[:-1]
+        self.cpp_type = f'::std::unique_ptr<{t}>'
+        self.function_argument = f'{param_name}.get()'
+      elif (not ptype.cpp_toptr_conversion and ctype.endswith('*')
+            and ptype.cpp_has_public_dtor and not ptype.cpp_abstract
+            and ptype.cpp_has_def_ctor):
         # Create a copy on stack and pass its address.
         # For compatibility with the original C API code generator.
         self.cpp_type = ctype[:-1]
