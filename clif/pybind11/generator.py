@@ -273,8 +273,6 @@ class ModuleGenerator:
     yield '#include "third_party/pybind11/include/pybind11/stl.h"'
     yield '#include "third_party/pybind11/include/pybind11/type_caster_pyobject_ptr.h"'  # pylint: disable=long-line
     yield ''
-    yield '// See pybind11_protobuf/proto_caster_impl.h'
-    yield ''
     for include in includes:
       yield f'#include "{include}"'
     yield f'#include "{self._header_path}"'
