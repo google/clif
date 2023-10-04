@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "clif/testing/copy_move_types_custom_from_as.h"
 #include "clif/testing/copy_move_types_library.h"
 
 namespace clif_testing::std_containers_copy_move {
@@ -28,6 +29,8 @@ using copy_move_types_library::CopyMoveType;
 using copy_move_types_library::CopyOnlyType;
 using copy_move_types_library::MoveOnlyType;
 using copy_move_types_library::StayPutType;
+
+using copy_move_types_custom_from_as::FromCRAsPPCopyMoveType;
 
 template <typename SeqType>
 std::string PassSeqType(SeqType& vec) {
@@ -66,6 +69,11 @@ inline std::string PassStdVectorMoveOnlyType(
 inline std::string PassStdVectorStayPutTypePtr(
     const std::vector<StayPutType*>& seq) {
   return PassSeqTypeItemPtr(seq);
+}
+
+inline std::string PassStdVectorFromCRAsPPCopyMoveType(
+    const std::vector<FromCRAsPPCopyMoveType>& seq) {
+  return PassSeqType(seq);
 }
 
 //

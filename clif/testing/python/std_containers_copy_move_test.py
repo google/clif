@@ -15,6 +15,7 @@
 from absl.testing import absltest
 from absl.testing import parameterized
 
+from clif.testing.python import copy_move_types_custom_from_as
 from clif.testing.python import copy_move_types_library
 from clif.testing.python import std_containers_copy_move as tm
 
@@ -45,6 +46,31 @@ class StdContainersCopyMoveTestCase(parameterized.TestCase):
     traces = getattr(tm, f"Pass{std_type_name}StayPutTypePtr")([obj])
     self.assertEqual(obj.trace, "DefaultCtor")
     self.assertEqual(traces, "DefaultCtor@")
+
+  def testPassStdVectorFromCRAsPPCopyMoveType(self):
+    class_obj = copy_move_types_library.CopyMoveType()
+    cfa_obj = copy_move_types_custom_from_as.MakeFromCRAsPPCopyMoveType(
+        class_obj
+    )
+    self.assertEqual(
+        copy_move_types_custom_from_as.GetTraceFromCRAsPPCopyMoveType(cfa_obj),
+        "DefaultCtor_CpCtor_CpCtor",
+    )
+    traces = tm.PassStdVectorFromCRAsPPCopyMoveType([cfa_obj])
+    self.assertEqual(
+        copy_move_types_custom_from_as.GetTraceFromCRAsPPCopyMoveType(cfa_obj),
+        [
+            "DefaultCtor_CpCtor_CpCtor",
+            "DefaultCtor_CpCtor_CpCtor_MvCtorFrom",  # b/287289622#comment32
+        ][GEN_IX],
+    )
+    self.assertEqual(
+        traces,
+        [
+            "DefaultCtor_CpCtor_CpCtor_CpCtor_MvCtorTo@",
+            "DefaultCtor_CpCtor_CpCtor_MvCtorTo@",
+        ][GEN_IX],
+    )
 
 
 if __name__ == "__main__":
