@@ -59,16 +59,13 @@ class StdContainersCopyMoveTestCase(parameterized.TestCase):
     traces = tm.PassStdVectorFromCRAsPPCopyMoveType([cfa_obj])
     self.assertEqual(
         copy_move_types_custom_from_as.GetTraceFromCRAsPPCopyMoveType(cfa_obj),
-        [
-            "DefaultCtor_CpCtor_CpCtor",
-            "DefaultCtor_CpCtor_CpCtor_MvCtorFrom",  # b/287289622#comment32
-        ][GEN_IX],
+        "DefaultCtor_CpCtor_CpCtor",
     )
     self.assertEqual(
         traces,
         [
             "DefaultCtor_CpCtor_CpCtor_CpCtor_MvCtorTo@",
-            "DefaultCtor_CpCtor_CpCtor_MvCtorTo@",
+            "DefaultCtor_CpCtor_CpCtor_CpCtor@",
         ][GEN_IX],
     )
 
