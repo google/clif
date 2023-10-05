@@ -62,6 +62,7 @@ def _generate_cpp_get(
     var_decl: ast_pb2.VarDecl,
     class_decl: ast_pb2.ClassDecl,
     generate_comma: bool = False,
+    is_unproperty: bool = False,
 ) -> Generator[str, None, None]:
   """Generate lambda expressions for getters."""
   reference_internal = True
@@ -72,7 +73,7 @@ def _generate_cpp_get(
     ret = f'self.{function_name}()'
   else:
     ret = f'self.{var_decl.name.cpp_name}'
-  if _convert_ptr_to_ref(var_decl):
+  if not is_unproperty and _convert_ptr_to_ref(var_decl):
     ret = f'*{ret}'
     reference_internal = False
   return_value_policy = function_lib.generate_return_value_policy_for_type(
@@ -228,7 +229,7 @@ def _generate_unproperty(
 ) -> Generator[str, None, None]:
   """Generates functions to expose attributes instead of exposing directly."""
   yield f'{class_name}.def("{var_decl.cpp_get.name.native}",'
-  yield from _generate_cpp_get(var_decl, class_decl)
+  yield from _generate_cpp_get(var_decl, class_decl, is_unproperty=True)
   if var_decl.HasField('cpp_set'):
     yield f'{class_name}.def("{var_decl.cpp_set.name.native}",'
     yield from _generate_cpp_set_without_setter(var_decl, class_decl)
