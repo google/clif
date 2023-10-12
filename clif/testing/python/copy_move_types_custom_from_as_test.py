@@ -26,6 +26,30 @@ class CopyMoveTypesCustomFromAsTestCase(absltest.TestCase):
     trace = tm.GetTraceFromCRAsPPCopyMoveType(cfa_obj)
     self.assertEqual(trace, "DefaultCtor_CpCtor_CpCtor")
 
+  def testFromCRAsPCopyMoveType(self):
+    class_obj = copy_move_types_library.CopyMoveType()
+    cfa_obj = tm.MakeFromCRAsPCopyMoveType(class_obj)
+    trace = tm.GetTraceFromCRAsPCopyMoveType(cfa_obj)
+    self.assertRegex(trace, r"DefaultCtor_CpCtor_CpCtor_CpLhs.*")
+
+  def testFromCRAsSOCopyMoveType(self):
+    class_obj = copy_move_types_library.CopyMoveType()
+    cfa_obj = tm.MakeFromCRAsOpCopyMoveType(class_obj)
+    trace = tm.GetTraceFromCRAsOpCopyMoveType(cfa_obj)
+    self.assertRegex(trace, r"DefaultCtor_CpCtor_CpCtor_CpLhs_CpCtor.*")
+
+  def testFromCRAsUPCopyMoveType(self):
+    class_obj = copy_move_types_library.CopyMoveType()
+    cfa_obj = tm.MakeFromCRAsUpCopyMoveType(class_obj)
+    trace = tm.GetTraceFromCRAsUpCopyMoveType(cfa_obj)
+    self.assertRegex(trace, r"DefaultCtor_CpCtor_CpCtor_CpLhs_CpCtor.*")
+
+  def testFromCRAsSPCopyMoveType(self):
+    class_obj = copy_move_types_library.CopyMoveType()
+    cfa_obj = tm.MakeFromCRAsSpCopyMoveType(class_obj)
+    trace = tm.GetTraceFromCRAsSpCopyMoveType(cfa_obj)
+    self.assertRegex(trace, r"DefaultCtor_CpCtor_CpCtor_CpLhs.*")
+
 
 if __name__ == "__main__":
   absltest.main()

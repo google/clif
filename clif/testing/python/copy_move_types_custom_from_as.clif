@@ -18,5 +18,22 @@ from "clif/testing/python/copy_move_types_library_clif.h" import *
 from "clif/testing/copy_move_types_custom_from_as.h":
   namespace `clif_testing::copy_move_types_custom_from_as`:
 
+    # Default clif type caster
+    def MakeFromCRAsPCopyMoveType(class_obj: CopyMoveType) -> FromCRAsPCopyMoveType
+    def GetTraceFromCRAsPCopyMoveType(cfa_obj: FromCRAsPCopyMoveType) -> str
+
+    # std::optional
+    def MakeFromCRAsOpCopyMoveType(class_obj: CopyMoveType) -> FromCRAsOpCopyMoveType
+    def GetTraceFromCRAsOpCopyMoveType(cfa_obj: NoneOr<FromCRAsOpCopyMoveType>) -> str
+
+    # Pointer to pointer
     def MakeFromCRAsPPCopyMoveType(class_obj: CopyMoveType) -> FromCRAsPPCopyMoveType
     def GetTraceFromCRAsPPCopyMoveType(cfa_obj: FromCRAsPPCopyMoveType) -> str
+
+    # std::unique_ptr
+    def MakeFromCRAsUpCopyMoveType(class_obj: CopyMoveType) -> FromCRAsUpCopyMoveType
+    def GetTraceFromCRAsUpCopyMoveType(cfa_obj: FromCRAsUpCopyMoveType) -> str
+
+    # std::shared_ptr
+    def MakeFromCRAsSpCopyMoveType(class_obj: CopyMoveType) -> FromCRAsSpCopyMoveType
+    def GetTraceFromCRAsSpCopyMoveType(cfa_obj: FromCRAsSpCopyMoveType) -> str

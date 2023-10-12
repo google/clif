@@ -52,6 +52,16 @@ bool GetPayloadPointerFromPyCapsule(PyObject* py_obj, PayloadType** c_obj) {
   return true;
 }
 
+template <typename PayloadType>
+bool GetPayloadFromPyCapsule(PyObject* py_obj, PayloadType* c_obj) {
+  void* void_ptr = PyCapsule_GetPointer(py_obj, typeid(PayloadType*).name());
+  if (void_ptr == nullptr) {
+    return false;
+  }
+  *c_obj = *(static_cast<PayloadType*>(void_ptr));
+  return true;
+}
+
 }  // namespace clif_testing::py_capsule_helpers
 
 #endif  // CLIF_TESTING_PY_CAPSULE_HELPERS_H_
