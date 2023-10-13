@@ -235,4 +235,10 @@ add_pyclif_library_for_test(python_multiple_inheritance python_multiple_inherita
 
 add_pyclif_library_for_test(mock_uninitializable mock_uninitializable.clif)
 
+add_pyclif_library_for_test(copy_move_types_custom_from_as copy_move_types_custom_from_as.clif)
+
+add_pyclif_library_for_test(copy_move_types_library copy_move_types_library.clif)
+
+add_pyclif_library_for_test(std_containers_copy_move std_containers_copy_move.clif)
+
 # OMITTED: instrumentation_for_testing_test (pytype currently not supported on GitHub)
