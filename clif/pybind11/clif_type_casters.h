@@ -234,11 +234,10 @@ struct clif_type_caster<
   }
 
   template <typename T_>
-  using cast_op_type = movable_cast_op_type<T_>;
+  using cast_op_type = ::pybind11::detail::cast_op_type<T_>;
 
   operator Type*() { return value; }
   operator Type&() { return *value; }
-  operator Type&&() && { return std::move(*value); }
 
  private:
   Type* value;

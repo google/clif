@@ -112,6 +112,13 @@ class ClassesTest(parameterized.TestCase):
     obj = classes.AddInitNoParams()
     self.assertEqual(obj.get_value(), 10)
 
+  def testUnpropertyForPointers(self):
+    obj = classes.SomePointerOwner()
+    self.assertIsNone(obj.GetSomePointee())
+    pointee = classes.SomePointee()
+    obj.SetSomePointee(pointee)
+    self.assertIsNotNone(obj.GetSomePointee())
+
   def testHandleAmbiguousNamespace(self):
     obj = classes.WithAmbiguousNamespace()
     self.assertEqual(obj.get_value(), 10)

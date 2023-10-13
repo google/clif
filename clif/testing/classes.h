@@ -165,6 +165,12 @@ struct NestedAttributes {
   }
 };
 
+struct SomePointee {};
+
+struct SomePointerOwner {
+  const SomePointee* some_pointer = nullptr;
+};
+
 // Use the duplicated namespace `clif_testing` for testing purposes.
 namespace clif_testing {
 

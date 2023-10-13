@@ -99,6 +99,16 @@ from "clif/testing/classes.h":
       @setter
       def `pair_unproperty_bytes_bytes` as set_pair_unproperty_bytes_bytes(self, p: tuple<bytes, bytes>)
 
+    class SomePointee:
+      pass
+
+    class SomePointerOwner:
+      def __init__(self)
+      @getter
+      def `some_pointer` as GetSomePointee(self) -> SomePointee
+      @setter
+      def `some_pointer` as SetSomePointee(self, pointee: SomePointee)
+
   namespace `::clif_testing::classes::clif_testing`:
     class WithAmbiguousNamespace:
       def get_value(self) -> int

@@ -99,6 +99,10 @@ class ModuleGenerator:
     includes = set()
     for decl in ast.decls:
       includes.add(decl.cpp_file)
+    for include in self._ast.usertype_includes:
+      includes.add(include)
+    for include in self._pybind11_only_includes:
+      includes.add(include)
     yield '#include "third_party/pybind11/include/pybind11/smart_holder.h"'
     yield '#include "clif/python/postconv.h"'
     for include in includes:
@@ -268,11 +272,6 @@ class ModuleGenerator:
     yield '#include "third_party/pybind11/include/pybind11/smart_holder.h"'
     yield '#include "third_party/pybind11/include/pybind11/stl.h"'
     yield '#include "third_party/pybind11/include/pybind11/type_caster_pyobject_ptr.h"'  # pylint: disable=long-line
-    yield ''
-    yield '// See pybind11_protobuf/proto_caster_impl.h'
-    yield '#if !defined(PYBIND11_PROTOBUF_UNSAFE)'
-    yield I + '#define PYBIND11_PROTOBUF_UNSAFE 1'
-    yield '#endif'
     yield ''
     for include in includes:
       yield f'#include "{include}"'

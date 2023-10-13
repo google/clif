@@ -2964,6 +2964,10 @@ const clang::FunctionDecl* ClifMatcher::SpecializeFunctionTemplate(
 #if PYCLIF_LLVM_VERSION_MAJOR > 16
       /*AggregateDeductionCandidate=*/false,
 #endif
+#if PYCLIF_LLVM_VERSION_MAJOR > 18
+      /*ObjectType=*/QualType(),
+      /*ObjectClassification=*/clang::Expr::Classification(),
+#endif
       [&](clang::ArrayRef<QualType> param_types) {
         // For template parameters that aren't instantiation
         // dependent, should we check for valid conversions prior to
