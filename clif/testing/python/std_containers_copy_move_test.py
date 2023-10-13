@@ -19,7 +19,9 @@ from clif.testing.python import copy_move_types_custom_from_as
 from clif.testing.python import copy_move_types_library
 from clif.testing.python import std_containers_copy_move as tm
 
-GEN_IX = 1 if "pybind11" in tm.__doc__ else 0
+ENV_IX = 1
+if "pybind11" in tm.__doc__:
+  ENV_IX += 2
 
 
 class StdContainersCopyMoveTestCase(parameterized.TestCase):
@@ -27,11 +29,19 @@ class StdContainersCopyMoveTestCase(parameterized.TestCase):
   @parameterized.parameters([
       (
           "StdVector",
-          ["DefaultCtor_CpLhs_MvCtorTo@", "DefaultCtor_CpCtor@"][GEN_IX],
+          [
+              "DefaultCtor_CpLhs_MvCtorTo@",
+              "DefaultCtor_CpLhs_MvCtorTo@",
+              "DefaultCtor_CpCtor@",
+          ][ENV_IX],
       ),
       (
           "StdArray1",
-          ["DefaultCtor_CpLhs_MvLhs@", "DefaultCtor_CpLhs_MvCtorTo@"][GEN_IX],
+          [
+              "DefaultCtor_CpLhs_MvLhs@",
+              "DefaultCtor_CpLhs_MvLhs@",
+              "DefaultCtor_CpLhs_MvCtorTo@",
+          ][ENV_IX],
       ),
   ])
   def testPassSeqCopyMoveType(self, std_type_name, expected_traces):
@@ -54,19 +64,28 @@ class StdContainersCopyMoveTestCase(parameterized.TestCase):
     )
     self.assertEqual(
         copy_move_types_custom_from_as.GetTraceFromCRAsPPCopyMoveType(cfa_obj),
-        "DefaultCtor_CpCtor_MvCtorTo_CpCtor",
+        [
+            "DefaultCtor_CpCtor_CpCtor",
+            "DefaultCtor_CpCtor_MvCtorTo_CpCtor",
+            "DefaultCtor_CpCtor_CpCtor",
+        ][ENV_IX],
     )
     traces = tm.PassStdVectorFromCRAsPPCopyMoveType([cfa_obj])
     self.assertEqual(
         copy_move_types_custom_from_as.GetTraceFromCRAsPPCopyMoveType(cfa_obj),
-        "DefaultCtor_CpCtor_MvCtorTo_CpCtor",
+        [
+            "DefaultCtor_CpCtor_CpCtor",
+            "DefaultCtor_CpCtor_MvCtorTo_CpCtor",
+            "DefaultCtor_CpCtor_CpCtor",
+        ][ENV_IX],
     )
     self.assertEqual(
         traces,
         [
+            "DefaultCtor_CpCtor_CpCtor_CpCtor_MvCtorTo@",
             "DefaultCtor_CpCtor_MvCtorTo_CpCtor_CpCtor_MvCtorTo@",
             "DefaultCtor_CpCtor_CpCtor_CpCtor@",
-        ][GEN_IX],
+        ][ENV_IX],
     )
 
 
