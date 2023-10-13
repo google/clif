@@ -17,6 +17,10 @@ from absl.testing import absltest
 from clif.testing.python import copy_move_types_custom_from_as as tm
 from clif.testing.python import copy_move_types_library
 
+ENV_IX = 1
+if "pybind11" in tm.__doc__:
+  ENV_IX += 2
+
 
 class CopyMoveTypesCustomFromAsTestCase(absltest.TestCase):
 
@@ -25,35 +29,70 @@ class CopyMoveTypesCustomFromAsTestCase(absltest.TestCase):
     class_obj = copy_move_types_library.CopyMoveType()
     cfa_obj = tm.MakeFromCRAsPCopyMoveType(class_obj)
     trace = tm.GetTraceFromCRAsPCopyMoveType(cfa_obj)
-    self.assertEqual(trace, "DefaultCtor_CpCtor_MvLhs_CpCtor_CpLhs")
+    self.assertEqual(
+        trace,
+        [
+            "DefaultCtor_CpCtor_CpCtor_CpLhs",
+            "DefaultCtor_CpCtor_MvLhs_CpCtor_CpLhs",
+            "DefaultCtor_CpCtor_CpCtor_CpLhs_MvCtorTo",
+        ][ENV_IX],
+    )
 
   def testFromCRAsSOCopyMoveType(self):
     # std::optional
     class_obj = copy_move_types_library.CopyMoveType()
     cfa_obj = tm.MakeFromCRAsOpCopyMoveType(class_obj)
     trace = tm.GetTraceFromCRAsOpCopyMoveType(cfa_obj)
-    self.assertEqual(trace, "DefaultCtor_CpCtor_MvLhs_CpCtor_CpLhs_CpCtor_MvCtorTo")
+    self.assertEqual(
+        trace,
+        [
+            "DefaultCtor_CpCtor_CpCtor_CpLhs_CpCtor_MvCtorTo",
+            "DefaultCtor_CpCtor_MvLhs_CpCtor_CpLhs_CpCtor_MvCtorTo",
+            "DefaultCtor_CpCtor_CpCtor_CpLhs_CpCtor_MvCtorTo_MvCtorTo_MvCtorTo",
+        ][ENV_IX],
+    )
 
   def testFromCRAsPPCopyMoveType(self):
     # Pointer to pointer
     class_obj = copy_move_types_library.CopyMoveType()
     cfa_obj = tm.MakeFromCRAsPPCopyMoveType(class_obj)
     trace = tm.GetTraceFromCRAsPPCopyMoveType(cfa_obj)
-    self.assertEqual(trace, "DefaultCtor_CpCtor_MvCtorTo_CpCtor")
+    self.assertEqual(
+        trace,
+        [
+            "DefaultCtor_CpCtor_CpCtor",
+            "DefaultCtor_CpCtor_MvCtorTo_CpCtor",
+            "DefaultCtor_CpCtor_CpCtor",
+        ][ENV_IX],
+    )
 
   def testFromCRAsUPCopyMoveType(self):
     # std::unique_ptr
     class_obj = copy_move_types_library.CopyMoveType()
     cfa_obj = tm.MakeFromCRAsUpCopyMoveType(class_obj)
     trace = tm.GetTraceFromCRAsUpCopyMoveType(cfa_obj)
-    self.assertEqual(trace, "DefaultCtor_CpCtor_MvLhs_CpCtor_CpLhs_CpCtor")
+    self.assertEqual(
+        trace,
+        [
+            "DefaultCtor_CpCtor_CpCtor_CpLhs_CpCtor",
+            "DefaultCtor_CpCtor_MvLhs_CpCtor_CpLhs_CpCtor",
+            "DefaultCtor_CpCtor_CpCtor_CpLhs_CpCtor",
+        ][ENV_IX],
+    )
 
   def testFromCRAsSPCopyMoveType(self):
     # std::shared_ptr
     class_obj = copy_move_types_library.CopyMoveType()
     cfa_obj = tm.MakeFromCRAsSpCopyMoveType(class_obj)
     trace = tm.GetTraceFromCRAsSpCopyMoveType(cfa_obj)
-    self.assertEqual(trace, "DefaultCtor_CpCtor_MvLhs_CpCtor_CpLhs")
+    self.assertEqual(
+        trace,
+        [
+            "DefaultCtor_CpCtor_CpCtor_CpLhs",
+            "DefaultCtor_CpCtor_MvLhs_CpCtor_CpLhs",
+            "DefaultCtor_CpCtor_CpCtor_CpLhs_CpCtor_MvCtorTo",
+        ][ENV_IX],
+    )
 
 
 if __name__ == "__main__":
