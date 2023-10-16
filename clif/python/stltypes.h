@@ -313,9 +313,11 @@ class Iterator {
   const T* Next() noexcept {
     if (!self_) return nullptr;
     using std::end;  // Allow to find custom end() via ADL.
-    if (it_ != end(*self_)) return &*it_++;
-    self_.reset();
-    return nullptr;
+    if (it_ == end(*self_)) {  // Using `==` for compatibility with pybind11.
+      self_.reset();
+      return nullptr;
+    }
+    return &*it_++;
   }
 
  private:
