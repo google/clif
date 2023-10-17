@@ -75,7 +75,7 @@ jobs:
     # Otherwise, docker build could take up to 10 minutes.
     # See https://github.com/marketplace/actions/build-and-push-docker-images
     - name: Cache Docker Layers
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
           path: /tmp/.buildx-cache
           key: ubuntu-${{ matrix.ubuntu }}-python-${{ matrix.python }}-buildx-${{ hashFiles('Dockerfile') }}
