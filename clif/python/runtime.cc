@@ -14,18 +14,21 @@
 
 #include "clif/python/runtime.h"
 
+#include <Python.h>
 #include <stdio.h>
 
 #include <cassert>
+#include <cstdint>
+#include <cstring>
 #include <initializer_list>
+#include <string>
 #include <system_error>  // NOLINT(build/c++11)
+#include <utility>
 
-#include "clif/python/pickle_support.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/log/check.h"
 #include "absl/log/log.h"
-// This should be removed once CLIF depends on Abseil.
-#include <cassert>
-// NOLINTNEXTLINE(whitespace/line_length) because of MOE, result is within 80.
-#define CHECK_NOTNULL(condition) (assert((condition) != nullptr),(condition))
+#include "clif/python/pickle_support.h"
 
 extern "C"
 int Clif_PyType_Inconstructible(PyObject* self, PyObject* a, PyObject* kw) {
@@ -35,6 +38,37 @@ int Clif_PyType_Inconstructible(PyObject* self, PyObject* a, PyObject* kw) {
 }
 
 namespace clif {
+
+void SetErrorWrappedTypeCannotBeUsedAsBase(PyTypeObject* wrapper_type,
+                                           PyTypeObject* derived_type) {
+  std::string derived_type_module;
+  PyObject* mod_attr =
+      PyObject_GetAttrString((PyObject*)derived_type, "__module__");
+  if (mod_attr == nullptr) {
+    PyErr_Clear();
+  } else {
+    // Report but clear all unexpected low-level errors.
+    if (!PyUnicode_Check(mod_attr)) {
+      derived_type_module = "<PyUnicode_Check(__module__) FALSE>";
+    } else {
+      Py_ssize_t length;
+      const char* data = PyUnicode_AsUTF8AndSize(mod_attr, &length);
+      if (PyErr_Occurred()) {
+        PyErr_Clear();
+        derived_type_module = "<PyUnicode_AsUTF8AndSize(__module__) ERROR>";
+      } else {
+        derived_type_module = std::string(data, length);
+      }
+    }
+    Py_DECREF(mod_attr);
+    derived_type_module += ".";
+  }
+  PyErr_Format(PyExc_TypeError,
+               "%s cannot be used as a base class for a Python type because it "
+               "has no constructor defined (the derived type is %s%s).",
+               wrapper_type->tp_name, derived_type_module.c_str(),
+               derived_type->tp_name);
+}
 
 void PyObjRef::Init(PyObject* self) {
   self_ = PyWeakref_NewRef(self, nullptr);

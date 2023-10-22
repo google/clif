@@ -597,6 +597,12 @@ def TypeObject(ht_qualname, tracked_slot_groups,
       yield I+I+'(*derived_tp_init_registry)[type] = type->tp_init;'
       yield I+I+'type->tp_init = tp_init_intercepted;'
       yield I+'}'
+    else:
+      yield I + 'if (type->tp_init != Clif_PyType_Inconstructible) {'
+      yield I + '  clif::SetErrorWrappedTypeCannotBeUsedAsBase('
+      yield I + '      wrapper_Type, type);'
+      yield I + '  return nullptr;'
+      yield I + '}'
     yield I+'return PyType_GenericNew(type, args, kwds);'
     yield '}'
 
