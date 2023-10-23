@@ -14,19 +14,21 @@
 
 #include "clif/python/runtime.h"
 
+#include <Python.h>
 #include <stdio.h>
 
 #include <cassert>
+#include <cstdint>
+#include <cstring>
 #include <initializer_list>
 #include <string>
 #include <system_error>  // NOLINT(build/c++11)
+#include <utility>
 
-#include "clif/python/pickle_support.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/log/check.h"
 #include "absl/log/log.h"
-// This should be removed once CLIF depends on Abseil.
-#include <cassert>
-// NOLINTNEXTLINE(whitespace/line_length) because of MOE, result is within 80.
-#define CHECK_NOTNULL(condition) (assert((condition) != nullptr),(condition))
+#include "clif/python/pickle_support.h"
 
 extern "C"
 int Clif_PyType_Inconstructible(PyObject* self, PyObject* a, PyObject* kw) {

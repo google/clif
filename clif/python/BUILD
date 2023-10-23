@@ -55,6 +55,7 @@ cc_library(
         "@com_google_absl//absl/base:config",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/log",
+        "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/numeric:int128",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:cord",
@@ -62,7 +63,7 @@ cc_library(
         "@com_google_absl//absl/types:variant",
         "@com_google_protobuf//:proto_api",
         "@com_google_protobuf//:protobuf_headers",
-        "@python_runtime//:python_headers",
+        "@python_runtime//:python_headers",  # buildcleaner: keep
     ],
 )
 

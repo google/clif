@@ -23,7 +23,12 @@ standard headers on some systems, you must include Python.h before any standard
 headers are included.
 */
 #include <Python.h>
+#include <stddef.h>
+
+#include <memory>
 #include <string>
+#include <typeinfo>
+
 #include "clif/python/instance.h"
 using std::string;
 
