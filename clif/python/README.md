@@ -252,6 +252,12 @@ If a different convention was used, one can create a wrapper to implement the
 desired behavior. If compatible overloaded functions exists, CLIF will prefer
 the `std::unique_ptr` alternative.
 
+`None` is converted to `nullptr` and vice versa in many but not all situations.
+However, ideally we'd change this behavior some day, by enforcing that `None` is
+accepted or returned only if `NoneOr<>` (or something similar) appears
+explicitly in the `.clif` file (note that today, `NoneOr<>` only works with
+`std::optional`, not pointers).
+
 #### Postprocessing {#postprocessing}
 
 Often C/C++ APIs return a status as one return value. Python users prefer to not
