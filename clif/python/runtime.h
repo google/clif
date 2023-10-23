@@ -59,6 +59,9 @@ T* Get(const clif::Instance<T>& cpp, bool set_err = true) {
 
 }  // namespace python
 
+void SetErrorWrappedTypeCannotBeUsedAsBase(PyTypeObject* wrapper_type,
+                                           PyTypeObject* derived_type);
+
 // Returns py.__class__.__name__ (needed for PY2 old style classes).
 const char* ClassName(PyObject* py);
 const char* ClassType(PyObject* py);

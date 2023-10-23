@@ -69,5 +69,29 @@ class MockUninitializableTest(absltest.TestCase):
       # pytype: enable=wrong-arg-count
 
 
+class DerivedFromNoCtor(tm.NoCtor):
+
+  def __init__(self):
+    pass
+
+
+class DerivedFromNoCtorTest(absltest.TestCase):
+
+  def testInstantiate(self):
+    if "pybind11" in tm.__doc__:
+      regex_expected = (
+          r"mock_uninitializable\.NoCtor\.__init__\(\) must be called when"
+          r" overriding __init__$"
+      )
+    else:
+      regex_expected = (
+          r"mock_uninitializable\.NoCtor cannot be used as a base class for a"
+          r" Python type because it has no constructor defined \(the derived"
+          r" type is \w+\.DerivedFromNoCtor\)\.$"
+      )
+    with self.assertRaisesRegex(TypeError, regex_expected):
+      DerivedFromNoCtor()
+
+
 if __name__ == "__main__":
   absltest.main()
