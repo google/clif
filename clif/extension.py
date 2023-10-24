@@ -43,7 +43,6 @@ _CLIF_LIBRARIES = [
     'absl_bad_optional_access',
     'absl_raw_logging_internal',
     'absl_log_severity',
-    'glog',
     'protobuf',
 ]
 
