@@ -28,7 +28,6 @@
 # the protoc compiler binary in the non-standard location.
 include(FindPkgConfig)
 # Lookup include and library directories using pkg-config.
-pkg_check_modules(GOOGLE_GLOG REQUIRED libglog)
 
 find_package(absl REQUIRED)
 find_package(Clang REQUIRED)
@@ -205,7 +204,6 @@ function(add_pyclif_library name pyclif_file)
     PRIVATE
       ${CLIF_SRC_DIR}
       ${CLIF_BIN_DIR}
-      ${GOOGLE_GLOG_INCLUDE_DIRS}
       ${PYTHON_INCLUDE_DIRS}
   )
 
@@ -214,7 +212,6 @@ function(add_pyclif_library name pyclif_file)
   # Plain and keyword target_link_libraries signatures cannot be mixed.
   # https://cmake.org/cmake/help/v3.0/policy/CMP0023.html
   target_link_libraries(${lib_target_name} PUBLIC
-    ${GOOGLE_GLOG_LIBRARIES}
     ${PYCLIF_LIBRARY_CC_DEPS}
     ${PYCLIF_LIBRARY_CLIF_DEPS}
     ${PYCLIF_LIBRARY_PROTO_DEPS}
@@ -260,7 +257,6 @@ function(add_pyclif_proto_library name proto_file proto_lib)
     PRIVATE
       ${CLIF_SRC_DIR}
       ${CLIF_BIN_DIR}
-      ${GOOGLE_GLOG_INCLUDE_DIRS}
       ${PYTHON_INCLUDE_DIRS}
   )
 
@@ -268,7 +264,6 @@ function(add_pyclif_proto_library name proto_file proto_lib)
     clif_python_utils_proto_util
     pyClifRuntime
     ${proto_lib}
-    ${GOOGLE_GLOG_LIBRARIES}
     ${PYTHON_LIBRARIES}
 
     absl::memory

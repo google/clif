@@ -18,10 +18,13 @@ Since Python may define some pre-processor definitions which affect the
 standard headers on some systems, you must include Python.h before any standard
 headers are included.
 */
+#include "clif/python/pyproto.h"
+
 #include <Python.h>
+
 #include <string>
 
-#include "clif/python/pyproto.h"
+#include "absl/log/check.h"
 #include "clif/python/runtime.h"
 #include "google/protobuf/io/coded_stream.h"
 #include "google/protobuf/descriptor.h"

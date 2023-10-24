@@ -56,12 +56,10 @@ add_library(pyClifRuntime SHARED
 target_include_directories(pyClifRuntime PUBLIC
   "${CLIF_SRC_DIR}"
   "${PYTHON_INCLUDE_DIRS}"
-  "${GOOGLE_GLOG_INCLUDE_DIRS}"
 )
 
 target_link_libraries(pyClifRuntime PRIVATE
   "${PYTHON_LIBRARIES}"
-  "${GOOGLE_GLOG_LIBRARIES}"
   pickle_support_lib
 
   absl::memory

@@ -51,11 +51,11 @@ cc_library(
     deps = [
         ":pickle_support_lib",
         "//third_party/protobuf/io",
-        "@com_github_google_glog//:glog",
         "@com_google_absl//absl/base:config",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/log",
         "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/log:die_if_null",
         "@com_google_absl//absl/numeric:int128",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:cord",
@@ -76,7 +76,6 @@ cc_test(
     ],
     deps = [
         ":instance",
-        "@com_github_google_glog//:glog",
         "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest_main",
         "@python_runtime//:python_headers",
@@ -181,7 +180,6 @@ cc_library(
     name = "postconv_clib",
     testonly = 1,
     hdrs = ["postconv.h"],
-    deps = ["@com_github_google_glog//:glog"],
 )
 
 cc_test(

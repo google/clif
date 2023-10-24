@@ -18,8 +18,7 @@
 
 #include <Python.h>
 
-#include "glog/logging.h"
-
+#include "absl/log/check.h"
 #include "clif/python/postconv.h"
 
 namespace clif {

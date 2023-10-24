@@ -47,6 +47,7 @@ headers are included.
 #endif                   // __EXCEPTIONS
 
 #include "absl/base/config.h"
+#include "absl/log/die_if_null.h"
 #include "absl/log/log.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -440,7 +441,7 @@ template <typename R, typename... T>
 class Func {
  public:
   explicit Func(PyObject* callable, const py::PostConv& pc)
-      : callback_(CHECK_NOTNULL(callable),
+      : callback_(ABSL_DIE_IF_NULL(callable),
                   [](PyObject* obj) {
                     GilLock holder;
                     Py_CLEAR(obj);

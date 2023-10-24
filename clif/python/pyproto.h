@@ -18,7 +18,6 @@
 
 #include <memory>
 
-#include "glog/logging.h"
 #include "google/protobuf/message.h"
 
 namespace proto2 = google::protobuf;
