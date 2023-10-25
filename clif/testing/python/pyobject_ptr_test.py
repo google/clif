@@ -93,7 +93,7 @@ class PyObjectPtrTest(absltest.TestCase):
         self.assertEqual(cc(cb_guarded, PyValueHolder(3.0)).value, -123)
       self.assertIn("ValueError: Unknown pvh.value: 3.0", sio.getvalue())
 
-  def test_call_callback_with_pyobject_ptr_int_args(self):
+  def test_call_callback_with_pyobject_ptr_int_args_temporary_arg(self):
     def cb(pvh, num):
       return tst.CppValueHolder(pvh.value * 10 + num)
 
@@ -101,13 +101,31 @@ class PyObjectPtrTest(absltest.TestCase):
     for _ in range(1000):
       self.assertEqual(cc(cb, PyValueHolder(30)).value, 340)
 
-  def test_call_callback_with_int_pyobject_ptr_args(self):
+  def test_call_callback_with_pyobject_ptr_int_args_named_arg(self):
+    def cb(pvh, num):
+      return tst.CppValueHolder(pvh.value * 10 + num)
+
+    cc = tst.call_callback_with_pyobject_ptr_int_args
+    value_holder = PyValueHolder(30)
+    for _ in range(1000):
+      self.assertEqual(cc(cb, value_holder).value, 340)
+
+  def test_call_callback_with_int_pyobject_ptr_args_temporary_arg(self):
     def cb(num, pvh):
       return tst.CppValueHolder(num * 20 + pvh.value)
 
     cc = tst.call_callback_with_int_pyobject_ptr_args
     for _ in range(1000):
       self.assertEqual(cc(cb, PyValueHolder(60)).value, 1060)
+
+  def test_call_callback_with_int_pyobject_ptr_args_named_arg(self):
+    def cb(num, pvh):
+      return tst.CppValueHolder(num * 20 + pvh.value)
+
+    cc = tst.call_callback_with_int_pyobject_ptr_args
+    value_holder = PyValueHolder(60)
+    for _ in range(1000):
+      self.assertEqual(cc(cb, value_holder).value, 1060)
 
 
 if __name__ == "__main__":

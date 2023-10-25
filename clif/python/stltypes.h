@@ -338,6 +338,11 @@ inline Py_ssize_t ArgIn(PyObject**, Py_ssize_t idx, const py::PostConv&) {
   return idx;
 }
 
+// NOTE: This forward declaration is CRITICAL (see b/282776731#comment6).
+template <typename... T>
+Py_ssize_t ArgIn(PyObject** a, Py_ssize_t idx, const py::PostConv& pc,
+                 PyObject* c1, T&&... c);
+
 template <typename T1, typename... T>
 Py_ssize_t ArgIn(PyObject** a, Py_ssize_t idx, const py::PostConv& pc, T1&& c1,
                  T&&... c) {
