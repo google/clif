@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# REMINDER for clif-team:
+# Review devtools/cider/extensions/clif/syntaxes
+# if changes are made here.
+
 """PYTD PyParser module.
 
 Use
