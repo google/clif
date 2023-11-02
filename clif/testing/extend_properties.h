@@ -31,6 +31,27 @@ struct ValueHolder {
   std::string value_str_;
 };
 
+struct ValueHolderFinal final {
+  ValueHolderFinal(int v) : value_(v) {}
+  int get_value() { return value_; }
+  void set_value(int v) { value_ = v; }
+  int value_;
+};
+
+struct ValueHolderImplicitGetPlain {
+  ValueHolderImplicitGetPlain(int v) : value_(v) {}
+  int value() { return value_; }
+  void set_value(int v) { value_ = v; }
+  int value_;
+};
+
+struct ValueHolderImplicitGetFinal final {
+  ValueHolderImplicitGetFinal(int v) : value_(v) {}
+  int value() { return value_; }
+  void set_value(int v) { value_ = v; }
+  int value_;
+};
+
 struct PropertyHolder {
   PropertyHolder(int v): value_holder_(v) {}
   ValueHolder value_holder_;

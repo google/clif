@@ -19,6 +19,30 @@ from clif.testing.python import extend_properties
 
 class ExtendPropertiesTest(absltest.TestCase):
 
+  def test_value_holder_plain(self):
+    vh = extend_properties.ValueHolderPlain(10)
+    self.assertEqual(vh.value_times_23, 10 * 2)
+    vh.value_times_23 = 12
+    self.assertEqual(vh.value_times_23, 12 * 2 * 3)
+
+  def test_value_holder_final(self):
+    vh = extend_properties.ValueHolderFinal(20)
+    self.assertEqual(vh.value_times_45, 20 * 4)
+    vh.value_times_45 = 23
+    self.assertEqual(vh.value_times_45, 23 * 4 * 5)
+
+  def test_value_holder_implicit_get_plain(self):
+    vh = extend_properties.ValueHolderImplicitGetPlain(30)
+    self.assertEqual(vh.value, 30 * 6)
+    vh.value = 34
+    self.assertEqual(vh.value, 34 * 6 * 7)
+
+  def test_value_holder_implicit_get_final(self):
+    vh = extend_properties.ValueHolderImplicitGetFinal(40)
+    self.assertEqual(vh.value, 40 * 8)
+    vh.value = 45
+    self.assertEqual(vh.value, 45 * 8 * 9)
+
   def test_property_with_simple_getter(self):
     expected_value = 543
     ph = extend_properties.PropertyHolder(expected_value)

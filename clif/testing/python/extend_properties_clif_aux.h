@@ -24,6 +24,44 @@
 namespace clif_testing {
 namespace extend_properties {
 
+inline int ValueHolderPlain__extend__get_value_times_2(ValueHolder& self) {
+  return self.get_value() * 2;
+}
+
+inline void ValueHolderPlain__extend__set_value_times_3(ValueHolder& self,
+                                                        int value) {
+  return self.set_value(value * 3);
+}
+
+inline int ValueHolderFinal__extend__get_value_times_4(ValueHolderFinal& self) {
+  return self.get_value() * 4;
+}
+
+inline void ValueHolderFinal__extend__set_value_times_5(ValueHolderFinal& self,
+                                                        int value) {
+  return self.set_value(value * 5);
+}
+
+inline int ValueHolderImplicitGetPlain__extend__value(
+    ValueHolderImplicitGetPlain& self) {
+  return self.value() * 6;
+}
+
+inline void ValueHolderImplicitGetPlain__extend__set_value(
+    ValueHolderImplicitGetPlain& self, int value) {
+  return self.set_value(value * 7);
+}
+
+inline int ValueHolderImplicitGetFinal__extend__value(
+    ValueHolderImplicitGetFinal& self) {
+  return self.value() * 8;
+}
+
+inline void ValueHolderImplicitGetFinal__extend__set_value(
+    ValueHolderImplicitGetFinal& self, int value) {
+  return self.set_value(value * 9);
+}
+
 inline int PropertyHolder__extend__get_value(PropertyHolder& self) {
   return self.value_holder_.get_value();
 }

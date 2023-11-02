@@ -366,12 +366,8 @@ class Module:
       raise NameError('Property %s has setter, but no getter' % v.name.native)
     getter = 'get_' + vname
     setter = 'set_' + vname
-    if self.final:
-      base = None
-      cobj = _GetCppObj() + '->'
-    else:
-      base = 'auto cpp = ThisPtr(self); if (!cpp) '
-      cobj = 'cpp->'
+    base = 'auto cpp = ThisPtr(self); if (!cpp) '
+    cobj = 'cpp->'
     is_property = False
     if v.cpp_get.name.cpp_name:
       # It's a property var (with cpp only `getter`, `setter`).
@@ -443,6 +439,21 @@ class Module:
           is_extend=v.is_extend_variable):
         yield s
 
+  def _ExtendPropertiesQuickBandaid(self):
+    """A proper fix seems involved."""
+    # It probably needs cooperating fixes in ast_manipulations and this
+    # code generator. We do not want to invest in this code generator anymore
+    # and this very simple bandaid does the trick. Besides, slots.GenSlots()
+    # further filters the list returned from here in a similar fashion.
+    prop_names = set()
+    for prop in self.properties:
+      prop_names.add(prop[0])
+    methods_filtered = []
+    for meth in self.methods:
+      if meth[0] not in prop_names:
+        methods_filtered.append(meth)
+    return methods_filtered
+
   def WrapClass(self, c, unused_ln, cpp_namespace, unused_class_ns=''):
     """Process AST.ClassDecl c."""
     cname = Ident(c.name.cpp_name)
@@ -486,9 +497,8 @@ class Module:
       # Normal class generator.
       if c.final:
         self.final = True
-      else:
-        yield ''
-        yield 'static %s* ThisPtr(PyObject*);' % c.name.cpp_name
+      yield ''
+      yield 'static %s* ThisPtr(PyObject*);' % c.name.cpp_name
       ctor = ('DEF' if c.cpp_has_def_ctor and (not c.cpp_abstract or virtual)
               else None)
       for d in c.members:
@@ -545,11 +555,13 @@ class Module:
             self.methods.append((w, w, NOARGS, 'Upcast to %s*' % p))
       _AppendReduceExIfNeeded(self.methods)
       if self.methods:
-        for s in slots.GenSlots(self.methods, tp_slots,
-                                tracked_groups=tracked_slot_groups):
+        methods_filtered = self._ExtendPropertiesQuickBandaid()
+        for s in slots.GenSlots(
+            methods_filtered, tp_slots, tracked_groups=tracked_slot_groups
+        ):
           yield s
-        if self.methods:  # If all methods are slots, it's empty.
-          for s in gen.MethodDef(self.methods):
+        if methods_filtered:  # If all methods are slots, it's empty.
+          for s in gen.MethodDef(methods_filtered):
             yield s
           tp_slots['tp_methods'] = gen.MethodDef.name
     qualname = '.'.join(f.pyname for f in self.nested)
