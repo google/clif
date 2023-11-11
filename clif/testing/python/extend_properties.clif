@@ -14,6 +14,32 @@
 
 from "clif/testing/python/extend_properties_clif_aux.h":
   namespace `clif_testing`:
+    class `ValueHolder` as ValueHolderPlain:
+      def __init__(self, v: int)
+
+      @extend
+      value_times_23: int = property(`get_value_times_2`, `set_value_times_3`)
+
+    @final
+    class ValueHolderFinal:
+      def __init__(self, v: int)
+
+      @extend
+      value_times_45: int = property(`get_value_times_4`, `set_value_times_5`)
+
+    class ValueHolderImplicitGetPlain:
+      def __init__(self, v: int)
+
+      @extend
+      value: int = property(`value`, `set_value`)
+
+    @final
+    class ValueHolderImplicitGetFinal:
+      def __init__(self, v: int)
+
+      @extend
+      value: int = property(`value`, `set_value`)
+
     class PropertyHolder:
       def __init__(self, v: int)
 

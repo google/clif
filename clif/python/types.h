@@ -149,13 +149,9 @@ inline PyObject* Clif_PyObjFrom(std::complex<double> c,
 }
 
 // CLIF use `bool` as bool
-#ifdef CLIF_PY_OBJ_FROM_BOOL_ALLOW_UNSAFE_IMPLICIT_CONVERSIONS
-inline PyObject* Clif_PyObjFrom(bool c, const py::PostConv& pc) {
-#else
 template <typename T>
-typename std::enable_if<std::is_same<T, bool>::value, PyObject*>::type  //
-    inline Clif_PyObjFrom(T c, const py::PostConv& pc) {
-#endif
+typename std::enable_if<std::is_same<T, bool>::value, PyObject*>::type
+inline Clif_PyObjFrom(T c, const py::PostConv& pc) {
   return pc.Apply(PyBool_FromLong(c));
 }
 
