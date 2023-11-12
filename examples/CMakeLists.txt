@@ -146,10 +146,10 @@ function(add_pyclif_proto_library name proto_file proto_lib)
     BYPRODUCTS ${gen_cc} ${gen_h}
     COMMAND
       ${PYCLIF_PROTO}
-      -s ${CLIF_EXAMPLES_SOURCE_DIR}
-      -d ${CLIF_EXAMPLES_BINARY_DIR}
-      -c ${gen_cc}
-      -h ${gen_h}
+      --source_dir ${CLIF_EXAMPLES_SOURCE_DIR}
+      --bin_dir ${CLIF_EXAMPLES_BINARY_DIR}
+      --ccdeps_out ${gen_cc}
+      --header_out ${gen_h}
       ${proto_file_relative_path}
     VERBATIM
     DEPENDS ${proto_lib}
