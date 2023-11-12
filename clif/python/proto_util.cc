@@ -17,8 +17,11 @@
 
 #include <memory>
 #include <sstream>
+#include <string>
+#include <vector>
 
 #include "google/protobuf/compiler/importer.h"
+#include "google/protobuf/descriptor.h"
 #include "proto_util.h"
 using proto2::Descriptor;
 using proto2::EnumDescriptor;
@@ -65,20 +68,23 @@ clif_proto::ProtoTypeInfo MakeProtoTypeInfo(const T& d) {
 
 namespace clif_proto {
 
-ProtoFileInfo::ProtoFileInfo(const std::string& proto_file_path,
-                             const std::string& additional_import_path)
+ProtoFileInfo::ProtoFileInfo(
+    const std::string& proto_file_path,
+    const std::vector<std::string>& additional_import_paths)
     : valid_(false),  // The 'Index' method will set it to the correct validity.
-      proto_file_path_(proto_file_path),
-      additional_import_path_(additional_import_path) {
-  Index();
+      proto_file_path_(proto_file_path) {
+  Index(additional_import_paths);
 }
 
-void ProtoFileInfo::Index() {
+void ProtoFileInfo::Index(
+    const std::vector<std::string>& additional_import_paths) {
   std::unique_ptr<DiskSourceTree> src_tree(new DiskSourceTree);
   // Map the root and source tree directories.
   src_tree->MapPath("/", "/");
   src_tree->MapPath("", ".");
-  src_tree->MapPath("", additional_import_path_);
+  for (const auto& path : additional_import_paths) {
+    src_tree->MapPath("", path);
+  }
 
   std::unique_ptr<ProtoFileErrorCollector> errors(
       new ProtoFileErrorCollector(&error_msg_));

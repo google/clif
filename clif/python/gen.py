@@ -29,6 +29,15 @@ _BUILTIN_TYPES_WITH_SHARED_PTR_CONVERSION = frozenset([
 ])
 
 
+def StripGeneratedFilesDir(path, gen_dir_paths):
+  for dir_path in gen_dir_paths:
+    if dir_path:
+      assert not dir_path.endswith('/')
+      if path.startswith(dir_path):
+        return path[len(dir_path) + 1 :]
+  return path
+
+
 def TopologicalSortSimple(ideps):
   """Simple topological sort working on sequence of integer indices."""
   # Returns permutation indices (list of integers).

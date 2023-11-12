@@ -234,9 +234,10 @@ function(add_pyclif_proto_library name proto_file proto_lib)
     COMMAND
       "PYTHONPATH=${CLIF_BIN_DIR}:${CLIF_SRC_DIR}" ${PYTHON_EXECUTABLE} ${PYCLIF_PROTO}
       "${CMAKE_CURRENT_SOURCE_DIR}/${proto_file}"
-      -c ${gen_cc} -h ${gen_h}
-      -s ${CLIF_SRC_DIR}
-      -d ${CLIF_BIN_DIR}
+      --ccdeps_out ${gen_cc}
+      --header_out ${gen_h}
+      --source_dir ${CLIF_SRC_DIR}
+      --bin_dir ${CLIF_BIN_DIR}
     VERBATIM
     DEPENDS clif_python_utils_proto_util
   )

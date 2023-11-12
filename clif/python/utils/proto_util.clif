@@ -37,7 +37,8 @@ from "clif/python/proto_util.h":
 
 
     class ProtoFileInfo:
-      def __init__(self, proto_file_path: str, additional_import_path: str)
+      def __init__(self, proto_file_path: str,
+                         additional_import_paths: list<str>)
 
       def SrcFile(self) -> str
 

@@ -16,7 +16,7 @@ r"""Generate CLIF extension C++ source for a protobuf.
 
 PROTO -cOUTPATH/CCNAME \
       -hOUTPATH/HNAME  \
-      --strip_dir=SYSPATH \
+      --bin_dir=SYSPATH \
       SYSPATH/PKGPATH/NAME.proto
 
 reads NAME.proto and generates C++ CCNAME source and HNAME header files.
@@ -40,14 +40,21 @@ class _ParseError(Exception):
 def _ParseCommandline(doc, argv):
   """Define command-line flags and return parsed argv."""
   parser = argparse.ArgumentParser(description=doc, add_help=False)
-  parser.add_argument('--source_dir', '-s', default='',
-                      help=('The base of the source code tree to strip from'
-                            ' file names.'))
-  parser.add_argument('--strip_dir', '-d', default='',
-                      help=('The base of the generated code tree to strip from'
-                            ' file names.'))
-  parser.add_argument('--ccdeps_out', '-c', help='output filename for base .cc')
-  parser.add_argument('--header_out', '-h', help='output filename for .h')
+  parser.add_argument(
+      '--source_dir',
+      default='',
+      help='The base of the source code tree to strip from file names.',
+  )
+  parser.add_argument(
+      '--bin_dir',
+      default='',
+      help='The base of the generated code tree to strip from file names.',
+  )
+  parser.add_argument(
+      '--genfiles_dir', default='', help='deprecated, but still in use'
+  )
+  parser.add_argument('--ccdeps_out', help='output filename for base .cc')
+  parser.add_argument('--header_out', help='output filename for .h')
   parser.add_argument('--allow_empty_package', action='store_true',
                       help=('Generate CLIF conversion library in ::clif '
                             'namespace, ADL will not work.'))
@@ -203,21 +210,18 @@ def _GenHeader(messages):
 def main(_):
   assert FLAGS.ccdeps_out and FLAGS.header_out, ('Both output files '
                                                  '(-c, -h) must be specified.')
-  assert not FLAGS.strip_dir.endswith('/')
-  assert FLAGS.header_out.startswith(FLAGS.strip_dir)
-  strip_dir = len(FLAGS.strip_dir)+1  # +1 for '/'
-  hdr = FLAGS.header_out[strip_dir:]
-  name = src = FLAGS.protobuf[0]
-  assert not FLAGS.source_dir.endswith('/')
-  if FLAGS.source_dir and name.startswith(FLAGS.source_dir):
-    name = name[len(FLAGS.source_dir)+1:]  # +1 for '/'
+  assert not FLAGS.bin_dir.endswith('/')
+  assert FLAGS.header_out.startswith(FLAGS.bin_dir)
+  hdr = FLAGS.header_out[len(FLAGS.bin_dir) + 1 :]
+  src = FLAGS.protobuf[0]
+  name = gen.StripGeneratedFilesDir(src, [FLAGS.source_dir])
   for ext in VALID_EXT:
     if name.endswith(ext):
       pypath = name[:-len(ext)]
       break
   else:
     raise NameError('Proto file should have any%s extension' % VALID_EXT)
-  desc = proto_util.ProtoFileInfo(src, FLAGS.source_dir)
+  desc = proto_util.ProtoFileInfo(src, [FLAGS.source_dir])
   if not desc:
     raise _ParseError(desc.ErrorMsg())
   messages = CreatePyTypeInfo(desc, pypath, not FLAGS.allow_empty_package)
