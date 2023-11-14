@@ -73,7 +73,7 @@ class ProtoFileInfo {
   // returns true, else false. The errors encountered while parsing are
   // returned by the "ErrorMsg" method.
   ProtoFileInfo(const std::string& proto_file_path,
-                const std::string& additional_import_path);
+                const std::vector<std::string>& additional_import_paths);
 
   bool IsValid() const {
     return valid_;
@@ -103,12 +103,11 @@ class ProtoFileInfo {
   }
 
  private:
-  void Index();
+  void Index(const std::vector<std::string>& additional_import_paths);
   void IndexMessage(const proto2::Descriptor& d);
 
   bool valid_;
   std::string proto_file_path_;
-  std::string additional_import_path_;
 
   std::string package_;
   std::string error_msg_;

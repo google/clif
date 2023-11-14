@@ -28,7 +28,7 @@ class ProtoTest(unittest.TestCase):
   def testCreateTypeInfo(self):
     test_proto = PKG + 'testdata/test.proto'
     logging.info(test_proto)
-    d = proto_util.ProtoFileInfo(test_proto, TEST_SRCDIR)
+    d = proto_util.ProtoFileInfo(test_proto, [TEST_SRCDIR])
     self.assertTrue(d, d.ErrorMsg())
     msgs = proto.CreatePyTypeInfo(d, 'a/b/c')
     m = {}
@@ -51,7 +51,9 @@ class ProtoTest(unittest.TestCase):
                      'TopLevelMessage.NestedMessage.DoublyNestedEnum')
 
   def testNoPkg(self):
-    d = proto_util.ProtoFileInfo(PKG+'testdata/no_pkg.proto.data', TEST_SRCDIR)
+    d = proto_util.ProtoFileInfo(
+        PKG + 'testdata/no_pkg.proto.data', [TEST_SRCDIR]
+    )
     with self.assertRaises(ValueError) as ctx:
       _ = proto.CreatePyTypeInfo(d, 'a/b/c')
     self.assertEqual(
