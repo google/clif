@@ -143,7 +143,10 @@ py_test(
     srcs = ["gen_test.py"],
     python_version = "PY3",
     srcs_version = "PY3",
-    deps = [":generator_lib"],
+    deps = [
+        ":generator_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+    ],
 )
 
 # Postconvertion utilities.
@@ -160,7 +163,10 @@ py_test(
     srcs = ["postconv_test.py"],
     python_version = "PY3",
     srcs_version = "PY3",
-    deps = [":postconv_test_lib"],
+    deps = [
+        ":postconv_test_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+    ],
 )
 
 py_library(
@@ -207,6 +213,7 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":postproc",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
         requirement("parameterized"),
         "@io_abseil_py//absl/testing:absltest",
     ],
@@ -235,7 +242,10 @@ py_test(
     srcs = ["pytd_parser_test.py"],
     python_version = "PY3",
     srcs_version = "PY3",
-    deps = [":pytd_parser_test_lib"],
+    deps = [
+        ":pytd_parser_test_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+    ],
 )
 
 py_library(
@@ -281,7 +291,10 @@ py_test(
     srcs = ["module_test.py"],
     python_version = "PY3",
     srcs_version = "PY3",
-    deps = [":module_test_lib"],
+    deps = [
+        ":module_test_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+    ],
 )
 
 py_library(
@@ -303,7 +316,10 @@ py_test(
     srcs = ["func_test.py"],
     python_version = "PY3",
     srcs_version = "PY3",
-    deps = [":func_test_lib"],
+    deps = [
+        ":func_test_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+    ],
 )
 
 py_library(
@@ -325,7 +341,10 @@ py_test(
     srcs = ["types_test.py"],
     python_version = "PY3",
     srcs_version = "PY3",
-    deps = [":types_test_lib"],
+    deps = [
+        ":types_test_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+    ],
 )
 
 py_library(
@@ -345,7 +364,10 @@ py_test(
     srcs = ["slots_test.py"],
     python_version = "PY3",
     srcs_version = "PY3",
-    deps = [":slots_test_lib"],
+    deps = [
+        ":slots_test_lib",
+        "//third_party/py/google/protobuf:use_fast_cpp_protos",  # Automatically added go/proto_python_upb_flip
+    ],
 )
 
 py_library(
