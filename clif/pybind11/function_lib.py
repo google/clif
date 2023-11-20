@@ -216,7 +216,9 @@ def generate_return_value_policy_for_type(
     if param_type.lang_type == 'bytes':
       return 'py::return_value_policy::_return_as_bytes'
     elif is_callable_arg:
-      return 'py::return_value_policy::automatic_reference'
+      if param_type.lang_type == 'object':
+        return 'py::return_value_policy::automatic_reference'
+      return 'py::return_value_policy::_clif_automatic'
     elif reference_internal:
       return 'py::return_value_policy::reference_internal'
     else:
