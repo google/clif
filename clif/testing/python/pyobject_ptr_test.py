@@ -38,6 +38,13 @@ class PyObjectPtrTest(absltest.TestCase):
     self.assertTrue(tst.pass_pyobject_ptr(()))
     self.assertFalse(tst.pass_pyobject_ptr({}))
 
+  def test_pass_pyobject_ptr_with_nullptr_default(self):
+    self.assertEqual(
+        tst.pass_pyobject_ptr_with_nullptr_default(), "obj == nullptr"
+    )
+    self.assertEqual(tst.pass_pyobject_ptr_with_nullptr_default(None), "None")
+    self.assertEqual(tst.pass_pyobject_ptr_with_nullptr_default([]), "[]")
+
   def test_call_callback_with_pyobject_ptr_return(self):
 
     def cb(cvh):

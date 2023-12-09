@@ -23,6 +23,8 @@ from "clif/testing/pyobject_ptr.h":
     def return_pyobject_ptr() -> object
     def pass_pyobject_ptr(obj: object) -> bool
 
+    def pass_pyobject_ptr_with_nullptr_default(obj: object = default) -> str
+
     def call_callback_with_pyobject_ptr_return(cb: (mode: CppValueHolder) -> object, mode: CppValueHolder) -> object
     def call_callback_with_pyobject_ptr_arg(cb: (obj: object) -> CppValueHolder, obj: object) -> CppValueHolder
 

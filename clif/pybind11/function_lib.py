@@ -23,6 +23,7 @@ from clif.pybind11 import utils
 
 I = utils.I
 
+_CPP_TYPE_PYOBJECT_PTR_FROM_MATCHER = '::_object *'
 _STATUS_PATTERNS = (r'Status', r'StatusOr<(\S)+>')
 
 
@@ -412,6 +413,8 @@ def _generate_py_arg_with_default(
       )
   else:
     if param.default_value == 'nullptr':
+      if param.type.cpp_type == _CPP_TYPE_PYOBJECT_PTR_FROM_MATCHER:
+        return f'py::arg("{param.name.cpp_name}") = py::nullptr_default_arg()'
       return f'py::arg("{param.name.cpp_name}") = {param.default_value}'
     else:
       return (
