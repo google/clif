@@ -30,13 +30,14 @@ add_custom_target(runPyClifIntegrationTests
 #
 # $> ninja [pyclif_library_target_name]_test
 function(add_pyclif_library_for_test name)
-  cmake_parse_arguments(PYCLIF_TEST_LIBRARY "" "" "TEST;PY_DEPS" ${ARGN})
+  cmake_parse_arguments(PYCLIF_TEST_LIBRARY "" "" "TEST;PY_DEPS;CLIF_DEPS" ${ARGN})
   if (NOT DEFINED PYCLIF_TEST_LIBRARY_TEST)
     set(PYCLIF_TEST_LIBRARY_TEST "${name}_test.py")
   endif()
 
   add_pyclif_library(${name}
     ${ARGN}
+    CLIF_DEPS ${PYCLIF_TEST_LIBRARY_CLIF_DEPS}
   )
 
   clif_target_name(${name} lib_target_name)
