@@ -84,8 +84,8 @@ add_pyclif_library_for_test(absl_uint128 absl_uint128.clif)
 add_pyclif_library_for_test(add_init_and_property add_init_and_property.clif)
 
 add_pyclif_library_for_test(callback callback.clif
-  CLIF_DEPS clif_testing_python_copy_move_types_library
   PY_DEPS clif_python_callback_exception_guard
+  CLIF_DEPS clif_testing_python_copy_move_types_library
 )
 
 add_pyclif_library_for_test(call_method call_method.clif)
