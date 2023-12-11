@@ -1,3 +1,7 @@
+########################################################################
+# STALE SNAPSHOT OF WORK IN PROGRESS - NEVER WAS IN WORKING CONDITION. #
+########################################################################
+
 # Bazel BUILD file for CLIF.
 #
 # This specific BUILD file is mostly needed so that other packages can find

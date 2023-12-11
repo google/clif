@@ -1,3 +1,7 @@
+########################################################################
+# STALE SNAPSHOT OF WORK IN PROGRESS - NEVER WAS IN WORKING CONDITION. #
+########################################################################
+
 """Load dependencies needed to compile CLIF as a 3rd-party consumer."""
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")

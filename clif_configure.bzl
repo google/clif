@@ -1,3 +1,7 @@
+########################################################################
+# STALE SNAPSHOT OF WORK IN PROGRESS - NEVER WAS IN WORKING CONDITION. #
+########################################################################
+
 """Configure CLIF dependencies as a 3rd-party consumer."""
 
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
