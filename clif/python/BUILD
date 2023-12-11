@@ -106,6 +106,7 @@ cc_library(
         "//clif/python/clif:__pkg__",
     ],
     deps = [
+        "@com_google_absl//absl/strings:string_view",
         "@com_google_protobuf//:protobuf",
         "@com_google_protobuf//:protobuf_headers",
     ],

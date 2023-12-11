@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
+
 #include "google/protobuf/compiler/importer.h"
 #include "google/protobuf/descriptor.h"
 #include "proto_util.h"
@@ -39,8 +41,8 @@ class ProtoFileErrorCollector : public MultiFileErrorCollector {
   explicit ProtoFileErrorCollector(std::string* error_str)
       : error_str_(error_str) {}
 
-  void AddError(const std::string& file, int line, int col,
-                const std::string& msg) override {
+  void RecordError(absl::string_view file, int line, int col,
+                   absl::string_view msg) override {
     std::ostringstream stream;
     stream << "Error parsing " << file;
     if (line > 0) {
