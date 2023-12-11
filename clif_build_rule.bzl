@@ -1,3 +1,7 @@
+########################################################################
+# STALE SNAPSHOT OF WORK IN PROGRESS - NEVER WAS IN WORKING CONDITION. #
+########################################################################
+
 """Provide bazel rules for OSS CLIF."""
 
 # Label for our OSS CLIF binary pyclif.
