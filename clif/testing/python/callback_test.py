@@ -50,6 +50,10 @@ def RaisingCallback():
   raise ValueError('raised a value error')
 
 
+def ObjCopyMoveTraceCallback(obj):
+  return obj.trace
+
+
 class CallbackTest(parameterized.TestCase):
 
   def CallbackMethod(self, data):
@@ -154,6 +158,28 @@ class CallbackTest(parameterized.TestCase):
         mock_logging_error.call_args_list[-1].args[0],
         'ValueError: Positive value: 5',
     )
+
+  @parameterized.parameters(
+      callback.CallCallbackPassConstPtrCopyMoveType,
+      callback.CallCallbackPassConstPtrCopyOnlyType,
+  )
+  def testCallCallbackPassConstPtrCopyableType(self, call_cb):
+    trace = call_cb(ObjCopyMoveTraceCallback)
+    self.assertEqual(trace, 'DefaultCtor@DefaultCtor_CpCtor')
+
+  @parameterized.parameters('MoveOnlyType', 'StayPutType')
+  def testCallCallbackPassConstPtrMoveOnlyType(self, cml_type):
+    call_cb_fn_name = f'CallCallbackPassConstPtr{cml_type}'
+    call_cb = getattr(callback, call_cb_fn_name, None)
+    if call_cb is None:
+      self.skipTest(f'Unavailable: {call_cb_fn_name}')
+    # TODO: Uncomment in callback.clif
+    expected_error = (
+        'return_value_policy = copy, but type '
+        f'clif_testing::copy_move_types_library::{cml_type} is non-copyable!'
+    )
+    with self.assertRaisesWithLiteralMatch(RuntimeError, expected_error):
+      call_cb(ObjCopyMoveTraceCallback)
 
 
 if __name__ == '__main__':

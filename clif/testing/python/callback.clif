@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from "clif/testing/python/copy_move_types_library_clif.h" import *
+
 from "clif/testing/callback.h":
   def `FunctionNewStyleCallbackConstRef` as NewStyleCallbackConstRef(
       input:list<int>,
@@ -36,3 +38,10 @@ from "clif/testing/callback.h":
   def PyObjectCallback(cb: () -> object) -> object
 
   def CallCallbackPassIntReturnInt(cb: (val: int) -> int, val: int) -> int
+
+  def CallCallbackPassConstPtrCopyMoveType(cb: (obj: CopyMoveType) -> str) -> str
+  def CallCallbackPassConstPtrCopyOnlyType(cb: (obj: CopyOnlyType) -> str) -> str
+  # TODO: Uncomment additional tests.
+  # These fail to build with PyCLIF-C-API, but only fail at runtime with PyCLIF-pybind11.
+  # def CallCallbackPassConstPtrMoveOnlyType(cb: (obj: MoveOnlyType) -> str) -> str
+  # def CallCallbackPassConstPtrStayPutType(cb: (obj: StayPutType) -> str) -> str

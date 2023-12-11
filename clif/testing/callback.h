@@ -20,7 +20,10 @@
 
 #include <functional>
 #include <string>
+#include <utility>
 #include <vector>
+
+#include "clif/testing/copy_move_types_library.h"
 
 namespace cliff {
 namespace testing {
@@ -90,5 +93,21 @@ inline int CallCallbackPassIntReturnInt(const std::function<int(int)>& cb,
                                         int val) {
   return cb(val);
 }
+
+#define LOCAL_HELPER(CMLType)                                            \
+  inline std::string CallCallbackPassConstPtr##CMLType(                  \
+      const std::function<std::string(                                   \
+          const clif_testing::copy_move_types_library::CMLType*)>& cb) { \
+    clif_testing::copy_move_types_library::CMLType obj;                  \
+    std::string cb_trace = cb(&obj);                                     \
+    return obj.GetTrace() + "@" + cb_trace;                              \
+  }
+
+LOCAL_HELPER(CopyMoveType)
+LOCAL_HELPER(CopyOnlyType)
+LOCAL_HELPER(MoveOnlyType)
+LOCAL_HELPER(StayPutType)
+
+#undef LOCAL_HELPER
 
 #endif  // CLIF_TESTING_CALLBACK_H_

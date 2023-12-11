@@ -19,6 +19,9 @@
 #include <Python.h>
 
 #include <functional>
+#include <string>
+
+#include "absl/log/check.h"
 
 namespace clif_testing_pyobject_ptr {
 
@@ -44,6 +47,20 @@ inline PyObject *return_pyobject_ptr() { return PyLong_FromLongLong(2314L); }
 
 inline bool pass_pyobject_ptr(PyObject *obj) {
   return static_cast<bool>(PyTuple_CheckExact(obj));
+}
+
+inline std::string pass_pyobject_ptr_with_nullptr_default(
+    PyObject *obj = nullptr) {
+  if (obj == nullptr) {
+    return "obj == nullptr";
+  }
+  PyObject *repr_obj = PyObject_Repr(obj);
+  CHECK(repr_obj != nullptr);
+  const char *repr_char = PyUnicode_AsUTF8(repr_obj);
+  CHECK(repr_char != nullptr);
+  std::string repr_string(repr_char);
+  Py_DECREF(repr_obj);
+  return repr_string;
 }
 
 inline PyObject *call_callback_with_pyobject_ptr_return(

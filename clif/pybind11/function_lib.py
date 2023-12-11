@@ -23,6 +23,7 @@ from clif.pybind11 import utils
 
 I = utils.I
 
+_CPP_TYPE_PYOBJECT_PTR_FROM_MATCHER = '::_object *'
 _STATUS_PATTERNS = (r'Status', r'StatusOr<(\S)+>')
 
 
@@ -216,7 +217,9 @@ def generate_return_value_policy_for_type(
     if param_type.lang_type == 'bytes':
       return 'py::return_value_policy::_return_as_bytes'
     elif is_callable_arg:
-      return 'py::return_value_policy::automatic_reference'
+      if param_type.lang_type == 'object':
+        return 'py::return_value_policy::automatic_reference'
+      return 'py::return_value_policy::_clif_automatic'
     elif reference_internal:
       return 'py::return_value_policy::reference_internal'
     else:
@@ -410,6 +413,8 @@ def _generate_py_arg_with_default(
       )
   else:
     if param.default_value == 'nullptr':
+      if param.type.cpp_type == _CPP_TYPE_PYOBJECT_PTR_FROM_MATCHER:
+        return f'py::arg("{param.name.cpp_name}") = py::nullptr_default_arg()'
       return f'py::arg("{param.name.cpp_name}") = {param.default_value}'
     else:
       return (
