@@ -1288,9 +1288,8 @@ TEST_F(ClifMatcherTest, TestBaseClassSetter) {
   EXPECT_EQ(decl.class_().cpp_bases(1).namespace_(), "GrandParents");
   EXPECT_EQ(decl.class_().cpp_bases(1).name(),
             decl.class_().bases(1).cpp_name());
-  EXPECT_TRUE(
-      llvm::StringRef(decl.class_().cpp_bases(2).filename()).endswith(
-          "test.h"));
+  EXPECT_TRUE(llvm::StringRef(decl.class_().cpp_bases(2).filename())
+                  .ends_with("test.h"));
 
   TestMatch("decltype: CLASS class_ { name { cpp_name: 'derive1' } } ", &decl);
   EXPECT_EQ(decl.class_().bases_size(), 2);

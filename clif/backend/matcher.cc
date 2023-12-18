@@ -473,7 +473,7 @@ bool ClifMatcher::ImportedFromCorrectFile(const NamedDecl& named_decl,
   std::string source_file = ast_->GetSourceFile(named_decl);
 
   // Examples: .../name.h, .../python/name.h, .../python/name_clif_aux.h
-  if (llvm::StringRef(source_file).endswith(clif_cpp_file.c_str())) {
+  if (llvm::StringRef(source_file).ends_with(clif_cpp_file.c_str())) {
     return true;
   }
   std::string decl_expected_in = clif_cpp_file;
@@ -483,12 +483,12 @@ bool ClifMatcher::ImportedFromCorrectFile(const NamedDecl& named_decl,
   if (dot_pos != std::string::npos &&
       dot_pos > kClifAuxLen  // Intentionally NOT >= (implies len(name) > 0)
       && llvm::StringRef(clif_cpp_file.c_str() + (dot_pos - kClifAuxLen))
-             .startswith(kClifAux)) {
+             .starts_with(kClifAux)) {
     // Example: .../python/name.h
     std::string clif_cpp_file_no_aux =
         clif_cpp_file.substr(0, dot_pos - kClifAuxLen) +
         clif_cpp_file.substr(dot_pos, std::string::npos);
-    if (llvm::StringRef(source_file).endswith(clif_cpp_file_no_aux.c_str())) {
+    if (llvm::StringRef(source_file).ends_with(clif_cpp_file_no_aux.c_str())) {
       return true;
     }
     decl_expected_in += ", " + clif_cpp_file_no_aux;
@@ -503,8 +503,8 @@ bool ClifMatcher::ImportedFromCorrectFile(const NamedDecl& named_decl,
         std::string clif_cpp_file_no_aux_level_up =
             clif_cpp_file_no_aux.substr(0, sep_pos_r2) +
             clif_cpp_file_no_aux.substr(sep_pos_r1, std::string::npos);
-        if (llvm::StringRef(source_file).endswith(
-                clif_cpp_file_no_aux_level_up.c_str())) {
+        if (llvm::StringRef(source_file)
+                .ends_with(clif_cpp_file_no_aux_level_up.c_str())) {
           return true;
         }
         decl_expected_in += ", " + clif_cpp_file_no_aux_level_up;
