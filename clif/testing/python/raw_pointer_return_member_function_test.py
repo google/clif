@@ -25,7 +25,7 @@ class RawPointerReturnMemberFunctionTest(absltest.TestCase):
     self.assertEqual(h.vec_at(1).int_value, 24)
 
   def testTemporaryHolder(self):
-    if 'pybind11' not in tst.__doc__:
+    if tst.__pyclif_codegen_mode__ == 'c_api':
       self.skipTest(
           'Only PyCLIF-pybind11 handles this correctly'
           ' (avoids creating a dangling pointer).'

@@ -78,7 +78,7 @@ class DerivedFromNoCtor(tm.NoCtor):
 class DerivedFromNoCtorTest(absltest.TestCase):
 
   def testInstantiate(self):
-    if "pybind11" in tm.__doc__:
+    if tm.__pyclif_codegen_mode__ == "pybind11":
       regex_expected = (
           r"mock_uninitializable\.NoCtor\.__init__\(\) must be called when"
           r" overriding __init__$"

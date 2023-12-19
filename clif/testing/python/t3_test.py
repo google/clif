@@ -34,7 +34,7 @@ class T3Test(absltest.TestCase):
     self.assertRaises(TypeError, t3.K().M, (5))
 
   @absltest.skipIf(
-      'pybind11' in t3.__doc__,
+      t3.__pyclif_codegen_mode__ == 'pybind11',
       'When building with pybind11, t3._New.__module__ is a Module object '
       'instead of a string.',
   )

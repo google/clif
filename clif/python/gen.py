@@ -310,7 +310,7 @@ def InitFunction(doc, meth_ref, init, dict_):
   yield '};'
   yield ''
   yield 'PyObject* Init() {'
-  yield I+'PyObject* module = PyModule_Create(&Module);'
+  yield I+'PyObject* module = ModuleCreateAndSetPyClifCodeGenMode(&Module);'
   yield I+'if (!module) return nullptr;'
   init_needs_err = False
   for s in init:

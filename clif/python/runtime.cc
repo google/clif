@@ -533,4 +533,29 @@ void SetIsNotConvertibleError(PyObject* py_obj, const char* cpp_type) {
                ClassName(py_obj), ClassType(py_obj), cpp_type);
 }
 
+namespace {
+
+bool SetPyClifCodeGenMode(PyObject* module, const char* codegen_mode) {
+  PyObject* codegen_mode_py = PyUnicode_FromString(codegen_mode);
+  if (codegen_mode_py == nullptr) {
+    return false;
+  }
+  int stat = PyObject_SetAttrString(module, "__pyclif_codegen_mode__",
+                                    codegen_mode_py);
+  Py_DECREF(codegen_mode_py);
+  return (stat == 0);
+}
+
+}  // namespace
+
+PyObject* ModuleCreateAndSetPyClifCodeGenMode(PyModuleDef* module_def) {
+  PyObject* module = PyModule_Create(module_def);
+  if (!module) return nullptr;
+  if (!SetPyClifCodeGenMode(module, "c_api")) {
+    Py_DECREF(module);
+    return nullptr;
+  }
+  return module;
+}
+
 }  // namespace clif

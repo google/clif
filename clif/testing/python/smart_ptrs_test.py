@@ -109,7 +109,7 @@ class SmartPtrsTest(absltest.TestCase):
 
   def testInfiniteLoopPerformUP(self):
     # No leak (manually verified under cl/362141489).
-    if 'pybind11' in smart_ptrs.__doc__:
+    if smart_ptrs.__pyclif_codegen_mode__ == 'pybind11':
       return  # pybind11 raises a ValueError (exercised above).
     while True:
       self.assertEqual(smart_ptrs.PerformUP(Add(17, 23)), 40)
@@ -125,7 +125,7 @@ class SmartPtrsTest(absltest.TestCase):
 
   def testInfiniteLoopRunStashedUPOperation(self):
     # No leak (manually verified under cl/362141489).
-    if 'pybind11' in smart_ptrs.__doc__:
+    if smart_ptrs.__pyclif_codegen_mode__ == 'pybind11':
       return  # pybind11 raises a ValueError (exercised above).
     while True:
       s = smart_ptrs.OperationStashUP()

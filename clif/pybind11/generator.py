@@ -190,6 +190,7 @@ class ModuleGenerator:
                f'"{self._module_name}", nullptr, '
                f'&module_def_{self._module_name});')
     yield I + 'try {'
+    yield I + I + 'm.attr("__pyclif_codegen_mode__") = "pybind11";'
     for s in self._generate_import_modules(ast):
       yield I + s
     yield I + I + ('m.doc() = "CLIF-generated pybind11-based module for '

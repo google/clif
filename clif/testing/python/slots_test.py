@@ -20,7 +20,11 @@ from clif.testing.python import slots
 
 
 def expected_exception():
-  return AttributeError if 'pybind11' in slots.__doc__ else NotImplementedError
+  return (
+      AttributeError
+      if slots.__pyclif_codegen_mode__ == 'pybind11'
+      else NotImplementedError
+  )
 
 
 class SlotsTest(absltest.TestCase):

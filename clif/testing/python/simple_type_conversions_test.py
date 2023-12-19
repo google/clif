@@ -22,7 +22,7 @@ class SimpleTypeConversions(absltest.TestCase):
   def testSignedCharManipulation(self):
     self.assertEqual(tm.SignedCharManipulation(2), 29)
     for inp in [-129, 128]:
-      if 'pybind11' in tm.__doc__:
+      if tm.__pyclif_codegen_mode__ == 'pybind11':
         with self.assertRaises(TypeError) as ctx:
           tm.SignedCharManipulation(inp)
         self.assertIn('incompatible function arguments.', str(ctx.exception))
@@ -37,7 +37,7 @@ class SimpleTypeConversions(absltest.TestCase):
 
   def testUnsignedCharManipulation(self):
     self.assertEqual(tm.UnsignedCharManipulation(3), 39)
-    if 'pybind11' in tm.__doc__:
+    if tm.__pyclif_codegen_mode__ == 'pybind11':
       with self.assertRaises(TypeError) as ctx:
         tm.SignedCharManipulation(256)
       self.assertIn('incompatible function arguments.', str(ctx.exception))
@@ -55,7 +55,7 @@ class SimpleTypeConversions(absltest.TestCase):
     self.assertEqual(tm.PassUint32(2**32 - 1), '4294967295')
 
   def testPassUint32Negative(self):
-    if 'pybind11' in tm.__doc__:
+    if tm.__pyclif_codegen_mode__ == 'pybind11':
       with self.assertRaisesRegex(
           TypeError, r'PassUint32\(\): incompatible function arguments.*'
       ):
@@ -69,7 +69,7 @@ class SimpleTypeConversions(absltest.TestCase):
         tm.PassUint32(-1)
 
   def testPassUint32OutOfRange(self):
-    if 'pybind11' in tm.__doc__:
+    if tm.__pyclif_codegen_mode__ == 'pybind11':
       with self.assertRaisesRegex(
           TypeError, r'PassUint32\(\): incompatible function arguments.*'
       ):

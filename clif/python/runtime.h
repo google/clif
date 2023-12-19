@@ -214,6 +214,8 @@ void LogFatalIfPythonErrorOccurred();
 // PyObjectTypeIsConvertible*() functions above.
 void SetIsNotConvertibleError(PyObject* py_obj, const char* cpp_type);
 
+PyObject* ModuleCreateAndSetPyClifCodeGenMode(PyModuleDef* module_def);
+
 }  // namespace clif
 
 #endif  // CLIF_PYTHON_RUNTIME_H_

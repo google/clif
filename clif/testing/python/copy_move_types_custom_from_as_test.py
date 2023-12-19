@@ -18,7 +18,7 @@ from clif.testing.python import copy_move_types_custom_from_as as tm
 from clif.testing.python import copy_move_types_library
 
 ENV_IX = 1
-if "pybind11" in tm.__doc__:
+if tm.__pyclif_codegen_mode__ == "pybind11":
   ENV_IX += 2
 
 

@@ -127,7 +127,7 @@ class LambdaExpressionsTest(parameterized.TestCase):
 
   def test_cpp_function_set_python_exception(self):
     expected_exception_type = (
-        ValueError if 'pybind11' in lambda_expressions.__doc__
+        ValueError if lambda_expressions.__pyclif_codegen_mode__ == 'pybind11'
         else SystemError)
     with self.assertRaises(expected_exception_type):
       lambda_expressions.python_exception_in_function()

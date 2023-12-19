@@ -84,7 +84,7 @@ class TestRenameVirtualFunctions(virtual_funcs.TestRenameVirtualFunctions):
 class VirtualTest(absltest.TestCase):
 
   @absltest.skipIf(
-      'pybind11' in virtual_funcs.__doc__,
+      virtual_funcs.__pyclif_codegen_mode__ == 'pybind11',
       'Currently pybind11 does not throw exceptions when initializing abstract'
       'classes.')
   def testInitAbstract(self):

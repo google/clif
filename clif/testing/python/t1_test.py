@@ -66,7 +66,7 @@ class T1Test(absltest.TestCase):
     self.assertIn('spans multiple lines', t1.Sum3.__doc__)
 
   def testFunctionDocstringNoTrailingWhitespaces(self):
-    if 'pybind11' in t1.__doc__:
+    if t1.__pyclif_codegen_mode__ == 'pybind11':
       self.skipTest(
           'pybind11 automatically adds a trailing whitespace to function '
           'docstrings.')
