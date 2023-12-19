@@ -55,7 +55,7 @@ class ExtendMethodsTest(absltest.TestCase):
     res = pass_none.pass_shared_ptr_holder(ih)
     self.assertEqual(res, 559)
 
-    if 'pybind11' in pass_none.__doc__:
+    if pass_none.__pyclif_codegen_mode__ == 'pybind11':
       self.assertEqual(pass_none.pass_shared_ptr_holder(None), 17)
     else:
       # The generated C API code does not support shared_ptr from None.

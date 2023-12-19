@@ -68,7 +68,7 @@ class ModuleTest(unittest.TestCase):
     };
 
     PyObject* Init() {
-      PyObject* module = PyModule_Create(&Module);
+      PyObject* module = ModuleCreateAndSetPyClifCodeGenMode(&Module);
       if (!module) return nullptr;
       return module;
     }"""))
@@ -110,7 +110,7 @@ class ModuleTest(unittest.TestCase):
         };
 
         PyObject* Init() {
-          PyObject* module = PyModule_Create(&Module);
+          PyObject* module = ModuleCreateAndSetPyClifCodeGenMode(&Module);
           if (!module) return nullptr;
           if (something_wrong) goto err;
           if (PyModule_AddObject(module, "ONE", Clif_PyObjFrom(static_cast<int>(kOne), {})) < 0) goto err;

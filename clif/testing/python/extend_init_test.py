@@ -48,12 +48,15 @@ class ExtendInitTest(absltest.TestCase):
     self.assertEqual(obj.get_k(), expected_k)
 
   def test_constructor_return_nullptr(self):
-    if 'pybind11' in extend_init.__doc__:
-      self.skipTest(
-          'Pybind11 does not allow factory functions to return nullptr.')
-    obj = extend_init.TestCase3(1)
-    with self.assertRaises(ValueError):
-      obj.get_value()
+    if extend_init.__pyclif_codegen_mode__ == 'pybind11':
+      with self.assertRaisesRegex(
+          TypeError, r'^pybind11::init\(\): factory function returned nullptr$'
+      ):
+        extend_init.TestCase3(1)
+    else:
+      obj = extend_init.TestCase3(1)
+      with self.assertRaises(ValueError):
+        obj.get_value()
 
   def test_extend_init_without_default_constructor(self):
     expected_value = 0
@@ -78,9 +81,6 @@ class ExtendInitTest(absltest.TestCase):
     self.assertIsInstance(
         extend_init.TestPyErrFromConstructor(0),
         extend_init.TestPyErrFromConstructor)
-    if 'pybind11' in extend_init.__doc__:
-      self.skipTest(
-          'Pybind11 does not allow factory functions to return nullptr.')
     with self.assertRaises(ValueError) as ctx:
       extend_init.TestPyErrFromConstructor(1)
     self.assertEqual(str(ctx.exception), 'RaisedFromExtendInit')

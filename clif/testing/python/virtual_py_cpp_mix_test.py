@@ -42,7 +42,7 @@ class VirtualPyCppMixTest(absltest.TestCase):
 
   def testCppDerivedGet(self):
     d = virtual_py_cpp_mix.CppDerived()
-    if 'pybind11' in virtual_py_cpp_mix.__doc__:
+    if virtual_py_cpp_mix.__pyclif_codegen_mode__ == 'pybind11':
       expected = 212  # NOT GOOD, but this will be fixed in the switch to ...
     else:
       expected = 101  # ... pybind11, because this result is correct.

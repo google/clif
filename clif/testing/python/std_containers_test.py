@@ -167,7 +167,7 @@ class StdContainersTest(parameterized.TestCase):
         std_containers.consume_unordered_set_customized_hash(my_set), 2)
 
   @absltest.skipIf(
-      'pybind11' not in std_containers.__doc__,
+      std_containers.__pyclif_codegen_mode__ == 'c_api',
       'Legacy PyCLIF does not accept None as smart pointers.')
   def testAcceptNoneAsSmartPointers(self):
     self.assertIsNone(std_containers.unique_ptr_vector_round_trip(None))

@@ -26,7 +26,7 @@ class ConstCharPtrTest(absltest.TestCase):
 
   def testReturnConstCharPtrAsBytes(self):
     res = const_char_ptr.ReturnConstCharPtrAsBytes()
-    if 'pybind11' not in const_char_ptr.__doc__:
+    if const_char_ptr.__pyclif_codegen_mode__ == 'c_api':
       # BUG: Return value should be bytes but is str (Python 3).
       self.assertIsInstance(res, str)  # Should be bytes.
       self.assertEqual(res, 'string literal')  # Should be b'string literal'.

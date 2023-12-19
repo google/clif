@@ -81,7 +81,7 @@ class PyObjectPtrTest(absltest.TestCase):
       self.assertEqual(cc(cb, PyValueHolder(20)).value, 100)
     for _ in range(1000):
       self.assertEqual(cc(cb, PyValueHolder("Two")).value, 101)
-    if "pybind11" in tst.__doc__:
+    if tst.__pyclif_codegen_mode__ == "pybind11":
       for _ in range(1000):
         with self.assertRaisesRegex(ValueError, r"^Unknown pvh\.value: 3\.0$"):
           cc(cb, PyValueHolder(3.0))

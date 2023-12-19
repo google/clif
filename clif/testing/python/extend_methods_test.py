@@ -213,7 +213,7 @@ class ExtendMethodsTest(absltest.TestCase):
     self.assertEqual(s, 'getter:18:ConcreteHolder')
 
   def testVirtualExtend(self):
-    if 'pybind11' not in extend_methods.__doc__:
+    if extend_methods.__pyclif_codegen_mode__ == 'c_api':
       expected_doc = 'Added to VirtualBaseHolder.'
       self.assertEqual(extend_methods.VirtualBaseHolder.__doc__, expected_doc)
       self.assertEqual(extend_methods.VirtualDerivedHolder.__doc__,
