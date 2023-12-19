@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
   std::string input_file;
   for (int i = 1; i < argc; i++) {
     llvm::StringRef argv_i(argv[i]);
-    if (!argv_i.starts_with("--") && argv_i.ends_with(".ipb")) {
+    if (!argv_i.startswith("--") && argv_i.endswith(".ipb")) {
       input_file = argv_i;
       // llvm considers an ipb file a linker input and will complain
       // if it appears, so remove it from the list.
