@@ -38,6 +38,7 @@ ARG UBUNTU_VERSION=20.04
 
 FROM ubuntu:${UBUNTU_VERSION}
 
+ARG LLVM_VERSION_MAJOR=17
 ARG ABSL_VERSION=20230125.1
 ARG PROTOBUF_VERSION=22.0
 ARG PYTHON_VERSION=3.10
@@ -56,21 +57,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     unzip
 
-# Configure LLVM 11 apt repository
+# Configure LLVM apt repository
 RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
-    add-apt-repository "deb http://apt.llvm.org/$(lsb_release -sc)/ llvm-toolchain-$(lsb_release -sc)-11 main"
+    add-apt-repository "deb http://apt.llvm.org/$(lsb_release -sc)/ llvm-toolchain-$(lsb_release -sc)-${LLVM_VERSION_MAJOR} main"
 
 # Install CLIF dependencies
 RUN apt-get update && apt-get install -y \
-    clang-11 \
-    libclang-11-dev \
-    libgtest-dev \
-    libllvm11 \
-    llvm-11 \
-    llvm-11-dev \
-    llvm-11-linker-tools \
+    clang-${LLVM_VERSION_MAJOR} \
+    libclang-${LLVM_VERSION_MAJOR}-dev \
+    libllvm${LLVM_VERSION_MAJOR} \
+    llvm-${LLVM_VERSION_MAJOR} \
+    llvm-${LLVM_VERSION_MAJOR}-dev \
+    llvm-${LLVM_VERSION_MAJOR}-linker-tools \
     python3-dev \
-    zlib1g-dev
+    zlib1g-dev \
+    libgtest-dev
 
 # Configure deadsnakes PPA with the more recent versions of python packaged for
 # Ubuntu. See https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa
