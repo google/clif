@@ -197,6 +197,9 @@ class ModuleGenerator:
     if self._codegen_info.requires_status:
       yield I + I + ('pybind11::module_::import('
                      '"util.task.python.error");')
+    yield I + I + 'pybind11_protobuf::check_unknown_fields::'
+    yield I + I + '    ExtensionsWithUnknownFieldsPolicy::'
+    yield I + I + '        WeakEnableFallbackToSerializeParse();'
     yield I + I + 'pybind11_protobuf::ImportNativeProtoCasters();'
 
     for decl in ast.decls:
