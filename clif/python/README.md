@@ -755,27 +755,84 @@ This statement is rarely needed. See more on types below.
 
 ## Type correspondence
 
-CLIF uses Python types in API descriptions. It's a CLIF job to find a proper C++
-type for each signature.
+CLIF uses Python types in API descriptions (.clif files). Generally it's CLIF's
+job to find the corresponding C++ types automatically. However, it is common
+that multiple C++ types are converted to the same Python type, e.g. C++
+`std::unordered_set` and `std::set` are both converted to the Python `set` type.
+In such situations only one of the conversions will work implicitly
+(this is a limitation of the implementation), while all others need to be
+specified explictly, e.g.:
 
-CLIF is currently limited to a single C++ type per Python type. We apologize for
-the inconvenience. This limitation may be lifted in the future
-versions.
+C++:
 
-To change what C++ type CLIF will use for a given Python type the user can
-either
+```c++
+void pass_unordered_set_int(const std::unordered_set<int>& values);
+std::unordered_set<int> return_unordered_set_int();
 
-*   specify an exact C++ type you want to use (ie. ``-> `size_t` as int``) or
-*   change the default with the [use][use] statement.
+void pass_set_int(const std::set<int>& values);
+std::set<int> return_set_int();
+```
+
+.clif:
+
+```python
+def pass_unordered_set_int(values: set<int>)
+def return_unordered_set_int() -> set<int>
+
+def pass_set_int(values: `std::set` as set<int>)
+def return_set_int() -> `std::set` as set<int>
+```
+
+What works implicitly can be customized with the [use][use] statement.
+
+The syntax for nested types is, e.g.:
+
+C++:
+
+```c++
+void pass_set_list_int(const std::set<std::list<int>>& clusters);
+```
+
+.clif:
+
+```python
+def pass_set_list_int(clusters: `std::set` as set<`std::list` as list<int>>)
+```
+
+Note that the backtick syntax also works for simpler types, e.g.:
+
+C++:
+
+```c++
+void pass_size_t(std::size_t value);
+```
+
+.clif:
+
+```python
+def pass_size_t(value: `std::size_t` as int)
+```
+
+However, in most cases the simpler
+
+```
+def pass_size_t(value: int)
+```
+
+will also work, if there is an implicit C++ conversion
+(in this example between `std::size_t` and `int`).
+
+NOTE: CLIF will reject unknown types and produce an error. It can be parse-time
+error for CLIF types or compile-time error for C++ types.
 
 ### Predefined types
 
-CLIF knows some basic types (predefined in `clif/python/types.h`):
+CLIF knows some basic types (predefined via `clif/python/types.h`) including:
 
 Default C++ type         | CLIF type[^type]
 ------------------------ | -------------------
 `int`                    | `int`
-`string`                 | `bytes` *or* `str`
+`string`                 | `bytes` or `str`
 `bool`                   | `bool`
 `double`                 | `float`
 `complex<>`              | `complex`
@@ -786,31 +843,25 @@ Default C++ type         | CLIF type[^type]
 `std::function<R(T, U)>` | `(t: T, u: U) -> R`
 `PyObject*`              | `object`[^object]
 
+Note: **Default** in the header row above means that the C++ type does not have
+      to be specified explicitly in .clif files (unless a `use` statement
+      changes the default).
+
 [^type]: CLIF types named after the corresponding Python types.
 [^object]: Be careful when you use `object`, CLIF assumes you **know** what
     you're doing with Python C API and all its caveats.
 
-CLIF also knows how to handle several compatible types
+CLIF also knows how to handle various other types including:
 
-Compatible C++ types               | Python type
----------------------------------- | ------------------------------
-float                              | float
-map                                | dict
-set                                | set
-list, array, stack                 | list
-deque, queue, priority_queue       | list
-const char* (as return value only) | str (bytes is *not* supported)
-
-To use a compatible type mention it explicitly in the declaration, e.g.
-
-```python
-def fsum(array: `std::list` as list<float>) -> `float` as float
-```
-
-for `float fsum(std::list<float>);` C++ function.
-
-NOTE: CLIF will reject unknown types and produce an error. It can be parse-time
-error for CLIF types or compile-time error for C++ types.
+C++ type                             | CLIF type
+------------------------------------ | ------------------------------
+`[u]intXX_t` (e.g. `int8_t`)         | `int`
+`float`                              | `float`
+`map`                                | `dict`
+`set`                                | `set`
+`list`, `array`, `stack`             | `list`
+`deque`, `queue`, `priority_queue`   | `list`
+`const char*` (as return value only) | `str` (`bytes` is **not** supported)
 
 ### Unicode
 
