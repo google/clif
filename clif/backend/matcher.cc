@@ -2737,7 +2737,7 @@ const FunctionDecl* ClifMatcher::MatchAndSetFuncFromCandidates(
 
     if (auto method_decl = llvm::dyn_cast<clang::CXXMethodDecl>(clang_decl)) {
       func_decl->set_cpp_const_method(method_decl->isConst());
-      func_decl->set_is_pure_virtual(method_decl->isPure());
+      func_decl->set_is_pure_virtual(method_decl->isPureVirtual());
     }
 
     if (auto named_decl = llvm::dyn_cast<clang::NamedDecl>(clang_decl)) {
