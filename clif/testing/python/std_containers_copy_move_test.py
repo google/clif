@@ -40,7 +40,7 @@ class StdContainersCopyMoveTestCase(parameterized.TestCase):
           [
               "DefaultCtor_CpLhs_MvLhs@",
               "DefaultCtor_CpLhs_MvLhs@",
-              "DefaultCtor_CpLhs_MvCtorTo@",
+              "DefaultCtor_CpCtor_MvCtorTo_MvCtorTo@",
           ][ENV_IX],
       ),
   ])
