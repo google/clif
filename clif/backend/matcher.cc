@@ -28,7 +28,6 @@
 
 #include "absl/container/btree_map.h"
 #include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
 #include "clif/backend/strutil.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/Mangle.h"
@@ -352,7 +351,7 @@ bool ClifMatcher::CompileMatchAndSet(
     const std::string& input_file_name,
     const AST& clif_ast,
     AST* modified_clif_ast) {
-  LLVM_DEBUG(llvm::dbgs() << absl::StrCat(clif_ast));
+  LLVM_DEBUG(llvm::dbgs() << ProtoDebugString(clif_ast));
   *modified_clif_ast = clif_ast;
   modified_clif_ast->set_clif_matcher_argv0(clif_matcher_argv0_);
   modified_clif_ast->set_clif_matcher_version_stamp(kMatcherVersionStamp);
@@ -407,7 +406,7 @@ std::string ClifMatcher::GetQualTypeClifName(QualType qual_type) const {
 bool ClifMatcher::MatchAndSetAST(AST* clif_ast) {
   assert(ast_ != nullptr && "RunCompiler must be called prior to this.");
   int num_unmatched = MatchAndSetDecls(clif_ast->mutable_decls());
-  LLVM_DEBUG(llvm::dbgs() << "Matched proto:\n" << absl::StrCat(*clif_ast));
+  LLVM_DEBUG(llvm::dbgs() << "Matched proto:\n" << ProtoDebugString(*clif_ast));
   return num_unmatched == 0;
 }
 
@@ -1173,7 +1172,7 @@ bool ClifMatcher::MatchAndSetEnum(EnumDecl* enum_decl) {
       clif_name->set_native(result.GetFirst()->getNameAsString());
     }
   }
-  LLVM_DEBUG(llvm::dbgs() << absl::StrCat(*enum_decl));
+  LLVM_DEBUG(llvm::dbgs() << ProtoDebugString(*enum_decl));
   return true;
 }
 
@@ -2737,7 +2736,11 @@ const FunctionDecl* ClifMatcher::MatchAndSetFuncFromCandidates(
 
     if (auto method_decl = llvm::dyn_cast<clang::CXXMethodDecl>(clang_decl)) {
       func_decl->set_cpp_const_method(method_decl->isConst());
+#if PYCLIF_LLVM_VERSION_MAJOR < 18  // The version number is a guess.
+      func_decl->set_is_pure_virtual(method_decl->isPure());
+#else
       func_decl->set_is_pure_virtual(method_decl->isPureVirtual());
+#endif
     }
 
     if (auto named_decl = llvm::dyn_cast<clang::NamedDecl>(clang_decl)) {
