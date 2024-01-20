@@ -100,6 +100,7 @@ def generate_from(
         base.cpp_canonical_type in codegen_info.dynamic_attr_types):
       enable_instance_dict = True
       break
+  definition += ', py::release_gil_before_calling_cpp_dtor()'
   if mi_bases:
     definition += ', py::multiple_inheritance()'
   if enable_instance_dict:
