@@ -21,6 +21,7 @@
 
 #include <Python.h>
 
+#include <cassert>
 #include <string>
 #include <unordered_map>
 
@@ -47,7 +48,7 @@ struct ProbeType {
   }
 };
 
-std::string PopPyGILState_Check_Result(const std::string &unique_key) {
+inline std::string PopPyGILState_Check_Result(const std::string &unique_key) {
   RegistryType &reg = PyGILState_Check_Results();
   if (reg.count(unique_key) == 0) {
     return "MISSING";
