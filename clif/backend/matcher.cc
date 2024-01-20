@@ -2736,10 +2736,10 @@ const FunctionDecl* ClifMatcher::MatchAndSetFuncFromCandidates(
 
     if (auto method_decl = llvm::dyn_cast<clang::CXXMethodDecl>(clang_decl)) {
       func_decl->set_cpp_const_method(method_decl->isConst());
-#if PYCLIF_LLVM_VERSION_MAJOR < 18  // The version number is a guess.
-      func_decl->set_is_pure_virtual(method_decl->isPure());
-#else
+#if PYCLIF_LLVM_VERSION_MAJOR >= 18  // llvm/llvm-project#78463
       func_decl->set_is_pure_virtual(method_decl->isPureVirtual());
+#else
+      func_decl->set_is_pure_virtual(method_decl->isPure());
 #endif
     }
 
