@@ -31,47 +31,12 @@
 #include "absl/container/flat_hash_set.h"
 #include "clif/python/types.h"
 #include "third_party/pybind11/include/pybind11/detail/common.h"
-#include "third_party/pybind11/include/pybind11/functional.h"
 #include "third_party/pybind11_abseil/status_caster.h"
 #include "third_party/pybind11_abseil/statusor_caster.h"
 #include "util/task/python/clif/status_return_override.h"
 
 namespace pybind11 {
 namespace detail {
-
-namespace type_caster_std_function_specializations {
-
-template <typename... Args>
-struct func_wrapper<absl::Status, Args...> : func_wrapper_base {
-  using func_wrapper_base::func_wrapper_base;
-  absl::Status operator()(Args... args) const {
-    gil_scoped_acquire acq;
-    try {
-      return hfunc.f.call_with_policies(rvpp, std::forward<Args>(args)...)
-          .template cast<absl::Status>();
-    } catch (error_already_set &e) {
-      return util_task_python_clif::StatusFromErrorAlreadySet(e);
-    }
-  }
-};
-
-template <typename PayloadType, typename... Args>
-struct func_wrapper<absl::StatusOr<PayloadType>, Args...> : func_wrapper_base {
-  using func_wrapper_base::func_wrapper_base;
-  absl::StatusOr<PayloadType> operator()(Args... args) const {
-    gil_scoped_acquire acq;
-    try {
-      return hfunc.f.call_with_policies(rvpp, std::forward<Args>(args)...)
-          .template cast<absl::StatusOr<PayloadType>>();
-    } catch (error_already_set &e) {
-      return util_task_python_clif::StatusFromErrorAlreadySet(e);
-    } catch (cast_error & e) {
-      return absl::Status(absl::StatusCode::kInvalidArgument, e.what());
-    }
-  }
-};
-
-}  // namespace type_caster_std_function_specializations
 
 template <>
 struct type_caster<absl::int128> {

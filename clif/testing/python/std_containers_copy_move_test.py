@@ -23,6 +23,10 @@ ENV_IX = 1
 if tm.__pyclif_codegen_mode__ == "pybind11":
   ENV_IX += 2
 
+# NOTE: The tests here are known to be hyper-sensitive.
+#       It is expected that they will need to be adjusted or made more
+#       permissive (similar to e.g. return_value_policy_test.py).
+
 
 class StdContainersCopyMoveTestCase(parameterized.TestCase):
 
@@ -40,7 +44,7 @@ class StdContainersCopyMoveTestCase(parameterized.TestCase):
           [
               "DefaultCtor_CpLhs_MvLhs@",
               "DefaultCtor_CpLhs_MvLhs@",
-              "DefaultCtor_CpLhs_MvCtorTo@",
+              "DefaultCtor_CpCtor_MvCtorTo_MvCtorTo@",
           ][ENV_IX],
       ),
   ])
