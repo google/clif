@@ -62,7 +62,6 @@ cc_library(
         "//clif/protos:ast_cc_proto",
         "@com_google_absl//absl/container:btree",
         "@com_google_absl//absl/log",
-        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest_prod",
         "@llvm-project//clang:ast",
         "@llvm-project//clang:sema",
@@ -74,6 +73,7 @@ cc_library(
     name = "strutil",
     hdrs = ["strutil.h"],
     deps = [
+        "@com_google_absl//absl/strings",
         "@llvm-project//llvm:Support",
     ],
 )

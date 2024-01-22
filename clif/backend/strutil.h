@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/str_cat.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/StringRef.h"
@@ -87,6 +88,11 @@ class NamespaceVector {
   std::string namespace_data_;
   ComponentsVector namespace_vector_;
 };
+
+template <typename ProtoType>
+std::string ProtoDebugString(const ProtoType& pb) {
+  return pb.DebugString();
+}
 
 }  // namespace clif
 

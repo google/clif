@@ -79,7 +79,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
 #include "clif/backend/strutil.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
@@ -391,7 +390,7 @@ const std::string& CodeBuilder::BuildCode(
     current_line_.pop_back();
     current_file_.pop_back();
   }
-  LLVM_DEBUG(llvm::dbgs() << absl::StrCat(*clif_ast));
+  LLVM_DEBUG(llvm::dbgs() << ProtoDebugString(*clif_ast));
   LLVM_DEBUG(llvm::dbgs() << code_);
   return code_;
 }
