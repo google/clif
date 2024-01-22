@@ -29,6 +29,14 @@ inline unsigned char UnsignedCharManipulation(unsigned char inp) {
 
 inline std::string PassUint32(std::uint32_t val) { return std::to_string(val); }
 
+inline std::string PassInt64ByValue(std::int64_t val) {
+  return std::to_string(val);
+}
+
+inline std::string PassInt64ConstRef(const std::int64_t& val) {
+  return std::to_string(val);
+}
+
 }  // namespace clif_testing
 
 #endif  // CLIF_TESTING_SIMPLE_TYPE_CONVERSIONS_H_

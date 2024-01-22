@@ -82,6 +82,38 @@ class SimpleTypeConversions(absltest.TestCase):
       ):
         tm.PassUint32(2**32)
 
+  def testPassInt64(self):
+    i64max = 2**63 - 1
+    i64max_str = '9223372036854775807'
+    self.assertEqual(tm.PassInt64ByValueInt(i64max), i64max_str)
+    self.assertEqual(tm.PassInt64ByValueInt64AsInt(i64max), i64max_str)
+    self.assertEqual(tm.PassInt64ConstRefInt64AsInt(i64max), i64max_str)
+    if tm.__pyclif_codegen_mode__ == 'pybind11':
+      # Partial error message (to not exercise pybind11 details).
+      expected = r'\(val: int\) -> object'
+    else:
+      # Full error message (exercising PyCLIF details).
+      expected = (
+          r'^PassInt64ConstRefInt\(\) argument val is not valid for int \(int'
+          r' instance given\): value too large for int$'
+      )
+    with self.assertRaisesRegex(TypeError, expected):
+      # THIS BEHAVIOR IS UNDESIRABLE. Ideally the matcher would be changed to
+      # handle this situation more consistently with the other three cases
+      # above.
+      # To make this more concrete, the PyCLIF-C-API generated code is:
+      #     int arg1;
+      #     if (!Clif_PyObjAs(a[0], &arg1)) return ArgError(...);
+      # for this case, while it is
+      #     long arg1;
+      # for the other three cases above. The difference is that the matcher
+      # does not update `func.params.type.cpp_type` correctly for the
+      # `const std::int64_t&` case.
+      # NOTE, just in case: On a platform where C++ `int` is 64 bits, this
+      #                     will not raise an exception. Please generalize
+      #                     this test as needed.
+      tm.PassInt64ConstRefInt(i64max)
+
 
 if __name__ == '__main__':
   absltest.main()

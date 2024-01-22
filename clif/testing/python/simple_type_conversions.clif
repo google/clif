@@ -16,3 +16,7 @@ from "clif/testing/simple_type_conversions.h":
   def SignedCharManipulation(inp: int) -> int
   def UnsignedCharManipulation(inp: int) -> int
   def PassUint32(val: int) -> str
+  def `PassInt64ByValue` as PassInt64ByValueInt(val: int) -> str
+  def `PassInt64ByValue` as PassInt64ByValueInt64AsInt(val: `std::int64_t` as int) -> str
+  def `PassInt64ConstRef` as PassInt64ConstRefInt(val: int) -> str
+  def `PassInt64ConstRef` as PassInt64ConstRefInt64AsInt(val: `std::int64_t` as int) -> str
