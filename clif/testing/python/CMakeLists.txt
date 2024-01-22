@@ -247,4 +247,6 @@ add_pyclif_library_for_test(std_containers_copy_move std_containers_copy_move.cl
   CLIF_DEPS clif_testing_python_copy_move_types_library
 )
 
+add_pyclif_library_for_test(class_release_gil_before_calling_cpp_dtor class_release_gil_before_calling_cpp_dtor.clif)
+
 # OMITTED: instrumentation_for_testing_test (pytype currently not supported on GitHub)
