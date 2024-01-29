@@ -141,9 +141,6 @@ def generate_from(
           for s in function.generate_from(
               class_name, member.func, codegen_info, class_decl):
             yield I + I + s
-          for s in function_lib.setstate_workaround_move_attr(
-              class_name, member.func.name.native):
-            yield I + I + s
     elif member.decltype == ast_pb2.Decl.Type.VAR:
       for s in variables.generate_from(class_name, member.var, class_decl):
         yield I + I + s
