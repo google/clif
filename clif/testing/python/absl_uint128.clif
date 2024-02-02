@@ -5,3 +5,6 @@ from "clif/testing/absl_uint128.h":
     def SetHighLsb() -> int
     def Max() -> int
     def AddUint128(a: int, b: int) -> int
+    const `kHasIntrinsicUint128` as HAS_INTRINSIC_UINT_128: bool
+    def FromAbsl(value: int) -> int
+    def ToAbsl(value: int) -> int

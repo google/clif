@@ -68,6 +68,38 @@ struct type_caster<absl::uint128> {
   }
 };
 
+#ifdef ABSL_HAVE_INTRINSIC_INT128
+template <>
+struct type_caster<__int128> {
+ public:
+  PYBIND11_TYPE_CASTER(__int128, _("int128"));
+  bool load(handle src, bool convert) {
+    using ::clif::Clif_PyObjAs;
+    return Clif_PyObjAs(src.ptr(), &value);
+  }
+
+  static handle cast(__int128 src, return_value_policy, handle) {
+    using ::clif::Clif_PyObjFrom;
+    return Clif_PyObjFrom(src, {});
+  }
+};
+
+template <>
+struct type_caster<unsigned __int128> {
+ public:
+  PYBIND11_TYPE_CASTER(unsigned __int128, _("uint128"));
+  bool load(handle src, bool convert) {
+    using ::clif::Clif_PyObjAs;
+    return Clif_PyObjAs(src.ptr(), &value);
+  }
+
+  static handle cast(unsigned __int128 src, return_value_policy, handle) {
+    using ::clif::Clif_PyObjFrom;
+    return Clif_PyObjFrom(src, {});
+  }
+};
+#endif
+
 template <typename ValueAndHolder, typename Value>
 class smart_pointer_vector_caster {
   using value_conv = make_caster<Value>;

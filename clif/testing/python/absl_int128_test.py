@@ -48,6 +48,18 @@ class AbslInt128Test(absltest.TestCase):
   def testAddInt128NegativeLong(self):
     self.assertEqual(absl_int128.AddInt128(HIGH_LSB, -MAX64), 1)
 
+  def testIntrinsicFromAbsl(self):
+    if absl_int128.HAS_INTRINSIC_INT_128:
+      self.assertEqual(absl_int128.FromAbsl(123), 123)
+    else:
+      self.assertEqual(absl_int128.FromAbsl(123), 0)  # Dummy implementation.
+
+  def testIntrinsicToAbsl(self):
+    if absl_int128.HAS_INTRINSIC_INT_128:
+      self.assertEqual(absl_int128.ToAbsl(123), 123)
+    else:
+      self.assertEqual(absl_int128.ToAbsl(123), 0)  # Dummy implementation.
+
 
 if __name__ == '__main__':
   absltest.main()
