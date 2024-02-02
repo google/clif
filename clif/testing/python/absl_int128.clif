@@ -8,3 +8,6 @@ from "clif/testing/absl_int128.h":
     def Min() -> int
     def Max() -> int
     def AddInt128(a: int, b: int) -> int
+    const `kHasIntrinsicInt128` as HAS_INTRINSIC_INT_128: bool
+    def FromAbsl(value: int) -> int
+    def ToAbsl(value: int) -> int

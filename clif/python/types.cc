@@ -272,6 +272,24 @@ bool Clif_PyObjAs(PyObject* py, absl::uint128* c) {  // NOLINT: runtime/int
 }
 #endif  // HAVE_LONG_LONG
 
+#ifdef ABSL_HAVE_INTRINSIC_INT128
+bool Clif_PyObjAs(PyObject* py, __int128* c) {  // NOLINT: runtime/int
+  CHECK(c != nullptr);
+  absl::int128 tmp;
+  if (!Clif_PyObjAs(py, &tmp)) return false;
+  *c = __int128{tmp};
+  return true;
+}
+
+bool Clif_PyObjAs(PyObject* py, unsigned __int128* c) {  // NOLINT: runtime/int
+  CHECK(c != nullptr);
+  absl::uint128 tmp;
+  if (!Clif_PyObjAs(py, &tmp)) return false;
+  *c = (unsigned __int128){tmp};
+  return true;
+}
+#endif  // ABSL_HAVE_INTRINSIC_INT128
+
 // float (double)
 bool Clif_PyObjAs(PyObject* py, double* c) {
   CHECK(c != nullptr);
