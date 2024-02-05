@@ -84,6 +84,21 @@ class PythonMultipleInheritanceTest(parameterized.TestCase):
         " overriding __init__",
     )
 
+  def testDerivedTpInitRegistryWeakrefBasedCleanup(self):
+    def NestedFunction(i):
+      class NestedClass(tm.CppBase):
+
+        def __init__(self, value):
+          super().__init__(value + 3)
+
+      d1 = NestedClass(i + 7)
+      d2 = NestedClass(i + 8)
+      return (d1.get_base_value(), d2.get_base_value())
+
+    for _ in range(100):
+      self.assertEqual(NestedFunction(0), (10, 11))
+      self.assertEqual(NestedFunction(3), (13, 14))
+
 
 if __name__ == "__main__":
   absltest.main()

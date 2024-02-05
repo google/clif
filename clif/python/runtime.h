@@ -216,6 +216,14 @@ void SetIsNotConvertibleError(PyObject* py_obj, const char* cpp_type);
 
 PyObject* ModuleCreateAndSetPyClifCodeGenMode(PyModuleDef* module_def);
 
+using derived_tp_init_registry_type =
+    std::unordered_map<PyTypeObject*, initproc>;
+
+PyObject* tp_new_impl_with_tp_init_safety_checks(
+    PyTypeObject* type, PyObject* args, PyObject* kwds,
+    derived_tp_init_registry_type* derived_tp_init_registry,
+    initproc tp_init_impl, initproc tp_init_with_safety_checks);
+
 }  // namespace clif
 
 #endif  // CLIF_PYTHON_RUNTIME_H_

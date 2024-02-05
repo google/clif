@@ -20,6 +20,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstring>
+#include <functional>
 #include <initializer_list>
 #include <string>
 #include <system_error>  // NOLINT(build/c++11)
@@ -29,6 +30,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "clif/python/pickle_support.h"
+#include "clif/python/stltypes.h"
 
 extern "C"
 int Clif_PyType_Inconstructible(PyObject* self, PyObject* a, PyObject* kw) {
@@ -556,6 +558,59 @@ PyObject* ModuleCreateAndSetPyClifCodeGenMode(PyModuleDef* module_def) {
     return nullptr;
   }
   return module;
+}
+
+namespace {
+
+extern "C" PyObject* FunctionCapsuleOneArgPyCFunction(PyObject* cap,
+                                                      PyObject* arg) {
+  using function_type = std::function<void(PyObject*)>;
+  void* fp = PyCapsule_GetPointer(cap, typeid(function_type).name());
+  if (fp == nullptr) {
+    return nullptr;
+  }
+  (*static_cast<function_type*>(fp))(arg);
+  Py_RETURN_NONE;
+}
+
+static PyMethodDef FunctionCapsuleOneArgPyMethodDef = {
+    "", FunctionCapsuleOneArgPyCFunction, METH_O, nullptr};
+
+}  // namespace
+
+PyObject* tp_new_impl_with_tp_init_safety_checks(
+    PyTypeObject* type, PyObject* args, PyObject* kwds,
+    derived_tp_init_registry_type* derived_tp_init_registry,
+    initproc tp_init_impl, initproc tp_init_with_safety_checks) {
+  if (type->tp_init != tp_init_impl &&
+      type->tp_init != tp_init_with_safety_checks &&
+      derived_tp_init_registry->count(type) == 0) {
+    PyObject* wr_cb_fc = FunctionCapsule(
+        std::function([type, derived_tp_init_registry](PyObject* wr) {
+          CHECK_EQ(PyWeakref_CheckRef(wr), 1);
+          auto num_erased = derived_tp_init_registry->erase(type);
+          CHECK_EQ(num_erased, 1);
+          Py_DECREF(wr);
+        }));
+    if (wr_cb_fc == nullptr) {
+      return nullptr;
+    }
+    PyObject* wr_cb =
+        PyCFunction_New(&FunctionCapsuleOneArgPyMethodDef, wr_cb_fc);
+    Py_DECREF(wr_cb_fc);
+    if (wr_cb == nullptr) {
+      return nullptr;
+    }
+    PyObject* wr = PyWeakref_NewRef((PyObject*)type, wr_cb);
+    Py_DECREF(wr_cb);
+    if (wr == nullptr) {
+      return nullptr;
+    }
+    CHECK_NE(wr, Py_None);
+    (*derived_tp_init_registry)[type] = type->tp_init;
+    type->tp_init = tp_init_with_safety_checks;
+  }
+  return PyType_GenericNew(type, args, kwds);
 }
 
 }  // namespace clif

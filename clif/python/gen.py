@@ -408,7 +408,7 @@ def TypeObject(ht_qualname, tracked_slot_groups,
         'static int tp_init_impl(PyObject* self, PyObject* args, PyObject* kw);'
     )
     yield (
-        'static int tp_init_intercepted('
+        'static int tp_init_with_safety_checks('
         'PyObject* self, PyObject* args, PyObject* kw);'
     )
   if not iterator:
@@ -446,7 +446,11 @@ def TypeObject(ht_qualname, tracked_slot_groups,
     yield I+'Py_END_ALLOW_THREADS'
   if not iterator and enable_instance_dict:
     yield I+'Py_CLEAR(%s(self)->instance_dict);' % _Cast(wname)
-  yield I+'Py_TYPE(self)->tp_free(self);'
+  yield I+'PyTypeObject* type_self = Py_TYPE(self);'
+  yield I+'type_self->tp_free(self);'
+  yield '#if PY_VERSION_HEX >= 0x03080000  // python/cpython#79991 (BPO 35810)'
+  yield I+'Py_DECREF((PyObject*) type_self);'
+  yield '#endif'
   yield '}'
   if not iterator:
     # Use delete for static types (not derived), allocated with tp_alloc_impl.
@@ -562,7 +566,7 @@ def TypeObject(ht_qualname, tracked_slot_groups,
     yield '}'
     yield ''
     yield (
-        'static int tp_init_intercepted('
+        'static int tp_init_with_safety_checks('
         'PyObject* self, PyObject* args, PyObject* kw) {'
     )
     yield I+'DCHECK(PyType_Check(self) == 0);'
@@ -574,7 +578,6 @@ def TypeObject(ht_qualname, tracked_slot_groups,
     yield I+'int status = (*derived_tp_init->second)(self, args, kw);'
     yield I+'if (status == 0 &&'
     yield I+'    reinterpret_cast<wrapper*>(self)->cpp.get() == nullptr) {'
-    yield I+'  Py_DECREF(self);'
     yield I+'  PyErr_Format(PyExc_TypeError,'
     yield I+'               "%s.__init__() must be called when"'
     yield I+'               " overriding __init__", wrapper_Type->tp_name);'
@@ -601,18 +604,16 @@ def TypeObject(ht_qualname, tracked_slot_groups,
         ' PyObject* kwds) {'
     )
     if ctor:
-      yield I+'if (type->tp_init != tp_init_impl &&'
-      yield I+'    derived_tp_init_registry->count(type) == 0) {'
-      yield I+I+'(*derived_tp_init_registry)[type] = type->tp_init;'
-      yield I+I+'type->tp_init = tp_init_intercepted;'
-      yield I+'}'
+      yield I + I + 'return tp_new_impl_with_tp_init_safety_checks('
+      yield I + I + '    type, args, kwds, derived_tp_init_registry,'
+      yield I + I + '    tp_init_impl, tp_init_with_safety_checks);'
     else:
       yield I + 'if (type->tp_init != Clif_PyType_Inconstructible) {'
       yield I + '  clif::SetErrorWrappedTypeCannotBeUsedAsBase('
       yield I + '      wrapper_Type, type);'
       yield I + '  return nullptr;'
       yield I + '}'
-    yield I+'return PyType_GenericNew(type, args, kwds);'
+      yield I + 'return PyType_GenericNew(type, args, kwds);'
     yield '}'
 
 
