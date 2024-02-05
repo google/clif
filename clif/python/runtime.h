@@ -64,6 +64,8 @@ T* Get(const clif::Instance<T>& cpp, bool set_err = true) {
 
 }  // namespace python
 
+void SetPybind11ProtobufExtensionsWithUnknownFieldsPolicy();
+
 void SetErrorWrappedTypeCannotBeUsedAsBase(PyTypeObject* wrapper_type,
                                            PyTypeObject* derived_type);
 

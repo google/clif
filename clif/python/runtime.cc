@@ -41,6 +41,9 @@ int Clif_PyType_Inconstructible(PyObject* self, PyObject* a, PyObject* kw) {
 
 namespace clif {
 
+void SetPybind11ProtobufExtensionsWithUnknownFieldsPolicy() {
+}
+
 void SetErrorWrappedTypeCannotBeUsedAsBase(PyTypeObject* wrapper_type,
                                            PyTypeObject* derived_type) {
   std::string derived_type_module;

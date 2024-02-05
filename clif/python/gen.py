@@ -238,6 +238,7 @@ def ReadyFunction(types_init):
   """Generate Ready() function to call PyType_Ready for wrapped types."""
   yield ''
   yield 'bool Ready() {'
+  yield I + 'SetPybind11ProtobufExtensionsWithUnknownFieldsPolicy();'
   have_modname = False
   pybases = set()
   last_pybase = ''
