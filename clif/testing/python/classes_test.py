@@ -14,11 +14,13 @@
 
 """Tests for clif.testing.python.classes."""
 
+import abc
 from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import parameterized
 
+from clif.python import abc_utils
 from clif.testing.python import classes
 
 
@@ -35,6 +37,20 @@ class ClassesTest(parameterized.TestCase):
     # AttributeError on CPython; TypeError on PyPy.
     with self.assertRaises((AttributeError, TypeError)):
       k.i2 = 0
+    self.assertEqual(classes.Klass.C, 1)
+    self.assertEqual(k.C, 1)
+    with self.assertRaisesRegex(AttributeError, 'read-only'):
+      k.C = 0
+
+    # UNDESIRABLE but long established behavior.
+    classes.Klass.C = 0  # C++ const but not read-only in Python.
+    self.assertEqual(classes.Klass.C, 0)
+    self.assertEqual(k.C, 0)
+    # Restore original value, to minimize the potential for surprises,
+    # just in case.
+    classes.Klass.C = 1
+    self.assertEqual(classes.Klass.C, 1)
+    self.assertEqual(k.C, 1)
 
   def testMockIsRejected(self):
     k_inst = classes.Klass(3)
@@ -211,6 +227,42 @@ class ClassesTest(parameterized.TestCase):
     getattr(obj, setter)(new_value)
     ret = getattr(obj, getter)()
     self.assertEqual(ret, new_expected)
+
+  def testABCMeta(self):
+    # Purely to help the linter.
+    ABCMeta = abc.ABCMeta  # pylint: disable=unused-variable
+
+    if abc_utils.PyCLIFMeta is type:
+
+      class KlassABCMeta(classes.Klass, metaclass=ABCMeta):
+        pass
+
+      self.assertEqual(type(classes.Klass).__name__, 'type')
+      km = KlassABCMeta(5)
+      self.assertEqual(km.i, 5)
+
+    else:
+      self.assertEqual(classes.__pyclif_codegen_mode__, 'pybind11')
+      with self.assertRaisesRegex(TypeError, 'metaclass conflict'):
+
+        class KlassABCMeta(classes.Klass, metaclass=ABCMeta):
+          pass
+
+  def testPyCLIFABCMeta(self):
+    # Purely to help the linter.
+    PyCLIFABCMeta = abc_utils.PyCLIFABCMeta  # pylint: disable=unused-variable,invalid-name
+
+    class KlassPyCLIFABCMeta(classes.Klass, metaclass=PyCLIFABCMeta):
+      pass
+
+    if abc_utils.PyCLIFMeta is type:
+      expected_type_name = 'type'
+    else:
+      self.assertEqual(classes.__pyclif_codegen_mode__, 'pybind11')
+      expected_type_name = 'pybind11_type'
+    self.assertEqual(type(classes.Klass).__name__, expected_type_name)
+    km = KlassPyCLIFABCMeta(5)
+    self.assertEqual(km.i, 5)
 
 
 if __name__ == '__main__':

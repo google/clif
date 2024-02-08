@@ -26,6 +26,8 @@ from clif.python import clif_types as types as legacy_types
 
 I = utils.I
 
+_USE_PYTYPE_TYPE_AS_METACLASS = True
+
 _KNOWN_TYPES_WITH_MULTIPLE_INHERITANCE = {
     '::borg::Config': ['::borg::ConfigArgs']
 }
@@ -100,6 +102,8 @@ def generate_from(
         base.cpp_canonical_type in codegen_info.dynamic_attr_types):
       enable_instance_dict = True
       break
+  if _USE_PYTYPE_TYPE_AS_METACLASS:
+    definition += ', py::metaclass((PyObject*) &PyType_Type)'
   definition += ', py::release_gil_before_calling_cpp_dtor()'
   if mi_bases:
     definition += ', py::multiple_inheritance()'
@@ -117,7 +121,7 @@ def generate_from(
   for member in class_decl.members:
     if member.decltype == ast_pb2.Decl.Type.CONST:
       for s in consts.generate_from(class_name, member.const):
-        yield I + I + s
+        yield I + s
     elif member.decltype == ast_pb2.Decl.Type.FUNC:
       if member.func.name.native in ('__reduce__', '__reduce_ex__'):
         reduce_or_reduce_ex_defined = True

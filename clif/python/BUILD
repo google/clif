@@ -1,6 +1,7 @@
 # CLIF python frontend
 
 load("@clif_python_deps//:requirements.bzl", "requirement")
+load("//devtools/clif/python:clif_build_rule.bzl", "py_clif_cc")
 load("//third_party/bazel_rules/rules_python/python:py_test.bzl", "py_test")
 
 package(
@@ -411,4 +412,26 @@ py_library(
     srcs = ["type_customization.py"],
     srcs_version = "PY2AND3",
     visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "meta_ext_lib",
+    hdrs = ["meta_ext.h"],
+)
+
+py_clif_cc(
+    name = "_meta_ext",
+    srcs = ["meta_ext.clif"],
+    deps = [
+        ":meta_ext_lib",
+    ],
+)
+
+py_library(
+    name = "abc_utils",
+    srcs = ["abc_utils.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":_meta_ext",
+    ],
 )

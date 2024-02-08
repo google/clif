@@ -1,0 +1,4 @@
+from "clif/python/meta_ext.h":
+  namespace `clif_meta_ext`:
+    class empty:
+      pass
