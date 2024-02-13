@@ -2989,20 +2989,20 @@ const clang::FunctionDecl* ClifMatcher::SpecializeFunctionTemplate(
 }
 
 std::string ClifMatcher::TemplateDeductionResult(
-    Sema::TemplateDeductionResult specialized_result) const {
+    clang::TemplateDeductionResult specialized_result) const {
   switch (specialized_result) {
-    case Sema::TDK_Invalid:
+    case clang::TemplateDeductionResult::Invalid:
       return "The template function declaration was invalid.";
-    case Sema::TDK_InstantiationDepth:
+    case clang::TemplateDeductionResult::InstantiationDepth:
       return "Template argument deduction exceeded the maximum template "
              "instantiation depth.";
-    case Sema::TDK_Incomplete:
+    case clang::TemplateDeductionResult::Incomplete:
       return "Template argument deduction did not deduce a value for every "
              "template parameter.";
-    case Sema::TDK_Inconsistent:
+    case clang::TemplateDeductionResult::Inconsistent:
       return "Template argument deduction produced inconsistent deduced "
              "values.";
-    case Sema::TDK_Underqualified:
+    case clang::TemplateDeductionResult::Underqualified:
       return "Template argument deduction failed due to inconsistent "
              "cv-qualifiers.";
     default:

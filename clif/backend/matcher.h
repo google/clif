@@ -402,7 +402,7 @@ class ClifMatcher {
 
   // Transform template type deduction error codes into error messages.
   std::string TemplateDeductionResult(
-      clang::Sema::TemplateDeductionResult specialized_result) const;
+      clang::TemplateDeductionResult specialized_result) const;
 
   // Add the class type as the first parameter to a function.
   void AdjustForNonClassMethods(protos::FuncDecl* clif_func_decl) const;
