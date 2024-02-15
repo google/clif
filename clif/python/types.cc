@@ -209,7 +209,6 @@ bool Clif_PyObjAs(PyObject* py, long* c) {  //NOLINT: runtime/int
 }
 
 // int64
-#ifdef HAVE_LONG_LONG
 bool Clif_PyObjAs(PyObject* py, long long* c) {  //NOLINT: runtime/int
   CHECK(c != nullptr);
   if (!PyLong_Check(py)) {
@@ -270,7 +269,6 @@ bool Clif_PyObjAs(PyObject* py, absl::uint128* c) {  // NOLINT: runtime/int
   }
   return !PyErr_Occurred();
 }
-#endif  // HAVE_LONG_LONG
 
 #ifdef ABSL_HAVE_INTRINSIC_INT128
 bool Clif_PyObjAs(PyObject* py, __int128* c) {
