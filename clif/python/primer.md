@@ -713,8 +713,8 @@ of the return values as positional arguments. Whatever it returns becomes the
 actual return value.
 
 Some commonly needed post-processors have been provided in the above imported
-library with CLIF. You can also
-provide your own Python post-processor library.
+library with CLIF.
+You can also provide your own Python post-processor library.
 
 ## Naming Rules in CLIF Files {#naming_rules}
 
