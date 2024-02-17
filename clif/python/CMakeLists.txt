@@ -92,6 +92,7 @@ target_link_libraries(proto_util_cc PRIVATE
   ${PYTHON_LIBRARIES}
 )
 
+add_py_library(abc_utils abc_utils.py)
 add_py_library(callback_exception_guard callback_exception_guard.py)
 add_py_library(type_customization type_customization.py)
 add_py_library(postproc postproc.py)

@@ -93,7 +93,9 @@ add_pyclif_library_for_test(call_method call_method.clif)
 
 add_pyclif_library_for_test(circular circular.clif)
 
-add_pyclif_library_for_test(classes classes.clif)
+add_pyclif_library_for_test(classes classes.clif
+  PY_DEPS clif_python_abc_utils
+)
 
 add_pyclif_library_for_test(class_module_attr class_module_attr.clif)
 
