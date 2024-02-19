@@ -13,9 +13,7 @@ For background see:
 import abc
 import typing
 
-from clif.python import _meta_ext
-
-PyCLIFMeta = type(_meta_ext.empty)
+PyCLIFMeta = type
 
 
 if typing.TYPE_CHECKING:

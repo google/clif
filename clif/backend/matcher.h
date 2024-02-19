@@ -48,6 +48,10 @@
 #include "clif/protos/ast.pb.h"
 #include "gtest/gtest_prod.h"  // Defines FRIEND_TEST.
 
+#ifndef PYCLIF_LLVM_VERSION_MAJOR
+#define PYCLIF_LLVM_VERSION_MAJOR LLVM_VERSION_MAJOR
+#endif
+
 namespace clif {
 
 // ############################################################################
@@ -176,6 +180,16 @@ enum TypeMatchFlags : unsigned int {
 
 class ClifError;
 class ClifMatcherTest;
+
+#if PYCLIF_LLVM_VERSION_MAJOR >= 19  // llvm/llvm-project#81398
+#define PYCLIF_CLANG_TEMPLATEDEDUCTIONRESULT_TYPE clang::TemplateDeductionResult
+#define PYCLIF_CLANG_TEMPLATEDEDUCTIONRESULT_ENUM(Name) \
+  clang::TemplateDeductionResult::Name
+#else
+#define PYCLIF_CLANG_TEMPLATEDEDUCTIONRESULT_TYPE \
+  clang::Sema::TemplateDeductionResult
+#define PYCLIF_CLANG_TEMPLATEDEDUCTIONRESULT_ENUM(Name) Sema::TDK_##Name
+#endif
 
 class ClifMatcher {
   friend class ClifMatcherTest;
@@ -402,7 +416,7 @@ class ClifMatcher {
 
   // Transform template type deduction error codes into error messages.
   std::string TemplateDeductionResult(
-      clang::TemplateDeductionResult specialized_result) const;
+      PYCLIF_CLANG_TEMPLATEDEDUCTIONRESULT_TYPE specialized_result) const;
 
   // Add the class type as the first parameter to a function.
   void AdjustForNonClassMethods(protos::FuncDecl* clif_func_decl) const;

@@ -39,10 +39,6 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 
-#ifndef PYCLIF_LLVM_VERSION_MAJOR
-#define PYCLIF_LLVM_VERSION_MAJOR LLVM_VERSION_MAJOR
-#endif
-
 #if PYCLIF_LLVM_VERSION_MAJOR > 16
 #include "clang/Sema/EnterExpressionEvaluationContext.h"
 #endif
@@ -2989,20 +2985,20 @@ const clang::FunctionDecl* ClifMatcher::SpecializeFunctionTemplate(
 }
 
 std::string ClifMatcher::TemplateDeductionResult(
-    clang::TemplateDeductionResult specialized_result) const {
+    PYCLIF_CLANG_TEMPLATEDEDUCTIONRESULT_TYPE specialized_result) const {
   switch (specialized_result) {
-    case clang::TemplateDeductionResult::Invalid:
+    case PYCLIF_CLANG_TEMPLATEDEDUCTIONRESULT_ENUM(Invalid):
       return "The template function declaration was invalid.";
-    case clang::TemplateDeductionResult::InstantiationDepth:
+    case PYCLIF_CLANG_TEMPLATEDEDUCTIONRESULT_ENUM(InstantiationDepth):
       return "Template argument deduction exceeded the maximum template "
              "instantiation depth.";
-    case clang::TemplateDeductionResult::Incomplete:
+    case PYCLIF_CLANG_TEMPLATEDEDUCTIONRESULT_ENUM(Incomplete):
       return "Template argument deduction did not deduce a value for every "
              "template parameter.";
-    case clang::TemplateDeductionResult::Inconsistent:
+    case PYCLIF_CLANG_TEMPLATEDEDUCTIONRESULT_ENUM(Inconsistent):
       return "Template argument deduction produced inconsistent deduced "
              "values.";
-    case clang::TemplateDeductionResult::Underqualified:
+    case PYCLIF_CLANG_TEMPLATEDEDUCTIONRESULT_ENUM(Underqualified):
       return "Template argument deduction failed due to inconsistent "
              "cv-qualifiers.";
     default:
