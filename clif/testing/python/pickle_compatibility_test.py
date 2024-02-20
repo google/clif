@@ -40,6 +40,29 @@ STORE_TYPES = (
 
 class PickleCompatibilityTest(unittest.TestCase):
 
+  def testAssumptions(self):
+    self.assertGreaterEqual(pickle.HIGHEST_PROTOCOL, 0)
+
+  @parameterized.parameterized.expand(range(pickle.HIGHEST_PROTOCOL + 1))
+  def testSimpleCallable(self, protocol):
+    self.assertEqual(pickle_compatibility.SimpleCallable(), 234)
+    serialized = pickle.dumps(
+        pickle_compatibility.SimpleCallable, protocol=protocol
+    )
+    self.assertIn(b'clif.testing.python._pickle_compatibility', serialized)
+    self.assertIn(b'SimpleCallable', serialized)
+    deserialized = pickle.loads(serialized)
+    self.assertEqual(deserialized(), 234)
+    self.assertIs(deserialized, pickle_compatibility.SimpleCallable)
+
+  def testSimpleMethod(self):
+    obj = pickle_compatibility.SimpleStruct()
+    self.assertEqual(obj.SimpleMethod(), -987)
+    with self.assertRaisesRegex(
+        TypeError, 'missing __getinitargs__ and/or __getstate__'
+    ):
+      pickle.dumps(obj.SimpleMethod)
+
   @parameterized.parameterized.expand(zip(EMPTY_TYPES))
   def testUnpicklable(self, empty_type):
     obj = empty_type()
