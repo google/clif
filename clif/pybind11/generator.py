@@ -181,27 +181,12 @@ class ModuleGenerator:
 
     yield 'namespace {'
     yield ''
-    yield 'PyObject * this_module_init() noexcept {'
-    yield I + 'PYBIND11_CHECK_PYTHON_VERSION'
-    yield I + 'PYBIND11_ENSURE_INTERNALS_READY'
-    yield I + ('static pybind11::module_::module_def '
-               f'module_def_{self._module_name};')
-    yield I + ('auto m = pybind11::module_::create_extension_module('
-               f'"{self._module_name}", nullptr, '
-               f'&module_def_{self._module_name});')
-    yield I + 'try {'
-    yield I + I + 'm.attr("__pyclif_codegen_mode__") = "pybind11";'
+    yield '// When manually converting this code to a pure pybind11 extension,'
+    yield '// change this function to:'
+    yield f'// PYBIND11_MODULE({self._module_name}, m)'
+    yield 'void PyclifPybind11ModuleInit(py::module_ m) {'
     for s in self._generate_import_modules(ast):
       yield I + s
-    yield I + I + f'm.doc() = "CLIF-generated module for {ast.source}";'
-    if self._codegen_info.requires_status:
-      yield I + I + ('pybind11::module_::import('
-                     '"util.task.python.error");')
-    yield I + I + 'pybind11_protobuf::check_unknown_fields::'
-    yield I + I + '    ExtensionsWithUnknownFieldsPolicy::'
-    yield I + I + '        WeakEnableFallbackToSerializeParse();'
-    yield I + I + 'pybind11_protobuf::ImportNativeProtoCasters();'
-
     for decl in ast.decls:
       if decl.decltype == ast_pb2.Decl.Type.FUNC:
         for s in function.generate_from(
@@ -217,26 +202,30 @@ class ModuleGenerator:
       elif decl.decltype == ast_pb2.Decl.Type.ENUM:
         for s in enums.generate_from('m', decl.enum):
           yield I + s
-    yield I + I + 'return m.ptr();'
-    yield I + '}'
-    yield I + 'PYBIND11_CATCH_INIT_EXCEPTIONS'
     yield '}'
     yield ''
     yield '}  // namespace'
     yield ''
     mangled_module_name = utils.generate_mangled_name_for_module(
         self._module_path)
-    yield f'extern "C" PyObject* GooglePyInit_{mangled_module_name}() {{'
-    yield I + 'return this_module_init();'
-    yield '}'
-    yield ''
+    yield '// When manually converting this code to a pure pybind11 extension,'
+    yield '// remove this macro invocation entirely.'
+    yield 'PYCLIF_PYBIND11_MODULE('
+    yield f'    "{ast.source}",'
+    yield f'    GooglePyInit_{mangled_module_name},'
+    yield f'    "{self._module_name}")'
 
+    insert_empty_line = True
     for namespace, typedefs in itertools.groupby(
         self._types, lambda gen_type: gen_type.cpp_namespace):
+      if insert_empty_line:
+        insert_empty_line = False
+        yield ''
       namespace = namespace.strip(':') or 'clif'
       yield ' '.join('namespace %s {' % ns for ns in namespace.split('::'))
       for t in typedefs:
         yield from t.generate_converters()
+      yield ''
       yield '} ' * (1 + namespace.count('::')) + ' // namespace ' + namespace
 
   def _generate_import_modules(self,
@@ -280,6 +269,7 @@ class ModuleGenerator:
       yield f'#include "{include}"'
     yield f'#include "{self._header_path}"'
     yield '#include "clif/pybind11/clif_type_casters.h"'
+    yield '#include "clif/pybind11/pyclif_pybind11_module_macro.h"'
     yield '#include "clif/pybind11/runtime.h"'
     yield '#include "clif/pybind11/type_casters.h"'
     yield '#include "third_party/pybind11_protobuf/native_proto_caster.h"'
