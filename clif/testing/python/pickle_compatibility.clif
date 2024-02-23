@@ -16,6 +16,11 @@ from clif.testing.python.pickle_compatibility_helper import ReduceStoreTwo
 
 from "clif/testing/pickle_compatibility.h":
   namespace `clif_testing`:
+    def SimpleCallable() -> int
+
+    class SimpleStruct:
+      def SimpleMethod(self) -> int
+
     class StoreTwoUsingPostproc:
       def __init__(self, v0: int, v1: int)
       def Get(self, i: int) -> int

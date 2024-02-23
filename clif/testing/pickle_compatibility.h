@@ -22,6 +22,13 @@
 
 namespace clif_testing {
 
+inline int SimpleCallable() { return 234; }
+
+struct SimpleStruct {
+  int value = -987;
+  int SimpleMethod() { return value; }
+};
+
 class StoreTwoUsingPostproc {
  public:
   StoreTwoUsingPostproc(int v0, int v1) : values{v0, v1} {}
