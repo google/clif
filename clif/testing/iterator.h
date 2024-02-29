@@ -22,6 +22,7 @@
 // It's using exceptions to demonstrate they are handled correctly by CLIF.
 
 #include <array>
+#include <cstddef>
 #include <iterator>
 
 namespace clif_iterator_test {
@@ -30,8 +31,14 @@ template<typename T, size_t N>
 class Ring {
  public:
   // Mimic std containers, so that Ring::const_iterator is a real thing.
-  class const_iterator: public std::iterator<std::forward_iterator_tag, T> {
+  class const_iterator {
    public:
+    using value_type = T;
+    using difference_type = ptrdiff_t;
+    using pointer = T*;
+    using reference = T&;
+    using iterator_category = std::forward_iterator_tag;
+
     // CLIF requires both or neither of copy/move constructors and copy/move
     // copy assignment operators.
     const_iterator(const const_iterator&) = default;
