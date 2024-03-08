@@ -110,6 +110,11 @@ class ExtendFromClifAuxTest(absltest.TestCase):
     self.assertEqual(
         rfp.Last(), 'ns_down::tbr_function(ToBeRenamed*, 117) -> int')
 
+  def testWithTemplateMemberFunction(self):
+    obj = extend_from_clifaux.WithTemplateMemberFunction()
+    self.assertEqual(obj.GetDefaultConstructed_int(), 0)
+    self.assertEqual(obj.GetDefaultConstructed_string(), '')
+
   def test_nested_method(self):
     obj = extend_from_clifaux.TestNestedMethod.Inner(3)
     self.assertEqual(obj.get_value(), 3 + 10 + 200)

@@ -89,6 +89,12 @@ from "clif/testing/python/extend_from_clifaux_clif_aux.h":
       @extend
       def `::clif_testing::extend_from_clifaux::ns_down::tbr_function` as ns_down_method(self, i: int, j: int) -> int
 
+    class WithTemplateMemberFunction:
+      @extend
+      def `WithTemplateMemberFunction_GetDefaultConstructed_int` as GetDefaultConstructed_int(self) -> int
+      @extend
+      def `WithTemplateMemberFunction_GetDefaultConstructed_string` as GetDefaultConstructed_string(self) -> str
+
     class TestNestedMethod:
       class Inner:
         def __init__(self, v: int)

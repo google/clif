@@ -19,6 +19,7 @@
 #include <Python.h>
 
 #include <memory>
+#include <string>
 
 #include "clif/testing/extend_from_clifaux.h"
 
@@ -176,6 +177,16 @@ inline int tbr_function(ToBeRenamed* self, int i, int j) {
 }
 
 }  // namespace ns_down
+
+inline int WithTemplateMemberFunction_GetDefaultConstructed_int(
+    const WithTemplateMemberFunction& self) {
+  return self.GetDefaultConstructed<int>();
+}
+
+inline std::string WithTemplateMemberFunction_GetDefaultConstructed_string(
+    const WithTemplateMemberFunction& self) {
+  return self.GetDefaultConstructed<std::string>();
+}
 
 inline int TestNestedMethod_Inner__extend__get_value(
     const TestNestedMethod::Inner& self) {

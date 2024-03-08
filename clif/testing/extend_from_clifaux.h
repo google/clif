@@ -45,6 +45,13 @@ struct TestNestedMethod {
   };
 };
 
+struct WithTemplateMemberFunction {
+  template <typename T>
+  T GetDefaultConstructed() const {
+    return T();
+  }
+};
+
 }  // namespace extend_from_clifaux
 }  // namespace clif_testing
 
