@@ -128,3 +128,17 @@ cc_test(
         "@llvm-project//llvm:Support",
     ],
 )
+
+# Small test to be sure clif_matcher handles io and interacts with the
+# compiler's input files properly.  This solely tests io. Actual
+# matching should be in matcher_test.
+sh_test(
+    name = "clif_matcher_io_test",
+    srcs = ["clif_matcher_io_test.sh"],
+    data = [
+        "simplest_proto.ipb",
+        "test.h",
+        ":clif_matcher",
+        "//testing/shbase",
+    ],
+)

@@ -13,11 +13,12 @@
 # limitations under the License.
 
 from absl.testing import absltest
+from absl.testing import parameterized
 
 from clif.testing.python import variables
 
 
-class VariablesTest(absltest.TestCase):
+class VariablesTest(parameterized.TestCase):
 
   def test_const_int(self):
     self.assertEqual(variables.kMyConstInt, 42)
@@ -56,6 +57,17 @@ class VariablesTest(absltest.TestCase):
   def test_enum(self):
     self.assertEqual(variables.kMyEnum1, 50)
     self.assertEqual(variables.kMyEnum2, 100)
+
+  @parameterized.parameters(
+      ('unspec', [b'hello', b'world']),
+      ('bytes', [b'hello', b'world']),
+      ('str', ['hello', 'world']),
+  )
+  def test_std_array_string_view_2_as_list(self, elem_type, expected_list):
+    const_as_list = getattr(
+        variables, 'std_array_string_view_2_as_list_' + elem_type
+    )
+    self.assertEqual(const_as_list, expected_list)
 
 
 if __name__ == '__main__':
