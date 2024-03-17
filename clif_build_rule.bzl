@@ -155,7 +155,6 @@ _clif_wrap_cc = rule(
             allow_single_file = True,
         ),
     },
-    output_to_genfiles = True,
     outputs = {
         "cc_out": "%{module_name}.cc",
         "h_out": "%{module_name}_clif.h",
