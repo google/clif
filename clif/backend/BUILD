@@ -90,6 +90,7 @@ cc_test(
         "test.h",
     ],
     defines = ["CLIF_BACKEND_SOURCE_DIR=\\\"clif/backend\\\""],
+    tags = ["darwin"],
     deps = [
         ":ast",
         "//devtools/build/runtime:get_runfiles_dir",
@@ -116,6 +117,7 @@ cc_test(
         "versioned_smart_ptr_test.h",
     ],
     defines = ["CLIF_BACKEND_SOURCE_DIR=\\\"clif/backend\\\""],
+    tags = ["darwin"],
     deps = [
         ":ast",
         ":matcher",
@@ -132,13 +134,26 @@ cc_test(
 # Small test to be sure clif_matcher handles io and interacts with the
 # compiler's input files properly.  This solely tests io. Actual
 # matching should be in matcher_test.
+_CLIF_MATCHER_IO_TEST_DATA = [
+    "simplest_proto.ipb",
+    "test.h",
+    ":clif_matcher",
+    "//testing/shbase",
+]
+
 sh_test(
     name = "clif_matcher_io_test",
     srcs = ["clif_matcher_io_test.sh"],
-    data = [
-        "simplest_proto.ipb",
-        "test.h",
-        ":clif_matcher",
-        "//testing/shbase",
+    data = _CLIF_MATCHER_IO_TEST_DATA,
+)
+
+sh_test(
+    name = "clif_matcher_io_darwin_test",
+    srcs = ["clif_matcher_io_test.sh"],
+    data = _CLIF_MATCHER_IO_TEST_DATA,
+    tags = [
+        "darwin",
+        "requires-darwin",
     ],
+    target_compatible_with = ["//third_party/bazel_platforms/os:macos"],
 )
