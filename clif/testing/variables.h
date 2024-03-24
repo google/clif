@@ -23,9 +23,7 @@ const std::pair<int, int> kMyConstPair{ 0, 10 };
 const std::unordered_map<int, int> kMyConstMap({{1, 10}, {2, 20}, {3, 30}});
 const std::unordered_set<int> kMyConstSet({1, 2, 3});
 
-template <typename T>
-using std_array_T_2 = std::array<T, 2>;
-const std_array_T_2<std::string_view> kMyConstStdArrayStringView{"hello",
+const std::array<std::string_view, 2> kMyConstStdArrayStringView{"hello",
                                                                  "world"};
 enum {
   kMyEnum1 = 50,

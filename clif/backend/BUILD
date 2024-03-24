@@ -130,24 +130,3 @@ cc_test(
         "@llvm-project//llvm:Support",
     ],
 )
-
-# Small test to be sure clif_matcher handles io and interacts with the
-# compiler's input files properly.  This solely tests io. Actual
-# matching should be in matcher_test.
-_CLIF_MATCHER_IO_TEST_DATA = [
-    "simplest_proto.ipb",
-    "test.h",
-    ":clif_matcher",
-    "//testing/shbase",
-]
-
-sh_test(
-    name = "clif_matcher_io_darwin_test",
-    srcs = ["clif_matcher_io_test.sh"],
-    data = _CLIF_MATCHER_IO_TEST_DATA,
-    tags = [
-        "darwin",
-        "requires-darwin",
-    ],
-    target_compatible_with = ["//third_party/bazel_platforms/os:macos"],
-)

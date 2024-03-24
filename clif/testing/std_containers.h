@@ -98,13 +98,6 @@ inline std::array<std::array<int, 2>, 3> Transpose(
   return tp;
 }
 
-// Needed as a workaround for parser & matcher limitations, to help wrapping
-// the above.
-template <typename T>
-using std_array_2 = std::array<T, 2>;
-template <typename T>
-using std_array_3 = std::array<T, 3>;
-
 inline std::vector<bool> Even(const std::vector<int>& v) {
   std::vector<bool> e(v.size());
   for (int i=0; i < v.size(); ++i) { if ((v[i] & 1) == 0) { e[i] = true; }}
@@ -195,6 +188,11 @@ inline void LastStringInVector(const std::vector<std::string>& v,
     *output = v.back();
   else
     output->clear();
+}
+
+inline const std::set<int>* GetConstPtrSetInt() {
+  static const std::set<int>* singleton = new std::set<int>{50, 51, 52};
+  return singleton;
 }
 
 inline std::unique_ptr<std::vector<int>> unique_ptr_vector_round_trip(

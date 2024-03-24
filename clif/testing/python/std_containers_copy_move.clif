@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from "clif/python/std_array_aliases.h" import *
+
 from "clif/testing/python/copy_move_types_custom_from_as_clif_use.h" import *
 from "clif/testing/python/copy_move_types_library_clif.h" import *
 
@@ -28,7 +30,7 @@ from "clif/testing/std_containers_copy_move.h":
 
     def PassStdVectorFromCRAsPPCopyMoveType(seq: list<FromCRAsPPCopyMoveType>) -> str
 
-    def PassStdArray1CopyMoveType(seq: `StdArray1` as list<CopyMoveType>) -> str
-    # def PassStdArray1CopyOnlyType(seq: `StdArray1` as list<CopyOnlyType>) -> str
-    # def PassStdArray1MoveOnlyType(seq: `StdArray1` as list<MoveOnlyType>) -> str
-    def PassStdArray1StayPutTypePtr(seq: `StdArray1` as list<StayPutType>) -> str
+    def PassStdArray1CopyMoveType(seq: `::clif::std_array_T_1` as list<CopyMoveType>) -> str
+    # def PassStdArray1CopyOnlyType(seq: `::clif::std_array_T_1` as list<CopyOnlyType>) -> str
+    # def PassStdArray1MoveOnlyType(seq: `::clif::std_array_T_1` as list<MoveOnlyType>) -> str
+    def PassStdArray1StayPutTypePtr(seq: `::clif::std_array_T_1` as list<StayPutType>) -> str

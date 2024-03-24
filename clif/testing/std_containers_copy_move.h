@@ -80,23 +80,20 @@ inline std::string PassStdVectorFromCRAsPPCopyMoveType(
 // std::array
 //
 
-template <typename T>
-using StdArray1 = std::array<T, 1>;
-
 inline std::string PassStdArray1CopyMoveType(
-    const StdArray1<CopyMoveType>& seq) {
+    const std::array<CopyMoveType, 1>& seq) {
   return PassSeqType(seq);
 }
 inline std::string PassStdArray1CopyOnlyType(
-    const StdArray1<CopyOnlyType>& seq) {
+    const std::array<CopyOnlyType, 1>& seq) {
   return PassSeqType(seq);
 }
 inline std::string PassStdArray1MoveOnlyType(
-    const StdArray1<MoveOnlyType>& seq) {
+    const std::array<MoveOnlyType, 1>& seq) {
   return PassSeqType(seq);
 }
 inline std::string PassStdArray1StayPutTypePtr(
-    const StdArray1<StayPutType*>& seq) {
+    const std::array<StayPutType*, 1>& seq) {
   return PassSeqTypeItemPtr(seq);
 }
 

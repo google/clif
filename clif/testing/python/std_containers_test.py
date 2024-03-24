@@ -145,6 +145,9 @@ class StdContainersTest(parameterized.TestCase):
     self.assertEqual(
         std_containers.LastStringInVector(['hello', 'world']), 'world')
 
+  def testGetConstPtrSetInt(self):
+    self.assertEqual(std_containers.GetConstPtrSetInt(), {50, 51, 52})
+
   def testContainerWithSmartPointers(self):
     v = [1, 2, 3]
     self.assertCountEqual(v, std_containers.unique_ptr_vector_round_trip(v))

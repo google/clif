@@ -32,9 +32,25 @@ def ExactTypeOrType(p, cpp_type_suffix=''):
   return p.cpp_exact_type or Type(p) + cpp_type_suffix
 
 
+def TypeMaybeConst(p):
+  # Crude bandaid to unblock PyCLIF-C-API / PyCLIF-pybind11 convergence.
+  # Fixing this properly probably requires deeper concerted fixes in the
+  # matcher and the two code generators.
+  if (
+      p.cpp_exact_type
+      and p.cpp_exact_type.startswith('const ')
+      and p.cpp_exact_type.endswith('*')
+      and not p.type.cpp_type.startswith('const ')
+  ):
+    return 'const ' + p.type.cpp_type
+  return p.type.cpp_type
+
+
 def FuncReturnType(fdecl, true_cpp_type=False):
   if not fdecl.cpp_void_return and fdecl.returns:
-    return (ExactTypeOrType if true_cpp_type else Type)(fdecl.returns[0])
+    return (ExactTypeOrType if true_cpp_type else TypeMaybeConst)(
+        fdecl.returns[0]
+    )
   return 'void'
 
 

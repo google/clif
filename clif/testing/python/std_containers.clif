@@ -14,6 +14,8 @@
 
 use `std::string` as str
 
+from "clif/python/std_array_aliases.h" import *
+
 from "clif/testing/std_containers.h":
   def PassVectorInt(v: list<int>) -> int
   def PassListInt(l: `std::list` as list<int>) -> int
@@ -24,7 +26,7 @@ from "clif/testing/std_containers.h":
   def PassMapInt(v: `std::map` as dict<int, int>) -> int
   def Mul(v: list<int>, m: int) -> list<int>
   def Div(v: `std::array<int, 2>` as list, m: int) -> `std::array<int, 2>` as list
-  def Transpose(m: `std_array_2` as list<`std::array<int, 3>` as list>) -> `std_array_3` as list<`std::array<int, 2>` as list>
+  def Transpose(m: `::clif::std_array_T_2` as list<`std::array<int, 3>` as list>) -> `::clif::std_array_T_3` as list<`std::array<int, 2>` as list>
   def Odd(v: list<int>) -> list<bool>
   def Even(v: list<int>) -> list<bool>
   def Find(v: int, m: dict<int,int>) -> (x: bool, y: int)
@@ -35,6 +37,8 @@ from "clif/testing/std_containers.h":
   def Make2By3() -> `std::tuple` as tuple<`std::tuple` as tuple<int, int, int>, `std::tuple` as tuple<int, int, int>>
   def Flatten2By3(m: `std::tuple` as tuple<`std::tuple` as tuple<int, int, int>, `std::tuple` as tuple<int, int, int>>) -> `std::tuple` as tuple<int, int, int, int, int, int>
   def LastStringInVector(v: list<str>) -> (output: str)
+
+  def GetConstPtrSetInt() -> `std::set` as set<int>
 
   def unique_ptr_vector_round_trip(v: list<int> = default) -> list<int>
   def unique_ptr_unordered_map_round_trip(m: dict<int, int> = default) -> dict<int, int>
