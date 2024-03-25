@@ -19,6 +19,7 @@ from clif.protos import ast_pb2
 from clif.pybind11 import function_lib
 from clif.pybind11 import operators
 from clif.pybind11 import utils
+from clif.python import astutils
 
 I = utils.I
 
@@ -192,8 +193,10 @@ def generate_lambda_body(
         yield I + I + I + s
       yield I + I + '}'
     else:
-      yield I + I + (f'{ret0.type.cpp_type} ret0_ = '
-                     f'{function_call}({function_call_params});')
+      yield I + I + (
+          f'{astutils.TypeMaybeConst(ret0)} ret0_ = '
+          f'{function_call}({function_call_params});'
+      )
       ret0_with_py_cast = generate_function_call_return(
           func_decl, ret0, 'ret0_', codegen_info, class_decl)
       yield I + I + '{'

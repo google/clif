@@ -43,6 +43,7 @@ cc_library(
         "postconv.h",
         "runtime.h",
         "slots.h",
+        "std_array_aliases.h",
         "stltypes.h",
         "stltypes_fwd.h",
         "pyobject_ptr_conv.h",

@@ -454,10 +454,15 @@ def generate_docstring(docstring: str) -> str:
 
 
 def is_bytes_type(pytype: ast_pb2.Type) -> bool:
-  # Counter-intuitive, for compatibility with PyCLIF-C-API:
-  # see function Initializer() in clif/python/postconv.py
-  # (postconv_types_index_map.get() there falls back to bytes).
-  return pytype.lang_type != 'str' and '<str>' not in pytype.lang_type
+  if pytype.lang_type in ('list', 'tuple', 'dict', 'set', 'frozenset') and (
+      'string' in pytype.cpp_type
+      or 'const char' in pytype.cpp_type
+      or 'char const' in pytype.cpp_type
+  ):
+    # TODO: Raise an exception.
+    # raise RuntimeError(f'UNSPECIFIED Python element type for {pytype}')
+    return True
+  return pytype.lang_type in 'bytes' or '<bytes>' in pytype.lang_type
 
 
 def has_bytes_return(func_decl: ast_pb2.FuncDecl) -> bool:

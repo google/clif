@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from "clif/python/std_array_aliases.h" import *
+
 from "clif/testing/variables.h":
   namespace `clif_testing::variables`:
     const kMyConstInt: int
@@ -28,6 +30,6 @@ from "clif/testing/variables.h":
     const kMyEnum1: int
     const kMyEnum2: int
 
-    const `kMyConstStdArrayStringView` as std_array_string_view_2_as_list_unspec: `std_array_T_2<std::string_view>` as list
-    const `kMyConstStdArrayStringView` as std_array_string_view_2_as_list_bytes: `std_array_T_2` as list<bytes>
-    const `kMyConstStdArrayStringView` as std_array_string_view_2_as_list_str: `std_array_T_2` as list<str>
+    const `kMyConstStdArrayStringView` as std_array_string_view_2_as_list_unspec: `::clif::std_array_T_2<std::string_view>` as list
+    const `kMyConstStdArrayStringView` as std_array_string_view_2_as_list_bytes: `::clif::std_array_T_2` as list<bytes>
+    const `kMyConstStdArrayStringView` as std_array_string_view_2_as_list_str: `::clif::std_array_T_2` as list<str>
