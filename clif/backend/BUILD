@@ -5,14 +5,6 @@ package(
 
 licenses(["notice"])
 
-exports_files([
-    "another_file.h",
-    "test.h",
-    "test_clif_aux.h",
-    "test_subdir/test_clif_aux.h",
-    "versioned_smart_ptr_test.h",
-])
-
 cc_binary(
     name = "clif_matcher",
     srcs = ["matcher_main.cc"],
