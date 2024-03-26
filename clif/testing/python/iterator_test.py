@@ -52,6 +52,11 @@ class IteratorTest(absltest.TestCase):
         weakref.ref(iter(r))
       self.assertIn('cannot create weak reference', str(ctx.exception))
 
+  def testUsingRingInt3ClassesExist(self):
+    # Trivial runtime tests only: this is primarily a codegen test.
+    self.assertIsNotNone(iterator.UsingRingInt3One)
+    self.assertIsNotNone(iterator.UsingRingInt3Two)
+
 
 if __name__ == '__main__':
   absltest.main()

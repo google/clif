@@ -110,6 +110,15 @@ class Ring {
   std::array<T, N> data_;
   size_t get_, put_;  // data_ index for next pop/push operation.
 };
+
+struct UsingRingInt3One : Ring<int, 3> {
+  using ring_one = Ring<int, 3>;
+};
+
+struct UsingRingInt3Two : Ring<int, 3> {
+  using ring_two = Ring<int, 3>;
+};
+
 }  // namespace clif_iterator_test
 
 #endif  // CLIF_TESTING_ITERATOR_H_

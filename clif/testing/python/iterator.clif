@@ -22,3 +22,11 @@ from "clif/testing/iterator.h":
 
       class `const_iterator` as __iter__:
         def __next__(self) -> int
+
+    class UsingRingInt3One:
+      class `ring_one::const_iterator` as __iter__:
+        def __next__(self) -> int
+
+    class UsingRingInt3Two:
+      class `ring_two::const_iterator` as __iter__:
+        def __next__(self) -> int

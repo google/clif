@@ -81,6 +81,19 @@ class ModuleGenerator:
     self._codegen_info = utils.CodeGenInfo(
         capsule_types=capsule_types, requires_status=requires_status,
         namemap=namemap, dynamic_attr_types=dynamic_attr_types)
+    self._dedupe_types()
+
+  def _dedupe_types(self):
+    # The same C++ iterator type may be wrapped under multiple Python names
+    # (see testing/python/iterator.clif).
+    filtered_types = []
+    cpp_names_done = set()
+    for typedef in self._types:
+      if typedef.cpp_name in cpp_names_done:
+        continue
+      cpp_names_done.add(typedef.cpp_name)
+      filtered_types.append(typedef)
+    self._types = filtered_types
 
   def generate_pyinit(self) -> Generator[str, None, None]:
     yield '#include <Python.h>'
