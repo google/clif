@@ -264,6 +264,10 @@ class ClassesTest(parameterized.TestCase):
     km = KlassPyCLIFABCMeta(5)
     self.assertEqual(km.i, 5)
 
+  def testMultipleTypesTupleIntExists(self):
+    # Trivial runtime test only: this is primarily a codegen test.
+    self.assertIsNotNone(classes.MultipleTypesTupleInt)
+
 
 if __name__ == '__main__':
   absltest.main()

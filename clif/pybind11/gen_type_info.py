@@ -68,7 +68,13 @@ class ClassType(BaseType):
     yield ''
 
   def generate_type_caster(self) -> Generator[str, None, None]:
-    yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({self.cpp_name})'
+    # Work around potential name collisions in
+    # `PYBIND11_SMART_HOLDER_TYPE_CASTERS()` invocation, e.g. a collision
+    # between a `std::tuple` alias in the global namespace (to work around
+    # b/118736768) and `pybind11::tuple`.
+    using_name = f'PyCLIF_py_name_{self.py_name}'.replace('.', '_')
+    yield f'using {using_name} = {self.cpp_name};'
+    yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({using_name})'
     if not self.cpp_copyable:
       yield from self.generate_type_trait('is_copy_constructible')
     if not self.cpp_movable:

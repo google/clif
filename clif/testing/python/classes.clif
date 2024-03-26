@@ -109,6 +109,12 @@ from "clif/testing/classes.h":
       @setter
       def `some_pointer` as SetSomePointee(self, pointee: SomePointee)
 
+    # Name clash between
+    #   std::tuple       with alias in global namespace (b/118736768), and
+    #   pybind11::tuple  in `PYBIND11_SMART_HOLDER_TYPE_CASTERS()`.
+    class `MultipleTypes<tuple<int>>` as MultipleTypesTupleInt:
+      pass
+
   namespace `::clif_testing::classes::clif_testing`:
     class WithAmbiguousNamespace:
       def get_value(self) -> int

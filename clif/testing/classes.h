@@ -18,7 +18,12 @@
 
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
+
+// This is sometimes used as a workaround for b/118736768.
+template <typename... Types>
+using tuple = std::tuple<Types...>;
 
 // This comment intentionally includes UTF-8 characters as an IO test.
 //   "Use pytype 🦆✔  - make code maintainers happy!"
@@ -170,6 +175,9 @@ struct SomePointee {};
 struct SomePointerOwner {
   const SomePointee* some_pointer = nullptr;
 };
+
+template <typename... Types>
+struct MultipleTypes {};
 
 // Use the duplicated namespace `clif_testing` for testing purposes.
 namespace clif_testing {
