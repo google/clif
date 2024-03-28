@@ -59,7 +59,6 @@ class VariablesTest(parameterized.TestCase):
     self.assertEqual(variables.kMyEnum2, 100)
 
   @parameterized.parameters(
-      ('unspec', [b'hello', b'world']),
       ('bytes', [b'hello', b'world']),
       ('str', ['hello', 'world']),
   )

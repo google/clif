@@ -30,6 +30,10 @@ from "clif/testing/variables.h":
     const kMyEnum1: int
     const kMyEnum2: int
 
-    const `kMyConstStdArrayStringView` as std_array_string_view_2_as_list_unspec: `::clif::std_array_T_2<std::string_view>` as list
     const `kMyConstStdArrayStringView` as std_array_string_view_2_as_list_bytes: `::clif::std_array_T_2` as list<bytes>
     const `kMyConstStdArrayStringView` as std_array_string_view_2_as_list_str: `::clif::std_array_T_2` as list<str>
+
+    # Uncomment to trigger exception during codegen:
+    #     RuntimeError: UNSPECIFIED Python element type for lang_type: "list"
+    #     cpp_type: "::std::array< ::std::string_view, 2>"
+    # const `kMyConstStdArrayStringView` as std_array_string_view_2_as_list_unspec: `::clif::std_array_T_2<std::string_view>` as list
