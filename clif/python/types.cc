@@ -33,9 +33,9 @@ PyObject* Clif_PyObjFrom(absl::string_view c, const py::PostConv& pc) {
 #endif
 
 PyObject* Clif_PyObjFrom(const absl::Cord& c, const py::PostConv& pc) {
-  PyObject* py = PyBytes_FromStringAndSize(nullptr, c.size());
+  std::string s(c);
+  PyObject* py = PyBytes_FromStringAndSize(s.c_str(), s.size());
   if (!py) return nullptr;
-  c.CopyToArray(PyBytes_AS_STRING(py));
   return pc.Apply(py);
 }
 
@@ -436,8 +436,9 @@ bool Clif_PyObjAs(PyObject* p, absl::string_view* c) {
 
 bool Clif_PyObjAs(PyObject* p, absl::Cord* c) {
   CHECK(c != nullptr);
-  return py::ObjToStr(p,
-      [c](const char* data, size_t length) { c->CopyFrom(data, length); });
+  return py::ObjToStr(p, [c](const char* data, size_t length) {
+    *c = absl::string_view(data, length);
+  });
 }
 
 }  // namespace clif
