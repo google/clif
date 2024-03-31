@@ -78,6 +78,8 @@ add_pyclif_library_for_test(t10 t10.clif
 
 add_pyclif_library_for_test(t12 t12.clif)
 
+add_pyclif_library_for_test(absl_cord absl_cord.clif)
+
 add_pyclif_library_for_test(absl_int128 absl_int128.clif)
 
 add_pyclif_library_for_test(absl_uint128 absl_uint128.clif)
