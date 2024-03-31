@@ -169,9 +169,7 @@ inline Clif_PyObjFrom(T c, const py::PostConv& pc) {
 // CLIF use `::std::string_view` as bytes
 // CLIF use `::absl::string_view` as bytes
 PyObject* Clif_PyObjFrom(std::string_view, const py::PostConv&);
-#ifndef ABSL_USES_STD_STRING_VIEW
-PyObject* Clif_PyObjFrom(absl::string_view, const py::PostConv&);
-#endif
+// absl::string_view has an implicit conversion from std::string.
 
 // CLIF use `::absl::Cord` as bytes
 PyObject* Clif_PyObjFrom(const absl::Cord&, const py::PostConv&);
