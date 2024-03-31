@@ -63,6 +63,16 @@ def GenPostConvTable(postconv_types):
       postconv_types[pytype] = '_%d' % index
 
 
+def EnsurePythonContainerElementTypesAreSpecified(ast_type):
+  # Ad-hoc and limited: see b/331017568 for background.
+  if ast_type.lang_type in ('list', 'tuple', 'dict', 'set', 'frozenset') and (
+      'string' in ast_type.cpp_type
+      or 'const char' in ast_type.cpp_type
+      or 'char const' in ast_type.cpp_type
+  ):
+    raise RuntimeError(f'UNSPECIFIED Python element type for {ast_type}')
+
+
 def Initializer(ast_type, postconv_types_index_map, nested=False,
                 marked_non_raising=False):
   """Tranform [complex] ast_type to a postconversion initializer_list."""
@@ -79,6 +89,7 @@ def Initializer(ast_type, postconv_types_index_map, nested=False,
         Initializer(t, postconv_types_index_map, nested=True)
         for t in ast_type.params)
   else:
+    EnsurePythonContainerElementTypesAreSpecified(ast_type)
     index = postconv_types_index_map.get(ast_type.lang_type, '_0')
   # If no table-based conversions needed, return "no_conversion".
   return index if nested or index.strip('{_0,}') else PASS
