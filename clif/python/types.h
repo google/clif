@@ -166,7 +166,16 @@ inline Clif_PyObjFrom(T c, const py::PostConv& pc) {
   return pc.Apply(PyBool_FromLong(c));
 }
 
+// CLIF use `::std::string_view` as bytes
+// CLIF use `::absl::string_view` as bytes
 PyObject* Clif_PyObjFrom(std::string_view, const py::PostConv&);
+#ifndef ABSL_USES_STD_STRING_VIEW
+PyObject* Clif_PyObjFrom(absl::string_view, const py::PostConv&);
+#endif
+
+// CLIF use `::absl::Cord` as bytes
+PyObject* Clif_PyObjFrom(const absl::Cord&, const py::PostConv&);
+
 // CLIF use `::std::string` as bytes
 
 typedef const char* char_ptr;  // A distinct type for constexpr CONST string.
@@ -220,6 +229,10 @@ bool Clif_PyObjAs(PyObject*, bool*);
 bool Clif_PyObjAs(PyObject*, std::string*);
 bool Clif_PyObjAs(PyObject* py, std::shared_ptr<std::string>* c);
 bool Clif_PyObjAs(PyObject*, std::string_view*);
+#ifndef ABSL_USES_STD_STRING_VIEW
+bool Clif_PyObjAs(PyObject* p, absl::string_view* c);
+#endif
+bool Clif_PyObjAs(PyObject*, absl::Cord*);
 
 PyObject* UnicodeFromBytes(PyObject*);
 
