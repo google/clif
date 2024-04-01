@@ -1,0 +1,6 @@
+from "clif/testing/absl_cord.h":
+  namespace `clif_testing_absl_cord`:
+    def `PassAbslCord` as PassAbslCordStr(c: `absl::Cord` as str) -> bytes
+    def `PassAbslCord` as PassAbslCordBytes(c: `absl::Cord` as bytes) -> bytes
+    def `ReturnAbslCord` as ReturnAbslCordStr(s: bytes) -> `absl::Cord` as str
+    def `ReturnAbslCord` as ReturnAbslCordBytes(s: bytes) -> `absl::Cord` as bytes

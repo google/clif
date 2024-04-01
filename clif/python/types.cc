@@ -21,8 +21,22 @@ namespace clif {
 //// To Python conversions.
 
 // bytes
+
 PyObject* Clif_PyObjFrom(std::string_view c, const py::PostConv& pc) {
   return pc.Apply(PyBytes_FromStringAndSize(c.data(), c.size()));
+}
+
+#ifndef ABSL_USES_STD_STRING_VIEW
+PyObject* Clif_PyObjFrom(absl::string_view c, const py::PostConv& pc) {
+  return pc.Apply(PyBytes_FromStringAndSize(c.data(), c.size()));
+}
+#endif
+
+PyObject* Clif_PyObjFrom(const absl::Cord& c, const py::PostConv& pc) {
+  std::string s(c);
+  PyObject* py = PyBytes_FromStringAndSize(s.c_str(), s.size());
+  if (!py) return nullptr;
+  return pc.Apply(py);
 }
 
 PyObject* UnicodeFromBytes(PyObject* b) {
@@ -407,6 +421,24 @@ bool Clif_PyObjAs(PyObject* p, std::string_view* c) {
   }
   PyErr_SetString(PyExc_TypeError, "expecting str or bytes");
   return false;
+}
+
+#ifndef ABSL_USES_STD_STRING_VIEW
+bool Clif_PyObjAs(PyObject* p, absl::string_view* c) {
+  std::string_view std_sv;
+  if (Clif_PyObjAs(p, &std_sv)) {
+    *c = absl::string_view(std_sv.data(), std_sv.size());
+    return true;
+  }
+  return false;
+}
+#endif
+
+bool Clif_PyObjAs(PyObject* p, absl::Cord* c) {
+  CHECK(c != nullptr);
+  return py::ObjToStr(p, [c](const char* data, size_t length) {
+    *c = absl::string_view(data, length);
+  });
 }
 
 }  // namespace clif
