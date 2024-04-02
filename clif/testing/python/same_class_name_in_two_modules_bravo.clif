@@ -1,0 +1,5 @@
+from "clif/testing/same_class_name_in_two_modules_bravo.h":
+  namespace `clif_testing_same_class_name_in_two_modules_bravo`:
+    class Smith:
+      @classmethod
+      def WhereIsHome(cls) -> str

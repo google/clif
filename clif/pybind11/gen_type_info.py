@@ -47,6 +47,7 @@ class BaseType:
 class ClassType(BaseType):
   """Wraps a C++ Class."""
 
+  module_path: str
   cpp_has_public_dtor: bool
   cpp_copyable: bool
   cpp_movable: bool
@@ -72,7 +73,11 @@ class ClassType(BaseType):
     # `PYBIND11_SMART_HOLDER_TYPE_CASTERS()` invocation, e.g. a collision
     # between a `std::tuple` alias in the global namespace (to work around
     # b/118736768) and `pybind11::tuple`.
-    using_name = f'PyCLIF_py_name_{self.py_name}'.replace('.', '_')
+    if self.module_path:
+      py_name_fq = '.'.join([self.module_path, self.py_name])
+    else:
+      py_name_fq = self.py_name
+    using_name = f'PyCLIF_py_name_{py_name_fq}'.replace('.', '_')
     yield f'using {using_name} = {self.cpp_name};'
     yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({using_name})'
     if not self.cpp_copyable:
