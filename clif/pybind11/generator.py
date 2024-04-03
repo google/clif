@@ -404,15 +404,21 @@ class ModuleGenerator:
           [b.native for b in decl.class_.bases if b.native and
            not b.cpp_canonical_type])
       class_type = gen_type_info.ClassType(
-          cpp_name=decl.class_.name.cpp_canonical_type, py_name=py_name,
-          cpp_namespace=cpp_namespace, py_bases=py_bases,
+          module_path=self._module_path,
+          cpp_name=decl.class_.name.cpp_canonical_type,
+          py_name=py_name,
+          cpp_namespace=cpp_namespace,
+          py_bases=py_bases,
           cpp_has_public_dtor=decl.class_.cpp_has_public_dtor,
-          cpp_copyable=(decl.class_.cpp_copyable and
-                        not decl.class_.cpp_abstract),
-          cpp_movable=(decl.class_.cpp_movable and
-                       not decl.class_.cpp_abstract),
+          cpp_copyable=(
+              decl.class_.cpp_copyable and not decl.class_.cpp_abstract
+          ),
+          cpp_movable=(
+              decl.class_.cpp_movable and not decl.class_.cpp_abstract
+          ),
           override_in_python=override_in_python,
-          enable_instance_dict=decl.class_.enable_instance_dict)
+          enable_instance_dict=decl.class_.enable_instance_dict,
+      )
       self._types.append(class_type)
       for member in decl.class_.members:
         self._register_types(member, py_name, cpp_namespace)

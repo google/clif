@@ -1,0 +1,7 @@
+from "clif/testing/python/same_class_name_in_two_modules_alpha_clif.h" import *
+from "clif/testing/python/same_class_name_in_two_modules_bravo_clif.h" import *
+
+from "clif/testing/same_class_name_in_two_modules_client.h":
+  namespace `clif_testing_same_class_name_in_two_modules_client`:
+    def ReturnAlphaSmith() -> `clif_testing_same_class_name_in_two_modules_alpha::Smith` as Smith
+    def ReturnBravoSmith() -> `clif_testing_same_class_name_in_two_modules_bravo::Smith` as Smith
