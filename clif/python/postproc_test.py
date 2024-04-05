@@ -44,10 +44,30 @@ class PostprocTest(unittest.TestCase):
     if error_type is not None:
       for args in ((False,), (False, 1), (False, 1, 2)):
         with self.assertRaises(error_type) as ctx:
-          postproc_function(False)
-        self.assertEqual(
-            str(ctx.exception),
-            'CLIF wrapped call returned False')
+          postproc_function(*args)
+        self.assertEqual(str(ctx.exception), 'CLIF wrapped call returned False')
+
+  @parameterized.parameterized.expand((
+      (postproc.ValueErrorOnNone, ValueError),
+      (postproc.RuntimeErrorOnNone, RuntimeError),
+  ))
+  def testNoneExceptionType(self, postproc_function, error_type):
+    self.assertEqual(postproc_function(True), True)
+    self.assertEqual(postproc_function(False), False)
+    self.assertEqual(postproc_function(1), 1)
+    self.assertEqual(postproc_function(False, 2), (False, 2))
+    self.assertEqual(postproc_function(1, 2), (1, 2))
+    for args in (
+        (None,),
+        (None, 1),
+        (None, 1, 2),
+        (1, 2, None),
+        (1, None),
+        (None, None),
+    ):
+      with self.assertRaises(error_type) as ctx:
+        postproc_function(*args)
+      self.assertEqual(str(ctx.exception), 'CLIF wrapped call returned None')
 
 
 if __name__ == '__main__':

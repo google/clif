@@ -269,6 +269,8 @@ The standard CLIF library comes with the following postprocessor functions:
 
 *   `ValueErrorOnFalse` takes first return value as bool, drops it from output
     if True or raise a ValueError if it's False.
+*   `ValueErrorOnNone` raises a ValueError if any of the return values are None,
+    corresponding to `nullptr` assignments.
 *   `chr` is a Python built-in function useful to convert int/uint8 (from C++
     char) to a Python 1-character string.
 

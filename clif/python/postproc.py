@@ -59,3 +59,20 @@ def RuntimeErrorOnFalse(ok, *args):
 def IgnoreTrueOrFalse(ok, *args):
   """Returns None / arg / (args,...) unconditionally, ignoring ok value."""
   return _RaiseOnFalse('IgnoreTrueOrFalse', None, ok, *args)
+
+
+def _RaiseOnNone(error_class, *args):
+  """Raises error_class if args contain None, or returns args[0] / args."""
+  if None in args:
+    raise error_class('CLIF wrapped call returned None')
+  return args if len(args) > 1 else args[0]
+
+
+def ValueErrorOnNone(obj, *args):
+  """Raises ValueError if args contain None, or returns args[0] / args."""
+  return _RaiseOnNone(ValueError, obj, *args)
+
+
+def RuntimeErrorOnNone(obj, *args):
+  """Raises RuntimeError if args contain None, or returns args[0] / args."""
+  return _RaiseOnNone(RuntimeError, obj, *args)
