@@ -878,8 +878,8 @@ def FunctionCall(pyname, wrapper, doc, catch, call, postcall_init,
       else:
         num_params = n
         # extended methods need to include `self` as the first parameter, but
-        # extended constructors do not.
-        if func_ast.is_extend_method:
+        # extended classmethods (and constructors) do not.
+        if func_ast.is_extend_method and not func_ast.classmethod:
           num_params += 1
         call_with_params = call + astutils.TupleStr(params[:num_params])
       yield I+I+'%s; break;' % call_with_params
