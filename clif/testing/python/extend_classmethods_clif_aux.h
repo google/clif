@@ -17,6 +17,11 @@ inline void Abc__extend__set_static_value(int v) {
   Abc::static_value = v;
 }
 
+inline int Abc__extend__function_with_defaults(int i = 3, int j = 5,
+                                               int k = 7) {
+  return (Abc::static_value * i + j) * k;
+}
+
 inline int TestNestedClassmethod_Inner__extend__get_static_value() {
   return 472;
 }
