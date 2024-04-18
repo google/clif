@@ -14,6 +14,8 @@
 
 """Tests for clif.testing.python.t3."""
 
+import sys
+
 from absl.testing import absltest
 
 from clif.testing.python import t3
@@ -21,7 +23,7 @@ from clif.testing.python import t3
 
 class T3Test(absltest.TestCase):
 
-  def testEnum(self):
+  def testEnumBasic(self):
     self.assertEqual(t3._Old.TOP1, 1)
     self.assertEqual(t3._Old.TOPn, -1)
     self.assertNotEqual(t3._New.TOP, 1)
@@ -33,14 +35,29 @@ class T3Test(absltest.TestCase):
     self.assertEqual(t3.K.NewE.ONE, t3.K.NewE(11))
     self.assertRaises(TypeError, t3.K().M, (5))
 
-  @absltest.skipIf(
-      t3.__pyclif_codegen_mode__ == 'pybind11',
-      'When building with pybind11, t3._New.__module__ is a Module object '
-      'instead of a string.',
-  )
   def testEnumModuleName(self):
     # This is necessary for proper pickling.
-    self.assertEqual(t3._New.__module__, t3.__name__)
+    if t3.__pyclif_codegen_mode__ == 'pybind11':
+      self.assertEqual(t3._Old.__module__.__name__, t3.__name__)
+      self.assertEqual(t3._New.__module__.__name__, t3.__name__)
+    else:
+      self.assertEqual(t3._Old.__module__, t3.__name__)
+      self.assertEqual(t3._New.__module__, t3.__name__)
+
+  def testEnumBases(self):
+    old_bases = t3._Old.__bases__
+    new_bases = t3._New.__bases__
+    # Intentionally avoiding direct import, to not spoil exercising the
+    # implicit import in the test itself.
+    enum_module = sys.modules.get('enum')
+    # Necessary (although not sufficient to prove that the implicit import
+    # works).
+    self.assertIsNotNone(enum_module)
+    self.assertEqual(old_bases, (enum_module.IntEnum,))
+    if t3.__pyclif_codegen_mode__ == 'pybind11':
+      self.assertEqual(new_bases, (enum_module.IntEnum,))  # b/335494591
+    else:
+      self.assertEqual(new_bases, (enum_module.Enum,))
 
   def testEnumsExportedToParentScope(self):
     self.assertEqual(t3.Outer.A, t3.Outer.Inner.A)
