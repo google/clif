@@ -21,9 +21,10 @@ I = utils.I
 
 def generate_from(class_name: str, enum_decl: ast_pb2.EnumDecl):
   """Generates enums."""
+  kind = 'Enum' if enum_decl.enum_class else 'IntEnum'
   yield I + (
       f'{class_name} += py::native_enum<{enum_decl.name.cpp_name}>'
-      f'("{enum_decl.name.native}")'
+      f'("{enum_decl.name.native}", py::native_enum_kind::{kind})'
   )
   for i, member in enumerate(enum_decl.members):
     s = I + I + f'.value("{member.native}", {member.cpp_name})'

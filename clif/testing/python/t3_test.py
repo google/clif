@@ -60,10 +60,7 @@ class T3Test(parameterized.TestCase):
     # works).
     self.assertIsNotNone(enum_module)
     self.assertEqual(old_bases, (enum_module.IntEnum,))
-    if t3.__pyclif_codegen_mode__ == 'pybind11':
-      self.assertEqual(new_bases, (enum_module.IntEnum,))  # b/335494591
-    else:
-      self.assertEqual(new_bases, (enum_module.Enum,))
+    self.assertEqual(new_bases, (enum_module.Enum,))
 
   def testEnumsExportedToParentScope(self):
     self.assertEqual(t3.Outer.A, t3.Outer.Inner.A)
