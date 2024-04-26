@@ -29,21 +29,24 @@ class TypesTest(absltest.TestCase):
                         can_copy=False, can_move=False, can_destruct=True,
                         virtual='', suppress_shared_ptr_const_conversion=False)
     header = '\n'.join(t.GenHeader()) + '\n'
-    self.assertMultiLineEqual(header, textwrap.dedent("""\
+    self.assertMultiLineEqual(
+        header,
+        textwrap.dedent("""\
       // CLIF use `c::name::cpp_name` as fq.py.path
       bool Clif_PyObjAs(PyObject* input, c::name::cpp_name** output);
       bool Clif_PyObjAs(PyObject* input, std::shared_ptr<c::name::cpp_name>* output);
       bool Clif_PyObjAs(PyObject* input, std::shared_ptr<const c::name::cpp_name>* output);
       bool Clif_PyObjAs(PyObject* input, std::unique_ptr<c::name::cpp_name>* output);
-      PyObject* Clif_PyObjFrom(c::name::cpp_name*, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::shared_ptr<c::name::cpp_name>, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::shared_ptr<const c::name::cpp_name>, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::unique_ptr<c::name::cpp_name>, py::PostConv);
+      PyObject* Clif_PyObjFrom(c::name::cpp_name*, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::shared_ptr<c::name::cpp_name>, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::shared_ptr<const c::name::cpp_name>, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::unique_ptr<c::name::cpp_name>, ::clif::py::PostConv);
       template<typename T>
-      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name*, py::PostConv) = delete;
+      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name*, ::clif::py::PostConv) = delete;
       template<typename T>
-      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name&, py::PostConv) = delete;
-    """))
+      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name&, ::clif::py::PostConv) = delete;
+    """),
+    )
 
   def testClassTypeWithNoDtor(self):
     ns = 'clif::name::'
@@ -52,19 +55,22 @@ class TypesTest(absltest.TestCase):
                         can_copy=False, can_move=False, can_destruct=False,
                         virtual='', suppress_shared_ptr_const_conversion=False)
     header = '\n'.join(t.GenHeader()) + '\n'
-    self.assertMultiLineEqual(header, textwrap.dedent("""\
+    self.assertMultiLineEqual(
+        header,
+        textwrap.dedent("""\
       // CLIF use `c::name::cpp_name` as fq.py.path
       bool Clif_PyObjAs(PyObject* input, c::name::cpp_name** output);
       bool Clif_PyObjAs(PyObject* input, std::shared_ptr<c::name::cpp_name>* output);
       bool Clif_PyObjAs(PyObject* input, std::shared_ptr<const c::name::cpp_name>* output);
-      PyObject* Clif_PyObjFrom(c::name::cpp_name*, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::shared_ptr<c::name::cpp_name>, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::shared_ptr<const c::name::cpp_name>, py::PostConv);
+      PyObject* Clif_PyObjFrom(c::name::cpp_name*, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::shared_ptr<c::name::cpp_name>, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::shared_ptr<const c::name::cpp_name>, ::clif::py::PostConv);
       template<typename T>
-      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name*, py::PostConv) = delete;
+      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name*, ::clif::py::PostConv) = delete;
       template<typename T>
-      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name&, py::PostConv) = delete;
-    """))
+      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name&, ::clif::py::PostConv) = delete;
+    """),
+    )
 
   def testUncopyableButMovableClassType(self):
     ns = 'clif::name::'
@@ -74,69 +80,87 @@ class TypesTest(absltest.TestCase):
                         can_destruct=True, virtual='',
                         suppress_shared_ptr_const_conversion=False)
     header = '\n'.join(t.GenHeader()) + '\n'
-    self.assertMultiLineEqual(header, textwrap.dedent("""\
+    self.assertMultiLineEqual(
+        header,
+        textwrap.dedent("""\
       // CLIF use `c::name::cpp_name` as fq.py.path
       bool Clif_PyObjAs(PyObject* input, c::name::cpp_name** output);
       bool Clif_PyObjAs(PyObject* input, std::shared_ptr<c::name::cpp_name>* output);
       bool Clif_PyObjAs(PyObject* input, std::shared_ptr<const c::name::cpp_name>* output);
       bool Clif_PyObjAs(PyObject* input, std::unique_ptr<c::name::cpp_name>* output);
-      PyObject* Clif_PyObjFrom(c::name::cpp_name*, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::shared_ptr<c::name::cpp_name>, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::shared_ptr<const c::name::cpp_name>, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::unique_ptr<c::name::cpp_name>, py::PostConv);
-      PyObject* Clif_PyObjFrom(c::name::cpp_name&&, py::PostConv);
+      PyObject* Clif_PyObjFrom(c::name::cpp_name*, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::shared_ptr<c::name::cpp_name>, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::shared_ptr<const c::name::cpp_name>, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::unique_ptr<c::name::cpp_name>, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(c::name::cpp_name&&, ::clif::py::PostConv);
       template<typename T>
-      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name*, py::PostConv) = delete;
+      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name*, ::clif::py::PostConv) = delete;
       template<typename T>
-      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name&, py::PostConv) = delete;
-    """))
+      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name&, ::clif::py::PostConv) = delete;
+    """),
+    )
 
   def testEnumType(self):
     t = types.EnumType('c::name::cpp_name', 'fq.py.path', 'Enum', 'clif::_Type')
     header = '\n'.join(t.GenHeader()) + '\n'
-    self.assertMultiLineEqual(header, textwrap.dedent("""\
+    self.assertMultiLineEqual(
+        header,
+        textwrap.dedent("""\
       // CLIF use `c::name::cpp_name` as fq.py.path
       bool Clif_PyObjAs(PyObject* input, c::name::cpp_name* output);
-      PyObject* Clif_PyObjFrom(const c::name::cpp_name&, py::PostConv);
-    """))
+      PyObject* Clif_PyObjFrom(const c::name::cpp_name&, ::clif::py::PostConv);
+    """),
+    )
 
   def testProtoType(self):
     t = types.ProtoType('c::cpp_name', 'fq.py.path', 'some.project.my_pb2')
     header = '\n'.join(t.GenHeader()) + '\n'
-    self.assertMultiLineEqual(header, textwrap.dedent("""\
+    self.assertMultiLineEqual(
+        header,
+        textwrap.dedent("""\
       // CLIF use `c::cpp_name` as fq.py.path
       bool Clif_PyObjAs(PyObject* input, c::cpp_name* output);
-      PyObject* Clif_PyObjFrom(const c::cpp_name&, py::PostConv);
+      PyObject* Clif_PyObjFrom(const c::cpp_name&, ::clif::py::PostConv);
       bool Clif_PyObjAs(PyObject*, std::unique_ptr<c::cpp_name>*);
-      PyObject* Clif_PyObjFrom(std::unique_ptr<const c::cpp_name>, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::shared_ptr<const c::cpp_name>, py::PostConv);
-    """))
+      PyObject* Clif_PyObjFrom(std::unique_ptr<const c::cpp_name>, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::shared_ptr<const c::cpp_name>, ::clif::py::PostConv);
+    """),
+    )
 
   def testProtoEnumType(self):
     c = types.ProtoEnumType('c::name::cpp_name', 'fq.py.path')
     header = '\n'.join(c.GenHeader()) + '\n'
-    self.assertMultiLineEqual(header, textwrap.dedent("""\
+    self.assertMultiLineEqual(
+        header,
+        textwrap.dedent("""\
       // CLIF use `c::name::cpp_name` as fq.py.path
       bool Clif_PyObjAs(PyObject* input, c::name::cpp_name* output);
-      PyObject* Clif_PyObjFrom(c::name::cpp_name, py::PostConv);
-    """))
+      PyObject* Clif_PyObjFrom(c::name::cpp_name, ::clif::py::PostConv);
+    """),
+    )
 
   def testCallableType(self):
     t = types.CallableType('cname::cpp_type', '(x:py)->None', 'lambda_Name_def')
     header = '\n'.join(t.GenHeader()) + '\n'
-    self.assertMultiLineEqual(header, textwrap.dedent("""\
+    self.assertMultiLineEqual(
+        header,
+        textwrap.dedent("""\
       // (x:py)->None
-      PyObject* Clif_PyObjFrom(cname::cpp_type, py::PostConv);
-    """))
+      PyObject* Clif_PyObjFrom(cname::cpp_type, ::clif::py::PostConv);
+    """),
+    )
 
   def testCapsuleType(self):
     t = types.CapsuleType('c::name::cpp_name', 'pyname')
     header = '\n'.join(t.GenHeader()) + '\n'
-    self.assertMultiLineEqual(header, textwrap.dedent("""\
+    self.assertMultiLineEqual(
+        header,
+        textwrap.dedent("""\
       // CLIF use `c::name::cpp_name*` as pyname
       bool Clif_PyObjAs(PyObject* input, c::name::cpp_name** output);
-      PyObject* Clif_PyObjFrom(const c::name::cpp_name*, py::PostConv);
-    """))
+      PyObject* Clif_PyObjFrom(const c::name::cpp_name*, ::clif::py::PostConv);
+    """),
+    )
 
 
 def _GenerateHeaderHelper(t_pp, t_ns, u_ns=None,
@@ -171,13 +195,16 @@ class NamespaceTest(absltest.TestCase):
   def testClass1Header(self):
     header = _GenerateHeaderHelper(t_pp='py.path', t_ns='c::name')
     optional_pyclif_cc_requirement = ""
-    expected = textwrap.dedent("""\
+    expected = (
+        textwrap.dedent("""\
       // This file was automatically generated by PyCLIF-C-API.
       // clif_matcher_argv0: "/fake/bin/clif_matcher"
       // clif_matcher_version_stamp: 123456789
       // source: fq/py/my.clif
 
-    """) + optional_pyclif_cc_requirement + textwrap.dedent("""\
+    """)
+        + optional_pyclif_cc_requirement
+        + textwrap.dedent("""\
       #include <memory>
       #include "absl/types/optional.h"
       #include "fq/my.h"
@@ -191,32 +218,36 @@ class NamespaceTest(absltest.TestCase):
       bool Clif_PyObjAs(PyObject* input, std::shared_ptr<c::name::cpp_name>* output);
       bool Clif_PyObjAs(PyObject* input, std::shared_ptr<const c::name::cpp_name>* output);
       bool Clif_PyObjAs(PyObject* input, std::unique_ptr<c::name::cpp_name>* output);
-      PyObject* Clif_PyObjFrom(c::name::cpp_name*, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::shared_ptr<c::name::cpp_name>, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::shared_ptr<const c::name::cpp_name>, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::unique_ptr<c::name::cpp_name>, py::PostConv);
+      PyObject* Clif_PyObjFrom(c::name::cpp_name*, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::shared_ptr<c::name::cpp_name>, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::shared_ptr<const c::name::cpp_name>, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::unique_ptr<c::name::cpp_name>, ::clif::py::PostConv);
       template<typename T>
-      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name*, py::PostConv) = delete;
+      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name*, ::clif::py::PostConv) = delete;
       template<typename T>
-      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name&, py::PostConv) = delete;
+      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name&, ::clif::py::PostConv) = delete;
 
       } }  // namespace c::name
 
       // CLIF init_module if (PyObject* m = PyImport_ImportModule("fq.py.path")) Py_DECREF(m);
       // CLIF init_module else goto err;
     """)
+    )
     self.assertMultiLineEqual(header, textwrap.dedent(expected))
 
   def testClassHeader(self):
     header = _GenerateHeaderHelper(t_pp='py.path.t', t_ns='c', u_ns='other')
     optional_pyclif_cc_requirement = ""
-    expected = textwrap.dedent("""\
+    expected = (
+        textwrap.dedent("""\
       // This file was automatically generated by PyCLIF-C-API.
       // clif_matcher_argv0: "/fake/bin/clif_matcher"
       // clif_matcher_version_stamp: 123456789
       // source: fq/py/my.clif
 
-    """) + optional_pyclif_cc_requirement + textwrap.dedent("""\
+    """)
+        + optional_pyclif_cc_requirement
+        + textwrap.dedent("""\
       #include <memory>
       #include "absl/types/optional.h"
       #include "fq/my.h"
@@ -230,14 +261,14 @@ class NamespaceTest(absltest.TestCase):
       bool Clif_PyObjAs(PyObject* input, std::shared_ptr<c::name::cpp_name>* output);
       bool Clif_PyObjAs(PyObject* input, std::shared_ptr<const c::name::cpp_name>* output);
       bool Clif_PyObjAs(PyObject* input, std::unique_ptr<c::name::cpp_name>* output);
-      PyObject* Clif_PyObjFrom(c::name::cpp_name*, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::shared_ptr<c::name::cpp_name>, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::shared_ptr<const c::name::cpp_name>, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::unique_ptr<c::name::cpp_name>, py::PostConv);
+      PyObject* Clif_PyObjFrom(c::name::cpp_name*, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::shared_ptr<c::name::cpp_name>, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::shared_ptr<const c::name::cpp_name>, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::unique_ptr<c::name::cpp_name>, ::clif::py::PostConv);
       template<typename T>
-      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name*, py::PostConv) = delete;
+      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name*, ::clif::py::PostConv) = delete;
       template<typename T>
-      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name&, py::PostConv) = delete;
+      typename std::enable_if<std::is_same<T, c::name::cpp_name>::value>::type Clif_PyObjFrom(const c::name::cpp_name&, ::clif::py::PostConv) = delete;
 
       }  // namespace c
 
@@ -249,20 +280,21 @@ class NamespaceTest(absltest.TestCase):
       bool Clif_PyObjAs(PyObject* input, std::shared_ptr<other::cpp_name>* output);
       bool Clif_PyObjAs(PyObject* input, std::shared_ptr<const other::cpp_name>* output);
       bool Clif_PyObjAs(PyObject* input, std::unique_ptr<other::cpp_name>* output);
-      PyObject* Clif_PyObjFrom(other::cpp_name*, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::shared_ptr<other::cpp_name>, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::shared_ptr<const other::cpp_name>, py::PostConv);
-      PyObject* Clif_PyObjFrom(std::unique_ptr<other::cpp_name>, py::PostConv);
+      PyObject* Clif_PyObjFrom(other::cpp_name*, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::shared_ptr<other::cpp_name>, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::shared_ptr<const other::cpp_name>, ::clif::py::PostConv);
+      PyObject* Clif_PyObjFrom(std::unique_ptr<other::cpp_name>, ::clif::py::PostConv);
       template<typename T>
-      typename std::enable_if<std::is_same<T, other::cpp_name>::value>::type Clif_PyObjFrom(const other::cpp_name*, py::PostConv) = delete;
+      typename std::enable_if<std::is_same<T, other::cpp_name>::value>::type Clif_PyObjFrom(const other::cpp_name*, ::clif::py::PostConv) = delete;
       template<typename T>
-      typename std::enable_if<std::is_same<T, other::cpp_name>::value>::type Clif_PyObjFrom(const other::cpp_name&, py::PostConv) = delete;
+      typename std::enable_if<std::is_same<T, other::cpp_name>::value>::type Clif_PyObjFrom(const other::cpp_name&, ::clif::py::PostConv) = delete;
 
       }  // namespace other
 
       // CLIF init_module if (PyObject* m = PyImport_ImportModule("fq.py.path")) Py_DECREF(m);
       // CLIF init_module else goto err;
     """)
+    )
     self.assertMultiLineEqual(header, textwrap.dedent(expected))
 
   def testOptionImportViaPythonLayer(self):
