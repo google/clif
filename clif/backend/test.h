@@ -20,6 +20,14 @@
 #define CLIF_BACKEND_TEST_H_
 
 #include <stdint.h>
+
+namespace std {
+struct destroying_delete_t {
+    explicit destroying_delete_t() = default;
+};
+inline constexpr destroying_delete_t destroying_delete{};
+}  // namespace std
+
 // These are all declared in the same file to make lookup inside the
 // TU complicated enough to be convincing.
 
@@ -105,6 +113,10 @@ class AbstractClass {
   virtual void Func() = 0;
 };
 
+class DestroyingDeleteClass {
+ public:
+  void operator delete(DestroyingDeleteClass*, std::destroying_delete_t);
+};
 
 class DerivedClass : public Class {
  public:
@@ -317,6 +329,7 @@ class ClassOverridesPureVirtual: public ClassPureVirtual {
 void SomeFunctionNotPureVirtual();
 void FuncAbstractParam(const ClassPureVirtual* x);
 void FuncAbstractParam(const AbstractClass& x);
+void FuncAbstractParam(const DestroyingDeleteClass& x);
 void FuncForwardDeclared(const Globally::Qualified::ForwardDecl* x);
 
 // tests to be sure we don't match a return in const param.

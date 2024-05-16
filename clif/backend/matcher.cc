@@ -1372,7 +1372,9 @@ void ClifMatcher::SetTypePropertiesHelper(clang::CXXRecordDecl* clang_decl,
       !ast_->DestructorIsAccessible(clang_decl)) {
     clif_decl->set_cpp_movable(false);
   }
-  if (clang_decl->isAbstract()) {
+  if (clang_decl->isAbstract() ||
+      std::any_of(clang_decl->method_begin(), clang_decl->method_end(),
+                  [](auto* md) { return md->isDestroyingOperatorDelete(); })) {
     clif_decl->set_cpp_abstract(true);
   }
   SetUniqueClassProperties(clang_decl, clif_decl);
