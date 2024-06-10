@@ -374,9 +374,9 @@ object or a property-accessed object of a container type (`list`, `dict`,
 is a copy of the C++ container and mutations to the object on Python side are
 not reflected in C++.
 
-To avoid such non-pythonic suprises, use the _unproperty_ feature to expose a
-container field to Python as getter and setter methods.  That way calling
-the _setter_ explicitly describes when to update the C++ field value.
+To avoid such non-pythonic surprises, use the *unproperty* feature to expose a
+container field to Python as getter and setter methods. That way calling the
+*setter* explicitly describes when to update the C++ field value.
 
 ## Wrapping Functions
 
