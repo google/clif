@@ -15,12 +15,14 @@
 #ifndef CLIF_PYBIND11_RUNTIME_H_
 #define CLIF_PYBIND11_RUNTIME_H_
 
+// pybind11 includes have to be at the very top, even before Python.h
 #include "third_party/pybind11/include/pybind11/smart_holder.h"
 #include "third_party/pybind11/include/pybind11/type_caster_pyobject_ptr.h"
 
+// Must be after pybind11 include.
+#include "clif/pybind11/status_return_override.h"
 #include "clif/python/stltypes.h"
 #include "third_party/pybind11_abseil/absl_casters.h"
-#include "util/task/python/clif/status_return_override.h"
 
 namespace clif {
 
