@@ -947,6 +947,11 @@ TEST_F(ClifMatcherTest, TestMatchSetTypeProperties) {
   EXPECT_TRUE(decl.class_().cpp_abstract());
   TestMatch(
       "decltype: CLASS class_ { "
+      "name { cpp_name: 'DestroyingDeleteSubclass' } "
+      "}", &decl);
+  EXPECT_TRUE(decl.class_().cpp_abstract());
+  TestMatch(
+      "decltype: CLASS class_ { "
       "name { cpp_name: 'PrivateDestructorClass' } "
       "}", &decl);
   EXPECT_FALSE(decl.class_().cpp_copyable());
@@ -982,6 +987,11 @@ TEST_F(ClifMatcherTest, TestCppAbstract) {
             "name { cpp_name: 'FuncAbstractParam' } "
             "params { type { lang_type: 'DestroyingDeleteClass' "
             "         cpp_type: 'DestroyingDeleteClass' } } }", &decl);
+  EXPECT_TRUE(decl.func().params(0).type().cpp_abstract());
+  TestMatch("decltype: FUNC func { "
+            "name { cpp_name: 'FuncAbstractParam' } "
+            "params { type { lang_type: 'DestroyingDeleteSubclass' "
+            "         cpp_type: 'DestroyingDeleteSubclass' } } }", &decl);
   EXPECT_TRUE(decl.func().params(0).type().cpp_abstract());
 }
 

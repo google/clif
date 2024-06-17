@@ -1346,6 +1346,22 @@ void ClifMatcher::SetTypeProperties(QualType clang_type,
   }
 }
 
+static bool HasDestroyingDelete(clang::CXXRecordDecl* decl) {
+  for (auto* method : decl->methods()) {
+    if (method->isDestroyingOperatorDelete()) return true;
+  }
+  for (auto bases : {decl->bases(), decl->vbases()}) {
+    for (auto& base : bases) {
+      if (auto* base_class = base.getType()->getAsCXXRecordDecl()) {
+        if (HasDestroyingDelete(base_class)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 template <class T>
 void ClifMatcher::SetTypePropertiesHelper(clang::CXXRecordDecl* clang_decl,
                                           T* clif_decl) const {
@@ -1373,8 +1389,7 @@ void ClifMatcher::SetTypePropertiesHelper(clang::CXXRecordDecl* clang_decl,
     clif_decl->set_cpp_movable(false);
   }
   if (clang_decl->isAbstract() ||
-      std::any_of(clang_decl->method_begin(), clang_decl->method_end(),
-                  [](auto* md) { return md->isDestroyingOperatorDelete(); })) {
+      (!clang_decl->isEffectivelyFinal() && HasDestroyingDelete(clang_decl))) {
     clif_decl->set_cpp_abstract(true);
   }
   SetUniqueClassProperties(clang_decl, clif_decl);

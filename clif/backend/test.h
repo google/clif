@@ -118,6 +118,8 @@ class DestroyingDeleteClass {
   void operator delete(DestroyingDeleteClass*, std::destroying_delete_t);
 };
 
+class DestroyingDeleteSubclass : DestroyingDeleteClass {};
+
 class DerivedClass : public Class {
  public:
   DerivedClass() { }
