@@ -79,7 +79,7 @@ jobs:
 
     - name: Create Docker Image
       id: docker_build
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
           tags: localhost:5000/clif
           push: true
