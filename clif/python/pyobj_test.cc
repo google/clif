@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "clif/python/pyobj.h"
+#include <Python.h>
 #include "gtest/gtest.h"
 
 namespace clif {
@@ -34,7 +35,7 @@ TEST_F(PyObjectTest, NullCtor) {
 }
 
 TEST_F(PyObjectTest, Equality) {
-  PyObject* obj = PyTuple_New(0);
+  PyObject* obj = PyList_New(0);
   py::Object a(obj);
   EXPECT_EQ(a, obj);
   EXPECT_NE(a, nullptr);
@@ -46,7 +47,7 @@ TEST_F(PyObjectTest, Equality) {
 }
 
 TEST_F(PyObjectTest, CtorAndDtorManageRefcount) {
-  PyObject* obj = PyTuple_New(0);
+  PyObject* obj = PyList_New(0);
   int initial_ref_count = Py_REFCNT(obj);
 
   {
@@ -58,7 +59,7 @@ TEST_F(PyObjectTest, CtorAndDtorManageRefcount) {
 }
 
 TEST_F(PyObjectTest, CopyCtorIncrements) {
-  PyObject* obj = PyTuple_New(0);
+  PyObject* obj = PyList_New(0);
   int initial_ref_count = Py_REFCNT(obj);
 
   {
@@ -77,7 +78,7 @@ TEST_F(PyObjectTest, CopyCtorIncrements) {
 }
 
 TEST_F(PyObjectTest, CopyIncrements) {
-  PyObject* obj = PyTuple_New(0);
+  PyObject* obj = PyList_New(0);
   int initial_ref_count = Py_REFCNT(obj);
 
   {
@@ -97,7 +98,7 @@ TEST_F(PyObjectTest, CopyIncrements) {
 }
 
 TEST_F(PyObjectTest, MoveCtorDoesNotIncrement) {
-  PyObject* obj = PyTuple_New(0);
+  PyObject* obj = PyList_New(0);
   int initial_ref_count = Py_REFCNT(obj);
 
   {
@@ -114,7 +115,7 @@ TEST_F(PyObjectTest, MoveCtorDoesNotIncrement) {
 }
 
 TEST_F(PyObjectTest, MoveDoesNotIncrement) {
-  PyObject* obj = PyTuple_New(0);
+  PyObject* obj = PyList_New(0);
   int initial_ref_count = Py_REFCNT(obj);
 
   {
@@ -132,32 +133,36 @@ TEST_F(PyObjectTest, MoveDoesNotIncrement) {
 }
 
 TEST_F(PyObjectTest, SwapDoesNotIncrement) {
-  PyObject* obj1 = PyTuple_New(0);
+  PyObject* obj1 = PyList_New(0);
   PyObject* obj2 = PyList_New(0);
   int initial_ref_count1 = Py_REFCNT(obj1);
   int initial_ref_count2 = Py_REFCNT(obj2);
-  ASSERT_NE(initial_ref_count1, initial_ref_count2);
+  EXPECT_EQ(initial_ref_count1, initial_ref_count2);
+  // Make refcount different to test swapping.
+  Py_INCREF(obj2);
+  EXPECT_NE(Py_REFCNT(obj1), Py_REFCNT(obj2));
 
   py::Object scoped1(obj1);
   py::Object scoped2(obj2);
   EXPECT_EQ(initial_ref_count1 + 1, Py_REFCNT(obj1));
-  EXPECT_EQ(initial_ref_count2 + 1, Py_REFCNT(obj2));
+  EXPECT_EQ(initial_ref_count2 + 2, Py_REFCNT(obj2));
 
   using std::swap;  // go/using-std-swap
   swap(scoped1, scoped2);
   EXPECT_EQ(scoped2, obj1);
   EXPECT_EQ(scoped1, obj2);
   EXPECT_EQ(initial_ref_count1 + 1, Py_REFCNT(obj1));
-  EXPECT_EQ(initial_ref_count2 + 1, Py_REFCNT(obj2));
+  EXPECT_EQ(initial_ref_count2 + 2, Py_REFCNT(obj2));
 
   Py_DECREF(obj1);
+  Py_DECREF(obj2);
   Py_DECREF(obj2);
   EXPECT_GT(Py_REFCNT(obj1), 0);
   EXPECT_GT(Py_REFCNT(obj2), 0);
 }
 
 TEST_F(PyObjectTest, ReleaseDoesNotDescrement) {
-  PyObject* obj = PyTuple_New(0);
+  PyObject* obj = PyList_New(0);
   int initial_ref_count = Py_REFCNT(obj);
 
   py::Object scoped(obj);
@@ -171,7 +176,7 @@ TEST_F(PyObjectTest, ReleaseDoesNotDescrement) {
 }
 
 TEST_F(PyObjectTest, CopyDoesNotLeakOldValue) {
-  PyObject* obj = PyTuple_New(0);
+  PyObject* obj = PyList_New(0);
   int initial_ref_count = Py_REFCNT(obj);
 
   py::Object scoped(obj);
@@ -181,7 +186,7 @@ TEST_F(PyObjectTest, CopyDoesNotLeakOldValue) {
 }
 
 TEST_F(PyObjectTest, AssignFromPyDoesNotLeakOldValue) {
-  PyObject* obj = PyTuple_New(0);
+  PyObject* obj = PyList_New(0);
   int initial_ref_count = Py_REFCNT(obj);
 
   py::Object scoped(obj);

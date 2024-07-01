@@ -20,7 +20,7 @@ from clif.testing.python import top_level_pass
 class TopLevelPassTest(absltest.TestCase):
 
   def testEmptyModule(self):
-    self.assertRegexpMatches(  # pylint: disable=deprecated-method
+    self.assertRegex(
         top_level_pass.__doc__,
         'CLIF-generated module for .*top_level_pass.clif')
     self.assertIn(top_level_pass.__pyclif_codegen_mode__, ('c_api', 'pybind11'))
