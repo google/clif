@@ -33,9 +33,9 @@ PyObject* Clif_PyObjFrom(absl::string_view c, const py::PostConv& pc) {
 #endif
 
 PyObject* Clif_PyObjFrom(const absl::Cord& c, const py::PostConv& pc) {
-  std::string s(c);
-  PyObject* py = PyBytes_FromStringAndSize(s.c_str(), s.size());
+  PyObject* py = PyBytes_FromStringAndSize(nullptr, c.size());
   if (!py) return nullptr;
+  c.CopyToArray(PyBytes_AS_STRING(py));
   return pc.Apply(py);
 }
 
