@@ -13,8 +13,16 @@
 // limitations under the License.
 
 #include "clif/python/types.h"
+
+#include <Python.h>
+
 #include <climits>
+#include <cstddef>
+
+#include "absl/log/check.h"
 #include "absl/numeric/int128.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/string_view.h"
 
 namespace clif {
 
@@ -358,7 +366,6 @@ namespace py {
 // bytes/unicode
 template<typename C>
 bool ObjToStr(PyObject* py, C copy) {
-#if PY_VERSION_HEX >= 0x03030000
   const char* data;
   Py_ssize_t length;
   if (PyUnicode_Check(py)) {
@@ -373,20 +380,6 @@ bool ObjToStr(PyObject* py, C copy) {
   }
   copy(data, length);
   return true;
-#else
-  bool decref = false;
-  if (PyUnicode_Check(py)) {
-    py = PyUnicode_AsUTF8String(py);
-    if (!py) return false;
-    decref = true;
-  } else if (!PyBytes_Check(py)) {
-    PyErr_SetString(PyExc_TypeError, "expecting str");
-    return false;
-  }
-  copy(PyBytes_AS_STRING(py), PyBytes_GET_SIZE(py));
-  if (decref) Py_DECREF(py);
-  return true;
-#endif
 }
 }  // namespace py
 
@@ -436,8 +429,14 @@ bool Clif_PyObjAs(PyObject* p, absl::string_view* c) {
 
 bool Clif_PyObjAs(PyObject* p, absl::Cord* c) {
   CHECK(c != nullptr);
-  return py::ObjToStr(p, [c](const char* data, size_t length) {
-    *c = absl::string_view(data, length);
+  return py::ObjToStr(p, [p, c](const char* data, size_t length) {
+    Py_INCREF(p);
+    *c = absl::MakeCordFromExternal(
+        absl::string_view(data, length), [p](absl::string_view) {
+          PyGILState_STATE gstate = PyGILState_Ensure();
+          Py_DECREF(p);
+          PyGILState_Release(gstate);
+        });
   });
 }
 
