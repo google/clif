@@ -17,6 +17,16 @@ namespace clif_pybind11 {
 
 absl::Status StatusFromErrorAlreadySet(pybind11::error_already_set& e);
 
+#if defined(PYBIND11_HAS_RETURN_VALUE_POLICY_PACK)
+using rvp_or_rvpp = pybind11::return_value_policy_pack;
+#define CLIF_PYBIND11_OVERLOAD_CALL_WITH_POLICIES(rvpp, argsddd) \
+  overload.call_with_policies(rvpp, argsddd)
+#else
+using rvp_or_rvpp = pybind11::return_value_policy;
+#define CLIF_PYBIND11_OVERLOAD_CALL_WITH_POLICIES(rvpp, argsddd) \
+  overload(argsddd)
+#endif
+
 template<typename U>
 pybind11::function GetOverload(
     const U* this_ptr, const std::string& function_name) {
@@ -28,7 +38,7 @@ pybind11::function GetOverload(
 template <typename U, typename... Ts>
 absl::Status CatchErrorAlreadySetAndReturnStatus(
     const U* this_ptr, const std::string& function_name,
-    const pybind11::return_value_policy_pack rvpp, Ts... args) {
+    const rvp_or_rvpp& rvpp, Ts... args) {
   try {
     pybind11::function overload = GetOverload(this_ptr, function_name);
     if (!overload) {
@@ -36,7 +46,8 @@ absl::Status CatchErrorAlreadySetAndReturnStatus(
                           "No Python overload is defined for " + function_name +
                           ".");
     }
-    overload.call_with_policies(rvpp, args...); /* Ignoring return value. */
+    CLIF_PYBIND11_OVERLOAD_CALL_WITH_POLICIES(
+        rvpp, args...); /* Ignoring return value. */
     return absl::OkStatus();
   } catch (pybind11::error_already_set &e) {
     return StatusFromErrorAlreadySet(e);
@@ -46,7 +57,7 @@ absl::Status CatchErrorAlreadySetAndReturnStatus(
 template <typename StatusOrPayload, typename U, typename... Ts>
 StatusOrPayload CatchErrorAlreadySetAndReturnStatusOr(
     const U* this_ptr, const std::string& function_name,
-    const pybind11::return_value_policy_pack rvpp, Ts... args) {
+    const rvp_or_rvpp& rvpp, Ts... args) {
   try {
     pybind11::function overload = GetOverload(this_ptr, function_name);
     if (!overload) {
@@ -54,7 +65,7 @@ StatusOrPayload CatchErrorAlreadySetAndReturnStatusOr(
                           "No Python overload is defined for " + function_name +
                           ".");
     }
-    auto o = overload.call_with_policies(rvpp, args...);
+    auto o = CLIF_PYBIND11_OVERLOAD_CALL_WITH_POLICIES(rvpp, args...);
     return o.template cast<StatusOrPayload>();
   } catch (pybind11::error_already_set &e) {
     return StatusFromErrorAlreadySet(e);

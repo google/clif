@@ -54,6 +54,11 @@ struct type_caster<clif::CapsuleWrapper<T>> {
       value = clif::CapsuleWrapper<T>(reinterpret_borrow<capsule>(src.ptr()));
       return true;
     }
+// This #if condition and the code below will need to be adapted, depending on
+// the future of the PyCLIF-pybind11 unification.
+#if defined(PYBIND11_HAS_RETURN_VALUE_POLICY_CLIF_AUTOMATIC)
+    // The implementation was in smart_holder_type_casters.h before it was
+    // removed with https://github.com/pybind/pybind11/pull/5257
     void* void_ptr_from_void_ptr_capsule
         = try_as_void_ptr_capsule_get_pointer(src, typeid(T).name());
     if (void_ptr_from_void_ptr_capsule) {
@@ -61,6 +66,7 @@ struct type_caster<clif::CapsuleWrapper<T>> {
         static_cast<T>(void_ptr_from_void_ptr_capsule));
       return true;
     }
+#endif
     return false;
   }
 
