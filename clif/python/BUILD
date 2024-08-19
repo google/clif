@@ -52,7 +52,9 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":pickle_support_lib",
+        "//net/proto2/proto:descriptor_cc_proto",
         "//third_party/protobuf/io",
+        "//third_party/pybind11_abseil/compat:py_base_utilities",
         "@com_google_absl//absl/base:config",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/log",
