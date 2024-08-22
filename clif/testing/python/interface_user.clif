@@ -1,0 +1,34 @@
+# This module is intended to reference types declared in another CLIF file that
+# use the `interface` and `implements` keywords to verify that CLIF can
+# properly parse generated headers that contain generated macros built from
+# those uses of the keywords.
+
+from "clif/testing/python/interface_declarer_clif.h" import *
+
+from clif.testing.python.interface_declarer import ValueContainerOfInt
+from clif.testing.python.interface_declarer import ValueContainerOfFloat
+
+from "clif/testing/interface_user.h":
+  namespace `clif_testing_interface_user`:
+
+    def `DoubleValue` as DoubleIntValue(
+      value_container: ValueContainerOfInt
+    ) -> ValueContainerOfInt:
+      """Returns a new container that holds double the value of the given container."""
+
+    def `DoubleValue` as DoubleFloatValue(
+      value_container: ValueContainerOfFloat
+    ) -> ValueContainerOfFloat:
+      """Returns a new container that holds double the value of the given container."""
+
+    interface DoublingContainerInterface<T>:
+      def __init__(self, value: T)
+
+      def DoubleSelf(self) -> None:
+        """Doubles the value stored in this container."""
+
+    class `DoublingContainer<int>` as DoublingContainerOfInt(ValueContainerOfInt):
+      implements DoublingContainerInterface<int>
+
+    class `DoublingContainer<double>` as DoublingContainerOfFloat(ValueContainerOfFloat):
+      implements DoublingContainerInterface<float>

@@ -40,7 +40,7 @@ CLIF_USE = re.compile(
     r' +`(?P<cname>.+)` +as +(?P<pyname>[\w.]+)'
 )
 CLIF_INIT = re.compile(r'// *CLIF:? +init_module +(?P<cpp_statement>.+)')
-CLIF_MACRO = re.compile(r'// *CLIF:? +macro +(?P<name>.+) +(?P<def>.+)$')
+CLIF_MACRO = re.compile(r'// *CLIF:? +macro +(?P<name>.+?) +(?P<def>.+)$')
 CLIF_INCLUDE = re.compile(r'// *CLIF:? +include +"(?P<path>[^"]+)"')
 KEEP_GIL_DECORATOR = 'do_not_release_gil'
 

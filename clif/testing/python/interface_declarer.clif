@@ -1,0 +1,20 @@
+# This module is intended to declare types that use the `interface` and
+# `implements` keywords. It is intended to be used in conjunction with
+# `interface_user.clif`.
+
+from "clif/testing/interface_declarer.h":
+  namespace `clif_testing_interface_declarer`:
+    interface ValueContainerInterface<T>:
+      def __init__(self, value: T)
+
+      def GetValue(self) -> T:
+        """Returns the value stored in this container."""
+
+      def SetValue(self, value: T) -> None:
+        """Sets the value stored in this container."""
+
+    class `ValueContainer<int>` as ValueContainerOfInt:
+      implements ValueContainerInterface<int>
+
+    class `ValueContainer<double>` as ValueContainerOfFloat:
+      implements ValueContainerInterface<float>
