@@ -1,6 +1,17 @@
 # C++ Language Interface Foundation (CLIF)
 
-![CI](https://github.com/google/clif/workflows/CI/badge.svg?branch=main&event=push)
+```
+  ██╗    ██╗ █████╗ ██████╗ ███╗   ██╗██╗███╗   ██╗ ██████╗
+  ██║    ██║██╔══██╗██╔══██╗████╗  ██║██║████╗  ██║██╔════╝
+  ██║ █╗ ██║███████║██████╔╝██╔██╗ ██║██║██╔██╗ ██║██║  ███╗
+  ██║███╗██║██╔══██║██╔══██╗██║╚██╗██║██║██║╚██╗██║██║   ██║
+  ╚███╔███╔╝██║  ██║██║  ██║██║ ╚████║██║██║ ╚████║╚██████╔╝
+   ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═══╝ ╚═════╝
+```
+
+## THIS REPO IS NO LONGER UPDATED — DO NOT USE
+
+## STALE INFORMATION FOLLOWS
 
 PyCLIF defines a C++ API to be wrapped via a concise
 *What You See Is What You Get* interface file
