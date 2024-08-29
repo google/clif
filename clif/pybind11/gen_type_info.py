@@ -153,7 +153,8 @@ class ClassType(BaseType):
     yield I + 'try {'
     yield I + I + (f'*output = pybind11::cast<{self.cpp_name}*>'
                    '(pybind11::handle(input));')
-    yield I + '} catch (pybind11::cast_error) {'
+    yield I + '} catch (const pybind11::cast_error& e) {'
+    yield I + I + 'PyErr_SetString(PyExc_TypeError, e.what());'
     yield I + I + 'return false;'
     yield I + '}'
     yield I + 'return true;'
@@ -164,7 +165,8 @@ class ClassType(BaseType):
     yield I + 'try {'
     yield I + I + (f'*output = pybind11::cast<std::shared_ptr<{self.cpp_name}>>'
                    '(pybind11::handle(input));')
-    yield I + '} catch (pybind11::cast_error) {'
+    yield I + '} catch (const pybind11::cast_error& e) {'
+    yield I + I + 'PyErr_SetString(PyExc_TypeError, e.what());'
     yield I + I + 'return false;'
     yield I + '}'
     yield I + 'return true;'
@@ -176,7 +178,8 @@ class ClassType(BaseType):
       yield I + 'try {'
       yield I + I + ('*output = pybind11::cast<std::unique_ptr'
                      f'<{self.cpp_name}>>(pybind11::handle(input));')
-      yield I + '} catch (pybind11::cast_error) {'
+      yield I + '} catch (const pybind11::cast_error& e) {'
+      yield I + I + 'PyErr_SetString(PyExc_TypeError, e.what());'
       yield I + I + 'return false;'
       yield I + '}'
       yield I + 'return true;'
@@ -188,7 +191,8 @@ class ClassType(BaseType):
       yield I + I + (f'{self.cpp_name} output_ = pybind11::cast<'
                      f'{self.cpp_name}>(pybind11::handle(input));')
       yield I + I + '*output = output_;'
-      yield I + '} catch (pybind11::cast_error) {'
+      yield I + '} catch (const pybind11::cast_error& e) {'
+      yield I + I + 'PyErr_SetString(PyExc_TypeError, e.what());'
       yield I + I + 'return false;'
       yield I + '}'
       yield I + 'return true;'
@@ -218,7 +222,8 @@ class EnumType(BaseType):
     yield I + 'try {'
     yield I + I + (f'*output = pybind11::cast<{self.cpp_name}>'
                    '(pybind11::handle(input));')
-    yield I + '} catch (pybind11::cast_error) {'
+    yield I + '} catch (const pybind11::cast_error& e) {'
+    yield I + I + 'PyErr_SetString(PyExc_TypeError, e.what());'
     yield I + I + 'return false;'
     yield I + '}'
     yield I + 'return true;'
@@ -272,7 +277,8 @@ class ProtoType(BaseType):
     yield I + 'try {'
     yield I + I + (f'*output = pybind11::cast<{self.cpp_name}>'
                    '(pybind11::handle(input));')
-    yield I + '} catch (pybind11::cast_error) {'
+    yield I + '} catch (const pybind11::cast_error& e) {'
+    yield I + I + 'PyErr_SetString(PyExc_TypeError, e.what());'
     yield I + I + 'return false;'
     yield I + '}'
     yield I + 'return true;'
@@ -283,7 +289,8 @@ class ProtoType(BaseType):
     yield I + 'try {'
     yield I + I + ('*output = pybind11::cast<std::unique_ptr'
                    f'<{self.cpp_name}>>(pybind11::handle(input));')
-    yield I + '} catch (pybind11::cast_error) {'
+    yield I + '} catch (const pybind11::cast_error& e) {'
+    yield I + I + 'PyErr_SetString(PyExc_TypeError, e.what());'
     yield I + I + 'return false;'
     yield I + '}'
     yield I + 'return true;'
@@ -311,7 +318,8 @@ class ProtoEnumType(BaseType):
     yield I + 'try {'
     yield I + I + (f'*output = pybind11::cast<{self.cpp_name}>'
                    '(pybind11::handle(input));')
-    yield I + '} catch (pybind11::cast_error) {'
+    yield I + '} catch (const pybind11::cast_error& e) {'
+    yield I + I + 'PyErr_SetString(PyExc_TypeError, e.what());'
     yield I + I + 'return false;'
     yield I + '}'
     yield I + 'return true;'
