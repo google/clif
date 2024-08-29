@@ -402,19 +402,27 @@ def generate_py_args(func_decl: ast_pb2.FuncDecl,
   return ', '.join(params_list)
 
 
+def _get_noconvert(param: ast_pb2.ParamDecl):
+  if param.type.HasField('callable'):
+    return '.noconvert()'
+  return ''
+
+
 def _generate_py_arg_with_default(
     param: ast_pb2.ParamDecl, return_value_policy_pack: str
 ) -> str:
   """Generate `pybind11::arg` for parameters with default value."""
+  noconvert = _get_noconvert(param)
   if return_value_policy_pack:
     if param.default_value == 'nullptr':
       return (
-          f'pybind11::arg("{param.name.cpp_name}")'
-          f'.policies({return_value_policy_pack}) = {param.default_value}'
+          f'pybind11::arg("{param.name.cpp_name}"){noconvert}'
+          f'.policies({return_value_policy_pack}) = '
+          f'{param.default_value}'
       )
     else:
       return (
-          f'pybind11::arg("{param.name.cpp_name}")'
+          f'pybind11::arg("{param.name.cpp_name}"){noconvert}'
           f'.policies({return_value_policy_pack}) = '
           f'static_cast<{param.type.cpp_type}>({param.default_value})'
       )
@@ -422,13 +430,14 @@ def _generate_py_arg_with_default(
     if param.default_value == 'nullptr':
       if param.type.cpp_type == _CPP_TYPE_PYOBJECT_PTR_FROM_MATCHER:
         return (
-            f'pybind11::arg("{param.name.cpp_name}") ='
-            ' pybind11::nullptr_default_arg()'
+            f'pybind11::arg("{param.name.cpp_name}"){noconvert} = '
+            'pybind11::nullptr_default_arg()'
         )
-      return f'pybind11::arg("{param.name.cpp_name}") = {param.default_value}'
+      return (f'pybind11::arg("{param.name.cpp_name}"){noconvert} = '
+              f'{param.default_value}')
     else:
       return (
-          f'pybind11::arg("{param.name.cpp_name}") = '
+          f'pybind11::arg("{param.name.cpp_name}"){noconvert} = '
           f'static_cast<{param.type.cpp_type}>({param.default_value})'
       )
 
@@ -436,13 +445,12 @@ def _generate_py_arg_with_default(
 def _generate_py_arg_without_default(
     param: ast_pb2.ParamDecl, return_value_policy_pack: str
 ) -> str:
+  noconvert = _get_noconvert(param)
   if return_value_policy_pack:
-    return (
-        f'pybind11::arg("{param.name.cpp_name}")'
-        f'.policies({return_value_policy_pack})'
-    )
+    return (f'pybind11::arg("{param.name.cpp_name}"){noconvert}'
+            f'.policies({return_value_policy_pack})')
   else:
-    return f'pybind11::arg("{param.name.cpp_name}")'
+    return f'pybind11::arg("{param.name.cpp_name}{noconvert}")'
 
 
 def _generate_return_value_policy_pack_for_py_arg(

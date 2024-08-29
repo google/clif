@@ -112,6 +112,10 @@ class CallbackTest(parameterized.TestCase):
     self.assertIsInstance(res, bytes)
     self.assertEqual(res, b'abcd')
 
+  def testPassNoneAsCallback(self):
+    with self.assertRaises(TypeError):
+      callback.LambdaCallback(None)
+
   def testPyObjectCallback(self):
     res = callback.PyObjectCallback(StringCallback)
     self.assertIsInstance(res, str)
