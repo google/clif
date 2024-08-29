@@ -27,7 +27,9 @@ def generate_from(class_name: str, const_decl: ast_pb2.ConstDecl):
   # Legacy CLIF ignores postconversion for clif::char_ptr.
   if (function_lib.is_bytes_type(const_decl.type)
       and const_decl.type.cpp_type != '::clif::char_ptr'):
-    return_value_policy = ', py::return_value_policy::_return_as_bytes'
-  yield I + (f'{class_name}.attr("{const_decl.name.native}") = '
-             f'py::cast(static_cast<{const_decl.type.cpp_type}>('
-             f'{const_decl.name.cpp_name}){return_value_policy});')
+    return_value_policy = ', pybind11::return_value_policy::_return_as_bytes'
+  yield I + (
+      f'{class_name}.attr("{const_decl.name.native}") = '
+      f'pybind11::cast(static_cast<{const_decl.type.cpp_type}>('
+      f'{const_decl.name.cpp_name}){return_value_policy});'
+  )

@@ -37,13 +37,13 @@ def generate_from(
     decl: ast_pb2.Decl, superclass_name: str,
     trampoline_class_names: Set[str], codegen_info: utils.CodeGenInfo,
 ) -> Generator[str, None, None]:
-  """Generates a complete py::class_<>.
+  """Generates a complete pybind11::class_<>.
 
   Args:
     decl: Class declaration in proto format.
     superclass_name: String name of the superclass.
-    trampoline_class_names: A Set of class names whose member functions
-      will be overriden in Python.
+    trampoline_class_names: A Set of class names whose member functions will be
+      overriden in Python.
     codegen_info: The information needed to generate pybind11 code.
 
   Yields:
@@ -57,7 +57,7 @@ def generate_from(
       namespace = '::'.join(namespaces[:i + 1])
       yield I + I + f'using namespace ::{namespace};'
   class_name = f'{class_decl.name.native}_class'
-  definition = f'py::classh<{class_decl.name.cpp_name}'
+  definition = f'pybind11::classh<{class_decl.name.cpp_name}'
   implicit_upcast_bases = []
   if not class_decl.suppress_upcasts:
     for base in class_decl.bases:
@@ -94,8 +94,8 @@ def generate_from(
   if class_decl.HasField('docstring'):
     definition += f', {function_lib.generate_docstring(class_decl.docstring)}'
 
-  # If we generate `py::dynamic_attr()` for the base class, we also need to
-  # generate `py::dynamic_attr()` for the derived class.
+  # If we generate `pybind11::dynamic_attr()` for the base class, we also need
+  # to generate `pybind11::dynamic_attr()` for the derived class.
   enable_instance_dict = class_decl.enable_instance_dict
   for base in class_decl.bases:
     if (base.HasField('cpp_canonical_type') and
@@ -103,14 +103,14 @@ def generate_from(
       enable_instance_dict = True
       break
   if _USE_PYTYPE_TYPE_AS_METACLASS:
-    definition += ', py::metaclass((PyObject*) &PyType_Type)'
-  definition += ', py::release_gil_before_calling_cpp_dtor()'
+    definition += ', pybind11::metaclass((PyObject*) &PyType_Type)'
+  definition += ', pybind11::release_gil_before_calling_cpp_dtor()'
   if mi_bases:
-    definition += ', py::multiple_inheritance()'
+    definition += ', pybind11::multiple_inheritance()'
   if enable_instance_dict:
-    definition += ', py::dynamic_attr()'
+    definition += ', pybind11::dynamic_attr()'
   if class_decl.final:
-    definition += ', py::is_final()'
+    definition += ', pybind11::is_final()'
   definition += ');'
   yield I + I + definition
 
@@ -172,7 +172,7 @@ def generate_from(
 
   if (not ctor_defined and class_decl.cpp_has_def_ctor and
       (not class_decl.cpp_abstract or trampoline_generated)):
-    yield I + I + f'{class_name}.def(py::init<>());'
+    yield I + I + f'{class_name}.def(pybind11::init<>());'
 
   for base in implicit_upcast_bases:
     mangled = legacy_types.Mangle(base.cpp_canonical_type)
@@ -180,13 +180,15 @@ def generate_from(
     yield I2 + f'{class_name}.def('
     yield I2 + I2 + f'"as_{mangled}",'
     yield I2 + I2 + f'[]({class_decl.name.cpp_name}* self) {{'
-    yield I2 + I2 + I2 + 'return py::capsule(static_cast<void *>(self));'
+    yield I2 + I2 + I2 + 'return pybind11::capsule(static_cast<void *>(self));'
     yield I2 + I2 + '}'
     yield I2 + ');'
 
   if not reduce_or_reduce_ex_defined:
-    yield I + I + (f'{class_name}.def("__reduce_ex__",' +
-                   ' ::clif_pybind11::ReduceExImpl, py::arg("protocol")=-1);')
+    yield I + I + (
+        f'{class_name}.def("__reduce_ex__", ::clif_pybind11::ReduceExImpl,'
+        ' pybind11::arg("protocol")=-1);'
+    )
 
   yield I + '}'
 
@@ -196,11 +198,12 @@ def _generate_iterator(
 ) -> Generator[str, None, None]:
   template_param = ''
   if function_lib.has_bytes_return(func_decl):
-    template_param = '<py::return_value_policy::_return_as_bytes>'
+    template_param = '<pybind11::return_value_policy::_return_as_bytes>'
   yield (
-      f'{class_name}.def("__iter__", []({class_decl.name.cpp_name} &s)'
-      f'{{ return py::make_iterator{template_param}(s.begin(), s.end()); }}, '
-      'py::keep_alive<0, 1>());')
+      f'{class_name}.def("__iter__", []({class_decl.name.cpp_name} &s) {{'
+      f' return pybind11::make_iterator{template_param}(s.begin(), s.end());'
+      ' }, pybind11::keep_alive<0, 1>());'
+  )
 
 
 def _generate_constructor(
@@ -280,7 +283,7 @@ def _generate_constructor_overload(
       func_decl, release_gil=False,
       first_unknown_default_index=first_unknown_default_index)
   if func_decl.name.native == '__init__' and func_decl.is_extend_method:
-    yield f'{class_name}.def(py::init([]({params_with_types}) {{'
+    yield f'{class_name}.def(pybind11::init([]({params_with_types}) {{'
     if function_lib.unknown_default_argument_needs_non_default_value(
         params_list, first_unknown_default_index, first_unknown_default_param):
       yield I + function_lib.generate_value_error_for_unknown_default_param(
@@ -291,7 +294,7 @@ def _generate_constructor_overload(
         yield from p.preprocess()
       func_keeps_gil = function_lib.func_keeps_gil(func_decl)
       if not func_keeps_gil:
-        yield I + 'py::gil_scoped_release release_gil;'
+        yield I + 'pybind11::gil_scoped_release release_gil;'
       yield I + f'return {func_decl.name.cpp_name}({params});'
     yield f'}}), {function_suffix}'
 
@@ -299,7 +302,7 @@ def _generate_constructor_overload(
     cpp_name = class_decl.name.cpp_name
     if trampoline_generated:
       cpp_name = utils.trampoline_name(class_decl)
-    yield f'{class_name}.def(py::init([]({params_with_types}) {{'
+    yield f'{class_name}.def(pybind11::init([]({params_with_types}) {{'
     if function_lib.unknown_default_argument_needs_non_default_value(
         params_list, first_unknown_default_index, first_unknown_default_param):
       yield I + function_lib.generate_value_error_for_unknown_default_param(
@@ -310,7 +313,7 @@ def _generate_constructor_overload(
         yield from p.preprocess()
       func_keeps_gil = function_lib.func_keeps_gil(func_decl)
       if not func_keeps_gil and params_with_types:
-        yield I + 'py::gil_scoped_release release_gil;'
+        yield I + 'pybind11::gil_scoped_release release_gil;'
       yield I + (f'return std::make_unique<{cpp_name}>'
                  f'({params}).release();')
     yield f'}}), {function_suffix}'
@@ -328,7 +331,7 @@ def _generate_constructor_overload(
         yield from p.preprocess()
       func_keeps_gil = function_lib.func_keeps_gil(func_decl)
       if not func_keeps_gil:
-        yield I + 'py::gil_scoped_release release_gil;'
+        yield I + 'pybind11::gil_scoped_release release_gil;'
       yield I + (f'return std::make_unique<{class_decl.name.cpp_name}>'
                  f'({params});')
     yield f'}}, {function_suffix}'

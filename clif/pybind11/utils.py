@@ -33,9 +33,10 @@ class CodeGenInfo:
   # Is type caster of `absl::Status` required?
   requires_status: bool
 
-  # What C++ types do we need to generate `py::dynamic_attr()`? This is needed
-  # because if we generate `py::dynamic_attr()` for the base class, we also need
-  # to generate `py::dynamic_attr()` for the derived class.
+  # What C++ types do we need to generate `pybind11::dynamic_attr()`?
+  # This is needed because if we generate `pybind11::dynamic_attr()` for the
+  # base class, we also need to generate `pybind11::dynamic_attr()` for the
+  # derived class.
   dynamic_attr_types: Set[str]
 
   # Dict[Python Name, Fully qualified Python name]

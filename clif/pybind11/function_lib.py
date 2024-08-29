@@ -51,7 +51,7 @@ class Parameter:
                     ctype.startswith('::std::shared_ptr'))
     self.is_ptr = ptype.cpp_raw_pointer or is_smart_ptr
     if is_self_param:
-      self.cpp_type = 'py::object'
+      self.cpp_type = 'pybind11::object'
       self.gen_name = f'{param_name}_py'
       if self.is_ptr:
         self.function_argument = param_name
@@ -146,9 +146,11 @@ def unknown_default_argument_needs_non_default_value(
 def generate_value_error_for_unknown_default_param(
     func_decl: ast_pb2.FuncDecl, first_unknown_default_param: ast_pb2.ParamDecl
 ) -> str:
-  return (f'throw py::value_error("{func_decl.name.native}() argument '
-          f'{first_unknown_default_param.name.native} needs a non-default '
-          'value");')
+  return (
+      f'throw pybind11::value_error("{func_decl.name.native}() argument '
+      f'{first_unknown_default_param.name.native} needs a non-default '
+      'value");'
+  )
 
 
 def generate_index_combination_for_unknown_default_func_decl(
@@ -211,20 +213,23 @@ def generate_return_value_policy_for_type(
     if len(return_value_policy_list) > 1:
       return f'{{{return_value_policy_str}}}'
     else:
-      return ('py::return_value_policy_pack(std::vector<'
-              f'py::return_value_policy_pack>({{{return_value_policy_str}}}), '
-              'py::return_value_policy::_clif_automatic)')
+      return (
+          'pybind11::return_value_policy_pack('
+          'std::vector<pybind11::return_value_policy_pack>('
+          f'{{{return_value_policy_str}}}),'
+          ' pybind11::return_value_policy::_clif_automatic)'
+      )
   else:
     if param_type.lang_type == 'bytes':
-      return 'py::return_value_policy::_return_as_bytes'
+      return 'pybind11::return_value_policy::_return_as_bytes'
     elif is_callable_arg:
       if param_type.lang_type == 'object':
-        return 'py::return_value_policy::automatic_reference'
-      return 'py::return_value_policy::_clif_automatic'
+        return 'pybind11::return_value_policy::automatic_reference'
+      return 'pybind11::return_value_policy::_clif_automatic'
     elif reference_internal:
-      return 'py::return_value_policy::reference_internal'
+      return 'pybind11::return_value_policy::reference_internal'
     else:
-      return 'py::return_value_policy::_clif_automatic'
+      return 'pybind11::return_value_policy::_clif_automatic'
 
 
 def generate_return_value_policy_for_func_decl_params(
@@ -247,7 +252,7 @@ def generate_return_value_policy_for_func_decl_params(
     else:
       return return_value_policy_str
   else:
-    return 'py::return_value_policy::_clif_automatic'
+    return 'pybind11::return_value_policy::_clif_automatic'
 
 
 def generate_function_suffixes(
@@ -261,12 +266,12 @@ def generate_function_suffixes(
   if py_args:
     suffix += f'{py_args}, '
   if func_decl.name.native in operators.ALL_OPS:
-    suffix += 'py::is_operator(), '
-  suffix += 'py::return_value_policy::_clif_automatic'
+    suffix += 'pybind11::is_operator(), '
+  suffix += 'pybind11::return_value_policy::_clif_automatic'
   if func_decl.docstring:
     suffix += f', {generate_docstring(func_decl.docstring)}'
   if release_gil and not func_decl.py_keep_gil:
-    suffix += ', py::call_guard<py::gil_scoped_release>()'
+    suffix += ', pybind11::call_guard<pybind11::gil_scoped_release>()'
   suffix += ');'
   return suffix
 
@@ -387,10 +392,11 @@ def generate_py_args(func_decl: ast_pb2.FuncDecl,
       params_list.append(
           _generate_py_arg_without_default(param, return_value_policy_pack)
       )
-  # Insert `py::kw_only()` at the index of the first parameter with unknown
-  # default value so that pybind11 is not confused about which overload to use.
+  # Insert `pybind11::kw_only()` at the index of the first parameter with
+  # unknown default value so that pybind11 is not confused about which
+  # overload to use.
   if first_unknown_default_index != -1 and params_list:
-    params_list.insert(first_unknown_default_index, 'py::kw_only()')
+    params_list.insert(first_unknown_default_index, 'pybind11::kw_only()')
   operators.fix_py_args_for_operators_in_place(
       func_decl, params_list)
   return ', '.join(params_list)
@@ -399,27 +405,30 @@ def generate_py_args(func_decl: ast_pb2.FuncDecl,
 def _generate_py_arg_with_default(
     param: ast_pb2.ParamDecl, return_value_policy_pack: str
 ) -> str:
-  """Generate `py::arg` for parameters with default value."""
+  """Generate `pybind11::arg` for parameters with default value."""
   if return_value_policy_pack:
     if param.default_value == 'nullptr':
       return (
-          f'py::arg("{param.name.cpp_name}")'
+          f'pybind11::arg("{param.name.cpp_name}")'
           f'.policies({return_value_policy_pack}) = {param.default_value}'
       )
     else:
       return (
-          f'py::arg("{param.name.cpp_name}")'
+          f'pybind11::arg("{param.name.cpp_name}")'
           f'.policies({return_value_policy_pack}) = '
           f'static_cast<{param.type.cpp_type}>({param.default_value})'
       )
   else:
     if param.default_value == 'nullptr':
       if param.type.cpp_type == _CPP_TYPE_PYOBJECT_PTR_FROM_MATCHER:
-        return f'py::arg("{param.name.cpp_name}") = py::nullptr_default_arg()'
-      return f'py::arg("{param.name.cpp_name}") = {param.default_value}'
+        return (
+            f'pybind11::arg("{param.name.cpp_name}") ='
+            ' pybind11::nullptr_default_arg()'
+        )
+      return f'pybind11::arg("{param.name.cpp_name}") = {param.default_value}'
     else:
       return (
-          f'py::arg("{param.name.cpp_name}") = '
+          f'pybind11::arg("{param.name.cpp_name}") = '
           f'static_cast<{param.type.cpp_type}>({param.default_value})'
       )
 
@@ -429,10 +438,11 @@ def _generate_py_arg_without_default(
 ) -> str:
   if return_value_policy_pack:
     return (
-        f'py::arg("{param.name.cpp_name}").policies({return_value_policy_pack})'
+        f'pybind11::arg("{param.name.cpp_name}")'
+        f'.policies({return_value_policy_pack})'
     )
   else:
-    return f'py::arg("{param.name.cpp_name}")'
+    return f'pybind11::arg("{param.name.cpp_name}")'
 
 
 def _generate_return_value_policy_pack_for_py_arg(
@@ -444,7 +454,7 @@ def _generate_return_value_policy_pack_for_py_arg(
         param.type.callable
     )
   if policy:
-    return f'py::return_value_policy_pack({policy})'
+    return f'pybind11::return_value_policy_pack({policy})'
   else:
     return ''
 

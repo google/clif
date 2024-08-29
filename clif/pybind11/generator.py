@@ -197,7 +197,7 @@ class ModuleGenerator:
     yield '// When manually converting this code to a pure pybind11 extension,'
     yield '// change this function to:'
     yield f'// PYBIND11_MODULE({self._module_name}, m)'
-    yield 'void PyclifPybind11ModuleInit(py::module_ m) {'
+    yield 'void PyclifPybind11ModuleInit(pybind11::module_ m) {'
     for s in self._generate_import_modules(ast):
       yield I + s
     for decl in ast.decls:
@@ -260,8 +260,10 @@ class ModuleGenerator:
     for module_path in all_modules:
       module_variable_name = utils.generate_mangled_name_for_module(
           module_path)
-      yield I + (f'auto {module_variable_name} = '
-                 f'py::module_::import("{module_path}");')
+      yield I + (
+          f'auto {module_variable_name} = '
+          f'pybind11::module_::import("{module_path}");'
+      )
 
   def _generate_headlines(self):
     """Generates #includes and headers."""
@@ -287,8 +289,6 @@ class ModuleGenerator:
     yield '#include "clif/pybind11/type_casters.h"'
     yield '#include "third_party/pybind11_protobuf/native_proto_caster.h"'
     yield ''
-    yield 'namespace py = pybind11;'
-    yield ''
 
   def _generate_trampoline_classes(
       self, trampoline_class_names: Set[str], decl: ast_pb2.Decl):
@@ -303,8 +303,10 @@ class ModuleGenerator:
       trampoline_class_name = utils.trampoline_name(decl.class_)
       assert decl.class_.name.cpp_name not in trampoline_class_names
       trampoline_class_names.add(trampoline_class_name)
-      yield (f'struct {trampoline_class_name} : {decl.class_.name.cpp_name}, '
-             'py::trampoline_self_life_support {')
+      yield (
+          f'struct {trampoline_class_name} : {decl.class_.name.cpp_name}, '
+          'pybind11::trampoline_self_life_support {'
+      )
       class_name = decl.class_.name.cpp_name.split('::')[-1]
       yield I + f'using {decl.class_.name.cpp_name}::{class_name};'
       for member in virtual_members:
@@ -326,7 +328,7 @@ class ModuleGenerator:
     params_list = []
     for p in func_decl.params:
       if p.type.lang_type == 'bytes' and 'std::string' in p.cpp_exact_type:
-        params_list.append(f'py::bytes({p.name.cpp_name})')
+        params_list.append(f'pybind11::bytes({p.name.cpp_name})')
       else:
         params_list.append(p.name.cpp_name)
     params = ', '.join(params_list)
@@ -365,7 +367,7 @@ class ModuleGenerator:
     if ',' in return_type:
       yield I + I + f'using {func_decl.name.native}_return = {return_type};'
       return_type = f'{func_decl.name.native}_return'
-    yield I + I + 'py::gil_scoped_acquire hold_gil;'
+    yield I + I + 'pybind11::gil_scoped_acquire hold_gil;'
     yield I + I + f'{pybind11_override}('
     if pybind11_override not in ('PYBIND11_OVERRIDE_STATUS_RETURN',
                                  'PYBIND11_OVERRIDE_PURE_STATUS_RETURN'):
@@ -379,7 +381,7 @@ class ModuleGenerator:
         )
     )
     return_value_policy_pack = (
-        f'py::return_value_policy_pack({return_value_policy})'
+        f'pybind11::return_value_policy_pack({return_value_policy})'
     )
     if params:
       yield I + I + I + f'{return_value_policy_pack},'

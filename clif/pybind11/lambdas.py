@@ -77,8 +77,10 @@ def generate_lambda(
 def generate_check_nullptr(
     func_decl: ast_pb2.FuncDecl, param_name: str) -> Generator[str, None, None]:
   yield I + f'if ({param_name} == nullptr) {{'
-  yield I + I + (f'throw py::type_error("{func_decl.name.native}() '
-                 f'argument {param_name} is not valid.");')
+  yield I + I + (
+      f'throw pybind11::type_error("{func_decl.name.native}() '
+      f'argument {param_name} is not valid.");'
+  )
   yield I +'}'
 
 
@@ -91,14 +93,16 @@ def generate_cpp_function_return_post_process(
   elif func_decl.name.native == '__enter__@':
     yield I + f'return {self_param};'
   elif func_decl.name.native == '__exit__@':
-    yield I + 'return py::none();'
+    yield I + 'return pybind11::none();'
   elif func_decl.postproc:
     assert '.' in func_decl.postproc
     module_name, method_name = func_decl.postproc.rsplit('.', maxsplit=1)
     # TODO: Port or reuse `clif::ImportFQName`.
-    yield I + f'auto mod = py::module_::import("{module_name}");'
-    yield I + ('py::object result_ = '
-               f'mod.attr("{method_name}")({function_call_returns});')
+    yield I + f'auto mod = pybind11::module_::import("{module_name}");'
+    yield I + (
+        'pybind11::object result_ = '
+        f'mod.attr("{method_name}")({function_call_returns});'
+    )
     yield I + 'return result_;'
   elif function_call_returns:
     if len(func_decl.returns) > 1:
@@ -106,7 +110,7 @@ def generate_cpp_function_return_post_process(
     else:
       yield I + f'return {function_call_returns};'
   else:
-    yield I + 'return py::none();'
+    yield I + 'return pybind11::none();'
 
 
 def generate_lambda_body(
@@ -123,7 +127,7 @@ def generate_lambda_body(
 
   if (class_decl and func_decl_is_member_function(func_decl, class_decl) and
       not func_decl.is_extend_method):
-    yield I + f'auto self = py::cast<{class_decl.name.cpp_name}*>(self_py);'
+    yield I + f'auto self = pybind11::cast<{class_decl.name.cpp_name}*>(self_py);'
 
   # Generates void pointer check for parameters that are converted from non
   # pointers by code generator.
@@ -139,25 +143,29 @@ def generate_lambda_body(
     index = params[start_idx]
     self_param = (
         params[0].gen_name if func_decl.is_extend_method else 'self_py')
-    yield I + f'py::object length_function_ = {self_param}.attr("__len__");'
+    yield I + f'pybind11::object length_function_ = {self_param}.attr("__len__");'
     yield I + 'if (length_function_.is_none()) {'
-    yield I + I + (f'throw py::attribute_error("class {class_decl.name.native} '
-                   f'defined {func_decl.name.native}, but does not define '
-                   '`__len__` function.");')
+    yield I + I + (
+        'throw pybind11::attribute_error("class'
+        f' {class_decl.name.native} defined {func_decl.name.native}, but does'
+        ' not define `__len__` function.");'
+    )
     yield I +'}'
-    yield I + (f'Py_ssize_t {index.gen_name}_ = ::clif::item_index('
-               f'{index.gen_name}, py::cast<int>(length_function_()));')
+    yield I + (
+        f'Py_ssize_t {index.gen_name}_ = ::clif::item_index('
+        f'{index.gen_name}, pybind11::cast<int>(length_function_()));'
+    )
     yield I + (f'if ({index.gen_name}_ < 0) {{')
-    yield I + I + 'throw py::index_error("index out of range.");'
+    yield I + I + 'throw pybind11::index_error("index out of range.");'
     yield I +'}'
     yield I + f'{index.gen_name} = {index.gen_name}_;'
 
   if not cpp_void_return:
     ret0 = func_decl.returns[0]
     if not ret0.type.cpp_type:
-      yield I + 'py::cpp_function ret0;'
+      yield I + 'pybind11::cpp_function ret0;'
     else:
-      yield I + 'py::object ret0;'
+      yield I + 'pybind11::object ret0;'
 
   # Generates declarations of pointer return values outside of scope
   for i, r in enumerate(func_decl.returns):
@@ -167,7 +175,7 @@ def generate_lambda_body(
   yield I + '{'
   func_keeps_gil = function_lib.func_keeps_gil(func_decl)
   if not func_keeps_gil:
-    yield I + I + 'py::gil_scoped_release gil_release;'
+    yield I + I + 'pybind11::gil_scoped_release gil_release;'
 
   # Generates call to the wrapped function
   cpp_void_return = func_decl.cpp_void_return or not func_decl.returns
@@ -176,19 +184,21 @@ def generate_lambda_body(
     if not ret0.type.cpp_type:
       callback_cpp_type = function_lib.generate_callback_signature(ret0)
       callback_params_list = [
-          f'py::arg("{param.name.native}")'
-          for param in ret0.type.callable.params]
+          f'pybind11::arg("{param.name.native}")'
+          for param in ret0.type.callable.params
+      ]
       callback_params_str = ', '.join(callback_params_list)
       yield I + I + (f'{callback_cpp_type} ret0_ = '
                      f'{function_call}({function_call_params});')
       yield I + I + '{'
       if not func_keeps_gil:
-        yield I + I + I + 'py::gil_scoped_acquire gil_acquire;'
+        yield I + I + I + 'pybind11::gil_scoped_acquire gil_acquire;'
       if callback_params_str:
-        yield I + I + I + ('ret0 = py::cpp_function(ret0_, '
-                           f'{callback_params_str});')
+        yield I + I + I + (
+            f'ret0 = pybind11::cpp_function(ret0_, {callback_params_str});'
+        )
       else:
-        yield I + I + I + 'ret0 = py::cpp_function(ret0_);'
+        yield I + I + I + 'ret0 = pybind11::cpp_function(ret0_);'
       for s in _generate_python_error_check():
         yield I + I + I + s
       yield I + I + '}'
@@ -201,7 +211,7 @@ def generate_lambda_body(
           func_decl, ret0, 'ret0_', codegen_info, class_decl)
       yield I + I + '{'
       if not func_keeps_gil:
-        yield I + I + I + 'py::gil_scoped_acquire gil_acquire;'
+        yield I + I + I + 'pybind11::gil_scoped_acquire gil_acquire;'
       yield I + I + I + f'ret0 = {ret0_with_py_cast};'
       for s in _generate_python_error_check():
         yield I + I + I + s
@@ -273,16 +283,16 @@ def generate_function_call_return(
     ret = f'({status_type})(std::move({return_value_name}))'
   if (func_decl.return_value_policy ==
       ast_pb2.FuncDecl.ReturnValuePolicy.REFERENCE):
-    return_value_policy = 'py::return_value_policy::reference'
+    return_value_policy = 'pybind11::return_value_policy::reference'
   return_value_policy_pack = (
-      f'py::return_value_policy_pack({return_value_policy})'
+      f'pybind11::return_value_policy_pack({return_value_policy})'
   )
   if func_decl_is_extend_member_function(func_decl, class_decl):
-    return f'py::cast({ret}, {return_value_policy_pack}, arg0_py)'
+    return f'pybind11::cast({ret}, {return_value_policy_pack}, arg0_py)'
   elif func_decl_is_member_function(func_decl, class_decl):
-    return f'py::cast({ret}, {return_value_policy_pack}, self_py)'
+    return f'pybind11::cast({ret}, {return_value_policy_pack}, self_py)'
   else:
-    return f'py::cast({ret}, {return_value_policy_pack})'
+    return f'pybind11::cast({ret}, {return_value_policy_pack})'
 
 
 def _generate_lambda_params_with_types(
@@ -293,14 +303,14 @@ def _generate_lambda_params_with_types(
   params_list = [f'{p.cpp_type} {p.gen_name}' for p in params]
   if (func_decl_is_member_function(func_decl, class_decl) and
       not func_decl.is_extend_method):
-    params_list = ['py::object self_py'] + params_list
+    params_list = ['pybind11::object self_py'] + params_list
   # For reflected operations, we need to generate (const Type& self, int lhs)
   # instead of (int lhs, const Type& self). So swapping the two function
   # parameters.
   if func_decl.name.native in operators.REFLECTED_OPS and len(params_list) == 2:
     params_list.reverse()
   if func_decl.name.native == '__exit__@' and class_decl:
-    params_list.append('py::args')
+    params_list.append('pybind11::args')
   return ', '.join(params_list)
 
 
@@ -333,5 +343,5 @@ def generate_function_call(
 def _generate_python_error_check(
     acquire_gil: bool = False) -> Generator[str, None, None]:
   if acquire_gil:
-    yield 'py::gil_scoped_acquire gil_acquire;'
+    yield 'pybind11::gil_scoped_acquire gil_acquire;'
   yield '::clif::ThrowErrorAlreadySetIfPythonErrorOccurred();'

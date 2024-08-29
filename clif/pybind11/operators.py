@@ -100,7 +100,7 @@ ALL_OPS = frozenset(SUPPORTED_OPS.keys()).union(UNSUPPORTED_BINARY_OPS).union(
 
 def fix_py_args_for_operators_in_place(
     func_decl: ast_pb2.FuncDecl, py_args: List[str]) -> None:
-  """Fix `py::args` declaration of the operator.
+  """Fix `pybind11::args` declaration of the operator.
 
   Sometimes users might implement operators as free functions, not C++ member
   functions. In this case, PyCLIF AST will include an extra parameter for
@@ -110,7 +110,7 @@ def fix_py_args_for_operators_in_place(
 
   Args:
     func_decl: AST function declaration in proto format.
-    py_args: A list of strings that are like `py::arg('a')`.
+    py_args: A list of strings that are like `pybind11::arg('a')`.
 
   Raises:
     RuntimeError: If the operator overloading has unexpected number of function

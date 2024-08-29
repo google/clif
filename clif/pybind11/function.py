@@ -92,13 +92,13 @@ def _generate_overload_for_unknown_default_function(
   ```
     m.def("add", [](int a, Arg b, int c) {
       return add(a, b, c);
-    }, py::arg("a"), py::arg("b"), py::arg("c") = 3);
+    }, pybind11::arg("a"), pybind11::arg("b"), pybind11::arg("c") = 3);
     m.def("add", [](int a, int c) {  // -b
-      throw py::value_error("argument b needs a non-default value");
-    }, py::arg("a"), py::kw_only(), py::arg("c"));
+      throw pybind11::value_error("argument b needs a non-default value");
+    }, pybind11::arg("a"), pybind11::kw_only(), pybind11::arg("c"));
     m.def("add", [](int a) {  // -b, -c
       return add(a);
-    }, py::arg("a"));
+    }, pybind11::arg("a"));
   ```
 
   Args:

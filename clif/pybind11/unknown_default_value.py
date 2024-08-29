@@ -32,12 +32,14 @@ def generate_from(
 ) -> Generator[str, None, None]:
   """Generates lambda to handle functions with unknown default args."""
   func_name = func_decl.name.native.rstrip('#').rstrip('@')
-  params_with_type = 'py::args args, py::kwargs kw'
+  params_with_type = 'pybind11::args args, pybind11::kwargs kw'
   self_py = 'arg0_py' if func_decl.is_extend_method else 'self_py'
   if class_decl and lambdas.func_decl_is_member_function(func_decl, class_decl):
-    params_with_type = f'py::object {self_py}, ' + params_with_type
-  yield (f'{module_name}.{function_lib.generate_def(func_decl)}'
-         f'("{func_name}", []({params_with_type}) -> py::object {{')
+    params_with_type = f'pybind11::object {self_py}, ' + params_with_type
+  yield (
+      f'{module_name}.{function_lib.generate_def(func_decl)}'
+      f'("{func_name}", []({params_with_type}) -> pybind11::object {{'
+  )
 
   if class_decl and lambdas.func_decl_is_member_function(func_decl, class_decl):
     yield I + f'auto self = {self_py}.cast<{class_decl.name.cpp_name}*>();'
@@ -64,7 +66,7 @@ def generate_from(
              f'"{args_signature}:{func_decl.name.native}",')
   args_array = ', '.join(f'&a[{i}]' for i in range(nargs))
   yield I + I + I + f'const_cast<char**>(names), {args_array})) {{'
-  yield I + I + 'return py::object();'
+  yield I + I + 'return pybind11::object();'
   yield I + '}'
 
   if minargs < nargs and not have_addl_returns:
@@ -82,7 +84,7 @@ def generate_from(
     yield I + arg_declaration
     arg_cpp_type = arg_declaration[:arg_declaration.rfind(' ')]
     if i < minargs:
-      yield I + f'{arg} = py::cast<{arg_cpp_type}>(py::handle(a[{i}]));'
+      yield I + f'{arg} = pybind11::cast<{arg_cpp_type}>(pybind11::handle(a[{i}]));'
       if check_nullptr:
         yield from lambdas.generate_check_nullptr(func_decl, arg)
     else:
@@ -101,27 +103,36 @@ def generate_from(
           if p.type.cpp_type.startswith('::std::unique_ptr'):
             yield indent + I + (f'if (!a[{i}]) {{ /* default-constructed '
                                 'smartptr */}')
-            yield indent + I + (f'else {arg} = py::cast<{arg_cpp_type}> '
-                                f'(py::handle(a[{i}]));')
+            yield indent + I + (
+                f'else {arg} = pybind11::cast<{arg_cpp_type}> '
+                f'(pybind11::handle(a[{i}]));'
+            )
           else:
             yield indent + I + f'if (!a[{i}]) {{'
             yield indent + I + I + (
-                f'throw py::value_error("{func_decl.name.native}() argument '
-                f'{p.name.native} needs a non-default value");')
+                f'throw pybind11::value_error("{func_decl.name.native}()'
+                f' argument {p.name.native} needs a non-default value");'
+            )
             yield indent + I + '}'
-            yield indent + I + (f'else {arg} = py::cast<{arg_cpp_type}>'
-                                f'(py::handle(a[{i}]));')
+            yield indent + I + (
+                f'else {arg} = pybind11::cast<{arg_cpp_type}>'
+                f'(pybind11::handle(a[{i}]));'
+            )
         else:
-          yield indent + I + (f'{arg} = py::cast<{arg_cpp_type}>'
-                              f'(py::handle(a[{i}]));')
+          yield indent + I + (
+              f'{arg} = pybind11::cast<{arg_cpp_type}>'
+              f'(pybind11::handle(a[{i}]));'
+          )
         if check_nullptr:
           for line in lambdas.generate_check_nullptr(func_decl, arg):
             yield indent + line
       else:
         yield indent + I + (f'if (!a[{i}]) {arg} = ({p.type.cpp_type})'
                             f'{p.default_value};')
-        yield indent + I + (f'else {arg} = py::cast<{arg_cpp_type}>'
-                            f'(py::handle(a[{i}]));')
+        yield indent + I + (
+            f'else {arg} = pybind11::cast<{arg_cpp_type}>'
+            f'(pybind11::handle(a[{i}]));'
+        )
         if check_nullptr:
           for line in lambdas.generate_check_nullptr(func_decl, arg):
             yield indent + line
@@ -182,7 +193,7 @@ def generate_from(
   if not cpp_void_return:
     ret0_with_py_cast = lambdas.generate_function_call_return(
         func_decl, func_decl.returns[0], 'ret0_', codegen_info, class_decl)
-    yield I + f'py::object ret0 = {ret0_with_py_cast};'
+    yield I + f'pybind11::object ret0 = {ret0_with_py_cast};'
   function_call_returns = lambdas.generate_function_call_returns(
       func_decl, codegen_info, class_decl)
 

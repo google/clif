@@ -80,7 +80,7 @@ def _generate_cpp_get(
       var_decl.type, reference_internal=reference_internal
   )
   return_value_policy_pack = (
-      f'py::return_value_policy_pack({return_value_policy})'
+      f'pybind11::return_value_policy_pack({return_value_policy})'
   )
 
   if not _is_var_decl_type_cpp_copyable(var_decl):
@@ -103,7 +103,7 @@ def _generate_cpp_get_for_copyable_type(
   """Generate lambda expressions for getters when the type is copyable."""
   self_param_type = _generate_self_param_type_for_cpp_get(var_decl, class_decl)
   if generate_comma:
-    yield I + f'py::cpp_function([]({self_param_type} self) {{'
+    yield I + f'pybind11::cpp_function([]({self_param_type} self) {{'
   else:
     yield I + f'[]({self_param_type} self) {{'
   yield I + I + f'return {ret};'
@@ -122,13 +122,14 @@ def _generate_cpp_get_for_uncopyable_type(
 ) -> Generator[str, None, None]:
   """Generate lambda expressions for getters when the type is uncopyable."""
   if generate_comma:
-    yield I + 'py::cpp_function([](py::object self_py) -> py::object {'
+    yield I + 'pybind11::cpp_function([](pybind11::object self_py) -> pybind11::object {'
   else:
-    yield I + '[](py::object self_py) -> py::object {'
+    yield I + '[](pybind11::object self_py) -> pybind11::object {'
   self_param_type = _generate_self_param_type_for_cpp_get(var_decl, class_decl)
   yield I + I + f'{self_param_type} self = self_py.cast<{self_param_type}>();'
-  yield I + I + (f'return py::cast({ret}, {return_value_policy_pack}, '
-                 'self_py);')
+  yield I + I + (
+      f'return pybind11::cast({ret}, {return_value_policy_pack}, self_py);'
+  )
   if generate_comma:
     yield I + '}),'
   else:
@@ -142,8 +143,10 @@ def _generate_cpp_set_without_setter(
 ) -> Generator[str, None, None]:
   """Generate lambda expressions for setters when setters are undefined."""
   if generate_comma:
-    yield I + (f'py::cpp_function([]({class_decl.name.cpp_name}& self, '
-               f'{var_decl.type.cpp_type} v) {{')
+    yield I + (
+        f'pybind11::cpp_function([]({class_decl.name.cpp_name}& self, '
+        f'{var_decl.type.cpp_type} v) {{'
+    )
   else:
     yield I + (
         f'[]({class_decl.name.cpp_name}& self, {var_decl.type.cpp_type} v) {{'
@@ -166,8 +169,10 @@ def _generate_cpp_set_with_setter(
   assert var_decl.cpp_set.params, (f'var_decl {var_decl.name.native} does not'
                                    'have any params.')
   self_param_type = _generate_self_param_type_for_cpp_set(var_decl, class_decl)
-  yield I + (f'py::cpp_function([]({self_param_type} self, '
-             f'{var_decl.cpp_set.params[-1].type.cpp_type} v) {{')
+  yield I + (
+      f'pybind11::cpp_function([]({self_param_type} self, '
+      f'{var_decl.cpp_set.params[-1].type.cpp_type} v) {{'
+  )
   if var_decl.is_extend_variable:
     function_call = f'{var_decl.cpp_set.name.cpp_name}(self, std::move(v))'
   else:
@@ -199,7 +204,7 @@ def generate_from(
           var_decl.type
       )
       return_value_policy_pack = (
-          f'py::return_value_policy_pack({return_value_policy})'
+          f'pybind11::return_value_policy_pack({return_value_policy})'
       )
       yield (
           f'{class_name}.def_readwrite("{var_decl.name.native}", '
