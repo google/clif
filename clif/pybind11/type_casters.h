@@ -314,7 +314,7 @@ template <typename Key, typename D, typename... Extra>
 class type_caster<std::unique_ptr<std::unordered_set<Key, Extra...>, D>>
     : public smart_pointer_set_caster<
         std::unique_ptr<std::unordered_set<Key, Extra...>, D>,
-        std::unordered_set<Key>, Key> {};
+        std::unordered_set<Key, Extra...>, Key> {};
 
 template <typename Key, typename... Extra>
 class type_caster<std::shared_ptr<std::unordered_set<Key, Extra...>>>
