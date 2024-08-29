@@ -70,7 +70,7 @@ class ClassType(BaseType):
 
   def generate_type_caster(self) -> Generator[str, None, None]:
     # Work around potential name collisions in
-    # `PYBIND11_SMART_HOLDER_TYPE_CASTERS()` invocation, e.g. a collision
+    # `PYBIND11_MAKE_OPAQUE()` invocation, e.g. a collision
     # between a `std::tuple` alias in the global namespace (to work around
     # b/118736768) and `pybind11::tuple`.
     if self.module_path:
@@ -79,7 +79,9 @@ class ClassType(BaseType):
       py_name_fq = self.py_name
     using_name = f'PyCLIF_py_name_{py_name_fq}'.replace('.', '_')
     yield f'using {using_name} = {self.cpp_name};'
-    yield f'PYBIND11_SMART_HOLDER_TYPE_CASTERS({using_name})'
+    # This fully specializes the `type_caster`, to avoid falling back to other
+    # partial specializations:
+    yield f'PYBIND11_MAKE_OPAQUE({using_name})'
     if not self.cpp_copyable:
       yield from self.generate_type_trait('is_copy_constructible')
     if not self.cpp_movable:
